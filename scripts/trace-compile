@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Compile a program with the original Algol-GDR under dubna with an instruction
+# trace, and summarize which modules ran (see trace-passes.py).
+#
+#   trace-compile [--full] [--coverage] FILE.alg...
+#
+# Needs os-dubna next to this project (OS_DUBNA to override): the layouts
+# from os-dubna/algol and the overlay images from the monsys.9 tape.
+#
+set -e
+scripts=$(dirname "$(realpath "$0")")
+osd=${OS_DUBNA:-$scripts/../../os-dubna}
+full=
+cov=
+while :; do
+    case "$1" in
+    --full) full=1; shift ;;
+    --coverage) cov=--coverage; shift ;;
+    *) break ;;
+    esac
+done
+[ $# -ge 1 ] || { echo "Usage: $0 [--full] [--coverage] FILE.alg..." >&2; exit 2; }
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+# Overlay images from the tape (zone, word of each RLE stream: os-dubna/algol/Makefile).
+cc -O -o "$work/ovl2bin" "$osd/tools/ovl2bin.c"
+tail -c +$(((0070 * 1024 + 01100) * 6 + 1)) "$osd/monsys/monsys.9" | "$work/ovl2bin" > "$work/algol.bin"
+tail -c +$(((0077 * 1024 + 00000) * 6 + 1)) "$osd/monsys/monsys.9" | "$work/ovl2bin" > "$work/aprintm.bin"
+
+n=0
+for src in "$@"; do
+    n=$((n + 1))
+    name=$(basename "$src" .alg)
+    pre="${src%.alg}.pre"
+    {
+        echo "*name $name"
+        [ -f "$pre" ] && cat "$pre"
+        echo "*punch"
+        [ -n "$full" ] && echo "*full"
+        echo "*algol"
+        cat "$src"
+        echo "*end file"
+    } > "$work/job.dub"
+    (cd "$work" && dubna -r -d i --trace=trace$n.txt job.dub > /dev/null)
+done
+
+python3 "$scripts/trace-passes.py" $cov \
+    "$osd/algol/algol.layout.py" "$work/algol.bin" \
+    "$osd/algol/aprintm.layout.py" "$work/aprintm.bin" \
+    -- "$work"/trace*.txt

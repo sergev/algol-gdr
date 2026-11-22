@@ -12,11 +12,10 @@ produce the same object (`.std`) from the same source; the tests in `tests/` are
 ## A6. Map of the original compiler
 
 The main risk of the project: the Madlen sources come from disassembly and have no comments
-about their meaning.
+about their meaning. Tools: `scripts/trace-compile` shows which modules a program runs, in
+what order, and the coverage of the corpus ([doc/traces.md](doc/traces.md)). Add test programs
+for modules with low coverage as their roles become clear.
 
-- **A6.1** Regenerate execution traces: `make trace` in `os-dubna/algol` (or the copy in
-  `tmp/asm-sources`). Add new test programs to the traced set, so all passes and branches
-  of interest are covered.
 - **A6.2** **Driver** (`algol.asm`, `ALGOL` at 01614): the order of passes, the conditions between
   them (`FLGEX*`, `CHECKFL*`, `FULISFL*`, `NOLISFL*`), where `*full` / `*no list` are set,
   and how the compiler finishes (the object module going to the punch or to the library).
