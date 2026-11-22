@@ -17,26 +17,9 @@ Milestone 0 builds everything around that comparison.
 
 ## A4. Standard array (object module) format
 
-The object module is the contract between Milestone 1 and `dubna`, so it needs a precise
-description and tooling.
+The object module is the contract between Milestone 1 and `dubna`. Its format is described in
+[doc/stdarray.md](doc/stdarray.md); the decoder `mesm6/toolchain/ld/stdobj.{h,c}` is a model.
 
-- **A4.1** **Card text form**, as written by `dubna/puncher.cpp` (`punch_stdarray`) and read back
-  in a job:
-  - a header line `` `77761 NAME  N``, where NAME is the six-character label from columns
-    77–80 and N is the card number;
-  - then 16 lines of `` `oooooooooooooooo `` (one 48-bit word each);
-  - the last card is padded with zeros.
-
-  Check how the `dubna` card reader parses it: whether checksums or the column 1–4 fields
-  matter, and whether a shorter last card is accepted.
-- **A4.2** **Logical layout.** Write it down from `os-dubna/docs/Writlib.md` (entries, the
-  *structure* header, declarations, calls, long names, data, instructions, constants), from
-  the WRITLIBR source (`besmmons/system2.txt`), from `docs/Dynamic_Loader.md`, and from
-  Madlen.md §17 (references `4000₈+N` / `40000₈+N` / `74000₈+N`, description table, row 0 =
-  module name in TEXT code). The long form that compilers make has a 6-word header.
-- **A4.3** Decode `tmp/stdarray.out` (Hello, World) by hand as the first worked example. Word 1,
-  `6062574762415500`, is the name `PROGRAM` in TEXT code.
-- **A4.4** Write `doc/stdarray.md` with the format, field by field.
 - **A4.5** C++ library `src/stdarray.{h,cpp}`:
   - model: a list of 48-bit words, with a typed view for the header, entries, tables and
     code;
