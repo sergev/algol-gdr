@@ -56,11 +56,20 @@ static void load_mem(Workspace &ws, const std::string &filename, int pass)
         if (n >= pass)
             break;
         std::istringstream fields(line);
+        fields >> std::oct;
         unsigned addr;
         Word value;
-        fields >> std::oct >> addr >> value;
-        ASSERT_TRUE(fields) << filename << ": " << line;
-        ws[addr] = value;
+        if (line.rfind("drum ", 0) == 0) {
+            std::string word;
+            unsigned unit, zone;
+            fields >> word >> unit >> zone >> addr >> value;
+            ASSERT_TRUE(fields) << filename << ": " << line;
+            ws.drum(unit, zone, addr) = value;
+        } else {
+            fields >> addr >> value;
+            ASSERT_TRUE(fields) << filename << ": " << line;
+            ws[addr] = value;
+        }
     }
 }
 

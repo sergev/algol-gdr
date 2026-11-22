@@ -7,7 +7,7 @@ TEST(workspace, init)
     Workspace ws;
     EXPECT_EQ(ws[02000], 051u);
     EXPECT_EQ(ws[02166], 02025112220254400u); // BEGIN
-    EXPECT_EQ(ws[04400], 0u); // D-list
+    EXPECT_EQ(ws[04400], 0u);                 // D-list
     EXPECT_EQ(ws[05754], 06402340000000027u);
     EXPECT_EQ(ws[027245], 0u);
 }
@@ -34,4 +34,15 @@ TEST(workspace, bounds)
     EXPECT_THROW(ws[027645], std::out_of_range);
     EXPECT_TRUE(Workspace::contains(06000));
     EXPECT_FALSE(Workspace::contains(027244));
+}
+
+TEST(workspace, drum)
+{
+    Workspace ws;
+    EXPECT_EQ(ws.drum(027, 033, 01777), 0u);
+    ws.drum(026, 0, 5) = 7;
+    EXPECT_EQ(ws.drum(026, 0, 5), 7u);
+    EXPECT_THROW(ws.drum(026, 0, 1024), std::out_of_range);
+    ws.reset();
+    EXPECT_EQ(ws.drum(026, 0, 5), 0u);
 }

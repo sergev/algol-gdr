@@ -67,14 +67,19 @@ Run:
 
 ## Pass streams
 
-`scripts/capture-streams FILE.alg…` compiles under a memory trace (`dubna -d im`) and writes
-next to the source:
+`scripts/capture-streams FILE.alg…` compiles under a trace of memory and extracodes
+(`dubna -d ime`) and writes next to the source:
 - `NAME.s1` … `NAME.s5`: the stream written by each pass, one 24-bit item per line in octal,
   in memory order (pass 2 writes backward, so its items are reversed). Items are taken at the
   entries of the stream helper G27126. A pass that did not run has no file.
-- `NAME.mem`: per pass, the words of the workspace (02000–05777, 27245–27644) it wrote, with
-  their values at the end of the pass; a zero only where the word was nonzero before.
-  Drum reads are not seen.
+- `NAME.mem`: per pass, the words it changed: in the workspace (01736–05777, 27245–27644) as
+  `ADDR VALUE`, and in the drum zones that carry data between passes (drum 26 zone 0, drum 27
+  zones 33 and 34) as `drum UNIT ZONE OFFSET VALUE`; all numbers octal. The workspace at the
+  start of pass N is the driver's data (`src/tables_data.cpp`) plus the changes of the passes
+  before N.
+
+The script keeps a shadow of memory and drums from the start of pass 1 (traced writes, `*70`
+transfers) and checks it against every traced read, so the dumps are exact.
 
 `make goldens` runs it for every program. Pass 3 is skipped (no `.s3`) for the programs with
 a `NAME.pre`: `*call setftn` sets `CHECKFL*` (cell 0521), so they are compiled in check mode.
