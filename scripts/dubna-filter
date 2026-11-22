@@ -1,0 +1,7 @@
+#!/bin/sh
+# Keep dubna output from the *NAME card up to the closing statistics.
+awk '
+    /^\*NAME / { on = 1 }
+    /^-{60}$/  { on = 0 }
+    on
+'

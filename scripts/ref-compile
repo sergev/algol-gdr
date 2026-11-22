@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Compile an Algol program with the original Algol-GDR under dubna.
+#
+#   ref-compile [--full] FILE.alg [OUTDIR]
+#
+# Writes OUTDIR/NAME.std (object cards) and OUTDIR/NAME.lst
+# (NAME.full.lst with --full). Exits 1 when no object was produced.
+#
+set -e
+full=
+if [ "$1" = "--full" ]; then
+    full=1
+    shift
+fi
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "Usage: $0 [--full] FILE.alg [OUTDIR]" >&2
+    exit 2
+fi
+src=$(realpath "$1")
+outdir=$(realpath "${2:-$(dirname "$1")}")
+name=$(basename "$1" .alg)
+scripts=$(dirname "$(realpath "$0")")
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+# *punch must come before *algol.
+{
+    echo "*name $name"
+    echo "*punch"
+    [ -n "$full" ] && echo "*full"
+    echo "*algol"
+    cat "$src"
+    echo "*end file"
+} > "$work/job.dub"
+
+(cd "$work" && dubna -r job.dub) | "$scripts/dubna-filter" > "$work/listing"
+
+if [ -n "$full" ]; then
+    cp "$work/listing" "$outdir/$name.full.lst"
+else
+    cp "$work/listing" "$outdir/$name.lst"
+fi
+if [ ! -s "$work/stdarray.out" ]; then
+    echo "$name: no object produced" >&2
+    exit 1
+fi
+cp "$work/stdarray.out" "$outdir/$name.std"

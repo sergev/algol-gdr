@@ -49,20 +49,20 @@ Done when `make && make test` passes with a placeholder test.
 
 Wrap `dubna` so that any `.alg` file can be compiled and run by the original compiler.
 
-- [ ] **A3.1** `scripts/ref-compile FILE.alg [OUTDIR]`:
+- [x] **A3.1** `scripts/ref-compile FILE.alg [OUTDIR]`:
   - put the source into a `*name / *algol / … / *punch / *end file` job;
   - run `dubna` in a temporary directory, because it writes `stdarray.out` (and `punch.out`)
     into the current directory;
   - save `FILE.std` (the object cards) and `FILE.lst` (the printed listing) in OUTDIR;
   - exit with an error if no `stdarray.out` was produced, i.e. the program did not compile.
-- [ ] **A3.2** `scripts/ref-run FILE.std`: put the cards into a `*name / … / *execute / *end file` job,
+- [x] **A3.2** `scripts/ref-run FILE.std`: put the cards into a `*name / … / *execute / *end file` job,
       run `dubna`, print the program output with the simulator banner and statistics removed.
-- [ ] **A3.3** Variant: `--full` adds `*full` before `*algol`, which puts the code listing (A/PRINTM) in
+- [x] **A3.3** Variant: `--full` adds `*full` before `*algol`, which puts the code listing (A/PRINTM) in
       the `.lst` file.
-- [ ] **A3.4** Check that the output is deterministic: compile the same source twice and diff. Find
+- [x] **A3.4** Check that the output is deterministic: compile the same source twice and diff. Find
       what varies between runs (date and time in the listing, `dubna` randomization — see
       `dubna -r`) and filter it or turn it off.
-- [ ] **A3.5** The listing contains the load map (`PROGRAM 01000`, `A/START`, `A/IPRI`, …). Keep it in
+- [x] **A3.5** The listing contains the load map (`PROGRAM 01000`, `A/START`, `A/IPRI`, …). Keep it in
       the expected output: it shows which runtime routines a program pulls in.
 
 ## A4. Standard array (object module) format

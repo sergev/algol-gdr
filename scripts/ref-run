@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Run an object file (standard array cards) under dubna.
+#
+#   ref-run FILE.std
+#
+# Prints the job output without the banner and statistics.
+#
+set -e
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 FILE.std" >&2
+    exit 2
+fi
+obj=$(realpath "$1")
+name=$(basename "$1" .std)
+scripts=$(dirname "$(realpath "$0")")
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+{
+    echo "*name $name"
+    cat "$obj"
+    echo "*execute"
+    echo "*end file"
+} > "$work/job.dub"
+
+(cd "$work" && dubna -r job.dub) | "$scripts/dubna-filter"
