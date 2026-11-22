@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project status
 
 Goal: re-create the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
-system) in **C++20**, with UTF-8 input/output. Milestone 0 (groundwork) is in progress: see
-[todo0.md](todo0.md). Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
+system) in **C++20**, with UTF-8 input/output. Milestone 0 (groundwork) is done; Milestone 1
+is planned in [todo1.md](todo1.md). Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
 task when it is done, in the same commit.
 
 ## Commands
@@ -32,8 +32,11 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output; side files
   `.pre`/`.run`/`.in`/`.norun` ([doc/reference-toolchain.md](doc/reference-toolchain.md)).
   `compile_test` and `run_test` compare our compiler with them and are skipped until it works.
-- `doc/` — findings about the original: [stdarray.md](doc/stdarray.md) (object format), and
-  more as Milestone 0 goes on.
+- `doc/` — findings about the original compiler: [passes.md](doc/passes.md) (driver, the six
+  passes, their streams), [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
+  [runtime-abi.md](doc/runtime-abi.md) (run-time calls, generated code),
+  [stdarray.md](doc/stdarray.md) (object format), [encoding.md](doc/encoding.md),
+  [traces.md](doc/traces.md) (`scripts/trace-compile`).
 
 Milestones (from README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
