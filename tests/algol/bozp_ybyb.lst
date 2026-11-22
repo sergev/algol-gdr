@@ -1,0 +1,38 @@
+*NAME BOZP_YBYB
+*CALL SETFTN:ONE,LONG
+*PUNCH
+*ALGOL
+                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+
+     1.     ′CODE′:′REAL′RNDM;
+     2.     ′ALGOL′:BOZP;
+     3.     ′ALGOL′:YBYB;
+     4.     ′BEGIN′
+     5.         ′REAL′ ′ARRAY′ A[1 : 10];
+     6.         ′INTEGER′ I;
+     7.
+     8.         ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 10 ′DO′
+     9.             A[I] := RNDM(-1);
+    10.
+    11.         ′PRINT′(′′(10F7.3)′′) A;
+    12.
+    13.         ′COMMENT′ PACПOЛOЖEHИE ЭЛEMEHTOB BEKTOPA ПO BOЗPACTAHИЮ;
+    14.         BOZP(A, 10);
+    15.         ′PRINT′(′′(10F7.3)′′) A;
+    16.
+    17.         ′COMMENT′ PACПOЛOЖEHИE ЭЛEMEHTOB BEKTOPA ПO YБЫBAHИЮ;
+    18.         YBYB(A, 10);
+    19.         ′PRINT′(′′(10F7.3)′′) A;
+    20.     ′END′
+    21.     ′EOP′
+
+CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
+   1 -                   00001 00001             00006
+   9 - 00011       00024             00034 00040
+  17 -       00050 00054 00064 00065
+
+PROGRAM   ДЛИHA:   71 00107B BPEMЯ:  0.00 CEK. KAPT:  21
+
+*END FILE

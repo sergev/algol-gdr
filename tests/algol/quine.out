@@ -1,0 +1,52 @@
+*NAME QUINE
+*CALL SETFTN:ONE,LONG
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/LPRI   E 02467
+         A/STOP     01333                A/NLINE  E 02533
+         A/START  E 01337                A/NPAGE  E 02535
+         A/ARRD/K   01413                A/I*ISO  E 02610
+         A/ARRD/V E 01416                A/R*ISO  E 02613
+         LENGTH     01507                A/CALLP    02646
+         A/SEQS   E 01552                A/CALLS  E 02647
+         A/SNES   E 01556                A/PROCRT E 02654
+         A/SGTS   E 01562                A/PARCON E 02677
+         A/SLTS   E 01564                A/PARVAR E 02706
+         A/SGES   E 01566                A/PARPAR E 02717
+         A/SLES   E 01570                A/PARVAL E 02726
+         A/SPLUSS   01574                A/PAREXP E 02733
+         A/SLICE  E 01626                A/PARLAB E 02744
+         ATOS     E 01677                A/PARSTR E 02753
+         STOA     E 01715                STOP*      02764
+         A/SREAD  E 01746                EXIT     E 02765
+         A/ARGSTR E 01757                STOPFLG* C 03013
+         A/AND      02254                SYSBACK*   03014
+         A/EQUIV  E 02257                A/GETINC   03024
+         A/NOT    E 02260                *HEAP*   C 03057
+         A/IMPL   E 02263                PRINT8     03457
+         A/RTOI   E 02266                A/RECORD C 03640
+         ENTIER*  E 02271                A/SYMB   C 03671
+         A/RHOCHI E 02273                READ*      03672
+         A/IHOCHI E 02306                MONREAD*   03720
+         A/SIGN   E 02313                READ*ERR E 04000
+         A/DRUCK    02323                DRUMTAP*   04024
+         A/IPRI   E 02355                COSYTISO   04055
+         A/RPRI   E 02407                CHKWORD* C 04131
+         A/BPRI   E 02443                CBOБOДHO   04132
+         A/SPRI   E 02452
+≠
+ ′BEGIN′′STRING′′ARRAY′L[1:7];′INTEGER′I,J;′STRING′Q,R,S;
+ ′PROCEDURE′P(S);′STRING′S;′BEGIN′′FOR′J:=1′STEP′1′UNTIL′
+ LENGTH(S)′DO′PRINT(′IF′J′NE′45′AND′S[J] = ′′/′′ ′THEN′ Q
+ ′ELSE′ S[J]); PRINT(NEWLINE) ′END′; R := ′′1234567′′;
+ L[1]:=′′/BEGIN//STRING//ARRAY/L[1:7];/INTEGER/I,J;/STRING/Q,R,S;′′;
+ L[2]:=′′/PROCEDURE/P(S);/STRING/S;/BEGIN//FOR/J:=1/STEP/1/UNTIL/′′;
+ L[3]:=′′LENGTH(S)/DO/PRINT(/IF/J/NE/45/AND/S[J] = ///// /THEN/ Q′′;
+ L[4]:=′′/ELSE/ S[J]); PRINT(NEWLINE) /END/; R := //1234567//;′′;
+ L[5]:=′′Q:=///47///;/FOR/ I:=1,2,3,4/DO/P(L[I]); /FOR/I:=1,2,3,4,′′;
+ L[6]:=′′5,6,7/DO/PRINT(//L[//,R[I],//]:=//,Q,Q,L[I],Q,Q,//;//,′′;
+ L[7]:=′′NEWLINE);/FOR/ I:=5,6,7 /DO/ P(L[I]); /END//EOP/′′;
+ Q:=′′′47′′′;′FOR′ I:=1,2,3,4′DO′P(L[I]); ′FOR′I:=1,2,3,4,
+ 5,6,7′DO′PRINT(′′L[′′,R[I],′′]:=′′,Q,Q,L[I],Q,Q,′′;′′,
+ NEWLINE);′FOR′ I:=5,6,7 ′DO′ P(L[I]); ′END′′EOP′

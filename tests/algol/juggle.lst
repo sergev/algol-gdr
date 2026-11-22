@@ -1,0 +1,334 @@
+*NAME JUGGLE
+*CALL SETFTN:ONE
+*PUNCH
+*ALGOL
+                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+
+           1. ′CODE′:′REAL′RNDM;
+           2. ′CODE′:TERIN;
+           3. ′BEGIN′
+           4.     ′COMMENT′ FROM: GITHUB.COM/CWI-SOFTWARE-AR
+               CHIVE/ALGOL60
+           5.     JUNGLE GENERATOR PRINTS RANDOM SENTENCES I
+               N ENGLISH AS A DEMO.
+           6.     AUTHOR: C.H.A. KOSTER, MATHEMATICAL CENTRE
+               .
+           7.     DATE: 1964 OR EARLIER.
+           8.     LISTING AND PAPERTAPE ARE FROM X1 AT THE H
+               TS"A".
+           9.     COPIED IN 1977/1978 AND PRESERVED SINCE TH
+               AT MOMENT.
+          10.     PAPERTAPE IS IN 7 BIT CODE FOR FRIDEN FLEX
+               OWRITER.
+          11.     THE PROGRAM REFERS TO "THE WORLD FAMOUS X8
+                COMPUTER".
+          12.     THE X8 MAY BE OF LATER DATE THAN THE ORIGI
+               NAL PROGRAM.;
+          13.
+          14.     ′REAL′ RR;
+          15.     ′INTEGER′ INPUT;
+          16.
+          17.     ′REAL′ ′PROCEDURE′ R;
+          18.     ′BEGIN′
+          19.         R := RR := RNDM(-1)
+          20.     ′END′;
+          21.
+          22.     ′PROCEDURE′ P(U);
+          23.         ′STRING′ U;
+          24.     PRINT(U);
+          25.
+          26.     ′PROCEDURE′ SENTENCE;
+          27.     ′BEGIN′
+          28.         SUBJECT;
+          29.         PREDICATE;
+          30.         ′IF′ R < .2 ′THEN′
+          31.             NEXTSENTENCE
+          32.     ′END′;
+          33.
+          34.     ′PROCEDURE′ NEXTSENTENCE;
+          35.     ′BEGIN′
+          36.         CONNECTIVE;
+          37.         SENTENCE
+          38.     ′END′;
+          39.
+          40.     ′PROCEDURE′ CONNECTIVE;
+          41.         ′IF′ R <.3 ′THEN′
+          42.             P(′′ AND′′)
+          43.         ′ELSE′ ′IF′ RR < .55 ′THEN′
+          44.             P(′′ BUT′′)
+          45.         ′ELSE′ ′IF′ RR <.8 ′THEN′
+          46.             P(′′ BECAUSE′′)
+          47.         ′ELSE′
+          48.             P(′′ THOUGH′′);
+          49.
+          50.     ′PROCEDURE′ SUBJECT;
+          51.         ′IF′ R < .8 ′THEN′
+          52.             SUBST
+          53.         ′ELSE′
+          54.             SUBNAME;
+          55.
+          56.     ′PROCEDURE′ SUBST;
+          57.     ′BEGIN′
+          58.         ARTICLE;
+          59.         NOUN PHRASE;
+          60.         ′IF′ R < .2 ′THEN′
+          61.             PROPERTY
+          62.     ′END′;
+          63.
+          64.     ′PROCEDURE′ PROPERTY;
+          65.         ′IF′ R <.25 ′THEN′
+          66.             P(′′ WITH BLUE EYES′′)
+          67.         ′ELSE′ ′IF′ RR < .5 ′THEN′
+          68.             P(′′ IN A MINK COAT′′)
+          69.         ′ELSE′
+          70.             ′BEGIN′
+          71.                 P(′′ FROM′′);
+          72.                 ′IF′ R < .25 ′THEN′
+          73.                     P(′′ AUSTRALIA′′)
+          74.                 ′ELSE′ ′IF′ RR < .5 ′THEN′
+          75.                     P(′′ SWITSERLAND′′)
+          76.                 ′ELSE′ ′IF′ RR <.75 ′THEN′
+          77.                     P(′′ SIBERIA′′)
+          78.                 ′ELSE′
+          79.                     P(′′ CLEVELAND (OHIO)′′)
+          80.             ′END′;
+          81.
+          82.     ′PROCEDURE′ NOUN PHRASE;
+          83.         ′IF′ R < .25 ′THEN′
+          84.             ′BEGIN′
+          85.                 ADJE;
+          86.                 NOUN PHRASE
+          87.             ′END′
+          88.         ′ELSE′
+          89.             NOUNPART;
+          90.
+          91.     ′PROCEDURE′ NOUNPART;
+          92.         ′IF′ R < .25 ′THEN′
+          93.             ′BEGIN′
+          94.                 NOUN;
+          95.                 RELSENTENCE
+          96.             ′END′
+          97.         ′ELSE′
+          98.             NOUN;
+          99.
+         100.     ′PROCEDURE′ PREDICATE;
+         101.         ′IF′ R < .2 ′THEN′
+         102.             ′BEGIN′
+         103.                 MODIFIER;
+         104.                 MODPREDICATE
+         105.             ′END′
+         106.         ′ELSE′ ′IF′ RR < .5 ′THEN′
+         107.             QUALITY
+         108.         ′ELSE′
+         109.             MODPREDICATE;
+         110.
+         111.     ′PROCEDURE′ MODPREDICATE;
+         112.     ′BEGIN′
+         113.         VERB;
+         114.         OBJECT
+         115.     ′END′;
+         116.
+         117.     ′PROCEDURE′ RELSENTENCE;
+         118.     ′BEGIN′
+         119.         P(′′, THAT′′);
+         120.         ′IF′ R < .4 ′THEN′
+         121.             ′BEGIN′
+         122.                 SUBJECT;
+         123.                 VERB
+         124.             ′END′
+         125.         ′ELSE′ ′IF′ RR < .6 ′THEN′
+         126.             QUALITY
+         127.         ′ELSE′
+         128.             PREDICATE
+         129.     ′END′;
+         130.
+         131.     ′PROCEDURE′ OBJECT;
+         132.         ′IF′ R < .8 ′THEN′
+         133.             SUBST
+         134.         ′ELSE′
+         135.             OBJNAME;
+         136.
+         137.     ′PROCEDURE′ QUALITY;
+         138.     ′BEGIN′
+         139.             ′IF′ R < .45 ′THEN′
+         140.                 P(′′ WAS′′)
+         141.             ′ELSE′
+         142.                 P(′′ IS′′);
+         143.             ′IF′ R < .4 ′THEN′
+         144.                 ADJE
+         145.             ′ELSE′
+         146.                 OBJECT
+         147.     ′END′;
+         148.
+         149.     ′PROCEDURE′ ADJE;
+         150.         ′IF′ R < .2 ′THEN′
+         151.             ′BEGIN′
+         152.                 ADVERB;
+         153.                 ADJECTIVE
+         154.             ′END′
+         155.         ′ELSE′
+         156.             ADJECTIVE;
+         157.
+         158.     ′PROCEDURE′ SUBNAME;
+         159.         ′IF′ R < .2 ′THEN′
+         160.             P(′′ HE′′)
+         161.         ′ELSE′ ′IF′ RR < .4 ′THEN′
+         162.             P(′′ JIM′′)
+         163.         ′ELSE′ ′IF′ RR < .6 ′THEN′
+         164.             P(′′ MARY′′)
+         165.         ′ELSE′ ′IF′ RR < .8 ′THEN′
+         166.             P(′′ SHE′′)
+         167.         ′ELSE′ ′IF′ RR < .9 ′THEN′
+         168.             P(′′ DAVID LIVINGSTONE′′)
+         169.         ′ELSE′
+         170.             P(′′ THE WORLD FAMOUS X8 COMPUTER′
+               ′);
+         171.
+         172.     ′PROCEDURE′ OBJNAME;
+         173.         ′IF′ R < .2 ′THEN′
+         174.             P(′′ HIM′′)
+         175.         ′ELSE′ ′IF′ RR < .4 ′THEN′
+         176.             P(′′ JIM′′)
+         177.         ′ELSE′ ′IF′ RR < .6 ′THEN′
+         178.             P(′′ MARY′′)
+         179.         ′ELSE′ ′IF′ RR < .8 ′THEN′
+         180.             P(′′ HER′′)
+         181.         ′ELSE′ ′IF′ RR < .95 ′THEN′
+         182.             P(′′ DAVID LIVINGSTONE′′)
+         183.         ′ELSE′
+         184.             P(′′ A COMPUTER′′);
+         185.
+         186.     ′PROCEDURE′ MODIFIER;
+         187.         ′IF′ R < .33 ′THEN′
+         188.             P(′′ ALWAYS′′)
+         189.         ′ELSE′ ′IF′ RR < .67 ′THEN′
+         190.             P(′′ OFTEN′′)
+         191.         ′ELSE′
+         192.             P(′′ NEVER′′);
+         193.
+         194.     ′PROCEDURE′ ARTICLE;
+         195.         ′IF′ R < .35 ′THEN′
+         196.             P(′′ A′′)
+         197.         ′ELSE′ ′IF′ RR < .75 ′THEN′
+         198.             P(′′ THE′′)
+         199.         ′ELSE′ ′IF′ RR < .87 ′THEN′
+         200.             P(′′ THIS′′)
+         201.         ′ELSE′
+         202.             P(′′ THAT′′);
+         203.
+         204.     ′PROCEDURE′ NOUN;
+         205.         ′IF′ R < .17 ′THEN′
+         206.             P(′′ BOY′′)
+         207.         ′ELSE′ ′IF′ RR < .33 ′THEN′
+         208.             P(′′ TREE′′)
+         209.         ′ELSE′ ′IF′ RR < .5 ′THEN′
+         210.             P(′′ GIRL′′)
+         211.         ′ELSE′ ′IF′ RR < .67 ′THEN′
+         212.             P(′′ BEAR′′)
+         213.         ′ELSE′ ′IF′ RR < .83 ′THEN′
+         214.             P(′′ HUNTER′′)
+         215.         ′ELSE′
+         216.             P(′′ LAMB′′);
+         217.
+         218.     ′PROCEDURE′ ADJECTIVE;
+         219.         ′IF′ R < .2 ′THEN′
+         220.             P(′′ LITTLE′′)
+         221.         ′ELSE′ ′IF′ RR < .4 ′THEN′
+         222.             P(′′ NICE′′)
+         223.         ′ELSE′ ′IF′ RR < .6 ′THEN′
+         224.             P(′′ BIG′′)
+         225.         ′ELSE′ ′IF′ RR < .8 ′THEN′
+         226.             P(′′ GREEN′′)
+         227.         ′ELSE′
+         228.             P(′′ BAD′′);
+         229.
+         230.     ′PROCEDURE′ ADVERB;
+         231.         ′IF′ R < .4 ′THEN′
+         232.             P(′′ VERY′′)
+         233.         ′ELSE′ ′IF′ RR < .6 ′THEN′
+         234.             P(′′ EXTRAORDINARILY′′)
+         235.         ′ELSE′
+         236.             P(′′ RATHER′′);
+         237.
+         238.     ′PROCEDURE′ VERB;
+         239.         ′IF′ R < .45 ′THEN′
+         240.             ′BEGIN′
+         241.                 ′IF′ R < .2 ′THEN′
+         242.                     P(′′ SAW′′)
+         243.                 ′ELSE′ ′IF′ RR < .4 ′THEN′
+         244.                     P(′′ LIKED′′)
+         245.                 ′ELSE′ ′IF′ RR < .6 ′THEN′
+         246.                     P(′′ DREAMT ABOUT′′)
+         247.                 ′ELSE′ ′IF′ RR < .7 ′THEN′
+         248.                     P(′′ SMELLED′′)
+         249.                 ′ELSE′ ′IF′ RR < .8 ′THEN′
+         250.                     P(′′ ATE′′)
+         251.                 ′ELSE′
+         252.                     P(′′ HAD′′)
+         253.             ′END′
+         254.         ′ELSE′
+         255.             ′BEGIN′
+         256.                 ′IF′ R < .2 ′THEN′
+         257.                     P(′′ SEES′′)
+         258.                 ′ELSE′ ′IF′ RR < .4 ′THEN′
+         259.                     P(′′ LIKES′′)
+         260.                 ′ELSE′ ′IF′ RR < .6 ′THEN′
+         261.                     P(′′ DREAMS ABOUT′′)
+         262.                 ′ELSE′ ′IF′ RR < .7 ′THEN′
+         263.                     P(′′ EATS′′)
+         264.                 ′ELSE′ ′IF′ RR < .8 ′THEN′
+         265.                     P(′′ SMELLS′′)
+         266.                 ′ELSE′
+         267.                     P(′′ HAS′′)
+         268.             ′END′;
+         269. NZ:
+         270.     SENTENCE;
+         271.     PRINT(NEWLINE);
+         272.
+         273.     TERIN(INPUT, 1);
+         274.     ′GOTO′ NZ
+         275. ′END′
+         276. ′EOP′
+
+CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
+   1 -             00001
+   9 -                               00001
+  17 -       00003 00003 00013                   00015
+  25 -             00022 00022 00023 00024       00026
+  33 -             00032 00032       00033
+  41 - 00037 00041 00045 00046 00053 00054       00061
+  49 -             00067       00071 00073
+  57 - 00077 00077 00100 00101       00103
+  65 - 00107 00111 00115 00116       00123 00123 00126
+  73 - 00130 00134 00135 00142 00143       00150 00154
+  81 -             00156 00160 00160       00161
+  89 - 00163             00167 00171 00171       00172
+  97 -       00174             00200 00202 00202
+ 105 - 00203 00205       00206 00211             00215
+ 113 - 00215       00216             00222 00222 00225
+ 121 - 00227 00227       00230 00232       00233
+ 129 - 00236             00242       00244 00246
+ 137 -       00252 00252 00254       00260 00263
+ 145 - 00265       00267             00273 00275 00275
+ 153 -       00276       00300             00304 00306
+ 161 - 00312 00313 00320 00321 00326 00327 00334 00335
+ 169 -       00342             00350 00352 00356 00357
+ 177 - 00364 00365 00372 00373 00400 00401       00406
+ 185 -             00414 00416 00422 00423       00430
+ 193 -             00436 00440 00444 00445 00452 00453
+ 201 -       00460             00466 00470 00474 00475
+ 209 - 00502 00503 00510 00511 00516 00517       00524
+ 217 -             00532 00534 00540 00541 00546 00547
+ 225 - 00554 00555       00562             00570 00572
+ 233 - 00576 00577       00604             00612 00614
+ 241 - 00614 00616 00622 00623 00630 00631 00636 00637
+ 249 - 00644 00645       00652             00656 00656
+ 257 - 00660 00664 00665 00672 00673 00700 00701 00706
+ 265 - 00707       00714 00720 00720       00721
+ 273 - 00722 00727       00730
+
+PROGRAM   ДЛИHA:  600 01130B BPEMЯ:  0.00 CEK. KAPT: 276
+
+*END FILE

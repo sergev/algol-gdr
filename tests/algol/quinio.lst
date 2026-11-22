@@ -1,0 +1,356 @@
+*NAME QUINIO
+*CALL SETFTN:ONE,LONG
+*PUNCH
+*ALGOL
+                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+
+     1.     ′CODE′:′INTEGER′XEEN,AVAILABLE;
+     2.     ′CODE′:DRAW;
+     3.     ′BEGIN′
+     4.         ′COMMENT′ L. MEERTENS, R 1082, LM 010964/9219.
+     5.         QUINIO (GO-MOKU). ZIE VOOR DE SPELREGELS APARTE BESCHRIJVING.:
+     6.         INDIEN X1 MOET BEGINNEN, D25 = 0 MAKEN, ANDERS D25 = 1 MAKEN.
+     7.         INBRENGEN VAN ZET: X-COORDINAAT BINAIR IN D9 T/M D5,
+     8.         Y-COORDINAAT IN D4 T/M D0.
+     9.         BIJV. 11-7 WORDT IN D9 T/M D0 (XEEN(1023)
+    10.         GENOTEERD ALS 01011 00111.
+    11.         DOORSTARTEN MET BVA. DE ZET WORDT UITGETYPT,
+    12.         EN DE MACHINE STOPT WEER.
+    13.         INDIEN NU BLIJKT DAT MEN ZICH VERGIST HEEFT,
+    14.          DAN KAN MEN MET NEGATIEF CONSOLEWOORD DOORSTARTEN,
+    15.         WAARNA OPNIEUW GELEGENHEID GEBODEN WORDT EEN ZET
+    16.         IN TE BRENGEN. WORDT MET POSITIEF CONSOLEWOORD
+    17.         DOORGESTART, DAN WORDT DE ZET UITGEVOERD EN
+    18.         BEZINT DE X1 ZICH OP ZIJN VOLG′END′E ZET.
+    19.         IS BIJGEVAL HELEMAAL GEEN ZET UITGETYPT,
+    20.         DAN CORRESPONDEERT DE STAND VAN DE TIEN RECHTER-
+    21.         SCHAKELAARS NIET MET EEN CORRECTE ZET.
+    22.         MEN KAN ALSNOG EEN BETERE ZET INBRENGEN;
+    23.
+    24.         ′INTEGER′ K, J, AV, TN, NT, VNL, X, Y, SW, WM, KLEUR, ZNR, KM;
+    25.         ′BOOLEAN′ KLAAR;
+    26.         ′INTEGER′ ′ARRAY′ DP[-6 : +6, 0 : 2], Z[1 : 6];
+    27.
+    28.         ′INTEGER′ ′PROCEDURE′ DIV(A, B);
+    29.             ′VALUE′ A, B;
+    30.             ′INTEGER′ A, B;
+    31.         DIV := ENTIER(A/B);
+    32.
+    33.         ′PROCEDURE′ NLCR;
+    34.         ′WRITE′ (54,′′(/)′′);
+    35.
+    36.         ′INTEGER′ ′PROCEDURE′ SUM(A, B, C, D);
+    37.             ′VALUE′ B, C;
+    38.             ′INTEGER′ A, B, C;
+    39.             ′REAL′ D;
+    40.         ′BEGIN′
+    41.             ′REAL′ T;
+    42.             T := 0;
+    43.             ′FOR′ A := B ′STEP′ 1 ′UNTIL′ C ′DO′
+    44.                 T := T + D;
+    45.             SUM := ENTIER(T)
+    46.         ′END′;
+    47.
+    48.         ′BOOLEAN′ ′PROCEDURE′ MINIM(X, P);
+    49.             ′VALUE′ P;
+    50.             ′INTEGER′ X, P;
+    51.         ′IF′ P < X ′THEN′
+    52.             ′BEGIN′
+    53.                 X := P;
+    54.                 MINIM := ′TRUE′
+    55.             ′END′
+    56.         ′ELSE′
+    57.             MINIM := ′FALSE′;
+    58.
+    59.         ′BOOLEAN′ ′PROCEDURE′ MAXIM(X, P);
+    60.             ′VALUE′ P;
+    61.             ′INTEGER′ X, P;
+    62.         ′IF′ P > X ′THEN′
+    63.             ′BEGIN′
+    64.                 X := P;
+    65.                 MAXIM := ′TRUE′
+    66.             ′END′
+    67.         ′ELSE′
+    68.             MAXIM := ′FALSE′;
+    69.
+    70.         NT := DIV(ENTIER(SQRT((AVAILABLE - 1000) / 36) - 1), 2) * 2 + 1;
+    71.         MINIM(NT, 19);
+    72.         AV := NT * NT;
+    73.         TN := 1 + DIV(NT, 2);
+    74.         NLCR;
+    75.         ′WRITE′(54, ′′(13HFIELD SIZE = I2/23HO - HUMAN, X - COMPUTER)′′) NT;
+    76.
+    77.         ′BEGIN′
+    78.             ′INTEGER′ ′ARRAY′ RNUM, RLANG, RVRY[1 : AV, 0 : 1, 1 : 4],
+    79.                 RVAL[1 : AV, 1 : 4], TEMPO, WT[1 : AV, 0 : 1], AX,
+    80.                 AY[1 :AV], BORD, AVNL[1 : NT, 1 : NT];
+    81.
+    82.             ′PROCEDURE′ CORR(X0, Y0);
+    83.                 ′VALUE′ X0, Y0;
+    84.                 ′INTEGER′ X0, Y0;
+    85.             ′BEGIN′
+    86.                 ′INTEGER′ X, Y, DX, DY, MIN, MAX, Q, K, J, B, T, D, W,
+    87.                           XDX, YDY, ZDZ;
+    88.                 DX := +1;
+    89.                 DY := -1;
+    90.                 KLAAR := ′FALSE′;
+    91.                 ′FOR′ Q := 1, 2, 3, 4 ′DO′
+    92.                 ′BEGIN′
+    93.                     ZDZ := XDX := (X0 - TN) * DX;
+    94.                     YDY := (Y0 - TN) * DY;
+    95.                     MINIM(ZDZ, YDY);
+    96.                     MIN := 3 - TN - ZDZ;
+    97.                     MAX := - MIN - XDX - YDY;
+    98.                     MAXIM(MIN, -6);
+    99.                     MINIM(MAX, +6);
+   100.                     ′IF′ MIN > MAX ′THEN′
+   101.                         ′GOTO′ NOR;
+   102.                     ′FOR′ K := 0, 1, 2 ′DO′
+   103.                         DP[MIN, K] := 0;
+   104.                     ′FOR′ K := -2 ′STEP′ 1 ′UNTIL′ +2 ′DO′
+   105.                     ′BEGIN′
+   106.                         B := BORD[X0 + (MIN + K) * DX, Y0 + (MIN + K) * DY];
+   107.                         DP[MIN, B] := DP[MIN, B] + 1
+   108.                     ′END′;
+   109.                     ′FOR′ K := MIN + 1 ′STEP′ 1 ′UNTIL′ MAX ′DO′
+   110.                     ′BEGIN′
+   111.                         ′IF′ DP[K - 1, KLEUR] = 5 ′THEN′
+   112.                             ′GOTO′WIN;
+   113.                         ′FOR′ B := 0, 1, 2 ′DO′
+   114.                             DP[K, B] := DP[K - 1, B];
+   115.                         ′FOR′ J := -3, +2 ′DO′
+   116.                         ′BEGIN′
+   117.                             B := BORD[X0 + (K + J) * DX, Y0 + (K + J) * DY];
+   118.                             DP[K, B] := DP[K, B] + SIGN(J)
+   119.                         ′END′
+   120.                     ′END′;
+   121.                     ′IF′ DP[MAX, KLEUR] = 5 ′THEN′
+   122.     WIN:            ′BEGIN′
+   123.                         KLAAR := ′TRUE′;
+   124.                         ′GOTO′UIT
+   125.                     ′END′;
+   126.                     ′FOR′ K := -6 ′STEP′ 1 ′UNTIL′ MIN - 1,
+   127.                           MAX + 1 ′STEP′ 1 ′UNTIL′ 6 ′DO′
+   128.                             DP[K, 0] := DP[K, 1] := 1;
+   129.                     MIN := 1 - TN - ZDZ;
+   130.                     MAX := - MIN - XDX - YDY;
+   131.                     MAXIM(MIN, -4);
+   132.                     MINIM(MAX, +4);
+   133.                     ′FOR′ K := MIN ′STEP′ 1 ′UNTIL′ -1,
+   134.                                 +1 ′STEP′ 1 ′UNTIL′ MAX ′DO′
+   135.                     ′BEGIN′
+   136.                         X := X0 + K * DX;
+   137.                         Y := Y0 + K * DY;
+   138.                         ′IF′ BORD[X, Y] = 2 ′THEN′
+   139.                         ′BEGIN′
+   140.                             VNL := AVNL[X, Y];
+   141.                             ′IF′ VNL > SW ′THEN′
+   142.                             ′BEGIN′
+   143.                                 AVNL[X, Y] := 0;
+   144.                                 ′GOTO′NXT
+   145.                             ′END′;
+   146.                             ′IF′ VNL ′NE′ 0 ′THEN′
+   147.                             ′BEGIN′
+   148.                                 RVAL[VNL, Q] := 0;
+   149.                                 ′FOR′ B := 0, 1 ′DO′
+   150.                                     RNUM [VNL, B, Q] :=
+   151.                                     RLANG [VNL, B, Q] :=
+   152.                                     RVRY[VNL, B, Q] := 0
+   153.                             ′END′ ′ELSE′ ′BEGIN′
+   154.                                 VNL := AVNL[X, Y] := SW;
+   155.                                 AX[SW] := X;
+   156.                                 AY[SW] := Y;
+   157.                                 SW := SW + 1;
+   158.                                 ′FOR′ J := 1, 2, 3, 4 ′DO′
+   159.                                 ′BEGIN′
+   160.                                     RVAL[VNL, J] := 0;
+   161.                                     ′FOR′ B := 0, 1 ′DO′
+   162.                                         RNUM[VNL, B, J] :=
+   163.                                         RLANG[VNL, B, J] :=
+   164.                                         RVRY[VNL, B, J] := 0
+   165.                                 ′END′
+   166.                             ′END′;
+   167.                             ′FOR′ J := -2 ′STEP′ 1 ′UNTIL′ +2 ′DO′
+   168.                                 ′FOR′ B := 0, 1 ′DO′
+   169.                                 ′BEGIN′
+   170.                                     ′IF′ DP[K + J, 1 - B] = 0 ′THEN′
+   171.                                     ′BEGIN′
+   172.                                         D := DP[K + J, B];
+   173.                                         RVAL[VNL, Q] := RVAL[VNL, Q] + D;
+   174.                                         ′IF′ MAXIM(RLANG[VNL, B, Q], D)
+   175.                                         ′THEN′ RVRY[VNL, B, Q] := 0
+   176.                                         ′ELSE′ ′IF′ RLANG [VNL, B, Q] = D
+   177.                                         ′THEN′ RVRY[VNL, B, Q] := 1;
+   178.                                         RNUM[VNL, B, Q] :=
+   179.                                             RNUM[VNL, B, Q] + 1
+   180.                                     ′END′
+   181.                                 ′END′;
+   182.                             TEMPO[VNL, 0] :=
+   183.                             TEMPO[VNL, 1] :=
+   184.                             WT[VNL, 0] :=
+   185.                             WT[VNL, 1] := 4;
+   186.                             ′FOR′ J := 1, 2, 3, 4 ′DO′
+   187.                                 ′FOR′ B := 0, 1 ′DO′
+   188.                                 ′BEGIN′
+   189.                                     T := 4 - RLANG[VNL, B, J];
+   190.                                     W := T - RVRY[VNL, B, J];
+   191.                                     MINIM(TEMPO[VNL, B], T);
+   192.                                     ′IF′ ′IF′ MINIM(WT[VNL, B], W)
+   193.                                         ′THEN′ ′FALSE′ ′ELSE′ W = 1
+   194.                                         ′AND′ WT[VNL, B] = 1 ′THEN′
+   195.                                         WT[VNL, B] := 0;
+   196.                                 ′END′
+   197.                         ′END′;
+   198.     NXT:            ′END′;
+   199.     NOR:            ′IF′ Q = 3 ′THEN′
+   200.                         DX := 0
+   201.                     ′ELSE′
+   202.                         DY := DY + 1;
+   203.                 ′END′;
+   204.     UIT:    ′END′;
+   205.
+   206.             ′PROCEDURE′ ZET(X, Y);
+   207.                 ′VALUE′ X, Y;
+   208.                 ′INTEGER′ X, Y;
+   209.             ′BEGIN′
+   210.                 BORD[X, Y] := KLEUR;
+   211.                 CORR(X, Y);
+   212.                 KLEUR := 1 - KLEUR;
+   213.                 ZNR := ZNR + 1
+   214.             ′END′;
+   215.
+   216.             ′PROCEDURE′ PRINTZET(X, Y);
+   217.                 ′VALUE′ X, Y;
+   218.                 ′INTEGER′ X, Y;
+   219.             ′BEGIN′
+   220.                 DRAW(BORD, NT, ZNR, KLEUR, X, Y);
+   221.             ′END′;
+   222.
+   223.             ′INTEGER′ ′PROCEDURE′ SEL;
+   224.             ′BEGIN′
+   225.                 ′INTEGER′ V, K, J, WSL, W, M;
+   226.                 W := 4;
+   227.                 V := M := 0;
+   228.                 ′FOR′ K := SW - 1 ′STEP′ -1 ′UNTIL′ 1 ′DO′
+   229.                 ′BEGIN′
+   230.                     ′IF′ ′IF′ BORD [AX[K], AY[K]] = 2 ′THEN′
+   231.                               WT[K, 1 - KLEUR] = 0 ′ELSE′ ′FALSE′
+   232.                     ′THEN′
+   233.                         MINIM(W, TEMPO[K, 1 - KLEUR])
+   234.                 ′END′;
+   235.                 ′FOR′ K := SW - 1 ′STEP′ -1 ′UNTIL′ 1 ′DO′
+   236.                 ′BEGIN′
+   237.                     ′IF′ ′IF′ BORD[AX[K], AY[K]] = 2 ′THEN′
+   238.                             (′IF′ TEMPO[K, KLEUR]′LE′W ′THEN′ ′TRUE′ ′ELSE′
+   239.                              ′IF′ WT[K, 1 - KLEUR] = 0 ′THEN′
+   240.                                 W = TEMPO[K, 1 - KLEUR] ′ELSE′ ′FALSE′)
+   241.                          ′ELSE′ ′FALSE′ ′THEN′
+   242.                     ′BEGIN′
+   243.                         ′INTEGER′ A, B;
+   244.                         A := SUM(J, 1, 4,
+   245.                                  2.0 * RVAL[K, J] + RNUM[K, KLEUR, J]);
+   246.                         B := SUM(J, 0, 1, 2 **
+   247.                                  (7.0 - WT[K, J] - ABS(J - KLEUR) / 2.0));
+   248.                         ′IF′ MAXIM(V, A + B) ′THEN′
+   249.                             M := K
+   250.                     ′END′
+   251.                 ′END′;
+   252.                 SEL := M
+   253.             ′END′;
+   254.
+   255.             NLCR;
+   256.             ′FOR′ X := 1 ′STEP′ 1 ′UNTIL′ NT ′DO′
+   257.                 ′FOR′ Y := 1 ′STEP′ 1 ′UNTIL′ NT ′DO′
+   258.                 ′BEGIN′
+   259.                     BORD[X, Y] := 2;
+   260.                     AVNL[X, Y] := 0
+   261.                 ′END′;
+   262.             KLEUR := SIGN(XEEN(33554432));
+   263.             NLCR;
+   264.             SW := ZNR := 1;
+   265.             ′IF′ KLEUR = 0 ′THEN′
+   266.             ′BEGIN′
+   267.                 PRINTZET(TN, TN);
+   268.                 ZET(TN, TN)
+   269.             ′END′;
+   270.     MENS:
+   271.             X := DIV(XEEN(992), 32);
+   272.             Y := XEEN(31);
+   273.             ′IF′ X = 0 ′OR′ X > NT ′OR′ Y = 0 ′OR′ Y > NT ′THEN′
+   274.                 ′GOTO′ MENS;
+   275.             ′IF′ BORD[X, Y] ′NE′ 2 ′THEN′
+   276.                 ′GOTO′ MENS;
+   277.             PRINTZET(X, Y);
+   278.             ′IF′ XEEN(-1) < 0 ′THEN′
+   279.                 ′GOTO′ MENS;
+   280.             ZET(X, Y);
+   281.             ′IF′ KLAAR ′THEN′
+   282.                 ′GOTO′ LKLAAR;
+   283.
+   284.     MACH:   KM := SEL;
+   285.             ′IF′ KM = 0 ′THEN′
+   286.             ′BEGIN′
+   287.                 NLCR;
+   288.                 ′WRITE′ (54, ′′(11H IK GEEF OP)′′);
+   289.                 ′GOTO′ LKLAAR
+   290.             ′END′;
+   291.             X := AX[KM];
+   292.             Y := AY[KM];
+   293.             PRINTZET(X, Y);
+   294.             ZET(X, Y);
+   295.             ′IF′ ′NOT′ KLAAR ′THEN′
+   296.                 ′GOTO′MENS;
+   297.     LKLAAR: NLCR;
+   298.             ′IF′ KLEUR = 0 ′THEN′
+   299.                 ′WRITE′ (54, ′′(16H U HEBT GEWONNEN)′′)
+   300.             ′ELSE′
+   301.                 ′WRITE′ (54, ′′(16H IK HEB GEWONNEN)′′)
+   302.         ′END′
+   303.     ′END′
+   304.     ′EOP′
+
+CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
+   1 -             00001
+   9 -
+  17 -                                           00001
+  25 -                                     00017
+  33 -       00027                               00040
+  41 - 00040 00040 00041 00050 00053 00054
+  49 -             00060 00062 00062 00064
+  57 - 00066                         00073 00075 00075
+  65 - 00077             00101       00104 00121 00126
+  73 - 00130 00136 00140       00150 00150
+  81 -                         00204 00204       00204
+  89 - 00205 00207 00210 00226 00226 00232 00236 00243
+  97 - 00245 00250 00257 00263 00264 00265 00277 00305
+ 105 - 00314 00314 00331 00342 00342 00350 00350 00354
+ 113 - 00355 00367 00377 00410 00410 00425       00440
+ 121 - 00441 00444 00445 00446       00447       00471
+ 129 - 00504 00506 00511 00520 00524       00543 00543
+ 137 - 00546 00551 00556 00556 00562 00564 00564 00572
+ 145 -       00573 00574 00574 00602 00611
+ 153 - 00636 00637 00645 00652 00657 00661 00677 00677
+ 161 - 00704 00713             00740 00741 00741 00750
+ 169 - 00757 00757 00766 00766 00774 01004 01016 01026
+ 177 - 01033 01042             01057 01060
+ 185 -       01102 01120 01127 01127 01134 01142 01153
+ 193 -             01174 01202 01203 01204 01205 01206
+ 201 -       01210 01213 01214
+ 209 - 01217 01217 01225 01231 01233 01236
+ 217 -             01240 01240 01251             01254
+ 225 - 01254 01254 01255 01256 01275 01275
+ 233 - 01317 01332 01332 01350 01350
+ 241 -       01406 01406 01406       01425       01445
+ 249 - 01454       01456 01457 01460       01462 01463
+ 257 - 01466 01472 01472 01501 01510 01511 01515 01517
+ 265 - 01520 01522 01522 01526       01532       01541
+ 273 - 01546 01557 01560 01564 01565 01571 01577 01600
+ 281 - 01604 01605       01606 01607 01611 01611 01612
+ 289 - 01620       01621 01623 01626 01632 01636 01637
+ 297 - 01640 01641 01642       01651       01660 01661
+
+PROGRAM   ДЛИHA:  990 01736B BPEMЯ:  0.00 CEK. KAPT: 304
+
+*END FILE

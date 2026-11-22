@@ -17,12 +17,10 @@ Milestone 0 builds everything around that comparison.
 
 ## A5. Test corpus and expected outputs
 
-- **A5.1** Collect the programs into `tests/algol/`:
-  - `tmp/asm-sources/test1–4.alg`;
-  - `tmp/algol-compile.dub` (Hello, World);
-  - from `dubna/examples`: `algol.dub`, `man_or_boy.dub`, `juggle.dub`, `bozp-ybyb.dub`,
-    `overlay/hello-algol.dub`, `games/quinio.dub`, `quine/algol.dub`. Extract the program part
-    of each job.
+The programs are in `tests/algol/`: test1–4, hello, and the `dubna` examples (man_or_boy,
+quine, hello_algol, bozp_ybyb, juggle, quinio). Side files `.pre`, `.run`, `.in`, `.norun`
+are described in [doc/reference-toolchain.md](doc/reference-toolchain.md).
+
 - **A5.2** Write small feature programs, one topic each, in the original notation:
   - an empty program (`'BEGIN' 'END'`);
   - integer and real arithmetic, operator precedence, `↑`, `÷`;

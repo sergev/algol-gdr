@@ -10,6 +10,17 @@ scripts/ref-run FILE.std                         # → job output on stdout
 `ref-compile` exits with status 1 and writes no `.std` file when the program has errors; the
 `.lst` file then holds the diagnostics.
 
+## Side files
+
+A program `NAME.alg` may come with:
+
+| File | Use |
+| --- | --- |
+| `NAME.pre` | control cards after `*name`, in both jobs (e.g. `*call setftn:one,long`) |
+| `NAME.run` | cards before `*execute` in the run job: `*library:…`, or other modules (`*ftn`, `*assem` sections) |
+| `NAME.in` | terminal input of the program, fed to `dubna` as stdin (default: empty) |
+| `NAME.norun` | the program is compiled but never run (the file says why) |
+
 ## Job layout
 
 Compile:

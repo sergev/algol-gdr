@@ -6,6 +6,7 @@
 #
 # Writes OUTDIR/NAME.std (object cards) and OUTDIR/NAME.lst
 # (NAME.full.lst with --full). Exits 1 when no object was produced.
+# Optional NAME.pre next to FILE.alg: control cards placed after *name.
 #
 set -e
 full=
@@ -20,6 +21,7 @@ fi
 src=$(realpath "$1")
 outdir=$(realpath "${2:-$(dirname "$1")}")
 name=$(basename "$1" .alg)
+pre="${src%.alg}.pre"
 scripts=$(dirname "$(realpath "$0")")
 
 work=$(mktemp -d)
@@ -28,6 +30,7 @@ trap 'rm -rf "$work"' EXIT
 # *punch must come before *algol.
 {
     echo "*name $name"
+    [ -f "$pre" ] && cat "$pre"
     echo "*punch"
     [ -n "$full" ] && echo "*full"
     echo "*algol"

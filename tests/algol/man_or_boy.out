@@ -1,0 +1,14 @@
+*NAME MAN_OR_BOY
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/PARPAR E 01215                A/BPRI   E 01402                EXIT     E 01606
+         A/STOP     01064                A/PARVAL E 01224                A/SPRI   E 01411                A/ARRD/K   01634
+         A/START  E 01070                A/PAREXP E 01231                A/LPRI   E 01426                A/ARRD/V E 01637
+         A/CALLP    01144                A/PARLAB E 01242                A/NLINE  E 01472                STOPFLG* C 01730
+         A/CALLS  E 01145                A/PARSTR E 01251                A/NPAGE  E 01474                PRINT8     01731
+         A/PROCRT E 01152                A/DRUCK    01262                A/I*ISO  E 01547                SYSBACK*   02112
+         A/PARCON E 01175                A/IPRI   E 01314                A/R*ISO  E 01552                CBOБOДHO   02122
+         A/PARVAR E 01204                A/RPRI   E 01346                STOP*      01605
+≠
+ -6.70000000000+01
