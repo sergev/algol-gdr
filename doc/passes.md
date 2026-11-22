@@ -217,7 +217,19 @@ sector to drum 27 zone 34. (V)
   - Equal constants share one slot. New constants are allocated downward from 03770; the
     presets are 0, 1, 2… at 03771–03777.
 - **Strings.** 6 ISO characters per word, ending with a zero byte; each word goes out
-  through G27220.
+  through G27220. Inside a string, `'ooo'` (one to three octal digits) is the character with
+  that code, and blanks are kept. G27220 stores at 04000–04377 and writes each full sector to
+  drum 27 zone 34; 02050 counts the words (`01634 + n` in bits 24–13).
+- **Character classes.** The table at 16514 has several fields per character, each a
+  dispatch: bits 4–1 the first character of a symbol (letter, quote, `.`, `:`, `*`, digit,
+  `(`, `/`, `"`, a one-character symbol with its code in bits 24–18, invalid, `,`); bits 6–5
+  the character after a quote (quote, other, letter, digit); bit 7 letter or digit; bits 10–8
+  the text after END; bit 11 not a letter; bits 13–12 in a number (other, `⏨`, `.`, digit);
+  bits 15–14 the sign of an exponent; bit 16 octal digit.
+- **Number conversion.** Digits accumulate as floating point (`×10 + d`, mode R = 2) up to
+  2^40; later digits only change the scale. A real is then multiplied by 1.25^k and 8^k (the
+  exponent field) or divided by 10 k times; `src/pass1_lexer.cpp` follows it step by step.
+- **`.,` is `;`.** After a number, `.,` ends it and the next `,` reads as `;` (02047).
 
 ### Errors `AG17015` (V)
 

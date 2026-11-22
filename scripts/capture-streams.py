@@ -7,8 +7,8 @@ Writes OUTBASE.sN (stream written by pass N, one item per line in octal, in memo
 order: a stream written backward is reversed) and OUTBASE.mem (per pass, the words
 it changed: workspace lines `ADDR VALUE`, drum lines `drum UNIT ZONE OFFSET VALUE`,
 and the index registers it left for the next pass: `reg N VALUE`), and OUTBASE.lex
-(at each call of the lexer AG15414 and at the end of pass 1: the symbol word 02000
-and register M4 left by the previous call, in octal).
+(at each return of the lexer AG15414, a UJ through M12 in 15414-16471: the symbol
+word 02000 and register M4, in octal).
 
 Passes start at the driver's calls (01625 … 01634). Items are the A register at the
 entries of G27126 (27114, 27126 halves; 27137 words), taken from the push at their
@@ -30,7 +30,7 @@ MEM = re.compile(r'^\s+Memory (Read|Write) \[([0-7]{5})\] = ([0-7 ]{19})')
 DRUM = re.compile(r'^\s+Drum ([0-7]+) (Read|Write) \[([0-7]{5})-([0-7]{5})\] = '
                   r'Zone ([0-7]+)(?: Sector ([0-7]))?')
 REG = re.compile(r'^\s+M([0-7]+) = ([0-7]{5})$')
-LEXER = re.compile(r'^15414 L: 13 31 16226 vjm')
+LEXRET = re.compile(r'^1(5[4-7]|6[0-4])[0-7]{2} [LR]: 14 30 00000 uj')
 INSN = re.compile(r'^[0-7]{5} [LR]: ')
 INIT = re.compile(r'^    \{ 0([0-7]+), 0([0-7]+) \},')
 RANGES = [(0o1736, 0o6000), (0o27245, 0o27645)]
@@ -62,7 +62,7 @@ def main():
     regs = {}               # index registers
     mismatches = 0
     pending = None          # writer entry waiting for its push
-    lex = []                # (02000, M4) at each lexer call
+    lex = []                # (02000, M4) at each lexer return
 
     def end_pass(final=True):
         dm = {a: v for a, v in mem.items() if in_ranges(a) and start[0].get(a, 0) != v}
@@ -77,12 +77,10 @@ def main():
             if m and m.group(1) in PASSES:
                 if npass:
                     end_pass()
-                if npass == 1:
-                    lex.append((mem.get(0o2000, 0), regs.get(4, 0)))
                 npass = PASSES[m.group(1)]
                 start = (dict(mem), dict(drum))
                 continue
-            if npass == 1 and LEXER.match(line):
+            if npass == 1 and LEXRET.match(line) and int(line[:5], 8) <= 0o16471:
                 lex.append((mem.get(0o2000, 0), regs.get(4, 0)))
                 continue
             m = WRITER.match(line)

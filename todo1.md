@@ -49,8 +49,8 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B2. Pass 1 (largest risk: the listing must match)
 
-- **B2.2** Lexer `AG15414`: names (6 characters, hashing into the table), keywords, numbers
-  (the BESM-6 formats, overflow errors), strings, comments, END comments.
+- **B2.2a** 'COMMON' declarations, read by the lexer itself (*1155B in ag14504.asm, not run
+  by any test program): add test programs, then translate.
 - **B2.3** Parser: blocks, statements, declarations, expressions, FOR, procedure heads;
   statement markers; the D-list.
 - **B2.4** Errors `AG17015`: numbers, classes, recovery; `↑EOP↑ …`, `HET ′EOP′ !`.
