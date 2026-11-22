@@ -15,22 +15,6 @@ Milestone 0 builds everything around that comparison.
 
 ---
 
-## A5. Test corpus and expected outputs
-
-The programs are in `tests/algol/`: test1–4, hello, the `dubna` examples (man_or_boy,
-quine, hello_algol, bozp_ybyb, juggle, quinio), and one program per feature (empty, arith,
-boolean, cond, for, goto, arrays, proc, switch, blocks, comment, print, stdfunc, strings).
-Programs with errors: test4, err_syntax, err_undeclared, err_type, err_own, err_end. Their
-`.lst` files hold two kinds of diagnostics: `ERROR nn CLASS` right after the source line
-(syntax, an early pass), and messages like `IDENTIFIER 'Y' IS NOT DECLARED. NEXT STATEMENT IS
-6/ 1` after the listing, in reverse order (semantics, a later pass) — a clue for A6.3. Side files `.pre`, `.run`, `.in`, `.norun`
-are described in [doc/reference-toolchain.md](doc/reference-toolchain.md). Each program has
-`.lst` and `.full.lst`, and when it compiles, `.std` and `.out`; `make goldens` regenerates
-them all with the original compiler.
-
-- **A5.7** Optional tests that use `dubna` (run our `.std` files and compare with `.out`). They are
-  skipped when `dubna` is not in `PATH`.
-
 ## A6. Map of the original compiler
 
 The main risk of the project: the Madlen sources come from disassembly and have no comments
@@ -51,6 +35,10 @@ about their meaning.
   - the error messages it can print.
 
   The time a pass runs and the data it touches can be read from the traces (`dubna -d im`).
+  Clue: syntax errors (`ERROR nn CLASS`) are printed right after their source line, while
+  semantic errors (`IDENTIFIER 'Y' IS NOT DECLARED. NEXT STATEMENT IS 6/ 1`) come after the
+  listing, in reverse order — so they come from different passes. See the `err_*.lst` files
+  in `tests/algol/`.
 - **A6.4** **Tables** at 01736–11777:
   - the keyword table at 02166 and the internal symbol codes;
   - the character-code conversion (GOST/ISO card codes to internal codes);
@@ -96,14 +84,14 @@ about their meaning.
 ## Order and dependencies
 
 ```
-A5 corpus/goldens ────┬── A7 plan M1
-A6 compiler map ──────┘
+A6 compiler map ── A7 plan M1
 ```
 
 Done: A1 (skeleton), A2 (CLI), A3 (reference scripts, see
 [doc/reference-toolchain.md](doc/reference-toolchain.md)), A4 (object format,
-[doc/stdarray.md](doc/stdarray.md), `src/stdarray.*`, `algol-gdr --dump`). A6 needs no C++ and is the
-longest; continue it in parallel.
+[doc/stdarray.md](doc/stdarray.md), `src/stdarray.*`, `algol-gdr --dump`), A5 (test corpus in
+`tests/algol/` with expected outputs, `make goldens`, compile and run tests that are skipped
+until the compiler works).
 
 ## Done when
 
