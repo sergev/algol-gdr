@@ -24,16 +24,10 @@ Programs with errors: test4, err_syntax, err_undeclared, err_type, err_own, err_
 `.lst` files hold two kinds of diagnostics: `ERROR nn CLASS` right after the source line
 (syntax, an early pass), and messages like `IDENTIFIER 'Y' IS NOT DECLARED. NEXT STATEMENT IS
 6/ 1` after the listing, in reverse order (semantics, a later pass) — a clue for A6.3. Side files `.pre`, `.run`, `.in`, `.norun`
-are described in [doc/reference-toolchain.md](doc/reference-toolchain.md).
+are described in [doc/reference-toolchain.md](doc/reference-toolchain.md). Each program has
+`.lst` and `.full.lst`, and when it compiles, `.std` and `.out`; `make goldens` regenerates
+them all with the original compiler.
 
-- **A5.4** For each program, store the expected output next to it:
-  - `.std` — the object module;
-  - `.lst` — the listing, and the `*full` listing as `.full.lst`;
-  - `.out` — the run output.
-
-  Commit them, so tests do not need `dubna`. Done for hello and test1–4.
-- **A5.5** `make goldens` regenerates all expected-output files with `scripts/ref-compile` and `scripts/ref-run`.
-  Run it only on purpose, and review the diff.
 - **A5.6** Test driver in `tests/`: for each program, run our compiler and compare with the `.std`
   file. All these tests are expected to fail until Milestone 1. Mark them as such, so they
   don't break `make test`.

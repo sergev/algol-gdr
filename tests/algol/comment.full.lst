@@ -1,0 +1,65 @@
+*NAME COMMENT
+*PUNCH
+*FULL
+*ALGOL                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+           1. ′COMMENT′ A COMMENT BEFORE THE PROGRAM;
+           2. ′BEGIN′
+           3.     ′COMMENT′ A COMMENT IN A BLOCK, WITH ′BEGI
+               N′ AND ′END′ INSIDE;
+           4.     ′INTEGER′ I;
+           5.     I := 1;
+           6.     ′BEGIN′
+           7.         I := 2
+           8.     ′END′ THIS TEXT AFTER END IS A COMMENT;
+           9.     ;;
+          10.     PRINT(I); ′COMMENT′ AFTER A STATEMENT;
+          11. ′END′
+          12. ′EOP′
+CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
+   1 -       00001       00001 00001 00002 00002
+   9 - 00003 00003 00005 00005
+PROGRAM   ДЛИHA:   14 00016B BPEMЯ:  0.00 CEK. KAPT:  12
+ 40000   7 VTM 40006
+        13 VJM 74001
+    01  15 UTM 00001
+         7 XTA  0006
+    02   6 ATX  0000
+         7 XTA  0005
+    03   6 ATX  0000
+         6 XTA  0000
+    04  13 VJM 74002
+           UTC 00000
+    05     UJ  74003
+           UTC 00000
+ 00000  0000000000000000
+    01  0020000000000000
+        !
+    02  6400000000000064
+                    52
+    03  6400000000000063
+                    51
+    04  6400000000000062
+                    50
+    05  6400000000000002
+                     2
+    06  6400000000000001
+                     1
+    07  6400000000000000
+                     0
+ 04000  6062574762415500
+        PROGRA
+    01  0000400463000000
+        ==>4004
+    02  0000400563000000
+        ==>4005
+    03  0000400663000000
+        ==>4006
+    04  4117636441626400
+        A/STAR
+    05  4117516062510000
+        A/IPRI
+    06  4117636457600000
+        A/STOP
+*END FILE
