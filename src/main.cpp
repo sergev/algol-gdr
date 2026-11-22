@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "dump.h"
 #include "options.h"
 #include "source.h"
 #include "version.h"
@@ -18,22 +19,25 @@ static void print_usage(std::ostream &out)
         << "    -o FILE, --output=FILE  Object file (default stdarray.out)\n"
         << "    --full                  Full listing, with object code (like *FULL)\n"
         << "    --no-list               No listing (like *NO LIST)\n"
+        << "    --dump                  Print object file (standard array) and exit\n"
         << "    -h, --help              Display available options\n"
         << "    -V, --version           Print the version number and exit\n";
 }
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_FULL = 256, OPT_NO_LIST };
+    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
         { "output", required_argument, nullptr, 'o' },
         { "full", no_argument, nullptr, OPT_FULL },
         { "no-list", no_argument, nullptr, OPT_NO_LIST },
+        { "dump", no_argument, nullptr, OPT_DUMP },
         {},
     };
     Options opt;
+    bool dump = false;
 
     for (;;) {
         int c = getopt_long(argc, argv, "-hVo:", long_options, nullptr);
@@ -62,6 +66,9 @@ int main(int argc, char *argv[])
         case OPT_NO_LIST:
             opt.no_listing = true;
             break;
+        case OPT_DUMP:
+            dump = true;
+            break;
         default:
             print_usage(std::cerr);
             return EXIT_FAILURE;
@@ -77,6 +84,10 @@ int main(int argc, char *argv[])
     }
 
     try {
+        if (dump) {
+            dump_stdarray(StdArray::read_cards_file(opt.source_file), std::cout);
+            return EXIT_SUCCESS;
+        }
         std::string text = read_source(opt.source_file);
         (void)text;
         std::cerr << prog_name << ": compilation not implemented yet\n";

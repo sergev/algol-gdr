@@ -70,3 +70,20 @@ TEST(cli, not_implemented)
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_NE(r.output.find("not implemented"), std::string::npos);
 }
+
+TEST(cli, dump)
+{
+    auto r = run_command(compiler + " --dump " TEST_DIR "/algol/hello.std");
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_NE(r.output.find("PROGRAM"), std::string::npos);
+    EXPECT_NE(r.output.find("13 VJM  74001       ; A/START"), std::string::npos);
+    EXPECT_NE(r.output.find(" 7 VTM  40005       ; @5"), std::string::npos);
+    EXPECT_NE(r.output.find("A/STOP"), std::string::npos);
+}
+
+TEST(cli, dump_bad_file)
+{
+    auto r = run_command(compiler + " --dump " TEST_DIR "/algol/hello.alg");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_NE(r.output.find("expected '`'"), std::string::npos);
+}

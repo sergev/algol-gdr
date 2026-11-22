@@ -15,16 +15,6 @@ Milestone 0 builds everything around that comparison.
 
 ---
 
-## A4. Standard array (object module) format
-
-The object module is the contract between Milestone 1 and `dubna`. Its format is described in
-[doc/stdarray.md](doc/stdarray.md); the decoder `mesm6/toolchain/ld/stdobj.{h,c}` is a model.
-
-- **A4.6** Dump tool `algol-gdr --dump FILE.std` (or a separate `stddump`): print the header,
-  entries, external references and data, and disassemble the code (reuse the
-  instruction-decoding logic of `disbesm6`, or call it). A readable dump makes Milestone 1
-  differences easy to find.
-
 ## A5. Test corpus and expected outputs
 
 - **A5.1** Collect the programs into `tests/algol/`:
@@ -121,13 +111,13 @@ about their meaning.
 ## Order and dependencies
 
 ```
-A4 stdarray library ──┐
-A5 corpus/goldens ────┼── A7 plan M1
+A5 corpus/goldens ────┬── A7 plan M1
 A6 compiler map ──────┘
 ```
 
-A1 (skeleton), A2 (CLI) and A3 (reference scripts, see
-[doc/reference-toolchain.md](doc/reference-toolchain.md)) are done. A6 needs no C++ and is the
+Done: A1 (skeleton), A2 (CLI), A3 (reference scripts, see
+[doc/reference-toolchain.md](doc/reference-toolchain.md)), A4 (object format,
+[doc/stdarray.md](doc/stdarray.md), `src/stdarray.*`, `algol-gdr --dump`). A6 needs no C++ and is the
 longest; continue it in parallel.
 
 ## Done when
