@@ -98,5 +98,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ## Order
 
-With the captured streams and `pass_test`, each pass can be written and tested on its own. Suggested order: B7.1 and B6 (small, and they give whole objects from
-captured streams early), then B2, B3, B4, B5, and B7.2–B7.3 last.
+With the captured streams and `pass_test`, each pass can be written and tested on its own.
+Suggested order: B7.1 and B6 (small, and they give whole objects from captured streams
+early), then B2, B3, B4, B5, and B7.2–B7.3 last.
