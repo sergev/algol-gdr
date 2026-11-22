@@ -49,8 +49,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B1. Infrastructure
 
-- **B1.2** `Item`, `Stream`, and reading/writing the `.sN` text form. Option `--stop-after=N`
-  prints stream N instead of compiling to the end.
 - **B1.3** `scripts/gen-tables.py`: extract the tables listed above from the overlay image
   (`os-dubna/monsys/monsys.9`) into `src/tables_data.cpp`, with comments giving the original
   addresses. Commit the generated file, so the build does not need os-dubna.

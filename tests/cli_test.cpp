@@ -87,3 +87,10 @@ TEST(cli, dump_bad_file)
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_NE(r.output.find("expected '`'"), std::string::npos);
 }
+
+TEST(cli, bad_stop_after)
+{
+    auto r = run_command(compiler + " --stop-after=6 " TEST_DIR "/algol/hello.alg");
+    EXPECT_NE(r.exit_code, 0);
+    EXPECT_NE(r.output.find("--stop-after"), std::string::npos);
+}

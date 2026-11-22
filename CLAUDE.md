@@ -27,7 +27,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `stdarray.*` (object
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `item.*` (pass stream items), `stdarray.*` (object
   format), `besm6.*` + `dump.*` (disassembly).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output, `.s1`…`.s5`/`.mem` pass

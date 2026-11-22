@@ -11,6 +11,7 @@ struct Options {
     std::string object_file{ "stdarray.out" }; // output standard array
     bool full_listing{};                       // like *full card
     bool no_listing{};                         // like *no list card
+    int stop_after{};                          // print stream of this pass and stop, 1-5
 };
 
 #endif

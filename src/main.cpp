@@ -19,6 +19,7 @@ static void print_usage(std::ostream &out)
         << "    -o FILE, --output=FILE  Object file (default stdarray.out)\n"
         << "    --full                  Full listing, with object code (like *FULL)\n"
         << "    --no-list               No listing (like *NO LIST)\n"
+        << "    --stop-after=N          Print the stream of pass N (1-5) and stop\n"
         << "    --dump                  Print object file (standard array) and exit\n"
         << "    -h, --help              Display available options\n"
         << "    -V, --version           Print the version number and exit\n";
@@ -26,7 +27,7 @@ static void print_usage(std::ostream &out)
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP };
+    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
@@ -34,6 +35,7 @@ int main(int argc, char *argv[])
         { "full", no_argument, nullptr, OPT_FULL },
         { "no-list", no_argument, nullptr, OPT_NO_LIST },
         { "dump", no_argument, nullptr, OPT_DUMP },
+        { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
         {},
     };
     Options opt;
@@ -69,6 +71,15 @@ int main(int argc, char *argv[])
         case OPT_DUMP:
             dump = true;
             break;
+        case OPT_STOP_AFTER: {
+            std::string arg = optarg;
+            if (arg.size() != 1 || arg[0] < '1' || arg[0] > '5') {
+                std::cerr << prog_name << ": --stop-after: pass number 1-5 expected\n";
+                return EXIT_FAILURE;
+            }
+            opt.stop_after = arg[0] - '0';
+            break;
+        }
         default:
             print_usage(std::cerr);
             return EXIT_FAILURE;
