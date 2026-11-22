@@ -28,13 +28,14 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `item.*` (pass stream items), `tables.*` (generated tables of the original), `workspace.*` (its shared data as words), `stdarray.*` (object
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `item.*` (pass stream items), `passes.*` (pass interface, `Context`), `tables.*` (generated tables of the original), `workspace.*` (its shared data as words), `stdarray.*` (object
   format), `besm6.*` + `dump.*` (disassembly).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output, `.s1`…`.s5`/`.mem` pass
   streams; side files
   `.pre`/`.run`/`.in`/`.norun` ([doc/reference-toolchain.md](doc/reference-toolchain.md)).
-  `compile_test` and `run_test` compare our compiler with them and are skipped until it works.
+  `compile_test` and `run_test` compare our compiler with them, `pass_test` each pass on its
+  own (input: the previous expected stream, workspace from `.mem`); skipped until implemented.
 - `doc/` — findings about the original compiler: [passes.md](doc/passes.md) (driver, the six
   passes, their streams), [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
   [runtime-abi.md](doc/runtime-abi.md) (run-time calls, generated code),

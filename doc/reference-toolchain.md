@@ -73,7 +73,8 @@ next to the source:
   in memory order (pass 2 writes backward, so its items are reversed). Items are taken at the
   entries of the stream helper G27126. A pass that did not run has no file.
 - `NAME.mem`: per pass, the words of the workspace (02000–05777, 27245–27644) it wrote, with
-  their values at the end of the pass; zero words are left out. Drum reads are not seen.
+  their values at the end of the pass; a zero only where the word was nonzero before.
+  Drum reads are not seen.
 
 `make goldens` runs it for every program. Pass 3 is skipped (no `.s3`) for the programs with
 a `NAME.pre`: `*call setftn` sets `CHECKFL*` (cell 0521), so they are compiled in check mode.

@@ -47,11 +47,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ## Tasks
 
-### B1. Infrastructure
-
-- **B1.5** Test driver: for each program and each pass N, feed the expected stream N−1 into
-  pass N and compare with stream N. Skipped while a pass is not implemented.
-
 ### B2. Pass 1 (largest risk: the listing must match)
 
 - **B2.1** Card reader: UTF-8 → the 8-bit codes of the original (`dubna`'s mapping, plus the
@@ -103,6 +98,5 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ## Order
 
-B1 comes first. With the captured streams (B1.1, B1.5) each pass can then be written and
-tested on its own. Suggested order: B7.1 and B6 (small, and they give whole objects from
+With the captured streams and `pass_test`, each pass can be written and tested on its own. Suggested order: B7.1 and B6 (small, and they give whole objects from
 captured streams early), then B2, B3, B4, B5, and B7.2–B7.3 last.

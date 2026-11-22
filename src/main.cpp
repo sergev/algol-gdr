@@ -5,6 +5,7 @@
 
 #include "dump.h"
 #include "options.h"
+#include "passes.h"
 #include "source.h"
 #include "version.h"
 
@@ -99,10 +100,18 @@ int main(int argc, char *argv[])
             dump_stdarray(StdArray::read_cards_file(opt.source_file), std::cout);
             return EXIT_SUCCESS;
         }
-        std::string text = read_source(opt.source_file);
-        (void)text;
-        std::cerr << prog_name << ": compilation not implemented yet\n";
-        return EXIT_FAILURE;
+        Context ctx;
+        ctx.options = opt;
+        ctx.source  = read_source(opt.source_file);
+        Stream stream;
+        int last = opt.stop_after ? opt.stop_after : 5;
+        for (int n = 1; n <= last; n++)
+            stream = run_pass(n, ctx, stream);
+        if (opt.stop_after) {
+            write_stream(std::cout, stream);
+            return EXIT_SUCCESS;
+        }
+        throw NotImplemented("compilation not implemented yet");
     } catch (const std::exception &e) {
         std::cerr << prog_name << ": " << e.what() << "\n";
         return EXIT_FAILURE;
