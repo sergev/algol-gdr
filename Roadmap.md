@@ -11,26 +11,11 @@ at 01736–11777, the pass modules `ag13666`…`ag30257`) and the listing overla
 `AG23523`, `AG26260`, `AG26666`, …), so the C++ structure can follow it pass by pass.
 
 The original compiler running under `dubna` is the reference oracle for Milestone 1: for any
-input, its listing and object module are the expected output.
+input, its listing and object module are the expected output. The groundwork is done: the
+reference scripts, the test corpus with expected outputs, and the analysis of the original
+in `doc/`. The detailed plan for Milestone 1 is [todo1.md](todo1.md).
 
 ---
-
-## Milestone 0 — Groundwork
-
-Goal: a skeleton that builds and a way to compare against the original.
-
-- CMake project, C++20, warnings as errors, GoogleTest; clang-format config like `dubna`'s.
-- CLI driver: `algol-gdr [options] file.alg`, with options mirroring the control cards
-  (`*full`, `*no list`, output file).
-- Test harness that runs a `.alg` source through the original compiler under `dubna` and stores
-  the listing and object module as golden files.
-- Corpus of test programs: `test1–4.alg`, the Algol examples of `dubna`, and small programs
-  that each exercise one feature.
-- Map of the original: what each pass module does, its inputs and outputs, and the layout of
-  the tables in `AD02000`…`AD06000` (keyword table at 02166). Written down in `doc/`, extending
-  `algol.sym`.
-
-Done when: the empty compiler builds, tests run, and goldens are produced from the original.
 
 ## Milestone 1 — C++ rewrite, BESM-6 object output
 
@@ -146,8 +131,8 @@ under `x1sim`. Any example skipped on purpose is listed with the reason.
 - **Faithful vs clean rewrite.** A literal translation is easier to verify against the original;
   a clean design is easier to retarget. Plan: faithful in Milestone 1, refactor into an explicit
   IR at the start of Milestone 2.
-- **Undocumented internals.** The passes come from disassembly and their data structures are not
-  named. The mapping work in Milestone 0 is the main schedule risk.
+- **Undocumented internals.** The passes come from disassembly. Their roles and data are mapped
+  in `doc/passes.md`, but most handlers of the code generator (pass 4) are still unknown.
 - **Arithmetic differences.** BESM-6 float rounding, range and integer width differ from IEEE
   `double` and `int64_t`. Numeric output may not match `dubna` exactly in Milestone 2; the
   comparison tests must allow for that.
