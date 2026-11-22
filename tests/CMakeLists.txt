@@ -10,6 +10,7 @@ include(GoogleTest)
 enable_testing()
 
 add_executable(unit_tests EXCLUDE_FROM_ALL
+    arith_test.cpp
     card_test.cpp
     cli_test.cpp
     compile_test.cpp

@@ -1,4 +1,5 @@
 add_library(algol STATIC
+    arith.cpp
     besm6.cpp
     card.cpp
     dump.cpp
