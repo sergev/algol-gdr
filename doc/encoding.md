@@ -60,6 +60,11 @@ Limits found:
 
 ## Our compiler
 
+`src/card.cpp` turns each source line into a card as `dubna` does (80 KOI-7 characters,
+blank-padded, six per word, like 02010… after `READ*`), with the Unicode symbols below mapped
+to the codes the lexer expects: `∨ ∧ ⊃ ¬ ≡` → 020–024, `≠ ≤ ≥` → 030–032, `⏨` and `@` → 027,
+`×` → `*`, `↑` → `**`. Other characters `dubna` does not know are dropped, as there.
+
 Input is UTF-8 with no column limit. To produce the same object code as the original, the
 reader maps every form to the same internal symbol:
 

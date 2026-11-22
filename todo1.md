@@ -49,8 +49,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B2. Pass 1 (largest risk: the listing must match)
 
-- **B2.1** Card reader: UTF-8 → the 8-bit codes of the original (`dubna`'s mapping, plus the
-  Unicode operators of [encoding.md](doc/encoding.md)), 72 columns, upper case.
 - **B2.2** Lexer `AG15414`: names (6 characters, hashing into the table), keywords, numbers
   (the BESM-6 formats, overflow errors), strings, comments, END comments.
 - **B2.3** Parser: blocks, statements, declarations, expressions, FOR, procedure heads;
