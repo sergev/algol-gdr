@@ -65,7 +65,7 @@ blank-padded, six per word, like 02010… after `READ*`), with the Unicode symbo
 to the codes the lexer expects: `∨ ∧ ⊃ ¬ ≡` → 020–024, `≠ ≤ ≥` → 030–032, `⏨` and `@` → 027,
 `×` → `*`, `↑` → `**`. Other characters `dubna` does not know are dropped, as there.
 
-Input is UTF-8 with no column limit. To produce the same object code as the original, the
+Only columns 1–72 count, as in the original. To produce the same object code as the original, the
 reader maps every form to the same internal symbol:
 
 | Internal symbol | Accepted spellings |

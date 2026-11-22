@@ -78,6 +78,10 @@ Run:
   start of pass N is the driver's data (`src/tables_data.cpp`) plus the changes of the passes
   before N.
 
+- `NAME.lex`: at each call of the lexer (AG15414), and at the end of pass 1, the symbol word
+  02000 and register M4 that the previous call left; the first line is the state before the
+  first call.
+
 The script keeps a shadow of memory and drums from the start of pass 1 (traced writes, `*70`
 transfers) and checks it against every traced read, so the dumps are exact.
 
