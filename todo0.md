@@ -28,9 +28,6 @@ are described in [doc/reference-toolchain.md](doc/reference-toolchain.md). Each 
 `.lst` and `.full.lst`, and when it compiles, `.std` and `.out`; `make goldens` regenerates
 them all with the original compiler.
 
-- **A5.6** Test driver in `tests/`: for each program, run our compiler and compare with the `.std`
-  file. All these tests are expected to fail until Milestone 1. Mark them as such, so they
-  don't break `make test`.
 - **A5.7** Optional tests that use `dubna` (run our `.std` files and compare with `.out`). They are
   skipped when `dubna` is not in `PATH`.
 
