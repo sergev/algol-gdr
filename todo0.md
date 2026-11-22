@@ -35,22 +35,13 @@ for modules with low coverage as their roles become clear.
   - the character-code conversion (GOST/ISO card codes to internal codes);
   - the error message texts;
   - the code templates, if there are any.
-- **A6.5** **Runtime interface.** List the `A/…` library routines that compiled code calls. The load
-  map shows `A/START`, `A/STOP`, `A/DRUCK`, `A/IPRI`, `A/RPRI`, `A/BPRI`, `A/SPRI`,
-  `A/LPRI`, `A/NLINE`, `A/NPAGE`, `A/I*ISO`, `A/R*ISO`, `A/ARRD/K`, `A/ARRD/V`, and more for
-  larger programs. For each: its calling convention, registers, and how parameters and
-  strings are passed. Find their sources or disassembly in the Dubna library.
-- **A6.6** **Generated code conventions.** From the `*full` listings: the program prologue and
-  epilogue, the layout of variables, array descriptors, procedure calls and returns,
-  display/static link, and the parameters passed by name.
 - **A6.7** Give meaningful names to the symbols in `algol.sym` as their roles become clear. Keep
   the names in step with the docs.
 - **A6.8** Deliverables:
   - `doc/passes.md` — the driver and each pass;
   - `doc/tables.md` — the tables;
-  - `doc/runtime-abi.md` — the runtime interface and generated-code conventions;
 
-  Done: `doc/encoding.md` (with the findings of A5.2).
+  Done: `doc/encoding.md` (with the findings of A5.2), `doc/runtime-abi.md` (A6.5–A6.6).
 
 ## A7. Plan for Milestone 1
 
