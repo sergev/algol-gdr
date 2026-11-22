@@ -73,7 +73,7 @@ TEST(stdarray, layout_all)
                 EXPECT_GE(row, lay.head_len + lay.sym_len);
                 EXPECT_LT(row, lay.head_len + lay.sym_len + lay.long_len);
             } else {
-                EXPECT_EQ(s.type, SYM_EXT_SHORT);
+                EXPECT_TRUE(s.type == SYM_EXT_SHORT || s.type == SYM_ABS) << std::oct << s.type;
             }
         }
     }

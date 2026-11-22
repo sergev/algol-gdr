@@ -29,6 +29,8 @@ static std::string row_name(const StdArray &obj, const Layout &lay, unsigned row
         return text_to_utf8(obj.table_row(lay, sym.ref - 04000));
     if (sym.type == SYM_EXT_SHORT)
         return text_to_utf8(Word(sym.ref) << 24);
+    if (sym.type == SYM_ABS)
+        return "=" + octal(sym.addr, 5);
     return "sym " + octal(sym.type, 3);
 }
 

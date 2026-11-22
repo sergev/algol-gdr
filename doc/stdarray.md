@@ -101,7 +101,9 @@ The types Algol-GDR uses:
 
 - `0630`, an external reference with a long name: `ref` = `04000 + row` of a long name.
 - `0430`, an external reference with a short name: `ref` holds 4 TEXT characters, as in
-  `SIN*`, `COS*`, `LN*`, `EXP*`.
+  `SIN*`, `COS*`, `LN*`, `EXP*`, and `'CODE'`/`'ALGOL'` procedures such as `RNDM`, `BOZP`.
+- `0400`, an absolute value in `addr`. Programs with `'CODE'` procedures have `77777` and
+  `77776` (−1 and −2); their use is not known yet.
 
 `stdobj.h` lists the other types: entries, commons, expressions and so on.
 
