@@ -16,10 +16,8 @@ about their meaning. Tools: `scripts/trace-compile` shows which modules a progra
 what order, and the coverage of the corpus ([doc/traces.md](doc/traces.md)). Add test programs
 for modules with low coverage as their roles become clear.
 
-- **A6.2** **Driver** (`algol.asm`, `ALGOL` at 01614): the order of passes, the conditions between
-  them (`FLGEX*`, `CHECKFL*`, `FULISFL*`, `NOLISFL*`), where `*full` / `*no list` are set,
-  and how the compiler finishes (the object module going to the punch or to the library).
-- **A6.3** **Each pass module** (`ag13666`, `ag14504`, `ag17223`, `ag22162`, `ag23523`, `ag26260`,
+- **A6.3** **Each pass module** (the driver is done: [doc/passes.md](doc/passes.md), which
+  also lists what is known so far about each pass) (`ag13666`, `ag14504`, `ag17223`, `ag22162`, `ag23523`, `ag26260`,
   `ag26666`, and the small ones `ag27126`…`ag30257`). For each, find:
   - its purpose (input, lexing, parsing, code generation, …);
   - its input and output, and where they live (memory buffers such as `AD06000` with 2048
