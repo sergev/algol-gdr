@@ -49,9 +49,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B1. Infrastructure
 
-- **B1.1** `scripts/capture-streams`: run the original compiler with a memory trace, and write
-  `NAME.s1` … `NAME.s5` (one item per line, octal) and a memory dump at each pass boundary.
-  Add them to `make goldens` for every program in `tests/algol/`.
 - **B1.2** `Item`, `Stream`, and reading/writing the `.sN` text form. Option `--stop-after=N`
   prints stream N instead of compiling to the end.
 - **B1.3** `scripts/gen-tables.py`: extract the tables listed above from the overlay image

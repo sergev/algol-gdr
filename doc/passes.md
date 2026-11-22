@@ -28,7 +28,7 @@ The flags are cells of the monitor:
 | --- | --- | --- |
 | `NOLISFL*` | `*NO LIST` | no banner; passes check it too (G13666, G26260) |
 | `FULISFL*` | `*FULL` | after the passes, load `A/PRINTM` to list the object code |
-| `CHECKFL*` | `*CHECK` | skip G22162; the code gets run-time checks (more externals) |
+| `CHECKFL*` (0521) | `*CHECK`; also `*call setftn` | skip G22162; the code gets run-time checks (more externals) |
 | `FLGEX*` | the compiler: G14504, G17223, G26260 | errors; stop after pass 2. The monitor adds it to `ERROFLG*` and keeps no object |
 
 Checked with `hello` and `test3`:

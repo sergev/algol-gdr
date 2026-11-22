@@ -18,6 +18,7 @@ make test                # unit tests via ctest
 make goldens             # regenerate tests/algol expected outputs (needs dubna)
 scripts/ref-compile [--full] tests/algol/X.alg [OUTDIR]   # original compiler → X.std, X.lst
 scripts/ref-run X.std    # run an object under dubna
+scripts/capture-streams tests/algol/X.alg   # pass streams X.s1…X.s5, X.mem
 ./build/src/algol-gdr --dump X.std   # decode and disassemble an object
 ```
 
@@ -29,7 +30,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 - `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `stdarray.*` (object
   format), `besm6.*` + `dump.*` (disassembly).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
-  original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output; side files
+  original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output, `.s1`…`.s5`/`.mem` pass
+  streams; side files
   `.pre`/`.run`/`.in`/`.norun` ([doc/reference-toolchain.md](doc/reference-toolchain.md)).
   `compile_test` and `run_test` compare our compiler with them and are skipped until it works.
 - `doc/` — findings about the original compiler: [passes.md](doc/passes.md) (driver, the six

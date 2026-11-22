@@ -64,3 +64,17 @@ Run:
   `A/SPRI`, …).
 - `.out`: the control cards, the load map between the `≠` lines (each runtime routine the
   program pulled in, with its address), then the program's own output.
+
+## Pass streams
+
+`scripts/capture-streams FILE.alg…` compiles under a memory trace (`dubna -d im`) and writes
+next to the source:
+- `NAME.s1` … `NAME.s5`: the stream written by each pass, one 24-bit item per line in octal,
+  in memory order (pass 2 writes backward, so its items are reversed). Items are taken at the
+  entries of the stream helper G27126. A pass that did not run has no file.
+- `NAME.mem`: per pass, the words of the workspace (02000–05777, 27245–27644) it wrote, with
+  their values at the end of the pass; zero words are left out. Drum reads are not seen.
+
+`make goldens` runs it for every program. Pass 3 is skipped (no `.s3`) for the programs with
+a `NAME.pre`: `*call setftn` sets `CHECKFL*` (cell 0521), so they are compiled in check mode.
+After errors in pass 1 or 2 only the streams up to that pass exist.

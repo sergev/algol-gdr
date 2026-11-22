@@ -1,7 +1,8 @@
 #!/bin/sh
 #
 # Regenerate expected outputs of all test programs with the original compiler:
-# NAME.std, NAME.lst, NAME.full.lst, NAME.out.
+# NAME.std, NAME.lst, NAME.full.lst, NAME.out, and the pass streams
+# NAME.s1 … NAME.s5, NAME.mem (capture-streams).
 #
 #   make-goldens [DIR]          (default tests/algol)
 #
@@ -13,6 +14,7 @@ for src in "$dir"/*.alg; do
     name=$(basename "$base")
     rm -f "$base.std" "$base.out"
     "$scripts/ref-compile" --full "$src" > /dev/null 2>&1
+    "$scripts/capture-streams" "$src"
     if "$scripts/ref-compile" "$src" 2> /dev/null; then
         if [ -f "$base.norun" ]; then
             echo "$name: compiled, not run"
