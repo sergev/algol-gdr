@@ -1,0 +1,12 @@
+*NAME SWITCH
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/BPRI   E 01253                A/R*ISO  E 01423                PRINT8     01602
+         A/STOP     01053                A/SPRI   E 01262                STOP*      01456                SYSBACK*   01763
+         A/START  E 01057                A/LPRI   E 01277                EXIT     E 01457                CBOБOДHO   01773
+         A/DRUCK    01133                A/NLINE  E 01343                A/ARRD/K   01505
+         A/IPRI   E 01165                A/NPAGE  E 01345                A/ARRD/V E 01510
+         A/RPRI   E 01217                A/I*ISO  E 01420                STOPFLG* C 01601
+≠
+              1              2              3              4

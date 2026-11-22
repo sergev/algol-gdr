@@ -1,0 +1,29 @@
+*NAME BLOCKS
+*PUNCH
+*ALGOL                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+           1. ′BEGIN′
+           2.     ′COMMENT′ NESTED BLOCKS AND SCOPES;
+           3.     ′INTEGER′ X;
+           4.     X := 1;
+           5.     ′BEGIN′ ′INTEGER′ X;
+           6.         X := 2;
+           7.         ′BEGIN′ ′REAL′ X;
+           8.             X := 3.5;
+           9.             PRINT(X)
+          10.         ′END′;
+          11.         PRINT(X)
+          12.     ′END′;
+          13.     ′BEGIN′
+          14.         X := X + 10
+          15.     ′END′;
+          16.     PRINT(X)
+          17. ′END′
+          18. ′EOP′
+CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
+   1 - 00001       00001 00001 00002 00002 00003 00003
+   9 - 00004 00006 00006 00007 00007 00007       00011
+  17 -       00013
+PROGRAM   ДЛИHA:   22 00026B BPEMЯ:  0.00 CEK. KAPT:  18
+*END FILE

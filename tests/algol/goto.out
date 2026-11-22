@@ -1,0 +1,14 @@
+*NAME GOTO
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/LPRI   E 01303                A/PARCON E 01513                EXIT     E 01601
+         A/STOP     01057                A/NLINE  E 01347                A/PARVAR E 01522                A/ARRD/K   01627
+         A/START  E 01063                A/NPAGE  E 01351                A/PARPAR E 01533                A/ARRD/V E 01632
+         A/DRUCK    01137                A/I*ISO  E 01424                A/PARVAL E 01542                STOPFLG* C 01723
+         A/IPRI   E 01171                A/R*ISO  E 01427                A/PAREXP E 01547                PRINT8     01724
+         A/RPRI   E 01223                A/CALLP    01462                A/PARLAB E 01560                SYSBACK*   02105
+         A/BPRI   E 01257                A/CALLS  E 01463                A/PARSTR E 01567                CBOБOДHO   02115
+         A/SPRI   E 01266                A/PROCRT E 01470                STOP*      01600
+≠
+              3              5              1              2            999

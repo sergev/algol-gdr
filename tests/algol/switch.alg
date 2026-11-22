@@ -1,0 +1,17 @@
+'BEGIN'
+    'COMMENT' SWITCH DECLARATIONS AND DESIGNATIONAL EXPRESSIONS;
+    'INTEGER' I;
+    'SWITCH' S := A, B, 'IF' I > 2 'THEN' C 'ELSE' A;
+    I := 0;
+NEXT:
+    I := I + 1;
+    'IF' I > 3 'THEN' 'GOTO' DONE;
+    'GOTO' S[I];
+A:  PRINT(1); 'GOTO' NEXT;
+B:  PRINT(2); 'GOTO' NEXT;
+C:  PRINT(3); 'GOTO' NEXT;
+DONE:
+    'GOTO' 'IF' I = 4 'THEN' E 'ELSE' S[1];
+E:  PRINT(I)
+'END'
+'EOP'

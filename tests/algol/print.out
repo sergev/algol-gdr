@@ -1,0 +1,15 @@
+*NAME PRINT
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/BPRI   E 01263                A/R*ISO  E 01433                PRINT8     01612
+         A/STOP     01063                A/SPRI   E 01272                STOP*      01466                SYSBACK*   01773
+         A/START  E 01067                A/LPRI   E 01307                EXIT     E 01467                CBOБOДHO   02003
+         A/DRUCK    01143                A/NLINE  E 01353                A/ARRD/K   01515
+         A/IPRI   E 01175                A/NPAGE  E 01355                A/ARRD/V E 01520
+         A/RPRI   E 01227                A/I*ISO  E 01430                STOPFLG* C 01611
+≠
+              0              1             -1      123456789  0.00000000000+00    1.00000000000+00   -1.00000000000+00
+  3.14159260000+00    1.00000000000+18    1.00000000000-18   TRUE  FALSE STRING ONESTRING TWO
+ AFTER NEWLINE             1
+              2  LAST

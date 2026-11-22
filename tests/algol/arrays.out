@@ -1,0 +1,15 @@
+*NAME ARRAYS
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/BPRI   E 01500                A/AND      01730                A/SIGN   E 01767
+         A/STOP     01204                A/SPRI   E 01507                A/EQUIV  E 01733                STOP*      01777
+         A/START  E 01210                A/LPRI   E 01524                A/NOT    E 01734                EXIT     E 02000
+         A/ARRD/K   01264                A/NLINE  E 01570                A/IMPL   E 01737                STOPFLG* C 02026
+         A/ARRD/V E 01267                A/NPAGE  E 01572                A/RTOI   E 01742                SYSBACK*   02027
+         A/DRUCK    01360                A/I*ISO  E 01645                ENTIER*  E 01745                PRINT8     02037
+         A/IPRI   E 01412                A/R*ISO  E 01650                A/RHOCHI E 01747                CBOБOДHO   02220
+         A/RPRI   E 01444                A/OPTLIN   01703                A/IHOCHI E 01762
+≠
+  5.00000000000-01    2.50000000000+00               -1             21             10 TRUE  FALSE  2.00000000000+01
+              4

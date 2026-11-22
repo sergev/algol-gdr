@@ -17,27 +17,11 @@ Milestone 0 builds everything around that comparison.
 
 ## A5. Test corpus and expected outputs
 
-The programs are in `tests/algol/`: test1–4, hello, and the `dubna` examples (man_or_boy,
-quine, hello_algol, bozp_ybyb, juggle, quinio). Side files `.pre`, `.run`, `.in`, `.norun`
+The programs are in `tests/algol/`: test1–4, hello, the `dubna` examples (man_or_boy,
+quine, hello_algol, bozp_ybyb, juggle, quinio), and one program per feature (empty, arith,
+boolean, cond, for, goto, arrays, proc, switch, blocks, comment, print, stdfunc, strings). Side files `.pre`, `.run`, `.in`, `.norun`
 are described in [doc/reference-toolchain.md](doc/reference-toolchain.md).
 
-- **A5.2** Write small feature programs, one topic each, in the original notation:
-  - an empty program (`'BEGIN' 'END'`);
-  - integer and real arithmetic, operator precedence, `↑`, `÷`;
-  - Boolean expressions with all logical operators;
-  - `if` statements and conditional expressions;
-  - `for` with `step/until`, `while` and value lists;
-  - labels and `goto`, including a `goto` out of a block;
-  - one- and two-dimensional arrays, with constant and dynamic bounds;
-  - procedures: value and name parameters, recursion, function procedures, a procedure as a
-    parameter;
-  - `switch`;
-  - `own` variables;
-  - nested blocks;
-  - comments;
-  - `print` of integers, reals and strings, and the other Algol-GDR I/O procedures found in the
-    runtime (`A/IPRI`, `A/RPRI`, `A/BPRI`, `A/SPRI`, `A/LPRI`, `A/NLINE`, `A/NPAGE`, …);
-  - the standard functions (`abs`, `sqrt`, `sin`, `entier`, …).
 - **A5.3** Erroneous programs: syntax errors, undeclared identifiers, type mismatches. Record the
   original's diagnostics.
 - **A5.4** For each program, store the expected output next to it:
@@ -95,6 +79,16 @@ about their meaning.
   - `doc/runtime-abi.md` — the runtime interface and generated-code conventions;
   - `doc/encoding.md` — source character set: the original card codes and the UTF-8 mapping,
     including the Unicode operators from the README and the quoted keywords.
+
+  Found while writing the test programs (A5.2):
+  - source lines are cards: columns 73–80 are ignored, so text past column 72 is lost;
+  - the exponent sign is `⏨`; `dubna` turns `@` into `°`, which the compiler rejects;
+  - `1.0⏨20` gives `ERROR 11 REAL OVERFLOW` (the BESM-6 range ends near 10¹⁹);
+  - `'OWN'` is in the keyword table but gives `ERROR 34` in any position;
+  - the keyword table (02166–02545 and on): word operators `'LE'`, `'NOTGREATER'`, `'POWER'`,
+    …, I/O statements `'PRINT'`, `'READ'`, `'WRITE'`, `'PUNCH'`, `'ENCODE'`, `'DECODE'`,
+    `'REWIND'`, `'BACKSPACE'`, `'ENDFILE'`, and `'CODE'`, `'ALGOL'`, `'COMMON'`, `'LABEL'`,
+    `'BITS'`.
 
 ## A7. Plan for Milestone 1
 

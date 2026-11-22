@@ -1,0 +1,13 @@
+*NAME COND
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/BPRI   E 01262                A/R*ISO  E 01432                PRINT8     01611
+         A/STOP     01062                A/SPRI   E 01271                STOP*      01465                SYSBACK*   01772
+         A/START  E 01066                A/LPRI   E 01306                EXIT     E 01466                CBOБOДHO   02002
+         A/DRUCK    01142                A/NLINE  E 01352                A/ARRD/K   01514
+         A/IPRI   E 01174                A/NPAGE  E 01354                A/ARRD/V E 01517
+         A/RPRI   E 01226                A/I*ISO  E 01427                STOPFLG* C 01610
+≠
+            100             10  2.50000000000+00              200             20  2.50000000000+00              300
+              3             -3  2.50000000000+00              300              4             -4  1.50000000000+00

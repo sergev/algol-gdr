@@ -1,0 +1,14 @@
+*NAME PROC
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/PARCON E 01362                A/IPRI   E 01501                A/R*ISO  E 01737
+         A/STOP     01155                A/PARVAR E 01371                A/RPRI   E 01533                STOP*      01772
+         A/START  E 01161                A/PARPAR E 01402                A/BPRI   E 01567                EXIT     E 01773
+         A/ARRD/K   01235                A/PARVAL E 01411                A/SPRI   E 01576                STOPFLG* C 02021
+         A/ARRD/V E 01240                A/PAREXP E 01416                A/LPRI   E 01613                SYSBACK*   02022
+         A/CALLP    01331                A/PARLAB E 01427                A/NLINE  E 01657                PRINT8     02032
+         A/CALLS  E 01332                A/PARSTR E 01436                A/NPAGE  E 01661                CBOБOДHO   02213
+         A/PROCRT E 01337                A/DRUCK    01447                A/I*ISO  E 01734
+≠
+              2        3628800  1.40000000000+01    9.00000000000+00               77
