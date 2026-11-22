@@ -16,6 +16,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     run_test.cpp
     source_test.cpp
     stdarray_test.cpp
+    tables_test.cpp
     util.cpp
     version_test.cpp
 )

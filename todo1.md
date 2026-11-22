@@ -49,9 +49,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B1. Infrastructure
 
-- **B1.3** `scripts/gen-tables.py`: extract the tables listed above from the overlay image
-  (`os-dubna/monsys/monsys.9`) into `src/tables_data.cpp`, with comments giving the original
-  addresses. Commit the generated file, so the build does not need os-dubna.
 - **B1.4** `Workspace`: the 48-bit word memory of 02000–11777, initialized like the driver's
   `SET` directives.
 - **B1.5** Test driver: for each program and each pass N, feed the expected stream N−1 into

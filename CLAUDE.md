@@ -19,6 +19,7 @@ make goldens             # regenerate tests/algol expected outputs (needs dubna)
 scripts/ref-compile [--full] tests/algol/X.alg [OUTDIR]   # original compiler → X.std, X.lst
 scripts/ref-run X.std    # run an object under dubna
 scripts/capture-streams tests/algol/X.alg   # pass streams X.s1…X.s5, X.mem
+scripts/gen-tables.py > src/tables_data.cpp # tables of the original, from monsys.9
 ./build/src/algol-gdr --dump X.std   # decode and disassemble an object
 ```
 
@@ -27,7 +28,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `item.*` (pass stream items), `stdarray.*` (object
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `item.*` (pass stream items), `tables.*` (generated tables of the original), `stdarray.*` (object
   format), `besm6.*` + `dump.*` (disassembly).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output, `.s1`…`.s5`/`.mem` pass
