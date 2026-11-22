@@ -29,7 +29,7 @@ Milestone 0 builds everything around that comparison.
       `make clean`.
 - [x] **A1.4** `.clang-format` copied from `dubna` (Google base, 4-space indent, 100 columns, WebKit
       braces).
-- [ ] **A1.5** Keep `tmp/` ignored. Move what stays useful from it (job templates, test programs) into
+- [x] **A1.5** Keep `tmp/` ignored. Move what stays useful from it (job templates, test programs) into
       `tests/algol/`.
 
 Done when `make && make test` passes with a placeholder test.
