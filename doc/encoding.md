@@ -34,12 +34,23 @@ Symbols, tested by compiling `PRINT(…)` under `dubna`:
 | `≠` | accepted | `'NE'`, `'NOTEQUAL'` |
 | `⏨` | accepted: exponent, `1.5⏨-3` | (`@` becomes `°`, which is rejected) |
 | `×` | `ERROR 01 SYMBOL` | `*` |
-| `÷` | taken as a different operator (`7 ÷ 2` printed `TRUE`) | — |
+| `÷` | read as `≥`: `dubna` gives it code 032, which the lexer reads as `≥` (`7 ÷ 2` printed `TRUE`) | — |
 | `↑` | `ERROR 01 SYMBOL` | `'POWER'` |
 | `≤ ≥` | `ERROR 01 SYMBOL` | `'LE'`, `'GE'` (`'NOTGREATER'`, `'NOTLESS'`) |
 | `¬ ∧ ∨ ⊃ ≡` | `ERROR 01 SYMBOL` | `'NOT'`, `'AND'`, `'OR'`, `'IMPL'`, `'EQUIV'` |
 
 Other word operators: `'LT'`, `'LESS'`, `'GT'`, `'GREATER'`, `'EQ'`, `'EQUAL'`.
+
+**Why most symbols fail.** The lexer itself accepts single-character operators at these
+KOI-7 codes (pass 1 analysis, character table at 16514):
+
+| Code | 020 | 021 | 022 | 023 | 024 | 030 | 031 | 032 |
+|---|---|---|---|---|---|---|---|---|
+| Operator | `∨` | `∧` | `⊃` | `¬` | `≡` | `≠` | `≤` | `≥` |
+
+`dubna` gives the Unicode symbols different codes (`∨`→036, `∧`→`&`, `≤`→016, …), so only
+`≠` arrives where the lexer expects it. Moreover, `‘` (U+2018) → 020 should work as `∨`.
+The two tables disagree; our compiler simply accepts the Unicode symbols.
 
 Strings: `''text''` or `'('text')'`.
 
