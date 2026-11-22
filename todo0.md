@@ -16,10 +16,9 @@ about their meaning. Tools: `scripts/trace-compile` shows which modules a progra
 what order, and the coverage of the corpus ([doc/traces.md](doc/traces.md)). Add test programs
 for modules with low coverage as their roles become clear.
 
-- **A6.7** Give meaningful names to the symbols in `algol.sym` as their roles become clear. Keep
-  the names in step with the docs.
 - **A6.8** Deliverables. Done: `doc/encoding.md` (with the findings of A5.2), `doc/runtime-abi.md` (A6.5–A6.6),
-  `doc/passes.md` (A6.2–A6.3), `doc/tables.md` (A6.4). What is left: the open points listed
+  `doc/passes.md` (A6.2–A6.3), `doc/tables.md` (A6.4), `doc/symbols.md` (A6.7; not yet
+  copied into `os-dubna/algol/algol.sym`). What is left: the open points listed
   in these documents (most pass-4 handlers, the pass-2 output codes), to be closed while
   rewriting the passes in Milestone 1.
 
