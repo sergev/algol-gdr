@@ -1,6 +1,7 @@
 #ifndef ALGOL_PASSES_H
 #define ALGOL_PASSES_H
 
+#include <array>
 #include <iosfwd>
 #include <stdexcept>
 #include <string>
@@ -17,6 +18,10 @@ struct Context {
     std::string source;               // program text, UTF-8 (pass 1)
     Workspace ws;                     // tables at their original addresses
     std::ostream *listing{ nullptr }; // listing output, or none
+
+    // Index registers as the previous pass left them; some passes take data
+    // in them (pass 6: M5 = number of symbol rows).
+    std::array<unsigned, 16> regs{};
 };
 
 struct NotImplemented : std::runtime_error {

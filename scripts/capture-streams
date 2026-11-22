@@ -28,6 +28,6 @@ for src in "$@"; do
     rm -f "$base".s[1-5] "$base.mem" "$work/trace"
     mkfifo "$work/trace"
     python3 "$scripts/capture-streams.py" "$work/trace" "$base" &
-    (cd "$work" && dubna -r -d ime --trace=trace job.dub > /dev/null)
+    (cd "$work" && dubna -r -d imer --trace=trace job.dub > /dev/null)
     wait $!
 done

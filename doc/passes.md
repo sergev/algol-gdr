@@ -503,23 +503,39 @@ Example, Hello, World (pass 4 → pass 5 → object):
 ## Pass 6: G26666 (V)
 
 It writes the standard array **backwards** with 27137 (words) and 27114 (halves). Reversing
-its writes for Hello, World gives exactly `hello.std` words 2–042.
+its writes gives the object after the entry pair. `src/pass6.cpp` reproduces all test objects.
 
-1. Row 0 = the module name (`PROGRAM`).
-2. Replace each long-name placeholder with `(04000+row)<<24 | 0630`.
-3. Add the string pool to the constant count; check the size; set the cursor so the last
-   word written lands at drum 26 zone 3 word 0.
-4. Write the long names, then the symbols and the module name.
-5. Copy the constants: the strings (drum 27 zone 34), then the numbers and the fixed block
-   (zone 33).
-6. Read the pass-5 stream backwards: label references `1nnnn` → `40000 + M[04400+n]`, label
-   markers dropped.
-7. Write the 10-word header.
-8. Fill `ENTRY*`, call G30257, return.
+Inputs: the number of symbol rows in register M5 (left by pass 5), the cells 02005 (module
+name), 02137 (a second name), 02050 (string pool end << 12), 02054 (code length), 02055
+(number of constants), the rows at 03000, the long names at 04000, the label table at 04400,
+drum 27 zones 33 (04000–05777 as pass 5 left it) and 34 (strings).
+
+1. Row 0 = the module name: 02137 if nonzero, else 02005.
+2. Each zero row (a long-name placeholder) becomes `(04000+rows+k)<<24 | 0630`, k counting
+   the long names. A row of type `067x` also takes the next long name: its ref is ORed with
+   `04000+rows+k`.
+3. Constants = 02055 + string words (`(02050>>12) − 01634`), stored back in 02055. If code +
+   constants ≥ 0100000: `PROGRAM TOO LONG` (G26544).
+4. Write the long names (04000+k−1, k = n…1), the rows (backward), and the constants: the last
+   `const` words of zone 33 followed by the string words of zone 34, read backward.
+5. Read the pass-5 stream backwards and write halves, a right half first. Per half `h`:
+   - `h & 03700000 = 02000000` (align): write `02200000` (UTC 0);
+   - `0211nnnn` (label n): `M[04400+n]` = the words still to write, i.e. the label's address
+     (the original stores with `ATX 074400` and C = `h & 077777`);
+   - other halves with bits `02000000` and `030000` and without `040000`: a reference to
+     label n. With v = `M[04400+n]`: if `v & 040000` = 0, the address becomes `40000 + v`;
+     otherwise it is `70000 + r`, where row r equals `v ^ 041000000`;
+   - anything else: copied.
+   It stops when the code length is written; earlier items are not read.
+6. Write the 10-word header backward: head 1, sym rows−1, 0, 0, long n, cmd, 0, const, 0, 0.
+7. Fill `ENTRY*`: (row 0, `2000000000000000`), and with 02137 ≠ 0 also (02005, same), then 0.
+   The monitor punches these as the entry pairs before the object. Then call G30257.
 
 ## G30257 — summary line (V)
 
-- Prints `PROGRAM ДЛИHA: <cmd+const decimal> <octal>B BPEMЯ: s.t CEK. KAPT: n`.
+- Prints `PROGRAM ДЛИHA: <cmd+const decimal> <octal>B BPEMЯ: s.t CEK. KAPT: n`
+  (`%5u %05oB`, time `%5.2f`, cards `%4u` from 01741). With 02006 ≠ 0 the name is taken
+  from it instead of `PROGRAM` (I, not seen in the tests).
 - The time is the difference of the clock readings at the start of pass 1 and here
   (G27645).
 - `KAPT` is the card count.

@@ -90,8 +90,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B7. Pass 6 and integration
 
-- **B7.1** Assembly of the object into `StdArray`; the summary line `PROGRAM ДЛИHA: …`
-  (`BPEMЯ` printed as 0.00).
 - **B7.2** The whole pipeline: `compile_test` and `run_test` pass for every program.
 - **B7.3** `--full`: the object listing of `A/PRINTM` (its modules are not analysed yet; do
   this last, or move it to a later milestone).
@@ -99,5 +97,4 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 ## Order
 
 With the captured streams and `pass_test`, each pass can be written and tested on its own.
-Suggested order: B7.1 and B6 (small, and they give whole objects from captured streams
-early), then B2, B3, B4, B5, and B7.2–B7.3 last.
+Suggested order: B6 (small; with pass 6 done it gives whole objects from captured streams), then B2, B3, B4, B5, and B7.2–B7.3 last.

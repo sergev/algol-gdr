@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""capture-streams.py - pass streams and data from a dubna -d ime trace of Algol-GDR.
+"""capture-streams.py - pass streams and data from a dubna -d imer trace of Algol-GDR.
 
     capture-streams.py TRACE OUTBASE [TABLES_DATA]
 
 Writes OUTBASE.sN (stream written by pass N, one item per line in octal, in memory
 order: a stream written backward is reversed) and OUTBASE.mem (per pass, the words
-it changed: workspace lines `ADDR VALUE`, drum lines `drum UNIT ZONE OFFSET VALUE`).
+it changed: workspace lines `ADDR VALUE`, drum lines `drum UNIT ZONE OFFSET VALUE`,
+and the index registers it left for the next pass: `reg N VALUE`).
 
 Passes start at the driver's calls (01625 … 01634). Items are the A register at the
 entries of G27126 (27114, 27126 halves; 27137 words), taken from the push at their
@@ -26,6 +27,7 @@ WRITER = re.compile(r'^27(114|126|137) L: 00 003 2001 xts 2001')
 MEM = re.compile(r'^\s+Memory (Read|Write) \[([0-7]{5})\] = ([0-7 ]{19})')
 DRUM = re.compile(r'^\s+Drum ([0-7]+) (Read|Write) \[([0-7]{5})-([0-7]{5})\] = '
                   r'Zone ([0-7]+)(?: Sector ([0-7]))?')
+REG = re.compile(r'^\s+M([0-7]+) = ([0-7]{5})$')
 INSN = re.compile(r'^[0-7]{5} [LR]: ')
 INIT = re.compile(r'^    \{ 0([0-7]+), 0([0-7]+) \},')
 RANGES = [(0o1736, 0o6000), (0o27245, 0o27645)]
@@ -53,15 +55,16 @@ def main():
     mem = dict(init)        # shadow memory
     drum = {}               # (unit, zone, offset) -> value
     start = None            # (mem, drum) at the start of the current pass
-    dumps = []              # (pass, mem changes, drum changes)
+    dumps = []              # (pass, mem changes, drum changes, registers)
+    regs = {}               # index registers
     mismatches = 0
     pending = None          # writer entry waiting for its push
 
-    def end_pass():
+    def end_pass(final=True):
         dm = {a: v for a, v in mem.items() if in_ranges(a) and start[0].get(a, 0) != v}
         dd = {k: v for k, v in drum.items()
               if k[:2] in DRUMS and start[1].get(k, 0) != v}
-        dumps.append((npass, dm, dd))
+        dumps.append((npass, dm, dd, dict(regs) if final else {}))
 
     for line in open(trace, errors='replace'):
         if INSN.match(line):
@@ -88,6 +91,10 @@ def main():
                 mismatches += 1
             mem[a] = v
             continue
+        m = REG.match(line)
+        if m:
+            regs[int(m.group(1), 8)] = int(m.group(2), 8)
+            continue
         m = DRUM.match(line)
         if m and npass:
             unit, op = m.group(1), m.group(2)
@@ -101,7 +108,7 @@ def main():
                 else:
                     mem[lo + i] = drum.get(k, 0)
     if npass:
-        end_pass()
+        end_pass(False)
     if mismatches:
         print(f'{out}: {mismatches} reads differ from the shadow memory', file=sys.stderr)
 
@@ -119,8 +126,11 @@ def main():
         with open(f'{out}.s{n}', 'w') as f:
             f.writelines(f'{v:08o}\n' for v in vals)
     with open(f'{out}.mem', 'w') as f:
-        for n, dm, dd in dumps:
+        for n, dm, dd, rr in dumps:
             f.write(f'pass {n}\n')
+            for r in sorted(rr):
+                if 0 < r < 0o17:
+                    f.write(f'reg {r:o} {rr[r]:05o}\n')
             for a in sorted(dm):
                 f.write(f'{a:05o} {dm[a]:016o}\n')
             for unit, zone, off in sorted(dd):

@@ -8,9 +8,8 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <sstream>
 
+#include "golden.h"
 #include "passes.h"
 #include "source.h"
 
@@ -21,56 +20,14 @@ struct PassCase {
     int pass{};
 };
 
-static std::string path(const std::string &name, const std::string &ext)
-{
-    return TEST_DIR "/algol/" + name + ext;
-}
-
 static std::vector<PassCase> pass_cases()
 {
     std::vector<PassCase> cases;
-    std::vector<std::string> names;
-    for (auto &e : fs::directory_iterator(TEST_DIR "/algol"))
-        if (e.path().extension() == ".alg")
-            names.push_back(e.path().stem().string());
-    std::sort(names.begin(), names.end());
-    for (auto &name : names)
+    for (auto &name : program_names())
         for (int n = 1; n <= 5; n++)
             if (fs::exists(path(name, ".s" + std::to_string(n))))
                 cases.push_back({ name, n });
     return cases;
-}
-
-// Apply the words written by passes before `pass`, from NAME.mem.
-static void load_mem(Workspace &ws, const std::string &filename, int pass)
-{
-    std::ifstream in(filename);
-    ASSERT_TRUE(in) << filename;
-    std::string line;
-    int n = 0;
-    while (std::getline(in, line)) {
-        if (line.rfind("pass ", 0) == 0) {
-            n = std::stoi(line.substr(5));
-            continue;
-        }
-        if (n >= pass)
-            break;
-        std::istringstream fields(line);
-        fields >> std::oct;
-        unsigned addr;
-        Word value;
-        if (line.rfind("drum ", 0) == 0) {
-            std::string word;
-            unsigned unit, zone;
-            fields >> word >> unit >> zone >> addr >> value;
-            ASSERT_TRUE(fields) << filename << ": " << line;
-            ws.drum(unit, zone, addr) = value;
-        } else {
-            fields >> addr >> value;
-            ASSERT_TRUE(fields) << filename << ": " << line;
-            ws[addr] = value;
-        }
-    }
 }
 
 class Pass : public ::testing::TestWithParam<PassCase> {};
@@ -79,7 +36,7 @@ TEST_P(Pass, stream)
 {
     auto &[name, pass] = GetParam();
     Context ctx;
-    load_mem(ctx.ws, path(name, ".mem"), pass);
+    load_mem(ctx, path(name, ".mem"), pass);
 
     Stream input;
     if (pass == 1) {

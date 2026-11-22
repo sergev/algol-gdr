@@ -2,6 +2,7 @@ add_library(algol STATIC
     besm6.cpp
     dump.cpp
     item.cpp
+    pass6.cpp
     passes.cpp
     source.cpp
     stdarray.cpp
