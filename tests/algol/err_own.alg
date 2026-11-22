@@ -1,0 +1,7 @@
+'BEGIN'
+    'COMMENT' OWN IS NOT SUPPORTED: ERROR 34;
+    'OWN' 'INTEGER' N;
+    N := 1;
+    PRINT(N)
+'END'
+'EOP'

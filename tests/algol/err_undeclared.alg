@@ -1,0 +1,10 @@
+'BEGIN'
+    'COMMENT' UNDECLARED AND TWICE DECLARED IDENTIFIERS;
+    'INTEGER' I, I;
+    'REAL' X;
+    X := Y;
+    Z[1] := 0;
+    P(X);
+    'GOTO' NOWHERE;
+'END'
+'EOP'

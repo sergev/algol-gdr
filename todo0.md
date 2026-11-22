@@ -19,11 +19,13 @@ Milestone 0 builds everything around that comparison.
 
 The programs are in `tests/algol/`: test1–4, hello, the `dubna` examples (man_or_boy,
 quine, hello_algol, bozp_ybyb, juggle, quinio), and one program per feature (empty, arith,
-boolean, cond, for, goto, arrays, proc, switch, blocks, comment, print, stdfunc, strings). Side files `.pre`, `.run`, `.in`, `.norun`
+boolean, cond, for, goto, arrays, proc, switch, blocks, comment, print, stdfunc, strings).
+Programs with errors: test4, err_syntax, err_undeclared, err_type, err_own, err_end. Their
+`.lst` files hold two kinds of diagnostics: `ERROR nn CLASS` right after the source line
+(syntax, an early pass), and messages like `IDENTIFIER 'Y' IS NOT DECLARED. NEXT STATEMENT IS
+6/ 1` after the listing, in reverse order (semantics, a later pass) — a clue for A6.3. Side files `.pre`, `.run`, `.in`, `.norun`
 are described in [doc/reference-toolchain.md](doc/reference-toolchain.md).
 
-- **A5.3** Erroneous programs: syntax errors, undeclared identifiers, type mismatches. Record the
-  original's diagnostics.
 - **A5.4** For each program, store the expected output next to it:
   - `.std` — the object module;
   - `.lst` — the listing, and the `*full` listing as `.full.lst`;
