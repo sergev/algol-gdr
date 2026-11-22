@@ -16,20 +16,6 @@ about their meaning. Tools: `scripts/trace-compile` shows which modules a progra
 what order, and the coverage of the corpus ([doc/traces.md](doc/traces.md)). Add test programs
 for modules with low coverage as their roles become clear.
 
-- **A6.3** **Each pass module** (the driver is done: [doc/passes.md](doc/passes.md), which
-  also lists what is known so far about each pass) (`ag13666`, `ag14504`, `ag17223`, `ag22162`, `ag23523`, `ag26260`,
-  `ag26666`, and the small ones `ag27126`…`ag30257`). For each, find:
-  - its purpose (input, lexing, parsing, code generation, …);
-  - its input and output, and where they live (memory buffers such as `AD06000` with 2048
-    words, the drum, scratch files);
-  - its main subroutines;
-  - the error messages it can print.
-
-  The time a pass runs and the data it touches can be read from the traces (`dubna -d im`).
-  Clue: syntax errors (`ERROR nn CLASS`) are printed right after their source line, while
-  semantic errors (`IDENTIFIER 'Y' IS NOT DECLARED. NEXT STATEMENT IS 6/ 1`) come after the
-  listing, in reverse order — so they come from different passes. See the `err_*.lst` files
-  in `tests/algol/`.
 - **A6.4** **Tables** at 01736–11777:
   - the keyword table at 02166 and the internal symbol codes;
   - the character-code conversion (GOST/ISO card codes to internal codes);
@@ -38,10 +24,10 @@ for modules with low coverage as their roles become clear.
 - **A6.7** Give meaningful names to the symbols in `algol.sym` as their roles become clear. Keep
   the names in step with the docs.
 - **A6.8** Deliverables:
-  - `doc/passes.md` — the driver and each pass;
   - `doc/tables.md` — the tables;
 
-  Done: `doc/encoding.md` (with the findings of A5.2), `doc/runtime-abi.md` (A6.5–A6.6).
+  Done: `doc/encoding.md` (with the findings of A5.2), `doc/runtime-abi.md` (A6.5–A6.6),
+  `doc/passes.md` (A6.2–A6.3).
 
 ## A7. Plan for Milestone 1
 

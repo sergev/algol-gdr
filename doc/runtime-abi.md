@@ -137,8 +137,9 @@ result to an integer. (V)
   the start address.
 - Example: A[1:5] gives `0022300000502227`.
 
-**A/SUBCH** (S2:2695, I). Checks start ≤ M12 < start + count; otherwise error 4. Seen only
-in quinio; when it is emitted is not known.
+**A/SUBCH** (S2:2695, V). The subscript check: start ≤ M12 < start + count, otherwise
+error 4. Pass 4 emits a call after each subscript computation in `*CHECK` mode (and in
+some cases without it, as in quinio).
 
 **A/OPTLIN** (S1:1676, V/I). Strength reduction of subscripts that are linear in the loop
 variable.
@@ -345,7 +346,7 @@ and a formal parameter is a compile error.
 
 ## Open questions
 
-- When `A/SUBCH` is emitted.
+- When `A/SUBCH` is emitted without `*CHECK` (quinio).
 - The exact rule for the value-parameter prologue.
 - The order of constants that code generation creates.
 - Why `'CODE'` calls need a description-table row holding 77777.
