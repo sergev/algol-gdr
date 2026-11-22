@@ -49,7 +49,7 @@ KOI-7 codes (pass 1 analysis, character table at 16514):
 | Operator | `∨` | `∧` | `⊃` | `¬` | `≡` | `≠` | `≤` | `≥` |
 
 `dubna` gives the Unicode symbols different codes (`∨`→036, `∧`→`&`, `≤`→016, …), so only
-`≠` arrives where the lexer expects it. Moreover, `‘` (U+2018) → 020 should work as `∨`.
+`≠` arrives where the lexer expects it. And `‘` (U+2018), which `dubna` maps to 020, does work as `∨`: `A ‘ B` gave TRUE, `B ‘ B` FALSE.
 The two tables disagree; our compiler simply accepts the Unicode symbols.
 
 Strings: `''text''` or `'('text')'`.
