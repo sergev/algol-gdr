@@ -17,17 +17,17 @@ Milestone 0 builds everything around that comparison.
 
 ## A1. Repository skeleton
 
-- [ ] **A1.1** Layout:
+- [x] **A1.1** Layout:
   - `src/` — compiler sources;
   - `tests/` — GoogleTest and test data;
   - `tests/algol/` — the test programs and their expected outputs;
   - `scripts/` — reference toolchain wrappers;
   - `doc/` — format and internals notes.
-- [ ] **A1.2** `CMakeLists.txt`: C++20, `-Wall -Werror -Wshadow`, GoogleTest fetched at configure time,
+- [x] **A1.2** `CMakeLists.txt`: C++20, `-Wall -Werror -Wshadow`, GoogleTest fetched at configure time,
       `ctest` integration. Follow `dubna`'s CMake setup.
-- [ ] **A1.3** Top-level `Makefile` wrapper like `dubna`'s: `make`, `make debug`, `make test`,
+- [x] **A1.3** Top-level `Makefile` wrapper like `dubna`'s: `make`, `make debug`, `make test`,
       `make clean`.
-- [ ] **A1.4** `.clang-format` copied from `dubna` (Google base, 4-space indent, 100 columns, WebKit
+- [x] **A1.4** `.clang-format` copied from `dubna` (Google base, 4-space indent, 100 columns, WebKit
       braces).
 - [ ] **A1.5** Keep `tmp/` ignored. Move what stays useful from it (job templates, test programs) into
       `tests/algol/`.
