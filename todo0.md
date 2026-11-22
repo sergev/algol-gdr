@@ -3,15 +3,9 @@
 Goal (from [Roadmap.md](Roadmap.md)): a skeleton that builds, plus a way to compare our output
 with the original compiler, so that Milestone 1 can be developed test-first.
 
-The reference round trip already works (in `tmp/`):
-
-```
-dubna algol-compile.dub   # *algol … *punch  → stdarray.out (object module, card text)
-dubna algol-run.dub       # stdarray.out cards + *execute → program output
-```
-
-In Milestone 1 our compiler must produce the same `stdarray.out` from the same source.
-Milestone 0 builds everything around that comparison.
+The reference round trip works through `scripts/ref-compile` and `scripts/ref-run`
+([doc/reference-toolchain.md](doc/reference-toolchain.md)). In Milestone 1 our compiler must
+produce the same object (`.std`) from the same source; the tests in `tests/` are ready for it.
 
 ---
 

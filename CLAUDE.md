@@ -4,9 +4,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Greenfield. Goal: re-create the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the
-Dubna monitor system) in **C++20**, with UTF-8 input/output. No C++ code, build system or tests
-exist yet — when adding them, update this file with the real commands.
+Goal: re-create the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
+system) in **C++20**, with UTF-8 input/output. Milestone 0 (groundwork) is in progress: see
+[todo0.md](todo0.md). Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
+task when it is done, in the same commit.
+
+## Commands
+
+```
+make                     # build (CMake, build/), cppcheck runs as part of it
+make test                # unit tests via ctest
+./build/tests/unit_tests --gtest_filter='stdarray.*'   # one test group
+make goldens             # regenerate tests/algol expected outputs (needs dubna)
+scripts/ref-compile [--full] tests/algol/X.alg [OUTDIR]   # original compiler → X.std, X.lst
+scripts/ref-run X.std    # run an object under dubna
+./build/src/algol-gdr --dump X.std   # decode and disassemble an object
+```
+
+Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Format with
+`clang-format` (config from `dubna`).
+
+## Layout
+
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `stdarray.*` (object
+  format), `besm6.*` + `dump.*` (disassembly).
+- `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
+  original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output; side files
+  `.pre`/`.run`/`.in`/`.norun` ([doc/reference-toolchain.md](doc/reference-toolchain.md)).
+  `compile_test` and `run_test` compare our compiler with them and are skipped until it works.
+- `doc/` — findings about the original: [stdarray.md](doc/stdarray.md) (object format), and
+  more as Milestone 0 goes on.
 
 Milestones (from README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
@@ -44,24 +71,15 @@ Detailed plan: [Roadmap.md](Roadmap.md).
 
 ## Running Algol-GDR on the simulator
 
-A job file (see `tmp/algol.dub`):
-
-```
-*name test
-*algol
-'begin'
-    print(''Hello, World!'');
-'end'
-'eop'
-*execute
-*end file
-```
-
-Run with `dubna file.dub`. Options `*full` (listing with code) or `*no list` go before `*algol`.
-Trace instructions with `dubna -d i --trace=out.txt file.dub`.
+Use the scripts above. Facts they rely on: `*punch` must come **before** `*algol`, or no object
+is punched; `dubna -r` fixes the date and makes output deterministic; `dubna` writes
+`stdarray.out` into the current directory. Trace instructions with
+`dubna -d i --trace=out.txt file.dub`.
 
 ## Source language
 
 Original input is upper/lower case with keywords in quotes (`'BEGIN'`, `'EOP'` ends the program,
-strings in `''…''`). UTF-8 operator symbols to accept: `×` (or `*`), `÷`, `↑`, `≥`, `≤`, `≠`, `¬`,
+strings in `''…''` or `'('…')'`), word operators like `'LE'`, `'AND'`, `'POWER'`. Lines are
+cards: only columns 1–72 count. The exponent sign is `⏨` (`dubna` turns `@` into `°`).
+UTF-8 operator symbols our compiler should accept: `×` (or `*`), `÷`, `↑`, `≥`, `≤`, `≠`, `¬`,
 `∧`, `∨`, `⊃`, `≡`, `⏨` (or `@`).
