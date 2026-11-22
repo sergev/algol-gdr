@@ -1,8 +1,8 @@
+#include "version.h"
+
 #include <gtest/gtest.h>
 
 #include <cstring>
-
-#include "version.h"
 
 TEST(version, not_empty)
 {

@@ -10,6 +10,9 @@ include(GoogleTest)
 enable_testing()
 
 add_executable(unit_tests EXCLUDE_FROM_ALL
+    cli_test.cpp
+    source_test.cpp
+    util.cpp
     version_test.cpp
 )
 target_link_libraries(unit_tests algol gtest_main)

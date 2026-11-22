@@ -36,14 +36,14 @@ Done when `make && make test` passes with a placeholder test.
 
 ## A2. CLI skeleton
 
-- [ ] **A2.1** `algol-gdr [options] file.alg`, option parsing with `getopt_long`.
-- [ ] **A2.2** Options:
+- [x] **A2.1** `algol-gdr [options] file.alg`, option parsing with `getopt_long`.
+- [x] **A2.2** Options:
   - `-o FILE` — the object file (default `stdarray.out`);
   - `--full`, `--no-list` — the same as the `*full` and `*no list` control cards;
   - `-h`, `-V`.
-- [ ] **A2.3** Read the source as UTF-8 and report file errors. Compilation itself returns "not
+- [x] **A2.3** Read the source as UTF-8 and report file errors. Compilation itself returns "not
       implemented" for now.
-- [ ] **A2.4** Tests for usage, version and a missing file (like `dubna/tests/cli_test.cpp`).
+- [x] **A2.4** Tests for usage, version and a missing file (like `dubna/tests/cli_test.cpp`).
 
 ## A3. Reference toolchain scripts
 
