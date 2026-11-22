@@ -6,6 +6,7 @@ add_library(algol STATIC
     stdarray.cpp
     tables_data.cpp
     version.cpp
+    workspace.cpp
 )
 target_include_directories(algol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_source_files_properties(version.cpp PROPERTIES COMPILE_DEFINITIONS

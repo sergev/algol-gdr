@@ -49,8 +49,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B1. Infrastructure
 
-- **B1.4** `Workspace`: the 48-bit word memory of 02000–11777, initialized like the driver's
-  `SET` directives.
 - **B1.5** Test driver: for each program and each pass N, feed the expected stream N−1 into
   pass N and compare with stream N. Skipped while a pass is not implemented.
 
