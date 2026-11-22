@@ -83,11 +83,6 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 - **B5.3** `--check`: the `A/SUBCH` calls; expected outputs for a `*check` variant of the
   array programs.
 
-### B6. Pass 5
-
-- **B6.1** Labels, run-time names → symbol rows (0430/0630/0400), alignment, `PROGRAM TOO LONG`.
-- **B6.2** The line→address table in the listing.
-
 ### B7. Pass 6 and integration
 
 - **B7.2** The whole pipeline: `compile_test` and `run_test` pass for every program.
@@ -97,4 +92,4 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 ## Order
 
 With the captured streams and `pass_test`, each pass can be written and tested on its own.
-Suggested order: B6 (small; with pass 6 done it gives whole objects from captured streams), then B2, B3, B4, B5, and B7.2–B7.3 last.
+Suggested order: B2, B3, B4, B5, and B7.2–B7.3 last.

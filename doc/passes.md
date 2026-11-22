@@ -453,52 +453,56 @@ Most handlers (codes 001–167) are known only by the code they serve. No error 
 - Example: `ASSIGN` → `4163 6351 4756 0000`.
 - Called by pass 4 (25653).
 
-## Pass 5: G26260 (V unless noted)
+## Pass 5: G26260 (V)
+
+`src/pass5.cpp` reproduces the streams, line tables and (with pass 6) the objects of all
+tests.
 
 ### Start
 
-1. Unless `NOLISFL*`: print the heading `CTPOKИ OTHOCИTEЛЬHЫE AДPECA`.
+1. Unless `NOLISFL*`: an empty line (G01713), the heading `CTPOKИ OTHOCИTEЛЬHЫE AДPECA`.
 2. Read the page saved by pass 2 (drum 26 zone 0) into 04000.
-3. Copy the constant pool to 05777 downward, and write 04000–05777 to drum 27 zone 33.
-4. Call G30120 (restore the run-time name table at 02400) and clear the label table at
-   04400.
+3. Constants: their number is `01633 − M[02003]`, stored in 02055. Copy them from 03777
+   downward to 05777 downward, and write 04000–05777 to drum 27 zone 33.
+4. Call G30120 (restore the run-time name table at 02400) and clear the label table
+   04400–05776.
+5. Write a 0 half before the stream proper (at the end of the previous page). The first
+   read of the pass-4 stream is a priming read; its value is dropped.
 
 ### Main loop
 
-It reads the pass-4 stream (24-bit halves) and dispatches on `h & 03700000`:
+Halves are counted in M3; 02004 is 1 at a word start; 02054 = M3/2, the code length so far.
+Per half `h` of the pass-4 stream, by `h & 03700000`:
 
-| Half or address | Meaning | Done here |
+| Half | Meaning | Done |
 |---|---|---|
-| `0330nnnn` | source line n starts here | dropped; used for the line table |
-| `02000000` | align to a word | dropped, or emitted as `UTC 0` |
-| `0211nnnn` | label n defined here | `M[04400+n]` = address |
-| address `1nnnn` | reference to label n | `40000+address` if already defined, else left for pass 6 |
-| address `04000+k` | run-time name `M[02400+k]` | on first use it gets the next symbol row, and the address becomes `74000+row` |
-| anything else | an instruction | copied |
+| `0330nnnn` | source line n starts | line table cell (only with a listing) |
+| `0200nnnn` | align | at a word start dropped, else written as `0220nnnn` (UTC) |
+| `0211nnnn` | label n defined | at a word start written as is, taking no space; else written as `0201nnnn`, filling the right half. Then `M[04400+n]` = address `^ 02000000` (an address ≥ 040000 also gets a row `addr ^ 041000000`). If the entry had bit 48, it is cleared instead |
+| `h & 02004000 = 0`, or `h & 02074000 = 02000000` | an instruction | copied |
+| `h & 02007700 = 07700`, or with 02000000 and `h & 07700 = 07700` | absolute value | a row `value ^ 040000000` (type 0400), shared by equal values; the address becomes the row (`^ 01000000` without 02000000; with it, `^ 070000` first) |
+| with 02000000 and `h & 070000` ≠ 0 | reference to label n | if defined (v = `M[04400+n]`): `40000 \| v`, or `70000 + (v>>24)` when v has 040000; if not, left for pass 6. Labels above the end label get an entry of bit 48 on a forward reference, and theirs is cleared on a backward one |
+| other | run-time name `M[02400 + (h & 07777) − 04000]` | on first use a row: a short name `name ^ 043000000`; a long one goes to the queue at 04000 with a 0 row; a `*NAME` found in the 'COMMON' table at 27246 (3 words per entry) gets type 047 (or 067 if long) with its address. The entry is replaced by the row number; the address field becomes the row (`^ 070000` with 02000000) |
 
-### Symbols
-
-- A name of at most 4 characters becomes `name | 0430`.
-- A long name is queued at 04000…, with a placeholder row.
-- Absolute values (type 0400) are deduplicated.
-- Names starting with `*` are looked up in `AD27245` (I).
+The pass ends at the definition of the end label (02020, `1nnnn`): it prints the last row of
+the line table and an empty line, and leaves the next row number in M5 for pass 6. The rest
+of the stream is not read.
 
 ### Line table
 
-Rows of 8 lines, printed with G27733; each cell is the code length (`D02054`) in 5 octal
-digits.
+Rows of 8 lines: `%4d - ` and a 5-character cell per line, the octal code length (02054) at
+the line's marker, blank if none. A marker of a line past the row prints the row first.
+Trailing blanks are not printed.
 
 ### Error
 
 `PROGRAM TOO LONG` when the code reaches 034000 words, or (from pass 6) when cmd + const ≥
 0100000. It sets `FLGEX*` and no object is made (I, not triggered).
 
-Example, Hello, World (pass 4 → pass 5 → object):
+### Empty lines
 
-| Pass 4 | Pass 5 | Object | Instruction |
-|---|---|---|---|
-| `36410000` | `36410000` | `36440005` | `7 VTM 40005` (the constants base is a label at the end of the code) |
-| `67104014` | `67174001` | `67174001` | `13 VJM A/START` |
+G01713 prints an empty line, but the printer shows it only with `*call setftn:one` (seen in
+the tests with a `.pre`).
 
 ## Pass 6: G26666 (V)
 

@@ -36,6 +36,7 @@ TEST_P(Pass, stream)
 {
     auto &[name, pass] = GetParam();
     Context ctx;
+    load_options(ctx.options, name);
     load_mem(ctx, path(name, ".mem"), pass);
 
     Stream input;

@@ -28,6 +28,9 @@ struct NotImplemented : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+// AG01713: an empty line in the listing; the printer shows it only with setftn:one.
+void blank_line(const Context &ctx);
+
 //
 // Run pass n (1-5) on the stream of the previous pass (ignored by pass 1)
 // and return its own stream.
