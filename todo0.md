@@ -49,18 +49,8 @@ for modules with low coverage as their roles become clear.
   - `doc/passes.md` — the driver and each pass;
   - `doc/tables.md` — the tables;
   - `doc/runtime-abi.md` — the runtime interface and generated-code conventions;
-  - `doc/encoding.md` — source character set: the original card codes and the UTF-8 mapping,
-    including the Unicode operators from the README and the quoted keywords.
 
-  Found while writing the test programs (A5.2):
-  - source lines are cards: columns 73–80 are ignored, so text past column 72 is lost;
-  - the exponent sign is `⏨`; `dubna` turns `@` into `°`, which the compiler rejects;
-  - `1.0⏨20` gives `ERROR 11 REAL OVERFLOW` (the BESM-6 range ends near 10¹⁹);
-  - `'OWN'` is in the keyword table but gives `ERROR 34` in any position;
-  - the keyword table (02166–02545 and on): word operators `'LE'`, `'NOTGREATER'`, `'POWER'`,
-    …, I/O statements `'PRINT'`, `'READ'`, `'WRITE'`, `'PUNCH'`, `'ENCODE'`, `'DECODE'`,
-    `'REWIND'`, `'BACKSPACE'`, `'ENDFILE'`, and `'CODE'`, `'ALGOL'`, `'COMMON'`, `'LABEL'`,
-    `'BITS'`.
+  Done: `doc/encoding.md` (with the findings of A5.2).
 
 ## A7. Plan for Milestone 1
 
