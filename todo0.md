@@ -20,12 +20,6 @@ Milestone 0 builds everything around that comparison.
 The object module is the contract between Milestone 1 and `dubna`. Its format is described in
 [doc/stdarray.md](doc/stdarray.md); the decoder `mesm6/toolchain/ld/stdobj.{h,c}` is a model.
 
-- **A4.5** C++ library `src/stdarray.{h,cpp}`:
-  - model: a list of 48-bit words, with a typed view for the header, entries, tables and
-    code;
-  - reader and writer for the card text form, with a round-trip test on every `.std`
-    expected-output file;
-  - a writer that produces output byte-identical to `dubna`'s `stdarray.out`.
 - **A4.6** Dump tool `algol-gdr --dump FILE.std` (or a separate `stddump`): print the header,
   entries, external references and data, and disassemble the code (reuse the
   instruction-decoding logic of `disbesm6`, or call it). A readable dump makes Milestone 1
@@ -63,7 +57,7 @@ The object module is the contract between Milestone 1 and `dubna`. Its format is
   - `.lst` — the listing, and the `*full` listing as `.full.lst`;
   - `.out` — the run output.
 
-  Commit them, so tests do not need `dubna`.
+  Commit them, so tests do not need `dubna`. Done for hello and test1–4.
 - **A5.5** `make goldens` regenerates all expected-output files with `scripts/ref-compile` and `scripts/ref-run`.
   Run it only on purpose, and review the diff.
 - **A5.6** Test driver in `tests/`: for each program, run our compiler and compare with the `.std`

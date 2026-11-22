@@ -12,6 +12,7 @@ enable_testing()
 add_executable(unit_tests EXCLUDE_FROM_ALL
     cli_test.cpp
     source_test.cpp
+    stdarray_test.cpp
     util.cpp
     version_test.cpp
 )

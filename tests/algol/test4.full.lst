@@ -1,0 +1,27 @@
+*NAME TEST4
+*PUNCH
+*FULL
+*ALGOL                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+           1. ′BEGIN′
+           2.     ′COMMENT′ ERRORS FOR THE DIAGNOSTICS;
+           3.     ′INTEGER′ I, I; ′REAL′ X;
+           4.     X := Y + ;
+ERROR 20    EXPRESSION
+           5.     ′IF′ I ′THEN′ ′GOTO′ NOWHERE;
+           6.     ′FOR′ I := 1 ′STEP′ ′UNTIL′ 10 ′DO′ ;
+ERROR 20    EXPRESSION
+           7.     A[1] := 2;
+           8.     I := ′TRUE′ + 1.5;
+           9.     ′BEGIN′ ′END′ ′END′
+          10. ′END′
+ERROR 99    PROGRAM END
+          11. ′EOP′
+TWICE DECLARED IDENTIFIER ′I′. NEXT STATEMENT IS   10/ 1
+TYPE ERROR IN CONNECTION WITH ′+′. NEXT STATEMENT IS    9/ 1
+IDENTIFIER ′A′ IS NOT DECLARED. NEXT STATEMENT IS    8/ 1
+IDENTIFIER ′NOWHER′ IS NOT DECLARED. NEXT STATEMENT IS    6/
+                1
+ * * INCORRECT ALGOL PROGRAM * *
+*END FILE

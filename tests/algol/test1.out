@@ -1,0 +1,15 @@
+*NAME TEST1
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/OPTLIN   01250                A/LPRI   E 01441                EXIT     E 01621
+         A/STOP     01070                A/DRUCK    01275                A/NLINE  E 01505                STOPFLG* C 01647
+         A/START  E 01074                A/IPRI   E 01327                A/NPAGE  E 01507                SYSBACK*   01650
+         A/ARRD/K   01150                A/RPRI   E 01361                A/I*ISO  E 01562                PRINT8     01660
+         A/ARRD/V E 01153                A/BPRI   E 01415                A/R*ISO  E 01565                CBOБOДHO   02041
+         A/VLM1     01244                A/SPRI   E 01424                STOP*      01620
+≠
+              2              3              5              7             11             13             17             19
+             23             29             31             37             41             43             47             53
+             59             61             67             71             73             79             83             89
+             97
