@@ -23,8 +23,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 4 (G23523)
 
-- **C21** Arrays: declarations and bounds, subscripts (24324), the `A/SUBCH` call in check
-  mode, the access forms made by pass 3 (`162`–`165`).
 - **C22** FOR loops, including the loops rewritten by pass 3.
 - **C23** Procedures: declarations, parameters by value and by name, calls, function results,
   procedures as parameters.

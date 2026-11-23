@@ -1824,6 +1824,546 @@ void register_blocks(Machine::Natives &n)
     n[BLOCK_ENTRY] = block_entry;
 }
 
+//
+// Arrays. Subscripts are pushed as operands, a constant one (045) as c and
+// 0 above it.
+//
+
+// 24244: a constant subscript (045).
+unsigned constant_subscript(Machine &m)
+{
+    m.ita(0, 3);
+    m.xts(0, 0);
+    m.atx(Machine::SP, 0);
+    return DISPATCH_NEXT;
+}
+
+// 24246: subscript + c (030): c, then the expression (A pushed if in it).
+unsigned subscript_plus(Machine &m)
+{
+    m.ita(0, 3);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024250);
+}
+
+unsigned subscript_plus_2(Machine &m)
+{
+    m.xta(Machine::SP, 077777);
+    if (m.u1a())
+        return DISPATCH_NEXT;
+    m.vtm(12, DISPATCH_NEXT);
+    return save_acc(m);
+}
+
+//
+// 24324 (24327 without a register for a formal: from 02021): the address
+// of an element of the array at M3, M2 subscripts on the stack: 02011 =
+// the half that indexes it. Returns M10 + k: 0 all constant (the address
+// on the stack), 1 in a register, 2 in A, 3 in a register and on the stack.
+//
+unsigned subscript(Machine &m, unsigned base, bool counted)
+{
+    m.set_m(10, base);
+    if (counted) {
+        m.xta(0, 02021);
+        if (m.uza()) {
+            m.xta(7, 02300);
+        } else {
+            m.asn(0, 054);
+            m.aox(7, 02266);
+        }
+    } else {
+        m.xta(7, 02300);
+    }
+    m.atx(0, 02011);
+    m.xta(3, 0);
+    m.arx(0, 0);
+    if (m.u1a()) {
+        m.aax(7, 02465);
+        m.aox(7, 02241);
+        emit_half(m, 024343);
+    } else {
+        m.aax(7, 02476);
+        m.arx(Machine::SP, 077776);
+        m.aax(7, 02476);
+        m.stx(Machine::SP, 077776);
+        m.mtj(10, 013);
+        if (!m.uza()) {
+            m.atx(Machine::SP, 0);
+            m.vtm(11, 024360);
+            m.set_m(12, 024337);
+            run_template(m);
+            m.utc(10, 2);
+            m.vtm(11, 0);
+        }
+        goto next;
+    }
+    for (;;) {
+        // *0620B: the subscript in A or not
+        m.xta(Machine::SP, 0);
+        if (m.u1a()) {
+            m.utm(Machine::SP, 1);
+            m.xta(0, 02011);
+            emit_half(m, 024350);
+            m.vtm(11, 024360);
+            m.set_m(12, 024351);
+            run_template(m);
+            m.xta(0, 02011);
+            m.aax(7, 02472);
+            m.aox(Machine::SP, 077777);
+            m.atx(Machine::SP, 077777);
+            m.utc(10, 3);
+            m.vtm(11, 0);
+        } else {
+            m.utc(10, 1);
+            m.vtm(11, 0);
+        }
+    next: // *0615B: the next subscript, if any (template 24360)
+        m.utm(2, 077777);
+        m.utc(11, 0);
+        unsigned done = m.field(0);
+        if (!m.M[2])
+            return done;
+        m.vtm(11, 024360);
+        m.set_m(12, 024343);
+        run_template(m);
+    }
+}
+
+// The half for k = 0…3 (24262…24264): 02011, or M7+634 or M7+2243 with it.
+unsigned element_half(Machine &m, unsigned k)
+{
+    switch (k) {
+    case 1:
+        m.xta(0, 02011);
+        return 1;
+    case 3:
+        m.xta(7, 02243);
+        return 1;
+    default:
+        m.xta(7, 0634);
+        return 2;
+    }
+}
+
+// 24252: an element read (044): the address, loaded unless constant.
+unsigned element_read(Machine &m)
+{
+    unsigned k = subscript(m, 024253, true) - 024253;
+    m.xta(Machine::SP, 0);
+    if (k == 0)
+        return give(m);
+    m.vtm(12, 024015);
+    return load_operand(m);
+}
+
+//
+// 24260: an element stored (046): its address, A/SUBCH in check mode
+// (template 24303), then the assignment through a register counted by
+// 02021 (or pushed).
+//
+unsigned element_store(Machine &m)
+{
+    unsigned k = subscript(m, 024261, true) - 024261;
+    if (k == 0) {
+        m.xta(Machine::SP, 0);
+        return assign(m);
+    }
+    if (element_half(m, k) == 2) {
+        m.aox(Machine::SP, 0);
+        emit_half(m, 024307);
+        m.xta(0, 02011);
+    } else {
+        m.aox(Machine::SP, 0);
+    }
+    emit_half(m, 024266);
+    m.xta(0, TranslatedPass::CHECKFL);
+    if (!m.uza()) {
+        m.xta(0, 02021);
+        if (!m.uza()) {
+            m.asn(0, 054);
+            m.aox(7, 0562);
+            emit_half(m, 024272);
+        }
+        m.xta(3, 0);
+        m.arx(0, 0);
+        if (!m.u1a()) {
+            m.asn(0, 073);
+            m.aux(7, 02465);
+        }
+        m.aax(7, 02465);
+        m.atx(Machine::SP, 0);
+        m.vtm(11, 024303);
+        m.set_m(12, 024277);
+        run_template(m);
+    }
+    m.xta(0, 02021);
+    if (m.uza())
+        return assign_pushed(m);
+    m.ntr(0, 3);
+    m.arith(7, 02453, 005);
+    m.atx(0, 02021);
+    m.xta(0, 02011);
+    m.aax(7, 02472);
+    return assign(m);
+}
+
+// 24311: the address of an element (0103), loaded (M7+1131).
+unsigned element_address(Machine &m)
+{
+    unsigned k = subscript(m, 024312, false) - 024312;
+    if (element_half(m, k) == 2) {
+        m.aox(Machine::SP, 0);
+        emit_half(m, 024322);
+        m.xta(0, 02011);
+    } else {
+        m.aox(Machine::SP, 0);
+    }
+    emit_half(m, 024317);
+    m.xta(7, 01131);
+    m.atx(Machine::SP, 0);
+    m.vtm(12, 024015);
+    return OPERAND_DONE;
+}
+
+//
+// 24616: an array segment (040) of the array at M3: its routine (4021,
+// 4022 by kind; or for a formal 4131 with the number of its external entry
+// in LINE), then each bound loaded and pushed (M4 = 02017) until 0104.
+//
+unsigned array_segment(Machine &m)
+{
+    m.xta(3, 0);
+    m.ita(0, 3);
+    m.atx(0, HALF);
+    m.vtm(14, 0);
+    bool found = false;
+    for (;;) {
+        m.utc(14, EXT_NAMES + 1);
+        m.xta(0, 0);
+        m.utm(14, 3);
+        if (m.uza())
+            break;
+        m.asn(0, 0144);
+        if (m.uza()) {
+            m.utc(14, EXT_NAMES - 2);
+            m.xta(0, 0);
+            m.asn(0, 0130);
+            m.atx(0, EMIT_LINK);
+            continue;
+        }
+        m.aex(0, HALF);
+        if (m.u1a())
+            continue;
+        m.vtm(14, 04131);
+        m.xta(0, EMIT_LINK);
+        m.atx(0, LINE);
+        found = true;
+        break;
+    }
+    if (!found) {
+        m.xta(3, 0);
+        m.vtm(14, 04021);
+        m.ntr(0, 013);
+        if (!m.u1a())
+            m.vtm(14, 04022);
+    }
+    m.ita(0, 016);
+    m.xts(3, 0);
+    m.ntr(0, 013);
+    if (!m.u1a()) {
+        m.asn(0, 073);
+        m.aux(7, 02465);
+    }
+    m.aax(7, 02465);
+    m.its(0, 2);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024644);
+}
+
+unsigned bound(Machine &m)
+{
+    load(m, 024645);
+    m.vtm(4, 02017);
+    return operand(m, 024644);
+}
+
+// 24646: the bounds end (0104): the routine call (template 24651).
+unsigned bounds_end(Machine &m)
+{
+    m.ita(0, 2);
+    m.atx(Machine::SP, 077777);
+    m.vtm(11, 024651);
+    m.vtm(4, 0);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24655: a block with arrays (0102): M7+674, then the frame of its
+// descriptor.
+unsigned array_block(Machine &m)
+{
+    m.xta(7, 0674);
+    emit_half(m, 024656);
+    m.xta(3, 0);
+    m.asn(0, 073);
+    m.aux(7, 02465);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+//
+// Items made by pass 3: an element through an index register R (bits
+// 8-12) at offset d (M3).
+//
+
+// 25363: 0161: d + 02027.
+unsigned register_item(Machine &m)
+{
+    m.ita(0, 3);
+    m.arx(0, 02027);
+    return give(m);
+}
+
+// R<<20 + d.
+void by_register(Machine &m)
+{
+    m.ita(0, 2);
+    m.asn(0, 054);
+    m.its(0, 3);
+    m.arx(Machine::SP, 0);
+}
+
+// 25365: an element read through R (0163).
+unsigned register_read(Machine &m)
+{
+    by_register(m);
+    return give(m);
+}
+
+// 25375: an element stored through R (0164).
+unsigned register_store(Machine &m)
+{
+    by_register(m);
+    return assign(m);
+}
+
+// 25370: 0160: d + 02027 loaded, the half kept.
+unsigned register_value(Machine &m)
+{
+    m.ita(0, 3);
+    m.arx(0, 02027);
+    m.atx(Machine::SP, 0);
+    return operand(m, 025372);
+}
+
+unsigned register_value_2(Machine &m)
+{
+    load(m, 025373);
+    m.xta(Machine::SP, 0);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+// 25400: step R by c (0165): UTM c, or for c = 0 template 25410.
+unsigned register_step(Machine &m)
+{
+    if (m.M[3]) {
+        by_register(m);
+        m.aox(7, 02243);
+        emit_half(m, DISPATCH_NEXT);
+        return DISPATCH_NEXT;
+    }
+    m.ita(0, 2);
+    m.asn(0, 054);
+    m.its(0, 2);
+    m.arx(7, 02444);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025410);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 25412: the preamble of an inner loop (0167): the control variable, the
+// initial value, the step and the until value; template 25441 (or 25447
+// when the step is not 1).
+unsigned preamble(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.atx(Machine::SP, 0);
+    return operand(m, 025414);
+}
+
+unsigned preamble_2(Machine &m)
+{
+    return operand(m, 025415);
+}
+
+unsigned preamble_3(Machine &m)
+{
+    return operand(m, 025416);
+}
+
+unsigned preamble_4(Machine &m)
+{
+    m.utc(Machine::SP, 077774);
+    m.vtm(14, 0);
+    m.vtm(11, 025441);
+    m.xta(0, LABELS);
+    m.arx(7, 02461);
+    m.wtc(0, 02031);
+    m.xts(0, 0);
+    m.aax(7, 02445);
+    if (!m.u1a()) {
+        m.vtm(11, 025447);
+        m.xta(14, 2);
+        m.atx(Machine::SP, 0);
+    }
+    m.xta(14, 3);
+    m.xts(14, 0);
+    m.xts(0, LABELS);
+    m.xts(14, 2);
+    m.xts(14, 0);
+    m.xts(0, LABELS);
+    m.arx(7, 02453);
+    m.xts(0, LABELS);
+    m.xts(14, 1);
+    m.atx(Machine::SP, 0);
+    m.set_m(12, 025432);
+    run_template(m);
+    m.utm(Machine::SP, 077774);
+    return DISPATCH_NEXT;
+}
+
+// 25433: the end of a preamble (0166): template 25455 with the count of
+// registers in M2.
+unsigned preamble_end(Machine &m)
+{
+    m.xta(0, LABELS);
+    m.arx(7, 02453);
+    m.its(0, 2);
+    m.ntr(0, 3);
+    m.arith(7, 02453, 006);
+    m.aax(7, 02451);
+    m.xts(0, LABELS);
+    m.arx(7, 02461);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025455);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 25460: load a register with the address of an element (0162): the
+// element item read here; then 02021 = 1.
+unsigned register_load(Machine &m)
+{
+    m.call(READ, 13, 025461);
+    m.asn(0, 0107);
+    m.aax(7, 02530);
+    m.atx(0, 02021);
+    unsigned k = subscript(m, 025463, true) - 025463;
+    if (element_half(m, k) == 2) {
+        m.aox(Machine::SP, 0);
+        emit_half(m, 025473);
+        m.xta(0, 02011);
+    } else {
+        m.aox(Machine::SP, 0);
+    }
+    emit_half(m, 025470);
+    m.xta(7, 02453);
+    m.atx(0, 02021);
+    return DISPATCH_NEXT;
+}
+
+// 25475: a FOR loop with registers (from 25134): its control variable,
+// the next item, the elements; template 25522 (or 25516 with A bit
+// 0400000000).
+unsigned register_loop(Machine &m)
+{
+    m.aax(7, 02437);
+    if (m.uza())
+        return operand(m, 025507);
+    return operand(m, 025477);
+}
+
+unsigned register_loop_2(Machine &m)
+{
+    m.call(READ, 13, 025500);
+    return operand(m, 025501);
+}
+
+unsigned register_loop_3(Machine &m)
+{
+    m.xta(Machine::SP, 077764);
+    m.xts(Machine::SP, 077764);
+    m.xts(Machine::SP, 077775);
+    m.xts(Machine::SP, 077773);
+    m.vtm(11, 025522);
+    m.atx(Machine::SP, 0);
+    m.set_m(12, 025505);
+    run_template(m);
+    m.utm(Machine::SP, 077776);
+    return DISPATCH_NEXT;
+}
+
+unsigned register_loop_4(Machine &m)
+{
+    return operand(m, 025510);
+}
+
+unsigned register_loop_5(Machine &m)
+{
+    return operand(m, 025511);
+}
+
+unsigned register_loop_6(Machine &m)
+{
+    m.xta(Machine::SP, 077763);
+    m.xts(Machine::SP, 077763);
+    m.xts(Machine::SP, 077774);
+    m.xts(Machine::SP, 077774);
+    m.xts(Machine::SP, 077771);
+    m.vtm(11, 025516);
+    m.atx(Machine::SP, 0);
+    m.set_m(12, 025515);
+    run_template(m);
+    m.utm(Machine::SP, 077775);
+    return DISPATCH_NEXT;
+}
+
+void register_arrays(Machine::Natives &n)
+{
+    n[024244] = constant_subscript;
+    n[024246] = subscript_plus;
+    n[024250] = subscript_plus_2;
+    n[024252] = element_read;
+    n[024260] = element_store;
+    n[024311] = element_address;
+    n[024616] = array_segment;
+    n[024644] = bound;
+    n[024646] = bounds_end;
+    n[024655] = array_block;
+    n[025363] = register_item;
+    n[025365] = register_read;
+    n[025370] = register_value;
+    n[025372] = register_value_2;
+    n[025375] = register_store;
+    n[025400] = register_step;
+    n[025412] = preamble;
+    n[025414] = preamble_2;
+    n[025415] = preamble_3;
+    n[025416] = preamble_4;
+    n[025433] = preamble_end;
+    n[025460] = register_load;
+    n[025475] = register_loop;
+    n[025477] = register_loop_2;
+    n[025501] = register_loop_3;
+    n[025507] = register_loop_4;
+    n[025510] = register_loop_5;
+    n[025511] = register_loop_6;
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -1850,5 +2390,6 @@ Stream pass4(Context &ctx, const Stream &input)
     register_operators(n);
     register_jumps(n);
     register_blocks(n);
+    register_arrays(n);
     return pass.run(023523, 01633);
 }
