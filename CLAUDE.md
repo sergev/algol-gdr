@@ -54,7 +54,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   [encoding.md](doc/encoding.md); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the
   parser reads (Algol 60 with the Algol-GDR extensions); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
   for its implementation; [codegen.md](doc/codegen.md) — data, frames, calling convention,
-  thunks, labels, arrays, runtime names.
+  thunks, labels, arrays, runtime names; [ir.asdl](doc/ir.asdl) — the LLVM IR subset algc
+  emits, as src/ir.h builds it.
 
 Milestones (from README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object

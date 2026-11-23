@@ -16,7 +16,8 @@
 // A small builder of LLVM IR in text, after the shape of llir/llvm (Go):
 // a module has globals, declarations and functions; a function has basic
 // blocks; a block has instructions and a terminator. Values are typed
-// operands: "i64 %t3", "double 1.5", "ptr @.str.0".
+// operands: "i64 %t3", "double 1.5", "ptr @.str.0". Its structure:
+// doc/ir.asdl.
 //
 namespace ir {
 
@@ -53,7 +54,7 @@ private:
 class Function {
 public:
     Function(std::string name, std::string ret, std::vector<std::string> param_types,
-             std::string attrs = "");
+             std::string attrs = "", std::string linkage = "");
 
     const std::string &name() const { return name_; }
     const std::string &ret_type() const { return ret_; }
@@ -93,7 +94,7 @@ public:
     std::string text() const;
 
 private:
-    std::string name_, ret_, attrs_;
+    std::string name_, ret_, attrs_, linkage_;
     std::vector<std::string> params_;
     std::vector<std::unique_ptr<Block>> blocks_;
     std::map<std::string, int> block_names_;
@@ -121,8 +122,10 @@ public:
     // A global definition line, as is: "@g = internal global i64 0".
     void global(const std::string &line);
 
+    // linkage: "" (external) or "internal", "private".
     Function &function(const std::string &name, const std::string &ret,
-                       const std::vector<std::string> &param_types, const std::string &attrs = "");
+                       const std::vector<std::string> &param_types, const std::string &attrs = "",
+                       const std::string &linkage = "");
 
     std::string text() const;
 

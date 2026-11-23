@@ -11,7 +11,7 @@ TEST(Ir, function)
 {
     ir::Module m("x.alg");
     m.declare("void", "f", "ptr");
-    auto &fn   = m.function("g", "i64", { "i64" });
+    auto &fn   = m.function("g", "i64", { "i64" }, "", "internal");
     auto *then = fn.new_block("then");
     auto *done = fn.new_block("then");
     auto c     = fn.icmp("slt", fn.param(0), ir::i64(0));
@@ -21,24 +21,25 @@ TEST(Ir, function)
     fn.br(done);
     fn.set_block(done);
     fn.ret(fn.binop("add", fn.param(0), ir::i64(1)));
-    EXPECT_EQ(m.text(), "; ModuleID = 'x.alg'\n"
-                        "source_filename = \"x.alg\"\n"
-                        "\n"
-                        "@.str.0 = private unnamed_addr constant [5 x i8] c\"a\\22b\\0A\\00\"\n"
-                        "\n"
-                        "define i64 @g(i64 %p0) {\n"
-                        "entry:\n"
-                        "  %t0 = icmp slt i64 %p0, 0\n"
-                        "  br i1 %t0, label %then, label %then.1\n"
-                        "then:\n"
-                        "  call void @f(ptr @.str.0)\n"
-                        "  br label %then.1\n"
-                        "then.1:\n"
-                        "  %t1 = add i64 %p0, 1\n"
-                        "  ret i64 %t1\n"
-                        "}\n"
-                        "\n"
-                        "declare void @f(ptr)\n");
+    EXPECT_EQ(m.text(),
+              "; ModuleID = 'x.alg'\n"
+              "source_filename = \"x.alg\"\n"
+              "\n"
+              "@.str.0 = private unnamed_addr constant [5 x i8] c\"a\\22b\\0A\\00\"\n"
+              "\n"
+              "define internal i64 @g(i64 %p0) {\n"
+              "entry:\n"
+              "  %t0 = icmp slt i64 %p0, 0\n"
+              "  br i1 %t0, label %then, label %then.1\n"
+              "then:\n"
+              "  call void @f(ptr @.str.0)\n"
+              "  br label %then.1\n"
+              "then.1:\n"
+              "  %t1 = add i64 %p0, 1\n"
+              "  ret i64 %t1\n"
+              "}\n"
+              "\n"
+              "declare void @f(ptr)\n");
 }
 
 TEST(Ir, constants)

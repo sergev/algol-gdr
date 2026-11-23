@@ -1,0 +1,101 @@
+-- The LLVM IR that algc emits: the subset of LLVM IR the code generator
+-- (src/codegen.cpp, doc/codegen.md) needs, as the builder in src/ir.h makes
+-- it. The builder keeps instructions as text lines; this is their
+-- structure, and the printed form of each node is in the comments.
+--
+-- Conventions of the printed text:
+--  * A value is written with its type, "i64 %t3", except where LLVM wants
+--    the type once (the second operand of a binary instruction).
+--  * Temporaries are %t0, %t1, … in order in a function; parameters %p0,
+--    %p1, …; blocks are named from a hint, made unique with .1, .2, ….
+--  * Globals are @name, quoted ("@\"…\"") when not plain ASCII.
+--  * Pointers are opaque (ptr); memory takes no types beyond the scalars.
+--
+module IR {
+    -- '; ModuleID = name', 'source_filename = name', ['target triple = …'],
+    -- then globals, functions and declarations.
+    Module = (string name, string? triple, Global* globals, Function* functions,
+              Declare* declares)
+
+    -- Scalar types; void only as a result.
+    Type = I1 | I8 | I64 | Double | Ptr | Void
+         | Array(int count, Type elem)                  -- [N x T], in globals and allocas
+
+    -- @.str.N = private unnamed_addr constant [N x i8] c"…\00": equal strings
+    -- share one; bytes other than printable ASCII, '"' and '\' as \XX.
+    Global = StringConst(identifier name, bytes value)
+           -- @name = internal global T init, align 8
+           | Variable(identifier name, Linkage linkage, Type type, Const init)
+
+    Linkage = Internal | External | Private
+
+    -- declare RET @name(PARAMS) [attrs]: once per name, sorted by name.
+    Declare = (identifier name, Type ret, Type* params, bool variadic, FnAttr* attrs)
+
+    -- define [linkage] RET @name(T %p0, …) [attrs] { blocks }
+    Function = (identifier name, Linkage linkage, Type ret, Type* params,
+                FnAttr* attrs, Block* blocks)          -- the first block is "entry"
+
+    FnAttr = NoReturn | ReturnsTwice | NoUnwind | NoInline
+
+    -- name: instructions, then one terminator. A block left without one
+    -- gets 'unreachable'; instructions after a terminator open a new
+    -- block, "dead", never reached.
+    Block = (identifier name, Inst* insts, Term term)
+
+    -- An instruction that has a result defines the temporary 'result'.
+    Inst = Binary(temp result, BinOp op, Value left, Value right)       -- %t = op T a, b
+         | ICmp(temp result, ICond cond, Value left, Value right)       -- %t = icmp cond T a, b
+         | FCmp(temp result, FCond cond, Value left, Value right)       -- %t = fcmp cond T a, b
+         | Cast(temp result, CastOp op, Value value, Type to)           -- %t = op T v to T2
+         | Select(temp result, Value cond, Value then, Value else)      -- %t = select i1 c, T a, T b
+         -- %t = alloca T, i64 N, align A: always in the entry block, after
+         -- the allocas already there, so loops do not grow the stack
+         | Alloca(temp result, Type type, int count, int align)
+         | Load(temp result, Type type, Value ptr)                      -- %t = load T, ptr p
+         | Store(Value value, Value ptr)                                -- store T v, ptr p
+         | Gep(temp result, Type elem, Value ptr, Value index)          -- %t = getelementptr T, ptr p, i64 i
+         -- [%t =] call RET callee(args) [attrs]; no result for void
+         | Call(temp? result, Type ret, Callee callee, Value* args, FnAttr* attrs)
+         | Phi(temp result, Type type, Incoming* incoming)              -- %t = phi T [ v, %b ], …
+         | Raw(string line)                                             -- anything else, as is
+
+    Callee = Direct(identifier function)                -- @name
+           | Indirect(Value pointer)                    -- a ptr to a function: procedures, thunks, switches
+
+    Incoming = (Value value, identifier block)
+
+    Term = Br(identifier target)                                        -- br label %b
+         | CondBr(Value cond, identifier then, identifier else)         -- br i1 c, label %t, label %f
+         | Switch(Value value, identifier default, Case* cases)         -- switch T v, label %d [ T k, label %b … ]
+         | Ret(Value value)                                             -- ret T v
+         | RetVoid                                                      -- ret void
+         | Unreachable                                                  -- unreachable
+
+    Case = (int value, identifier target)
+
+    -- An operand: its type and how it is written.
+    Value = Temp(Type type, temp name)                  -- %t3
+          | Param(Type type, int index)                 -- %p0
+          | GlobalRef(identifier name)                  -- @name, a ptr
+          | Const(Const value)
+
+    Const = Int(Type type, int value)                   -- i1 true/false, i8 1, i64 42
+          | Real(float value)                           -- double 0x3FF8000000000000, exact bits
+          | Null                                        -- ptr null
+          | Zero(Type type)                             -- zeroinitializer, for globals
+
+    temp = string                                       -- %tN
+
+    BinOp = Add | Sub | Mul | SDiv | SRem               -- integers
+          | FAdd | FSub | FMul | FDiv                   -- reals
+          | And | Or | Xor | Shl | AShr                 -- Booleans, bits
+
+    ICond = Eq | Ne | Slt | Sle | Sgt | Sge
+    FCond = Oeq | One | Olt | Ole | Ogt | Oge           -- ordered: false with a NaN
+
+    CastOp = SIToFP | FPToSI                            -- integer ↔ real
+           | ZExt | Trunc                               -- Booleans: i1 ↔ i8, i1 → i64
+           | Bitcast                                    -- real ↔ i64 in procedure results
+           | PtrToInt | IntToPtr                        -- strings in procedure results
+}

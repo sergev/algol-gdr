@@ -64,9 +64,9 @@ std::string global_name(const std::string &name)
 // Function.
 //
 Function::Function(std::string name, std::string ret, std::vector<std::string> param_types,
-                   std::string attrs)
+                   std::string attrs, std::string linkage)
     : name_(std::move(name)), ret_(std::move(ret)), attrs_(std::move(attrs)),
-      params_(std::move(param_types))
+      linkage_(std::move(linkage)), params_(std::move(param_types))
 {
     set_block(new_block("entry"));
 }
@@ -243,7 +243,8 @@ void Function::unreachable()
 std::string Function::text() const
 {
     std::ostringstream out;
-    out << "define " << ret_ << " " << global_name(name_) << "(";
+    out << "define " << (linkage_.empty() ? "" : linkage_ + " ") << ret_ << " "
+        << global_name(name_) << "(";
     for (size_t i = 0; i < params_.size(); i++)
         out << (i ? ", " : "") << params_[i] << " %p" << i;
     out << ")" << (attrs_.empty() ? "" : " " + attrs_) << " {\n";
@@ -296,9 +297,10 @@ void Module::global(const std::string &line)
 }
 
 Function &Module::function(const std::string &name, const std::string &ret,
-                           const std::vector<std::string> &param_types, const std::string &attrs)
+                           const std::vector<std::string> &param_types, const std::string &attrs,
+                           const std::string &linkage)
 {
-    functions_.push_back(std::make_unique<Function>(name, ret, param_types, attrs));
+    functions_.push_back(std::make_unique<Function>(name, ret, param_types, attrs, linkage));
     return *functions_.back();
 }
 
