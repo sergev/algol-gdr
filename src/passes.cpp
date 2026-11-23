@@ -8,6 +8,7 @@
 #include "pass4.h"
 #include "pass5.h"
 #include "pass6.h"
+#include "printm.h"
 
 void blank_line(const Context &ctx)
 {
@@ -53,9 +54,14 @@ bool compile(Context &ctx, StdArray &object)
             made   = !object.words.empty();
             if (made && ctx.listing)
                 ctx.listing->print(summary_line(ctx));
-            // G44504; after errors in passes 1-2 the driver skips it.
-            if (ctx.listing)
+            // G44504; after errors in passes 1-2 the driver skips it. Then
+            // with *FULL the object listing of A/PRINTM.
+            if (ctx.listing) {
                 ctx.listing->finish();
+                if (made && ctx.options.full_listing)
+                    for (const auto &row : printm_rows(object))
+                        ctx.listing->print(row);
+            }
         }
     }
     return made && !ctx.flgex;

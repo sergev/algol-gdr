@@ -23,6 +23,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     pass_test.cpp
     pass5_test.cpp
     pass6_test.cpp
+    printm_test.cpp
     run_test.cpp
     source_test.cpp
     stdarray_test.cpp

@@ -10,40 +10,11 @@ at 01736–11777, the pass modules `ag13666`…`ag30257`) and the listing overla
 (`*FULL` only). The driver calls the passes in sequence (`AG13666`, `AG17223`, `AG22162`,
 `AG23523`, `AG26260`, `AG26666`, …), so the C++ structure can follow it pass by pass.
 
-The original compiler running under `dubna` is the reference oracle for Milestone 1: for any
-input, its listing and object module are the expected output. The groundwork is done: the
-reference scripts, the test corpus with expected outputs, and the analysis of the original
-in `doc/`. The detailed plan for Milestone 1 is [todo1.md](todo1.md).
+Milestone 1 is done: the C++ compiler produces the same objects and listings as the original
+(the reference oracle, running under `dubna`) for the test corpus. The analysis of the
+original is in `doc/`.
 
 ---
-
-## Milestone 1 — C++ rewrite, BESM-6 object output
-
-Goal: compile simple programs into Dubna standard modules (standard arrays) that load and run
-on `dubna` the same way the original's output does.
-
-1. **Input and lexer.** Read UTF-8 source. Accept the original notation (quoted keywords
-   `'BEGIN'`, `''…''` strings, `'EOP'`) and the Unicode symbols `× ÷ ↑ ≥ ≤ ≠ ¬ ∧ ∨ ⊃ ≡ ⏨`,
-   with `*` and `@` as ASCII alternatives. Convert to the compiler's internal codes in a
-   single place.
-2. **Passes.** Translate each pass from Madlen into C++, keeping its algorithm and
-   intermediate representation, so outputs can be diffed pass by pass against `dubna` traces.
-   Use real types (enums, structs, `std::vector`) instead of raw 48-bit words where the meaning
-   is clear, and keep word-exact data where the bit layout reaches the object code.
-3. **Code generator.** Emit BESM-6 instructions and constants exactly as the original does.
-4. **Object writer.** Write the standard module format (Madlen.md §17; loader in
-   Dynamic_Loader.md), including external references to the Algol runtime routines that
-   already exist in the Dubna library.
-5. **Listing.** The source listing and diagnostics in UTF-8; the `*FULL` code listing
-   (A/PRINTM) last.
-6. **Integration with `dubna`.** A way to feed the produced object module into a Dubna job
-   (in place of `*algol`) and run it with `*execute`.
-
-Done when, for the test corpus:
-- the object modules match the original's word for word, or differ only where justified and
-  documented;
-- the programs run on `dubna` with the same output;
-- error messages appear for the same erroneous programs.
 
 ## Milestone 2 — LLVM backend
 
@@ -65,7 +36,7 @@ Goal: `algol-gdr file.alg -o prog` produces a native executable.
 - **Runtime library in C** (as `blang/runtime`): the standard functions (`abs`, `sign`, `sqrt`,
   `sin`, `cos`, `arctan`, `ln`, `exp`, `entier`) and the I/O procedures used by Algol-GDR
   programs (`print` and its relatives), with output formatted like the original.
-- Tests: the Milestone 1 corpus compiled natively, with output compared to the `dubna` runs.
+- Tests: the test corpus compiled natively, with output compared to the `dubna` runs.
 
 Done when the whole corpus runs natively with the same output as on `dubna`.
 
@@ -129,7 +100,7 @@ under `x1sim`. Any example skipped on purpose is listed with the reason.
 ## Risks and open questions
 
 - **Faithful vs clean rewrite.** A literal translation is easier to verify against the original;
-  a clean design is easier to retarget. Plan: faithful in Milestone 1, refactor into an explicit
+  a clean design is easier to retarget. Milestone 1 was faithful; refactor into an explicit
   IR at the start of Milestone 2.
 - **Undocumented internals.** The passes come from disassembly. Their roles and data are mapped
   in `doc/passes.md`, but most handlers of the code generator (pass 4) are still unknown.

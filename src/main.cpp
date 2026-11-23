@@ -120,8 +120,6 @@ int main(int argc, char *argv[])
             write_stream(std::cout, stream);
             return EXIT_SUCCESS;
         }
-        if (opt.full_listing)
-            throw NotImplemented("--full: the object listing is not implemented yet");
         Listing listing(std::cout);
         ctx.listing = &listing;
         StdArray object;

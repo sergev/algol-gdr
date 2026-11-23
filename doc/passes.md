@@ -837,6 +837,34 @@ drum 27 zones 33 (04000–05777 as pass 5 left it) and 34 (strings).
 
 `27645`/`27646` read a clock (`*50 070100`) into 02141/02140; `27652` prints a source line.
 
+## A/PRINTM — the object listing of `*FULL` (30355, V)
+
+A sub-overlay (`aprintm.asm`, `ag31206`–`ag31421`; part of the Fortran library DTRAN)
+that the driver loads after G44504 when `FULISFL*` is set. It lists the object (code at
+40000, constants from 00000, the description table at 04000) and prints its own pages.
+Ours is `src/printm.*`: the same rows in one column; `tests/printm_test.cpp` lays them out
+as the original and compares with `NAME.full.lst`.
+
+- Each word takes two rows. The first: the address, in full (` %05o`) for the first word of
+  a part and at the top of each column (every 64 rows), else `    ` and its last two
+  digits; two blanks; for code the first instruction, else the word in octal. The second:
+  8 blanks and the second instruction or the value.
+- An instruction: the register (`%2d`, blank for 0), the mnemonic (`%-3s`), a blank, the
+  address: 5 digits (long format) or a blank and 4 (short; the extension bit is not shown).
+- A constant: nothing for 0; an integer (exponent 0150) `%14d`; a real (a byte with bit 8)
+  in E format; else 6 ISO characters, 0 printing as a blank and a blank as `⊃` (034).
+- The real format (AG31544 → AG31341): sign, `d.ddddddddddd`, the exponent `±dd`. The
+  magnitude is scaled from 1e18 down by powers of 10 (BESM-6 division, no rounding), the
+  fraction gets 0377 in its low bits, and each digit is taken as f·10 = f/8 + f/2 (ARX),
+  shifted left by 4. So 0.6 prints as `6.00000000001-01`.
+- The description table: a name as 6 TEXT characters (8 printer positions, the last 2
+  printing nothing); a symbol 0630 as `==>` and the row of its name, 0430 its short name,
+  0400 as `-  ` and the 4 digits of its negated address, the others blank.
+- Pages: a line with a form feed, then 4 columns of 64 rows, 32 characters wide; a full
+  page ends with a form feed. The last page has 32 + its words rows (at most 64), on the
+  first page as many as it has rows; a row blank in all columns is left out within the
+  rows of the first column.
+
 ## Notes
 
 `scripts/trace-compile` sometimes reports a single instruction "in G22162" before the driver

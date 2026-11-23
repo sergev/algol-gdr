@@ -79,11 +79,14 @@ TEST(cli, compile)
     EXPECT_NE(r.output.find("PROGRAM   ДЛИHA:   16 00020B"), std::string::npos);
 }
 
-TEST(cli, full_not_implemented)
+// --full: the listing, then the object listing.
+TEST(cli, full)
 {
     auto r = run_command(compiler + " --full -o /dev/null " TEST_DIR "/algol/hello.alg");
-    EXPECT_EQ(r.exit_code, 1);
-    EXPECT_NE(r.output.find("not implemented"), std::string::npos);
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_EQ(r.output.rfind("A L G O L", 0), 0u) << r.output;
+    EXPECT_NE(r.output.find("\n\n 40000   7 VTM 40005\n"), std::string::npos) << r.output;
+    EXPECT_NE(r.output.find("        HELLO,\n"), std::string::npos) << r.output;
 }
 
 TEST(cli, dump)

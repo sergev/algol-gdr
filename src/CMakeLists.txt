@@ -13,6 +13,7 @@ add_library(algol STATIC
     pass5.cpp
     pass6.cpp
     passes.cpp
+    printm.cpp
     source.cpp
     stdarray.cpp
     tables_data.cpp
