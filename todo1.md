@@ -23,8 +23,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 4 (G23523)
 
-- **C23** Procedures: declarations, parameters by value and by name, calls, function results,
-  procedures as parameters.
 - **C24** I/O, strings, external names (the table at 27245, G30034), 'CODE'/'ALGOL'
   procedures, 'COMMON'; then pass 4 fully native, drop `pass4_gen.cpp`.
 

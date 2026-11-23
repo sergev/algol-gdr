@@ -2756,6 +2756,269 @@ void register_loops(Machine::Natives &n)
     n[025255] = step_in_acc_2;
 }
 
+//
+// Procedures. 02017 is a label still to be defined (0211) before the next
+// code: after a thunk, the place its jump around goes.
+//
+
+// 24372: define the pending label, if any; through M12.
+void pending_label(Machine &m, unsigned link)
+{
+    m.set_m(12, link);
+    m.xta(0, 02017);
+    if (m.uza())
+        return;
+    m.aox(7, 0746);
+    emit_half(m, 024374);
+    m.xta(0, 02017);
+    m.atx(0, LABELS);
+    m.xta(0, 0);
+    m.atx(0, 02017);
+}
+
+// 24361: a call with parameters starts (0110): the frame of the arguments
+// (template 24366, or 24370 with A pushed).
+unsigned call_start(Machine &m)
+{
+    m.vtm(11, 024366);
+    if (m.M[4]) {
+        m.xta(7, 02227);
+        m.atx(4, 0);
+        m.vtm(4, 0);
+        m.vtm(11, 024370);
+    }
+    m.xta(0, 0);
+    m.atx(0, 02017);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24407: the call of the procedure in A: template M11, or 24420 for one
+// on the stack; the result in A.
+unsigned call_tail(Machine &m)
+{
+    m.atx(Machine::SP, 0);
+    m.aax(7, 02472);
+    m.vtm(12, 024015);
+    if (!m.uza())
+        m.vtm(11, 024420);
+    return TEMPLATE;
+}
+
+// 24377: a standard function with an expression argument (n<<12 | 057):
+// routine 2n (template 24402).
+unsigned std_expression(Machine &m)
+{
+    m.vtm(11, 024402);
+    pending_label(m, 024400);
+    m.utc(3, 0);
+    m.utm(3, 0);
+    m.ita(0, 3);
+    return call_tail(m);
+}
+
+// 24405: the call of a procedure with parameters (020), template 24416.
+unsigned call_item_params(Machine &m)
+{
+    m.vtm(11, 024416);
+    pending_label(m, 024406);
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    return call_tail(m);
+}
+
+// 24412: the call of a procedure without parameters (021), template 24414.
+unsigned call_item_plain(Machine &m)
+{
+    m.set_m(12, 024413);
+    save_acc(m);
+    m.vtm(11, 024414);
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    return call_tail(m);
+}
+
+// 24426: an argument (A), its template M11.
+unsigned argument(Machine &m)
+{
+    m.atx(Machine::SP, 0);
+    pending_label(m, 024427);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24423, 24424: a string (0156) or a constant (0111) argument: its address.
+unsigned constant_argument(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    m.ita(0, 3);
+    m.arx(0, 02010);
+    return argument(m);
+}
+
+// 24430, 24432: a variable (0112), a label (0114) argument.
+unsigned variable_argument(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    return argument(m);
+}
+
+// 24434: an array argument (0115), its address by its descriptor.
+unsigned array_argument(Machine &m)
+{
+    m.vtm(11, 024472);
+    m.xta(3, 0);
+    m.arx(0, 0);
+    if (!m.u1a()) {
+        m.asn(0, 073);
+        m.aux(7, 02465);
+    }
+    m.aax(7, 02465);
+    return argument(m);
+}
+
+// 24440: a procedure argument (0113), with the register count 02021.
+unsigned procedure_argument(Machine &m)
+{
+    m.vtm(11, 024474);
+    m.xta(3, 0);
+    m.aax(7, 02526);
+    m.xts(0, 02021);
+    m.asn(0, 054);
+    m.aox(Machine::SP, 0);
+    return argument(m);
+}
+
+// 24444: an expression argument (0120): its value (template 24476).
+unsigned expression_argument(Machine &m)
+{
+    pending_label(m, 024445);
+    m.vtm(4, 02017);
+    return operand(m, 024446);
+}
+
+unsigned expression_argument_2(Machine &m)
+{
+    load(m, 024447);
+    m.vtm(11, 024476);
+    m.xta(0, 0);
+    m.atx(0, 02017);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24452: a thunk starts (0117): the argument (template 24464) and a jump
+// around the thunk's code to a new label, pushed.
+unsigned thunk_start(Machine &m)
+{
+    pending_label(m, 024453);
+    m.vtm(11, 024464);
+    m.xta(0, 02021);
+    m.asn(0, 054);
+    m.aox(0, LABELS);
+    m.atx(Machine::SP, 0);
+    m.set_m(12, 024456);
+    run_template(m);
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 0);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    return MAIN_LOOP;
+}
+
+// 24461: a thunk ends (0116): its return (M7+750); its label pending.
+unsigned thunk_end(Machine &m)
+{
+    m.utm(Machine::SP, 077776);
+    m.xta(Machine::SP, 0);
+    m.atx(0, 02017);
+    m.xta(7, 0750);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+// 24755: a jump around procedure bodies (0146): UJ to a new label, pushed
+// twice.
+unsigned bodies_start(Machine &m)
+{
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 0);
+    m.atx(Machine::SP, 0);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    m.vtm(11, 024671);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24761: its target (0145): the label defined.
+unsigned bodies_end(Machine &m)
+{
+    m.xta(Machine::SP, 077777);
+    m.atx(0, LABELS);
+    m.vtm(11, 026051);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24764, 25005: VALUE ends (0155), starts (0127): for a procedure with
+// value parameters (02023 = 0) the half M7+742 or M7+746 with 02004.
+unsigned value_mark(Machine &m, unsigned half)
+{
+    m.xta(0, 02023);
+    if (m.u1a())
+        return DISPATCH_NEXT;
+    m.xta(7, half);
+    m.aox(0, LABELS);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+// 24767, 24776: a value parameter (061), a real one (0154): its descriptor
+// marked; the copy (template 25002, 24777) unless 02023 ≠ 0.
+unsigned value_parameter(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    m.xta(3, 0);
+    m.arx(7, 02453);
+    m.atx(3, 0);
+    m.aax(7, 02465);
+    m.atx(Machine::SP, 0);
+    m.arx(7, 02522);
+    m.xts(0, 02023);
+    m.vtm(12, DISPATCH_NEXT);
+    if (m.uza())
+        return TEMPLATE;
+    m.utm(Machine::SP, 077776);
+    return DISPATCH_NEXT;
+}
+
+void register_procedures(Machine::Natives &n)
+{
+    n[024361] = call_start;
+    n[024377] = std_expression;
+    n[024405] = call_item_params;
+    n[024412] = call_item_plain;
+    n[024423] = [](Machine &m) { return constant_argument(m, 024500); };
+    n[024424] = [](Machine &m) { return constant_argument(m, 024466); };
+    n[024430] = [](Machine &m) { return variable_argument(m, 024470); };
+    n[024432] = [](Machine &m) { return variable_argument(m, 024472); };
+    n[024434] = array_argument;
+    n[024440] = procedure_argument;
+    n[024444] = expression_argument;
+    n[024446] = expression_argument_2;
+    n[024452] = thunk_start;
+    n[024461] = thunk_end;
+    n[024755] = bodies_start;
+    n[024761] = bodies_end;
+    n[024764] = [](Machine &m) { return value_mark(m, 0742); };
+    n[024767] = [](Machine &m) { return value_parameter(m, 025002); };
+    n[024776] = [](Machine &m) { return value_parameter(m, 024777); };
+    n[025005] = [](Machine &m) { return value_mark(m, 0746); };
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -2784,5 +3047,6 @@ Stream pass4(Context &ctx, const Stream &input)
     register_blocks(n);
     register_arrays(n);
     register_loops(n);
+    register_procedures(n);
     return pass.run(023523, 01633);
 }
