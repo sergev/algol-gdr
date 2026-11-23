@@ -18,4 +18,3 @@ _begin
     YBYB(a, 10);
     _print(`(10f7.3)') a;
 _end
-_eop

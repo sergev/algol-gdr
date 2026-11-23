@@ -142,6 +142,15 @@ public:
 private:
     struct EndOfInput {};
 
+    // While set, the end of the input reads as the character 0.
+    struct SoftEof {
+        explicit SoftEof(bool &flag) : flag_(flag) { flag_ = true; }
+        ~SoftEof() { flag_ = false; }
+        SoftEof(const SoftEof &)            = delete;
+        SoftEof &operator=(const SoftEof &) = delete;
+        bool &flag_;
+    };
+
     std::vector<std::string> lines_;
     Diagnostics &diag_;
     std::function<void(int, const std::string &)> on_line_;
@@ -156,6 +165,7 @@ private:
     bool warned_{};
     bool semicolon_{}; // a number ended with '.,'
     bool eof_{};
+    bool soft_eof_{};    // reading a name or number: SoftEof
     bool publication_{}; // keywords underlined: b̲e̲g̲i̲n̲, strings in `…'
     int string_line_{};  // where an open string began
     Sym last_{ Sym::SEMICOLON };

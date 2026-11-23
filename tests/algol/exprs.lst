@@ -32,5 +32,4 @@ A L G O L - Г Д P
     29.       _for I := 1.5 _step 1 _until 2 _do X := 1; PRINT(I);
     30.       _for I := -I _step 1 _until 2 _do X := 1; PRINT(I)
     31.     _end
-    32.     _eop
 

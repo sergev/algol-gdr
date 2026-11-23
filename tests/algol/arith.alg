@@ -11,4 +11,3 @@ _begin
     K := X + 0.6;
     PRINT(K, X + I, 1.0⏨3, 2.5⏨-2);
 _end
-_eop

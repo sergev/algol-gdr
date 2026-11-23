@@ -24,4 +24,3 @@ _begin
         PRINT(C[N, N + 1], D[8])
     _end
 _end
-_eop

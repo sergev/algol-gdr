@@ -20,4 +20,3 @@ _begin
     PRINT(ABS(-3), SIGN(-2.0), ENTIER(3.7));
     C[2] := ENTIER(7 / 2); PRINT(C[2], 7 / 2)
 _end
-_eop

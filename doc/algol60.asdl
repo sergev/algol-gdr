@@ -17,7 +17,7 @@
 --    case-sensitive. Elsewhere outside strings blanks and line ends separate
 --    nothing: "noun phrase" is the identifier "nounphrase", "1 000" is 1000.
 --  * _comment … ; is skipped after ';' or _begin; text after _end is
---    skipped up to ';', _end, _else or _eop.
+--    skipped up to ';', _end or _else.
 --  * Strings: `…' or ‘…’, which nest, the inner quotes kept. In `…', '` is
 --    an apostrophe: `it'`s' is "it's". The strings of Algol-GDR, ''…'' and
 --    '('…')', and strings in "…" are errors.
@@ -46,8 +46,8 @@
 module Algol60 {
     -- A program: _code: and _algol: lists of external procedures (GDR),
     -- _common declarations (GDR), then a block or compound statement, maybe
-    -- labeled; or a unit of procedures compiled alone (GDR). Then _eop (GDR)
-    -- or the end of the file.
+    -- labeled; or a unit of procedures compiled alone (GDR). Then the end of
+    -- the file.
     Program = Program(External* externals, Decl* commons, Stmt body)
             | Unit(External* externals, Decl* commons, Decl* procedures)
 

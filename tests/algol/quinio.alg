@@ -301,4 +301,3 @@ LKLAAR: NLCR;
             _write (54, `(16H Ik heb gewonnen)')
     _end
 _end
-_eop

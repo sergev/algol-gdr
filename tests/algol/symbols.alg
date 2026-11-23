@@ -145,4 +145,3 @@ _begin _comment SYMBOLS IN COMMENTS AND STRINGS;
   I := 139;
   PRINT(`@', I)
 _end
-_eop

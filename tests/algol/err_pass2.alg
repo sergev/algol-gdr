@@ -51,4 +51,3 @@ M: X := 1;
   PP(1, I, B, RA, L, P0, `S', S);
   PP(1, X, B, RA, CP, P0, `S', S)
 _end
-_eop

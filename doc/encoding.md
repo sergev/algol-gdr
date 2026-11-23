@@ -29,7 +29,7 @@ publication form; otherwise it is in the `_keyword` form. The file name does not
 Both forms take the same keywords, in any case:
 
 `algol and array backspace begin bits boolean code comment common decode div do else encode
-end endfile eop eq equal equiv false for ge goto greater gt if impl integer label le less lt
+end endfile eq equal equiv false for ge goto greater gt if impl integer label le less lt
 ne not notequal notgreater notless or own power print procedure punch read real rewind step
 string switch then true until value while write`
 
@@ -91,9 +91,9 @@ Any other character outside a string or comment is an error: `Illegal character 
 ## Comments
 
 - `_comment` (`c̲o̲m̲m̲e̲n̲t̲`) after `;` or `_begin` skips up to the next `;` (or `.,`).
-- After `_end`, the text up to `;`, `_end`, `_else` or `_eop` is a comment. Letters and
-  digits pass quietly; anything else gets one warning per comment.
-- `_eop` may end the program; the end of the file does as well.
+- After `_end`, the text up to `;`, `_end` or `_else` is a comment. Letters and digits pass
+  quietly; anything else gets one warning per comment.
+- The end of the file ends the program.
 
 ## The listing
 

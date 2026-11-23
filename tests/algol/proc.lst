@@ -32,5 +32,4 @@ A L G O L - Г Д P
     29.         PRINT(APPLY(SQ, 3.0));
     30.         NOARGS
     31.     _end
-    32.     _eop
 

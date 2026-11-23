@@ -8,4 +8,3 @@ _begin
     I := _true + 1.5;
     _begin _end _end
 _end
-_eop

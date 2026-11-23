@@ -1,5 +1,5 @@
 _comment The program form of the Revised Report: unsigned integers as
-labels, the parameter delimiter ) letter string: (, no _eop at the end;
+labels, the parameter delimiter ) letter string: (;
 _begin _integer i;
     _switch s := 20, 30, 0040;
     _procedure jump(n) to: (l); _value n; _integer n; _label l;

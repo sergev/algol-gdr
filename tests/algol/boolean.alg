@@ -11,4 +11,3 @@ _begin
     PRINT(I _lt 6, I _gt 6, I _eq 5,
         I _notless 5, I _notgreater 4);
 _end
-_eop

@@ -8,4 +8,3 @@ _begin
     _real X, Y, Z, U, V, W;
     X := 1;
 _end
-_eop

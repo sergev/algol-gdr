@@ -20,5 +20,4 @@ A L G O L - Г Д P
     17.         A[1] := 7; Q(A[1]); PRINT(A[1])
     18.       _end
     19.     _end
-    20.     _eop
 

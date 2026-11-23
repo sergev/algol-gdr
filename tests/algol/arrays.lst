@@ -27,5 +27,4 @@ A L G O L - Г Д P
     24.             PRINT(C[N, N + 1], D[8])
     25.         _end
     26.     _end
-    27.     _eop
 

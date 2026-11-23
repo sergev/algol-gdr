@@ -10,5 +10,4 @@ A L G O L - Г Д P
      7.         _for I := 1 _until 2 _do ;
      8.         I = 1;
      9.     _end
-    10.     _eop
 

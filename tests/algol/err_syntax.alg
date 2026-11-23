@@ -7,4 +7,3 @@ _begin
     _for I := 1 _until 2 _do ;
     I = 1;
 _end
-_eop

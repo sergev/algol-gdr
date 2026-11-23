@@ -155,14 +155,14 @@ TEST(Checker, messages)
         "x.alg:1:35: error: Wrong number of arguments of 'ininteger'\n"
         "x.alg:1:62: error: Type error in argument 2 of 'outstring': integer instead of string\n");
     EXPECT_EQ(check_messages("_begin _integer I; _boolean B;\n"
-                             "I := B; J := 1; _goto I\n_end _eop"),
+                             "I := B; J := 1; _goto I\n_end"),
               "x.alg:2:6: error: Type error in the value of ':=': boolean instead of integer\n"
               "x.alg:2:9: error: Undeclared identifier 'J'\n"
               "x.alg:2:23: error: A label is expected in _goto\n");
-    EXPECT_EQ(check_messages("_begin _real _procedure F; ; F _end _eop"),
+    EXPECT_EQ(check_messages("_begin _real _procedure F; ; F _end"),
               "x.alg:1:25: warning: Function 'F' does not assign its result\n");
     EXPECT_EQ(check_messages("_begin _procedure P(X); _integer X; X := 1;\n"
-                             "_real Y; _boolean Z; P(Y); P(Y + 1); P(Z) _end _eop"),
+                             "_real Y; _boolean Z; P(Y); P(Y + 1); P(Z) _end"),
               "x.alg:2:40: error: Argument 1 of 'P' does not match formal parameter 'X'\n");
 }
 
@@ -171,7 +171,7 @@ TEST(Checker, names)
     // Names count in full and by case; standard ones in any case.
     EXPECT_EQ(check_messages("_begin _integer counter1, counter2, Counter1;\n"
                              "counter1 := counter2 := Counter1 := 1; COUNTER1 := sqrt(4);\n"
-                             "Print(counter1) _end _eop"),
+                             "Print(counter1) _end"),
               "x.alg:2:40: error: Undeclared identifier 'COUNTER1'\n");
 }
 
@@ -181,7 +181,7 @@ TEST(Checker, scopes_and_conversions)
     Diagnostics diag("x.alg", err);
     auto program = check(parse("_begin _real X; _integer I;\n"
                                "L: X := I + 1; _begin _integer X; X := 2.5 _end;\n"
-                               "_goto L _end _eop",
+                               "_goto L _end",
                                diag),
                          diag);
     ASSERT_EQ(err.str(), "");

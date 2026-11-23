@@ -34,4 +34,3 @@ _begin
     I := (1;
     I := (1;
 _end
-_eop

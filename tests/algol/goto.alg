@@ -24,4 +24,3 @@ L2: P(1); P(2); P(3);
 OUT:
     PRINT(999)
 _end
-_eop

@@ -23,5 +23,4 @@ A L G O L - Г Д P
     20.         PRINT(ABS(-3), SIGN(-2.0), ENTIER(3.7));
     21.         C[2] := ENTIER(7 / 2); PRINT(C[2], 7 / 2)
     22.     _end
-    23.     _eop
 

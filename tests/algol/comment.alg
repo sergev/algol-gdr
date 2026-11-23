@@ -9,4 +9,3 @@ _begin
     ;;
     PRINT(I); _comment AFTER A STATEMENT;
 _end
-_eop

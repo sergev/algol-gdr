@@ -103,7 +103,7 @@ Milestones (all done; the history is in README.md):
 
 ## Source language
 
-UTF-8 text. Keywords are `_` and a word, in any case (`_begin`, `_eop` may end the program); a
+UTF-8 text. Keywords are `_` and a word, in any case (`_begin`); a
 blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in
 `` `…' `` or `‘…’`, nested, the inner quotes kept; in `` `…' `` an apostrophe is `` '` ``
 (`` `it'`s' ``). The Algol-GDR `''…''` and `'('…')'` and strings in `"…"` are errors, each

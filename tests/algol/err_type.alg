@@ -9,4 +9,3 @@ _begin
     _if X _then I := 0;
     B := I _and B;
 _end
-_eop

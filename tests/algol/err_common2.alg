@@ -10,4 +10,3 @@ _begin
     X := 1;
     PRINT(X)
 _end
-_eop

@@ -11,5 +11,4 @@ A L G O L - Г Д P
      8.       LOAD(I);
      9.       _for I := 1 _step 1 _until I _do X := 1
     10.     _end
-    11.     _eop
 

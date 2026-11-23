@@ -382,7 +382,7 @@ L: I := I + 1;
   _if S > 100 _then PRINT(`BAD');
   _begin _integer J; J := I; _if J = 11 _then _goto M; PRINT(`BAD') _end;
 M: PRINT(S, I)
-_end _eop
+_end
 )"),
               "OK            55             11 \n");
 }
@@ -394,7 +394,7 @@ TEST(Run, for_lists)
   X := 0;
   _for X := X + 0.5 _while X < 2 _do PRINT(X);
   PRINT(NEWLINE, I)
-_end _eop
+_end
 )"),
               "             1              2              4              6             10 "
               " 5.00000000000e-01    1.00000000000e+00    1.50000000000e+00   \n"
@@ -404,7 +404,7 @@ _end _eop
 TEST(Run, domain_error)
 {
     const std::string src = BUILD_DIR "/run_sqrt.alg";
-    std::ofstream(src) << "_begin PRINT(1); PRINT(SQRT(-1.0)) _end _eop\n";
+    std::ofstream(src) << "_begin PRINT(1); PRINT(SQRT(-1.0)) _end\n";
     auto r =
         run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
     EXPECT_EQ(r.exit_code, 1);
@@ -516,7 +516,7 @@ TEST(Run, checks)
 TEST(Run, division_by_zero)
 {
     const std::string src = BUILD_DIR "/run_idiv.alg";
-    std::ofstream(src) << "_begin _integer z; z := 0; PRINT(1 ÷ z) _end _eop\n";
+    std::ofstream(src) << "_begin _integer z; z := 0; PRINT(1 ÷ z) _end\n";
     auto r =
         run_command(compiler + " -o " BUILD_DIR "/run_idiv " + src + " && " BUILD_DIR "/run_idiv");
     EXPECT_EQ(r.exit_code, 1);
@@ -533,7 +533,7 @@ TEST(Run, arrays)
     PRINT(A[2, -1], A[1, 1]);
     PRINT(NEWLINE, A)
   _end
-_end _eop
+_end
 )"),
               "            19             11 \n"
               "            -1              0              1              9             10 "
@@ -543,7 +543,7 @@ _end _eop
 TEST(Run, bounds_check)
 {
     const std::string src = BUILD_DIR "/run_bounds.alg";
-    std::ofstream(src) << "_begin _array A[1:3]; _integer I; I := 4; A[I] := 1 _end _eop\n";
+    std::ofstream(src) << "_begin _array A[1:3]; _integer I; I := 4; A[I] := 1 _end\n";
     auto r = run_command(compiler + " --check -o " BUILD_DIR "/run_bounds " + src +
                          " && " BUILD_DIR "/run_bounds");
     EXPECT_EQ(r.exit_code, 1);
@@ -560,7 +560,7 @@ TEST(Run, procedures)
   _for I := 1 _step 1 _until 3 _do A[I] := I;
   ZAP(A);
   PRINT(A[1], FACT(10), HALF(3))
-_end _eop
+_end
 )"),
               "            99        3628800  1.50000000000e+00   \n");
 }
@@ -585,7 +585,7 @@ TEST(Run, by_name)
   I := 5; INC(I); PRINT(I);
   PRINT(TWICE(SQ, 3));
   T := `HI'; SAY(T); SAY(`THERE')
-_end _eop
+_end
 )"),
               " 3.00000000000e+01                6  8.10000000000e+01   HITHERE\n");
 }
@@ -618,7 +618,7 @@ L1: N := N + 1; PRINT(N);
 L2: _if N < 2 _then _goto L1;
   _goto L1;
 L3: PRINT(`DONE')
-_end _eop
+_end
 )"),
               "             1              2 DONE\n");
 }
@@ -630,7 +630,7 @@ TEST(Run, strings)
   PRINT(LENGTH(S), S[2], S[2:4], S[5:7]);
   T := S[1:4];
   PRINT(T = `Счёт', T < `Сча', T _ne S, `ab' < `b')
-_end _eop
+_end
 )"),
               "             7 ччёт-42true  false true  true  \n");
 }
@@ -656,7 +656,7 @@ _begin _real X; _integer _array A[1:3]; _integer N, M;
   N := 7; M := 8; A[1] := 1; A[2] := 2; A[3] := 3;
   X := twice(2.5); PRINT(X, NEWLINE);
   show(A, N, X + 1)
-_end _eop
+_end
 )";
     EXPECT_EQ(run(src, BUILD_DIR "/run_code", false, "/dev/null", stub),
               " 5.00000000000e+00   \n[1 2 3] 7 6 8\n");
@@ -669,7 +669,7 @@ TEST(Run, format_and_read)
   READ(I, X, A);
   _write(54, `(4HI = I3, 2X, F6.2/3(I2, 1X), E12.4)') I, X, A, X * 100;
   _print(`(2HA:, 2I3)') A
-_end _eop
+_end
 )";
     const std::string input = BUILD_DIR "/run_format.in";
     std::ofstream(input) << "42 3.14159\n1 2 3\n";

@@ -5,4 +5,3 @@ _begin _integer a, b;
     a := 17; b := 5;
     PRINT(NEWLINE, a ÷ b, a - a ÷ b × b, -a ÷ b)
 _end
-_eop

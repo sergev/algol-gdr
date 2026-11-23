@@ -16,7 +16,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
   ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ÷ ↑` have ASCII and word forms.
 - A file with an underlined letter (U+0332) is in the publication form: keywords are
   underlined words (`b̲e̲g̲i̲n̲`, `g̲o̲ t̲o̲`). Both forms read the same symbols otherwise.
-- The program may end with `_eop`, as on the original.
 - Standard identifiers (`sqrt`, `print`, …) are recognized in any case; a declaration of the
   same name hides them, as in the Report. `print` is the X1 procedure in the publication
   form and Algol-GDR's `PRINT` in the `_keyword` form; `read` in an expression is X1's.

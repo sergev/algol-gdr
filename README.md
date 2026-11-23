@@ -26,7 +26,6 @@ Write `hello.alg`:
 _begin
     PRINT(`Hello, World!')
 _end
-_eop
 ```
 
 Compile and run it:
@@ -41,9 +40,6 @@ Hello, World!
 
 - Keywords start with an underscore: `_begin`, `_end`, `_integer`, `_if`, `_then`.
 - Strings are in a backquote and an apostrophe: `` `text' ``. They nest: `` `a `b' c' ``.
-  An apostrophe in a string is written `` '` ``: `` `it'`s' `` is `it's`. The strings of
-  Algol-GDR, `''text''`, and `"text"` are errors.
-- The program ends with `_eop`.
 - Use `PRINT(...)` to print numbers and strings, and `NEWLINE` to start a new line; or the
   standard Algol 60 procedures `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
 
@@ -52,7 +48,6 @@ _begin _integer i;
     _for i := 1 _step 1 _until 5 _do
         PRINT(i, i * i, NEWLINE)
 _end
-_eop
 ```
 
 The `tests/algol/` directory has more examples.

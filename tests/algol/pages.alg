@@ -284,4 +284,3 @@ _begin
     S := S + 280;
     PRINT(S)
 _end
-_eop

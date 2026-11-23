@@ -4,4 +4,3 @@ _begin
     PRINT(SQRT(16.0), SIN(0.0), COS(0.0), ARCTAN(0.0));
     PRINT(EXP(0.0), LN(1.0), ENTIER(2.5), ENTIER(-2.5));
 _end
-_eop

@@ -15,5 +15,4 @@ A L G O L - Г Д P
     12.             _if PRIME[N] _then
     13.                 PRINT (N);
     14.     _end
-    15.     _eop
 

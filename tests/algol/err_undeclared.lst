@@ -10,5 +10,4 @@ A L G O L - Г Д P
      7.         P(X);
      8.         _goto NOWHERE;
      9.     _end
-    10.     _eop
 

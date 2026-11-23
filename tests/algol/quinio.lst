@@ -304,5 +304,4 @@ A L G O L - Г Д P
    301.                 _write (54, `(16H Ik heb gewonnen)')
    302.         _end
    303.     _end
-   304.     _eop
 

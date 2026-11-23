@@ -17,5 +17,4 @@ A L G O L - Г Д P
     14.         _for X := 0.5 _step 0.25 _until 1.0 _do PRINT(X);
     15.         PRINT(I)
     16.     _end
-    17.     _eop
 

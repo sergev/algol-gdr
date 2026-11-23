@@ -13,5 +13,4 @@ A L G O L - Г Д P
     10.         _for I := 1 _step 1 _until LENGTH(S) _do PRINT(S[I]);
     11.         PRINT(NEWLINE, T, A[1], A[2])
     12.     _end
-    13.     _eop
 

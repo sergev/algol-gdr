@@ -39,4 +39,3 @@ L2: PRINT(I);
   _for I := 1 _step 1 _until 3 _do IA[I*(-2)] := I+20;
   _for I := 1 _step 1 _until 3 _do IA[2-I+5] := I+30; SHOW
 _end
-_eop

@@ -5,4 +5,3 @@ _begin
     _begin
         X := 0
 _end
-_eop

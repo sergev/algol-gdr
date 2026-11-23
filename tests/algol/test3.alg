@@ -21,4 +21,3 @@ L3: B := I = 3 _and _not (I > 5) _or _false;
     PRINT(A[4, 0], B, C, K);
     PRINT(`HELLO FROM ALGOL')
 _end
-_eop

@@ -12,4 +12,3 @@ _begin
         _if PRIME[N] _then
             PRINT (N);
 _end
-_eop

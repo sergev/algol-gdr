@@ -4,4 +4,3 @@ _begin
     N := 1;
     PRINT(N)
 _end
-_eop

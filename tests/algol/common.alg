@@ -11,4 +11,3 @@ _begin
     N := 4; T[2, 2, 2] := 5; W := _true;
     PRINT(X, Y[1], Z[2,3], N, T[2, 2, 2], W);
 _end
-_eop

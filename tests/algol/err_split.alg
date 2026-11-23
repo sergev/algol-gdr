@@ -89,4 +89,3 @@ _begin _integer I;
     IDENTIFIERLONG := 1;
     PRINT(I)
 _end
-_eop

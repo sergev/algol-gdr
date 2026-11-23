@@ -14,4 +14,3 @@ DONE:
     _goto _if I = 4 _then E _else S[1];
 E:  PRINT(I)
 _end
-_eop

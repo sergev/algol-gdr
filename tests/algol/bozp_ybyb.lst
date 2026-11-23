@@ -21,5 +21,4 @@ A L G O L - Г Д P
     18.         YBYB(a, 10);
     19.         _print(`(10f7.3)') a;
     20.     _end
-    21.     _eop
 

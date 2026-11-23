@@ -29,4 +29,3 @@ M: X := 1;
   _for I := 1.5 _step 1 _until 2 _do X := 1; PRINT(I);
   _for I := -I _step 1 _until 2 _do X := 1; PRINT(I)
 _end
-_eop

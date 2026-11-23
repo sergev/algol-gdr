@@ -29,4 +29,3 @@ _begin
     PRINT(APPLY(SQ, 3.0));
     NOARGS
 _end
-_eop

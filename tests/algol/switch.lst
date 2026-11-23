@@ -17,5 +17,4 @@ A L G O L - Г Д P
     14.         _goto _if I = 4 _then E _else S[1];
     15.     E:  PRINT(I)
     16.     _end
-    17.     _eop
 

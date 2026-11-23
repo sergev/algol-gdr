@@ -9,4 +9,3 @@ _begin
     PRINT(NEWPAGE);
     PRINT(`LAST')
 _end
-_eop

@@ -24,5 +24,4 @@ A L G O L - Г Д P
     21.         PRINT(A[4, 0], B, C, K);
     22.         PRINT(`HELLO FROM ALGOL')
     23.     _end
-    24.     _eop
 

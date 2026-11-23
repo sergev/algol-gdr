@@ -102,7 +102,6 @@ bool ends_statement(Sym s)
     case Sym::SEMICOLON:
     case Sym::END:
     case Sym::ELSE:
-    case Sym::EOP:
     case Sym::END_OF_FILE:
         return true;
     default:
@@ -142,7 +141,10 @@ private:
     Token tok_;
     std::deque<Token> ahead_;       // symbols after tok_, read by peek()
     std::map<int, int> statements_; // per line: statements started
+    bool eop_{};                    // _eop met: the input ends
+    Token eop_token_;
 
+    Token next_symbol();
     void advance();
     const Token &peek(size_t n = 1);
     bool label_ahead();
@@ -193,13 +195,29 @@ Parser::Parser(const std::string &source, Diagnostics &diag, Listing *listing)
 {
 }
 
+// The next symbol of the lexer. _eop, which the original needed at the end,
+// is an error, and the input stops there.
+Token Parser::next_symbol()
+{
+    if (eop_)
+        return eop_token_;
+    Token t = lexer_.next();
+    if (t.sym == Sym::EOP) {
+        report(t.line, "_eop is not used: the program ends at the end of the file");
+        eop_       = true;
+        t.sym      = Sym::END_OF_FILE;
+        eop_token_ = t;
+    }
+    return t;
+}
+
 void Parser::advance()
 {
     if (!ahead_.empty()) {
         tok_ = std::move(ahead_.front());
         ahead_.pop_front();
     } else {
-        tok_ = lexer_.next();
+        tok_ = next_symbol();
     }
 }
 
@@ -207,7 +225,7 @@ void Parser::advance()
 const Token &Parser::peek(size_t n)
 {
     while (ahead_.size() < n)
-        ahead_.push_back(lexer_.next());
+        ahead_.push_back(next_symbol());
     return ahead_[n - 1];
 }
 
@@ -320,7 +338,6 @@ void Parser::skip_statement()
             if (depth > 0)
                 continue;
             return;
-        case Sym::EOP:
         case Sym::END_OF_FILE:
             return;
         default:
@@ -338,8 +355,7 @@ void Parser::skip_declaration()
 
 //
 // The program: _code: and _algol: lists of procedures before it, then a
-// block or compound statement, or a procedure; then _eop or the end of the
-// file.
+// block or compound statement, or procedures; then the end of the file.
 //
 Program Parser::program()
 {
@@ -348,8 +364,8 @@ Program Parser::program()
     try {
         advance();
         head(p);
-        if (tok_.sym != Sym::EOP && tok_.sym != Sym::END_OF_FILE)
-            report(tok_.line, "Expected _eop after the program, found " + found());
+        if (tok_.sym != Sym::END_OF_FILE)
+            report(tok_.line, "Expected the end of the file after the program, found " + found());
     } catch (const Stop &) {
     }
     return p;
@@ -398,7 +414,7 @@ void Parser::head(Program &p)
             expect(Sym::SEMICOLON);
         } catch (const SyntaxError &) {
             skip_declaration();
-            if (tok_.sym == Sym::EOP || tok_.sym == Sym::END_OF_FILE)
+            if (tok_.sym == Sym::END_OF_FILE)
                 return;
         }
     }
@@ -470,7 +486,7 @@ StmtList Parser::statements()
             continue;
         if (accept(Sym::END))
             return list;
-        if (tok_.sym == Sym::EOP || tok_.sym == Sym::END_OF_FILE) {
+        if (tok_.sym == Sym::END_OF_FILE) {
             report(tok_.line, "Missing _end");
             return list;
         }

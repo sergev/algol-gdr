@@ -7,4 +7,3 @@ _begin
     P(X);
     _goto NOWHERE;
 _end
-_eop

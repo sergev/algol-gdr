@@ -44,7 +44,7 @@ std::vector<Sym> syms(const std::string &text)
 TEST(Lexer, numbers)
 {
     // Blanks do not separate digits.
-    auto t = tokens("1 2, 1.5, .25, 1⏨3, ⏨-2, 3.,_eop");
+    auto t = tokens("1 2, 1.5, .25, 1⏨3, ⏨-2, 3.,");
     ASSERT_EQ(t.size(), 13u);
     EXPECT_EQ(t[0].sym, Sym::INTEGER_CONST);
     EXPECT_EQ(t[0].ival, 12);
@@ -54,14 +54,14 @@ TEST(Lexer, numbers)
     EXPECT_EQ(t[8].rval, 0.01);
     EXPECT_EQ(t[10].sym, Sym::INTEGER_CONST);
     EXPECT_EQ(t[11].sym, Sym::SEMICOLON);
-    EXPECT_EQ(t[12].sym, Sym::EOP);
+    EXPECT_EQ(t[12].sym, Sym::END_OF_FILE);
 }
 
 TEST(Lexer, strings)
 {
     // `…' nested, the inner quotes kept; ‘…’ for a lone apostrophe.
     std::string messages;
-    auto t = tokens("`A b' `x `y' z' ‘'’ `'\n_eop", &messages);
+    auto t = tokens("`A b' `x `y' z' ‘'’ `'", &messages);
     ASSERT_EQ(t.size(), 5u);
     EXPECT_EQ(t[0].text, "A b");
     EXPECT_EQ(t[1].text, "x `y' z");
@@ -71,7 +71,7 @@ TEST(Lexer, strings)
 
     // '` is an apostrophe, also in a nested string; split by a line end it
     // is two strings.
-    t = tokens("`it'`s' `'`' `see `it'`s' now' `a'\n`b'\n_eop", &messages);
+    t = tokens("`it'`s' `'`' `see `it'`s' now' `a'\n`b'", &messages);
     ASSERT_EQ(t.size(), 6u);
     EXPECT_EQ(t[0].text, "it's");
     EXPECT_EQ(t[1].text, "'");
@@ -88,7 +88,7 @@ TEST(Lexer, strings)
 TEST(Lexer, rejected_strings)
 {
     std::string messages;
-    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750''' \"q\nr\" 1\n_eop", &messages);
+    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750''' \"q\nr\" 1", &messages);
     EXPECT_EQ(messages,
               "x.alg:1:1: error: Strings in '' are not supported: write `text'\n"
               "x.alg:1:9: error: Strings in '' are not supported: write `text'\n"
@@ -101,46 +101,54 @@ TEST(Lexer, rejected_strings)
 
 TEST(Lexer, keywords_and_names)
 {
-    EXPECT_EQ(syms("_begin _integer ALPHA1; _end _eop"),
+    EXPECT_EQ(syms("_begin _integer ALPHA1; _end"),
               (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::SEMICOLON, Sym::END,
-                                 Sym::EOP }));
-    EXPECT_EQ(syms("_begin _Integer x _END _eop"),
-              (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::END, Sym::EOP }));
+                                 Sym::END_OF_FILE }));
+    EXPECT_EQ(
+        syms("_begin _Integer x _END"),
+        (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::END, Sym::END_OF_FILE }));
     // A blank ends a keyword, not a name; '_' starts a keyword.
-    auto k = tokens("_real_array noun phrase[1:2]_eop");
+    auto k = tokens("_real_array noun phrase[1:2]");
     ASSERT_EQ(k.size(), 9u);
     EXPECT_EQ(k[0].sym, Sym::REAL);
     EXPECT_EQ(k[1].sym, Sym::ARRAY);
     EXPECT_EQ(k[2].text, "nounphrase");
-    EXPECT_EQ(k[8].sym, Sym::EOP);
-    auto t = tokens("AbcDefGhij, Счёт1 _eop");
+    EXPECT_EQ(k[8].sym, Sym::END_OF_FILE);
+    auto t = tokens("AbcDefGhij, Счёт1");
     EXPECT_EQ(t[0].text, "AbcDefGhij");
     EXPECT_EQ(t[2].text, "Счёт1");
-    EXPECT_EQ(
-        syms("A := B ** C (/ D /) _le _notequal _eop"),
-        (std::vector<Sym>{ Sym::IDENT, Sym::ASSIGN, Sym::IDENT, Sym::POWER, Sym::IDENT,
-                           Sym::LBRACKET, Sym::IDENT, Sym::RBRACKET, Sym::LE, Sym::NE, Sym::EOP }));
-    EXPECT_EQ(syms("¬A ∨ B ∧ C ⊃ D ≡ E ≤ F ≥ G ≠ H × I ↑ J _eop"),
+    EXPECT_EQ(syms("A := B ** C (/ D /) _le _notequal"),
+              (std::vector<Sym>{ Sym::IDENT, Sym::ASSIGN, Sym::IDENT, Sym::POWER, Sym::IDENT,
+                                 Sym::LBRACKET, Sym::IDENT, Sym::RBRACKET, Sym::LE, Sym::NE,
+                                 Sym::END_OF_FILE }));
+    EXPECT_EQ(syms("¬A ∨ B ∧ C ⊃ D ≡ E ≤ F ≥ G ≠ H × I ↑ J"),
               syms("_not A _or B _and C _impl D _equiv E\n"
-                   "_le F _ge G _ne H * I _power J _eop"));
-    EXPECT_EQ(syms("A ÷ B _div C _eop"), (std::vector<Sym>{ Sym::IDENT, Sym::INTDIV, Sym::IDENT,
-                                                            Sym::INTDIV, Sym::IDENT, Sym::EOP }));
+                   "_le F _ge G _ne H * I _power J"));
+    EXPECT_EQ(syms("A ÷ B _div C"),
+              (std::vector<Sym>{ Sym::IDENT, Sym::INTDIV, Sym::IDENT, Sym::INTDIV, Sym::IDENT,
+                                 Sym::END_OF_FILE }));
 }
 
 TEST(Lexer, comment_and_after_end)
 {
-    const std::string text = "_begin _comment ANY TEXT; X _end OF IT; _end + _eop";
+    const std::string text = "_begin _comment ANY TEXT; X _end OF IT; _end +";
     std::string messages;
     tokens(text, &messages);
     EXPECT_EQ(syms(text), (std::vector<Sym>{ Sym::BEGIN, Sym::IDENT, Sym::END, Sym::SEMICOLON,
-                                             Sym::END, Sym::EOP }));
-    EXPECT_EQ(messages,
-              "x.alg:1: warning: Text after _end is skipped up to ';', _end, _else or _eop\n");
+                                             Sym::END, Sym::END_OF_FILE }));
+    EXPECT_EQ(messages, "x.alg:1: warning: Text after _end is skipped up to ';', _end or _else\n");
+}
+
+// _eop is read, so that the parser can reject it.
+TEST(Lexer, eop)
+{
+    EXPECT_EQ(syms("_end _eop"), (std::vector<Sym>{ Sym::END, Sym::EOP }));
+    EXPECT_EQ(syms("e̲n̲d̲ e̲o̲p̲"), (std::vector<Sym>{ Sym::END, Sym::EOP }));
 }
 
 TEST(Lexer, common)
 {
-    auto t = tokens("_common /ABC/ X, Y(10), Z(2,3); _eop");
+    auto t = tokens("_common /ABC/ X, Y(10), Z(2,3);");
     ASSERT_EQ(t[0].sym, Sym::COMMON);
     const CommonBlock &b = *t[0].common;
     EXPECT_EQ(b.name, "ABC");
@@ -149,20 +157,20 @@ TEST(Lexer, common)
     EXPECT_EQ(b.elements[0].size, 1);
     EXPECT_EQ(b.elements[2].dims, (std::vector<int>{ 2, 3 }));
     EXPECT_EQ(b.elements[2].size, 6);
-    EXPECT_EQ(t[1].sym, Sym::EOP);
+    EXPECT_EQ(t[1].sym, Sym::END_OF_FILE);
 }
 
 TEST(Lexer, errors)
 {
     std::string messages;
-    auto t = tokens("A % _foo 'begin' 1.X\n''S'9'' _eop", &messages);
+    auto t = tokens("A % _foo 'begin' 1.X\n''S'9''", &messages);
     EXPECT_EQ(messages,
               "x.alg:1:3: error: Illegal character '%'\n"
               "x.alg:1:5: error: Unknown keyword _foo\n"
               "x.alg:1:10: error: Write a keyword as _begin, not in quotes\n"
               "x.alg:1:18: error: Malformed number\n"
               "x.alg:2:1: error: Strings in '' are not supported: write `text'\n");
-    EXPECT_EQ(t.back().sym, Sym::EOP);
+    EXPECT_EQ(t.back().sym, Sym::END_OF_FILE);
 }
 
 // The publication form: underlined keywords, `…' strings nested.

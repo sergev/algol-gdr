@@ -92,5 +92,4 @@ A L G O L - Г Д P
     89.         IDENTIFIERLONG := 1;
     90.         PRINT(I)
     91.     _end
-    92.     _eop
 

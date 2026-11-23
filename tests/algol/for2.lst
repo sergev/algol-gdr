@@ -42,5 +42,4 @@ A L G O L - Г Д P
     39.       _for I := 1 _step 1 _until 3 _do IA[I*(-2)] := I+20;
     40.       _for I := 1 _step 1 _until 3 _do IA[2-I+5] := I+30; SHOW
     41.     _end
-    42.     _eop
 

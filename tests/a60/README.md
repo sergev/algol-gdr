@@ -12,7 +12,7 @@ runs them on x86_64, aarch64 and riscv64. `.a60` files are in the publication fo
 | parameters | Jensen's device, conversions of name parameters, formal procedures, formals without specifications, arrays and labels by value |
 | for | the for statement of 4.6: subscripted variable, element order, goto out |
 | own | own variables and arrays |
-| program_form | unsigned integer labels, `) text: (` delimiters, no `_eop` |
+| program_form | unsigned integer labels, `) text: (` delimiters |
 | publication | the publication form |
 | intdiv | `÷` |
 | ifip | the IFIP input and output procedures |

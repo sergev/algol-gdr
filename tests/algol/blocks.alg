@@ -15,4 +15,3 @@ _begin
     _end;
     PRINT(X)
 _end
-_eop

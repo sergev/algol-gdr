@@ -7,5 +7,4 @@ A L G O L - Г Д P
      4.         PRINT(SQRT(16.0), SIN(0.0), COS(0.0), ARCTAN(0.0));
      5.         PRINT(EXP(0.0), LN(1.0), ENTIER(2.5), ENTIER(-2.5));
      6.     _end
-     7.     _eop
 

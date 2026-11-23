@@ -54,5 +54,4 @@ A L G O L - Г Д P
     51.       PP(1, I, B, RA, L, P0, `S', S);
     52.       PP(1, X, B, RA, CP, P0, `S', S)
     53.     _end
-    54.     _eop
 

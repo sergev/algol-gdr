@@ -273,4 +273,3 @@ NZ:
     terin(input, 1);
     _goto NZ
 _end
-_eop

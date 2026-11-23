@@ -12,5 +12,4 @@ A L G O L - Г Д P
      9.         _if X _then I := 0;
     10.         B := I _and B;
     11.     _end
-    12.     _eop
 

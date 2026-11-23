@@ -65,7 +65,7 @@ typed.
 
 - The program: `_code:` and `_algol:` lists of external procedures, `_common` declarations,
   then a block or compound statement; or procedures alone, a unit for separate compilation.
-  `_eop` or the end of the file ends it.
+  The end of the file ends it.
 - Expressions by priority, from the lowest: `≡`, `⊃`, `∨`, `∧`, `¬`, the relations, `+ -`,
   `× / ÷`, `↑`; all binary operators are left-associative. A conditional expression as an
   operand must be in parentheses.

@@ -10,4 +10,3 @@ _begin
     _for I := 1 _step 1 _until LENGTH(S) _do PRINT(S[I]);
     PRINT(NEWLINE, T, A[1], A[2])
 _end
-_eop

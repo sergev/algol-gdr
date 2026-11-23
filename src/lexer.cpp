@@ -245,8 +245,11 @@ char32_t Lexer::fetch()
 {
     for (;;) {
         if (col_ >= text_.size()) {
-            if (next_line_ >= lines_.size())
+            if (next_line_ >= lines_.size()) {
+                if (soft_eof_) // a name or number at the end of the file
+                    return ch_ = 0;
                 throw EndOfInput{};
+            }
             const std::string &text = lines_[next_line_++];
             text_                   = decode_utf8(text) + U'\n';
             std::replace(text_.begin(), text_.end(), U'′', QUOTE);
@@ -401,6 +404,7 @@ std::string Lexer::word(bool raw)
 
 Token Lexer::name()
 {
+    SoftEof guard(soft_eof_);
     Pos start = start_;
     Token t   = make(Sym::IDENT);
     t.text    = word(false);
@@ -496,7 +500,7 @@ Token Lexer::after_end()
             continue;
         }
         if (!warned_) {
-            diag_.warning(line_, "Text after _end is skipped up to ';', _end, _else or _eop");
+            diag_.warning(line_, "Text after _end is skipped up to ';', _end or _else");
             warned_ = true;
         }
         if (c == ';')
@@ -601,6 +605,7 @@ Token Lexer::octal()
 //
 Token Lexer::number(bool point)
 {
+    SoftEof guard(soft_eof_);
     Pos start = start_;
     std::string whole, fraction, exponent;
     bool exp = false, negative = false, digit = false, bad = point && !is_digit(ch_);

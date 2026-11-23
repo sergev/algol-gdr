@@ -174,7 +174,7 @@ account (see tests/algol/quinio.c).
   expression a temporary holding its value (a string: a `char *`). The result is the
   procedure's type in C: `int64_t` (integer), `double` (real), `bool`, `char *` (string),
   `void`. `_code: _real rndm;` is `double rndm(…)`.
-- **Units.** A file of procedures alone (`_real _procedure f(…); …; _procedure g; …; _eop`)
+- **Units.** A file of procedures alone (`_real _procedure f(…); …; _procedure g; …`)
   compiles to an object with no `algol_main`: its procedures are global functions under
   their own names, with the Algol convention below. A program declares them `_algol: _real
   f; _algol: g;` and is linked with the object.

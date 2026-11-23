@@ -11,4 +11,3 @@ _begin
         PRINT(J, _if I = 4 _then 1.5 _else 2.5)
     _end
 _end
-_eop

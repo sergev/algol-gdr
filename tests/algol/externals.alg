@@ -8,4 +8,3 @@ _begin _integer I; _real X;
   LOAD(I);
   _for I := 1 _step 1 _until I _do X := 1
 _end
-_eop

@@ -14,4 +14,3 @@ _begin
     _for X := 0.5 _step 0.25 _until 1.0 _do PRINT(X);
     PRINT(I)
 _end
-_eop

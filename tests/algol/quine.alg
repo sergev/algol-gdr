@@ -11,4 +11,4 @@
  L[7]:=`NEWLINE);/FOR/ I:=5,6,7 /DO/ P(L[I]); /END//EOP/';
  Q:=‘'’;_for I:=1,2,3,4_do P(L[I]); _for I:=1,2,3,4,
  5,6,7_do PRINT(`L[',R[I],`]:=',Q,Q,L[I],Q,Q,`;',
- NEWLINE);_for I:=5,6,7 _do P(L[I]); _end_eop
+ NEWLINE);_for I:=5,6,7 _do P(L[I]); _end

@@ -17,4 +17,3 @@ _begin _integer I, J, N; _real X; _boolean B;
     A[1] := 7; Q(A[1]); PRINT(A[1])
   _end
 _end
-_eop

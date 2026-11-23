@@ -11,5 +11,4 @@ A L G O L - Г Д P
      8.         _real X, Y, Z, U, V, W;
      9.         X := 1;
     10.     _end
-    11.     _eop
 
