@@ -1,0 +1,4 @@
+b̲e̲g̲i̲n̲
+    PRINTTEXT(`Hello `Algol'');
+    NLCR
+e̲n̲d̲

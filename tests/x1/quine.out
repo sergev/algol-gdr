@@ -1,0 +1,8 @@
+begin procedure x(s); string s; begin PRSYM(102); PRINTTEXT(s); PRSYM(103); PRSYM(87); NLCR end;
+procedure Q(a,b,c,d,e); string a,b,c,d; real e; begin PRINTTEXT(a); NLCR; PRINTTEXT(b); NLCR;
+PRINTTEXT(c); NLCR; x(a); x(b); x(c); x(d); PRINTTEXT(d); NLCR; end; Q(
+`begin procedure x(s); string s; begin PRSYM(102); PRINTTEXT(s); PRSYM(103); PRSYM(87); NLCR end;',
+`procedure Q(a,b,c,d,e); string a,b,c,d; real e; begin PRINTTEXT(a); NLCR; PRINTTEXT(b); NLCR;',
+`PRINTTEXT(c); NLCR; x(a); x(b); x(c); x(d); PRINTTEXT(d); NLCR; end; Q(',
+`0); end',
+0); end

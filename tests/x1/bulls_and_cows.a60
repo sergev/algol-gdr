@@ -1,0 +1,72 @@
+b̲e̲g̲i̲n̲
+    i̲n̲t̲e̲g̲e̲r̲ secret, count, guess, cows, bulls, i, j;
+    r̲e̲a̲l̲ seed;
+
+    i̲n̲t̲e̲g̲e̲r̲ p̲r̲o̲c̲e̲d̲u̲r̲e̲ digit(num, ps);
+        v̲a̲l̲u̲e̲ num;
+        i̲n̲t̲e̲g̲e̲r̲ num, ps;
+    b̲e̲g̲i̲n̲
+        num := num ÷ 10↑ps;
+        digit := num - num ÷ 10 * 10
+    e̲n̲d̲;
+
+    B̲o̲o̲l̲e̲a̲n̲ p̲r̲o̲c̲e̲d̲u̲r̲e̲ malformed(num);
+        v̲a̲l̲u̲e̲ num;
+        i̲n̲t̲e̲g̲e̲r̲ num;
+    b̲e̲g̲i̲n̲
+        malformed := num > 9876 ∨ num < 0123 ∨
+                     digit(num, 0) = digit(num, 1) ∨
+                     digit(num, 0) = digit(num, 2) ∨
+                     digit(num, 0) = digit(num, 3) ∨
+                     digit(num, 1) = digit(num, 2) ∨
+                     digit(num, 1) = digit(num, 3) ∨
+                     digit(num, 2) = digit(num, 3);
+    e̲n̲d̲;
+
+    SETRANDOM(TIMEOFDAY);
+    secret := 0;
+    f̲o̲r̲ i := 0 w̲h̲i̲l̲e̲ malformed(secret) d̲o̲
+        secret := entier(RANDOM * 9877);
+
+    PRINTTEXT(`Welcome to bulls and cows!'); NLCR;
+    NLCR;
+    PRINTTEXT(`I choose a number made of 4 digits (from 0 to 9) without repetitions.'); NLCR;
+    PRINTTEXT(`You enter a number of 4 digits, and I say you how many of them'); NLCR;
+    PRINTTEXT(`are in my secret number but in wrong position (cows),'); NLCR;
+    PRINTTEXT(`and how many are in the right position (bulls).'); NLCR;
+    NLCR;
+
+    count := 0;
+    guess := 0;
+    f̲o̲r̲ i := 0 w̲h̲i̲l̲e̲ guess ≠ secret d̲o̲ b̲e̲g̲i̲n̲
+        count := count + 1;
+again:
+        PRINTTEXT(`Guess a number.');
+        NLCR;
+        guess := entier(read);
+        i̲f̲ malformed(guess) t̲h̲e̲n̲
+            g̲o̲t̲o̲ again;
+
+        cows := 0;
+        bulls := 0;
+
+        f̲o̲r̲ i := 0 s̲t̲e̲p̲ 1 u̲n̲t̲i̲l̲ 3 d̲o̲
+            f̲o̲r̲ j := 0 s̲t̲e̲p̲ 1 u̲n̲t̲i̲l̲ 3 d̲o̲
+                i̲f̲ digit(secret, i) = digit(guess, j) t̲h̲e̲n̲
+                    i̲f̲ i = j t̲h̲e̲n̲
+                        bulls := bulls + 1
+                    e̲l̲s̲e̲
+                        cows := cows + 1;
+
+        PRINTTEXT(`You scored ');
+        print(bulls);
+        PRINTTEXT(` bulls and ');
+        print(cows);
+        PRINTTEXT(` cows.');
+        NLCR
+    e̲n̲d̲;
+    PRINTTEXT(`Correct. That took you ');
+    print(count);
+    PRINTTEXT(` guesses.');
+    NLCR
+e̲n̲d̲

@@ -7,7 +7,7 @@ purpose is listed with the reason.
 
 **Where we are.** Every example passes the front end as it is (`ast_test` x1_examples):
 the X1 procedures are standard identifiers, `print` is X1's in the publication form, `read`
-in an expression is X1's (doc/ast.asdl). The whole X1 library runs (runtime/x1.c, doc/codegen.md); `tests/x1/` checks it against `x1sim`.
+in an expression is X1's (doc/ast.asdl). The whole X1 library runs (runtime/x1.c, doc/codegen.md); `tests/x1/` has the examples with their `x1sim` outputs (README there).
 
 **Reference.** The behaviour to match is `x1sim`'s, not the X8 manual's where they differ.
 Its sources are in `x1-algol-compiler/`:
@@ -26,16 +26,6 @@ green.
 
 ### Running the examples
 
-- **G5** Goldens from `x1sim`:
-  - Build `x1sim` natively. The binary in `x1-algol-compiler/build` is for another
-    machine.
-  - Copy each example into `tests/x1/NAME.a60`, noting the x1-algol-compiler revision in
-    `tests/x1/README.md`.
-  - Take the inputs (`NAME.in`) from the `*.sh` scripts and `*.md` pages: lisp, outer_planets,
-    pentomino (four sizes: `pentomino6x10.in` and so on), quinio (a game from quinio.md),
-    and a game for bulls_and_cows.
-  - Record `NAME.out` from `x1sim < NAME.in`. These are frozen, like the dubna ones; the
-    script that makes them goes in `tests/x1/`.
 - **G6** `run_test` runs `tests/x1/`: each example is compiled, run on the three targets
   and compared with `NAME.out`, or with `NAME.native.out` where the reason is documented.
   - Reals: X1 has a 40-bit mantissa and doubles have 53, so the last of the 13 printed
