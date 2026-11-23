@@ -5,8 +5,7 @@
 
 //
 // Pass 2 (G17223): reads the stream of pass 1 backward, binds identifiers
-// and checks types; writes its stream backward. C++ on a
-// Machine (doc/translation.md).
+// and checks types; writes its stream backward.
 //
 Stream pass2(Context &ctx, const Stream &input);
 

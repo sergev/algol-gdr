@@ -321,7 +321,11 @@ the depth in 02107; AG15102 sets both and every block saves them.
 ## Pass 2: G17223
 
 It reads the pass-1 stream **backwards** (last item first) and writes its own stream
-backwards too, through 27114, so pass 3 reads it forwards. (V)
+backwards too, through 27114, so pass 3 reads it forwards. (V) C++ (`Pass2`,
+src/pass2.cpp): the streams are vectors; the handlers are chained by the continuation
+addresses of the original, the return addresses of subtrees kept on its own stack, and
+members named after their role hold what the registers M1–M6, M9, M14 carried from one
+routine to another.
 
 ### Identifier table
 
@@ -444,9 +448,10 @@ A block header has bit 48 set, and its low 12 bits give the end address.
     (0 simple, 1 array or switch, 2 procedure with parameters, 3 procedure without).
   - One message per subtree; sibling subtrees each report. An undeclared identifier is
     reported once, at its last use.
-- **Start of the pass (17223, C++).**
-  - The read cursor 02000 is the write cursor of pass 1 + 0200000; one item is read (EOP).
-    The write cursor becomes the constant at 22113. 02004 and 02026 get M3, 02022 M3<<12.
+- **Start of the pass (17223).**
+  - The read cursor 02000 is the write cursor of pass 1 + 0200000; the first read returns
+    the half after the stream (nothing), so the last item is read next. The write cursor
+    becomes the constant at 22113. 02004 and 02026 get M3, 02022 M3<<12.
   - 'COMMON' elements (the table at 27245, a zero second word ends it; block entries have
     slot 0): the name slot must hold the element's name, else `**HECOOTBETCTBИE …` (not
     declared); the declaration at D3 must be in this slot, else `*****ПEPEПYTAH ПOPЯДOK …`.
@@ -458,7 +463,7 @@ A block header has bit 48 set, and its low 12 bits give the end address.
     the identifier slots below 02003 are cleared; [M3] = 06000 and the outer scope is opened
     (17455); the six words 21670… (`PROGR/END`, the position before any statement marker)
     go to 02011; EOP (075) is written.
-- **End of the pass (22027, C++).** At the first item: for each array record at 04000 up to
+- **End of the pass (22027).** At the first item: for each array record at 04000 up to
   02032, its descriptors (count in bits 11–7, the first at bits 23–12) get the record address
   in bits 33–21 and bit 48. Then `* * INCORRECT ALGOL PROGRAM * *` (22051–22056, through
   27733) if `FLGEX*` is set, and the return into the driver pushed at the start.
