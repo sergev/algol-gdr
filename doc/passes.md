@@ -296,10 +296,21 @@ sector to drum 27 zone 34. (V)
 
 ### The parser in C++
 
-`src/pass1_parser.cpp` keeps the control flow of the original: one function, labels named
-after the addresses, an explicit stack for M17 and a dispatch for the return addresses kept
-on it. After a syntax error, SYNERR resumes at the address in 02106 with the stack cut to
-the depth in 02107; AG15102 sets both and every block saves them.
+`src/pass1_parser.cpp` is recursive descent: a function per construct (program head,
+statement, block, declarations, procedure heading, FOR, I/O statements, expression,
+designator), with the items, D-list words and register values (M3, M4, `rau`) of the
+original in its order.
+
+After a syntax error the original (SYNERR, AG17015) resumes at a checkpoint: the address in
+02106, with the stack cut to the depth in 02107. AG15102 sets both and writes a statement
+marker. A statement (AG14020) sets the point after itself in its caller, at its start and
+again at its end (it saves and restores the pair), so an error after a statement and before
+the next checkpoint resumes there, in the caller; 'BEGIN', the declarations of a block
+(14504), an error at its end (14265), the program head (13760) and the end of the program
+(14011) set their own. A checkpoint always lies in a routine still running. In C++ the
+program, each statement and each procedure heading run as frames (`Pass1::frame`): the error
+is reported where it happens, then unwinds (`Resume`) to the frame that owns the checkpoint,
+which goes on at its label.
 
 ### Main routines
 

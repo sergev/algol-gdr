@@ -1,9 +1,13 @@
 //
-// Parser of pass 1 (G13666 and the parser part of G14504), translated label by
-// label. The original passes return addresses on its stack and resumes after a
-// syntax error at the point saved in 02106 (address) and 02107 (stack depth),
-// so the routines are one function here: Lnnnnn is the code at nnnnn, `stk`
-// is the stack of M17, and `pc` with `dispatch` stands for a computed jump.
+// Parser of pass 1 (G13666 and the parser part of G14504): recursive descent
+// over the symbols of the lexer, writing the stream and the D-list.
+//
+// After a syntax error the original resumes at a checkpoint (02106, 02107):
+// an address in a routine still running, with the stack cut to its frame. A
+// statement sets it to the point after itself in its caller, and so does its
+// end; blocks, the declarations and the program set their own. Here the
+// routines that own checkpoints run as frames (frame()): the error unwinds
+// to the frame of the checkpoint, which goes on at that point.
 //
 #include <cstdio>
 #include <ostream>
@@ -16,6 +20,7 @@
 namespace {
 
 constexpr Word MASK24  = 077777777;
+constexpr Word MASK48  = 07777777777777777;
 constexpr unsigned R15 = 077777;
 
 // Constants of pass 1 (AE16472 + offset, in the table at 15146…).
@@ -34,7 +39,7 @@ Word arx(Word a, Word b)
 {
     Word s = a + b;
     if (s >> 48)
-        s = (s + 1) & 07777777777777777;
+        s = (s + 1) & MASK48;
     return s;
 }
 
@@ -51,7 +56,63 @@ Word apx(Word a, Word mask)
     return r;
 }
 
+const Word ONE      = K(015274); // 1
+const Word COUNT    = K(015262); // one in a count at bits 12-8
+const Word TOO_MANY = K(015404); // a count of 32 or more
+
+// Checkpoints: the address of the original where the parser goes on.
+enum : unsigned {
+    START          = 0,
+    HEAD_NEXT      = 013760, // the program head: after an external name
+    AFTER_PROGRAM  = 013732,
+    SKIP_TO_EOP    = 014011,
+    BEGIN_BODY     = 014060, // after 'BEGIN'
+    NEXT_STATEMENT = 014062, // a compound statement: the next statement
+    AFTER_COMPOUND = 014063, // … after one
+    AFTER_THEN     = 014105, // IF: after the THEN branch
+    AFTER_ELSE     = 014111,
+    AFTER_THEN_FOR = 014114, // after a THEN branch that is a FOR statement
+    AFTER_BODY     = 014050, // FOR: after its body
+    AFTER_BLOCK_ST = 014301, // a block: after a statement
+    BLOCK_ERROR    = 014265, // … after an error there
+    DECLARATIONS   = 014504, // a block: the declarations
+    PROC_END       = 014642, // a procedure: after its body
+    THIRTY_ERRORS  = 017103, // 30 errors: skip to 'EOP'
+};
+
 } // namespace
+
+// The parser state saved in a checkpoint is the frame's own.
+struct Pass1::Resume {
+    Checkpoint at;
+};
+
+//
+// Run a frame from START: a syntax error is reported (AG17015) and resumes at
+// the checkpoint, here when it is this frame's (body runs from its label),
+// else in the frame that owns it.
+//
+template <class Body>
+void Pass1::frame(Body body)
+{
+    const unsigned self = ++frames_;
+    unsigned at         = START;
+    for (;;) {
+        try {
+            body(self, at);
+            return;
+        } catch (const SyntaxError &e) {
+            Checkpoint c = recover(e.number);
+            if (c.frame != self)
+                throw Resume{ c };
+            at = c.label;
+        } catch (const Resume &r) {
+            if (r.at.frame != self)
+                throw;
+            at = r.at.label;
+        }
+    }
+}
 
 // AG15120: write an item of the stream. An identifier of a 'COMMON' block
 // becomes a subscripted variable with the constant 1.
@@ -75,6 +136,12 @@ void Pass1::emit(Word a)
     out_.push_back(Item{ uint32_t(a & MASK24) });
 }
 
+// A syntax error found by the parser (the lexer's error() also clears 02000).
+void Pass1::syntax_error(unsigned n)
+{
+    throw SyntaxError{ n };
+}
+
 // AG15104: a statement marker, line << 12 | n << 7 | 051.
 void Pass1::stmark()
 {
@@ -86,14 +153,13 @@ void Pass1::stmark()
         a               = K(015262);
     }
     ws_[D_MARKN] = a;
-    emit(((ws_[D_MARKLINE] << 12) & 07777777777777777) | ws_[D_MARKN] | K(015361));
+    emit(((ws_[D_MARKLINE] << 12) & MASK48) | ws_[D_MARKN] | K(015361));
 }
 
-// AG15102: the point to resume at after a syntax error, then a marker.
-void Pass1::setres(unsigned addr)
+// AG15102: the checkpoint, then a marker.
+void Pass1::setres(unsigned owner, unsigned label)
 {
-    ws_[D_RESSP] = stk_.size();
-    ws_[D_RESPC] = addr;
+    checkpoint_ = { owner, label };
     stmark();
 }
 
@@ -112,1670 +178,1240 @@ void Pass1::print_line(const std::string &line)
         ctx_.listing->print(line);
 }
 
-void Pass1::parse()
+//
+// AG17015: report the syntax error n, skip a symbol (unless at ';' or END)
+// and write 044; the checkpoint to go on at. At 'EOP' the compilation ends;
+// after 30 errors the rest is skipped to 'EOP'.
+//
+Pass1::Checkpoint Pass1::recover(unsigned n)
 {
-    auto &stk = stk_;
-    auto push = [&](Word w) { stk.push_back(w); };
-    auto pop  = [&]() {
-        Word w = stk.back();
-        stk.pop_back();
-        return w;
-    };
-    // M[M17 - k]: the k-th word from the top.
-    auto S    = [&](unsigned k) -> Word    &{ return stk[stk.size() - k]; };
-    auto drop = [&](unsigned n) { stk.resize(stk.size() - n); };
-    auto D0   = [&]() { return ws_[D_SYM]; };
-
-    Word a      = 0;
-    unsigned m1 = 0, m8 = 0, m13 = 0, m14 = 0;
-    unsigned pc = 013666;
-    Word x14417 = 0; // a cell of the code, *0531B
-
     for (;;) {
         try {
-            goto dispatch;
-        dispatch:
-            switch (pc) {
-            case RET_DRIVER:
-                return;
-            case 013666:
-                goto L13666;
-            case 013711:
-                goto L13711;
-            case 013715:
-                goto L13715;
-            case 013724:
-                goto L13724;
-            case 013730:
-                goto L13730;
-            case 013732:
-                goto L13732;
-            case 013736:
-                goto L13736;
-            case 013742:
-                goto L13742;
-            case 013743:
-                goto L13743;
-            case 013745:
-                goto L13745;
-            case 013750:
-                goto L13750;
-            case 013755:
-                goto L13755;
-            case 013756:
-                goto L13756;
-            case 013760:
-                goto L13760;
-            case 013767:
-                goto L13767;
-            case 014010:
-                goto L14010;
-            case 014011:
-                goto L14011;
-            case 014013:
-                goto L14013;
-            case 014020:
-                goto L14020;
-            case 014023:
-                goto L14023;
-            case 014046:
-                goto L14046;
-            case 014047:
-                goto L14047;
-            case 014050:
-                goto L14050;
-            case 014056:
-                goto L14056;
-            case 014060:
-                goto L14060;
-            case 014062:
-                goto L14062;
-            case 014063:
-                goto L14063;
-            case 014066:
-                goto L14066;
-            case 014070:
-                goto L14070;
-            case 014074:
-                goto L14074;
-            case 014075:
-                goto L14075;
-            case 014105:
-                goto L14105;
-            case 014111:
-                goto L14111;
-            case 014112:
-                goto L14112;
-            case 014113:
-                goto L14113;
-            case 014114:
-                goto L14114;
-            case 014116:
-                goto L14116;
-            case 014117:
-                goto L14117;
-            case 014120:
-                goto L14120;
-            case 014121:
-                goto L14121;
-            case 014131:
-                goto L14131;
-            case 014136:
-                goto L14136;
-            case 014140:
-                goto L14140;
-            case 014143:
-                goto L14143;
-            case 014146:
-                goto L14146;
-            case 014147:
-                goto L14147;
-            case 014150:
-                goto L14150;
-            case 014151:
-                goto L14151;
-            case 014153:
-                goto L14153;
-            case 014154:
-                goto L14154;
-            case 014160:
-                goto L14160;
-            case 014165:
-                goto L14165;
-            case 014166:
-                goto L14166;
-            case 014167:
-                goto L14167;
-            case 014170:
-                goto L14170;
-            case 014174:
-                goto L14174;
-            case 014175:
-                goto L14175;
-            case 014201:
-                goto L14201;
-            case 014202:
-                goto L14202;
-            case 014206:
-                goto L14206;
-            case 014210:
-                goto L14210;
-            case 014212:
-                goto L14212;
-            case 014213:
-                goto L14213;
-            case 014217:
-                goto L14217;
-            case 014223:
-                goto L14223;
-            case 014224:
-                goto L14224;
-            case 014225:
-                goto L14225;
-            case 014226:
-                goto L14226;
-            case 014230:
-                goto L14230;
-            case 014232:
-                goto L14232;
-            case 014234:
-                goto L14234;
-            case 014236:
-                goto L14236;
-            case 014240:
-                goto L14240;
-            case 014241:
-                goto L14241;
-            case 014243:
-                goto L14243;
-            case 014244:
-                goto L14244;
-            case 014245:
-                goto L14245;
-            case 014250:
-                goto L14250;
-            case 014252:
-                goto L14252;
-            case 014256:
-                goto L14256;
-            case 014257:
-                goto L14257;
-            case 014262:
-                goto L14262;
-            case 014265:
-                goto L14265;
-            case 014277:
-                goto L14277;
-            case 014301:
-                goto L14301;
-            case 014313:
-                goto L14313;
-            case 014315:
-                goto L14315;
-            case 014323:
-                goto L14323;
-            case 014325:
-                goto L14325;
-            case 014327:
-                goto L14327;
-            case 014342:
-                goto L14342;
-            case 014350:
-                goto L14350;
-            case 014352:
-                goto L14352;
-            case 014356:
-                goto L14356;
-            case 014401:
-                goto L14401;
-            case 014402:
-                goto L14402;
-            case 014404:
-                goto L14404;
-            case 014410:
-                goto L14410;
-            case 014446:
-                goto L14446;
-            case 014451:
-                goto L14451;
-            case 014460:
-                goto L14460;
-            case 014470:
-                goto L14470;
-            case 014472:
-                goto L14472;
-            case 014504:
-                goto L14504;
-            case 014510:
-                goto L14510;
-            case 014526:
-                goto L14526;
-            case 014546:
-                goto L14546;
-            case 014563:
-                goto L14563;
-            case 014564:
-                goto L14564;
-            case 014601:
-                goto L14601;
-            case 014610:
-                goto L14610;
-            case 014613:
-                goto L14613;
-            case 014614:
-                goto L14614;
-            case 014637:
-                goto L14637;
-            case 014641:
-                goto L14641;
-            case 014642:
-                goto L14642;
-            case 014651:
-                goto L14651;
-            case 014655:
-                goto L14655;
-            case 014666:
-                goto L14666;
-            case 014670:
-                goto L14670;
-            case 014700:
-                goto L14700;
-            case 014704:
-                goto L14704;
-            case 014705:
-                goto L14705;
-            case 014715:
-                goto L14715;
-            case 014716:
-                goto L14716;
-            case 014722:
-                goto L14722;
-            case 014724:
-                goto L14724;
-            case 014726:
-                goto L14726;
-            case 014736:
-                goto L14736;
-            case 014743:
-                goto L14743;
-            case 014745:
-                goto L14745;
-            case 014746:
-                goto L14746;
-            case 014750:
-                goto L14750;
-            case 014752:
-                goto L14752;
-            case 014753:
-                goto L14753;
-            case 014762:
-                goto L14762;
-            case 014775:
-                goto L14775;
-            case 014777:
-                goto L14777;
-            case 015004:
-                goto L15004;
-            case 015010:
-                goto L15010;
-            case 015011:
-                goto L15011;
-            case 015013:
-                goto L15013;
-            case 015015:
-                goto L15015;
-            case 015016:
-                goto L15016;
-            case 015024:
-                goto L15024;
-            case 015026:
-                goto L15026;
-            case 015032:
-                goto L15032;
-            case 015036:
-                goto L15036;
-            case 015037:
-                goto L15037;
-            case 015043:
-                goto L15043;
-            case 015045:
-                goto L15045;
-            case 015063:
-                goto L15063;
-            case 015072:
-                goto L15072;
-            case 015076:
-                goto L15076;
-            case 017015:
-                goto L17015;
-            case 017056:
-                goto L17056;
-            case 017062:
-                goto L17062;
-            case 017066:
-                goto L17066;
-            case 017076:
-                goto L17076;
-            case 017103:
-                goto L17103;
-            default:
-                throw std::logic_error("pass 1: no code at " + std::to_string(pc));
+            if (++ctx_.flgex == 30) {
+                checkpoint_.label = THIRTY_ERRORS;
+                print_line("30 ERRORS , COMPILATION INTERRUPTED");
+                skip_to_eop();
             }
-            //
-            // AG13666: the start of the pass and the program head.
-            //
-        L13666:
-            push(RET_DRIVER);
-            ws_[D_RESSP] = stk.size();
-            if (!ctx_.options.no_listing)
-                blank_line(ctx_);
-            ws_[D_LIST]  = ctx_.options.no_listing ? 0 : 1;
-            m5_          = 0;
-            m6_          = 0;
-            m3_          = 05753;
-            ws_[02001]   = K(015403);
-            ws_[D_POOL]  = K(015371);
-            m1           = 013760;
-            ws_[D_RESPC] = m1;
-            emit(0102);
-            stmark();
-            lex();
-            ws_[02054] = 0;
-        L13711: // *0023B
-            ws_[02055] = K(015316);
-            switch ((attr(m4_) & 017000000) >> 18) {
-            case 1: // 'ALGOL'
-                a = K(015275);
-                goto L13745;
-            case 2: // 'CODE'
-                a = K(015360);
-                goto L13745;
-            case 3:
-                a = K(015331);
-                goto L13750;
-            case 4:
-                a = K(015324);
-                goto L13750;
-            case 5:
-                a = K(015326);
-                goto L13750;
-            case 6:
-                a = K(015330);
-                goto L13750;
-            case 7: // 'PROCEDURE'
-                a = ws_[02055];
-                goto L13730;
-            case 010: // a label
-                goto L13767;
-            case 011: // 'BEGIN'
-                m13 = 013732;
-                goto L14020;
-            case 012:
-                a = K(015327);
-                goto L13750;
-            default:
-                goto L13715;
-            }
-        L13715:
-            m8 = 0137;
-            goto L14013;
-        L13724:
-            a = ws_[02055];
-        L13730:
-            push(a | K(015317));
-            push(K(015336));
-            m13 = 013732;
-            goto L14510;
-        L13732: // *0044B: after the program block
-            m1           = 014011;
-            ws_[D_RESPC] = m1;
-            ws_[D_RESSP] = stk.size();
-            if (D0() != 075)
-                goto L13743;
-        L13736: // *0050B: the last sector of the string pool
-            push(ws_[D_POOL]);
-            a           = ws_[D_POOL] | K(015413);
-            ws_[D_POOL] = a;
-            pool_put(a);
-            ws_[D_POOL] = pop();
-        L13742: // AG13742: return through the stack
-            pc = pop();
-            goto dispatch;
-        L13743:
-            stmark();
-            m8 = 0143;
-            goto L17015;
-        L13745: // *0057B: 'ALGOL' : or 'CODE' :
-            ws_[02054] = a;
-            lex();
-            m4_ = (m4_ - 050) & R15;
-            if (m4_)
-                goto L13715;
-            lex();
-            goto L13711;
-        L13750: // a type before an external name
-            ws_[02055] = a;
-            lex();
-            if (D0() == 042)
-                goto L13724;
-            if (m4_)
-                goto L13715;
-            ws_[02056] = D0() >> 12;
-            lex();
-        L13755:
-            a = ws_[02054];
-            if (!a)
-                goto L13715;
-        L13756:
-            a |= ws_[02055];
-            a |= ws_[02056];
-            dpush(a);
-        L13760: // *0072B
-            m4_ = (m4_ - 051) & R15;
-            if (!m4_) {
-                lex();
-                goto L13711;
-            }
-            m4_ = (m4_ + 2) & R15;
-            if (m4_)
-                goto L13715;
-            lex();
-            if (m4_)
-                goto L13715;
-            ws_[02056] = D0() >> 12;
-            lex();
-            a = ws_[02054];
-            goto L13756;
-        L13767: // a label before the program
-            ws_[02056] = D0() >> 12;
-            lex();
-            if (D0() == 047 || D0() == 051)
-                goto L13755;
-            if (D0() != 050)
-                goto L13715;
-            lex();
-            emit((Word(m3_) << 12) | K(015256));
-            if (!ws_[D_RENAME]) {
-                ws_[02136]    = ws_[NAMES + ws_[02056]];
-                ws_[D_RENAME] = apx(ws_[02136], K(015407));
-            }
-            dpush(ws_[02056] | K(015351));
-            if (!m4_)
-                goto L13767;
-            if (D0() == 036) {
-                m13 = 013732;
-                goto L14020;
-            }
-            goto L13715;
-        L14010: // *0122B: skip to 'EOP'
-            lex();
-        L14011:
-            if (D0() != 075)
-                goto L14010;
-            goto L13736;
-        L14013: // *0125B: error in the program head
-            if (D0() == 075)
-                goto L17066;
-            if (D0() == 037) {
-                lex();
-                m8 = 0137;
-                goto L17015;
-            }
-            if (D0() != 051)
-                goto L17015;
-            m8 = 0137;
-            goto L17015;
-
-            //
-            // AG14020: a statement; for a block with declarations see L14257.
-            //
-        L14020:
-            m8 = m13;
-            setres(m8);
-            push(m8);
-            push(ws_[D_RESSP]);
-            push(ws_[D_RESPC]);
-        L14023: // *0135B
-            switch ((attr(m4_) & 03600) >> 7) {
-            case 0:
-                m8 = 042;
-                goto L17015;
-            case 1: // 'BEGIN'
-                goto L14056;
-            case 2: // 'IF'
-                lex();
-                goto L14074;
-            case 3: // 'GOTO'
-                lex();
-                goto L14117;
-            case 4: // identifier
-                a = D0();
-                goto L14121;
-            case 5: // 'FOR'
-                a = m3_;
-                goto L14046;
-            case 6:
-                a = K(015335);
-                goto L14154;
-            case 7:
-                a = K(015373);
-                goto L14213;
-            case 010:
-                a = K(015335);
-                goto L14250;
-            case 011:
-                a = K(015373);
-                goto L14240;
-            case 012: // 'PRINT'
-                a = K(015373);
-                goto L14230;
-            case 013:
-                a = K(015373);
-                goto L14236;
-            case 014:
-                a = K(015350);
-                goto L14151;
-            case 015:
-                a = K(015362);
-                goto L14151;
-            case 016:
-                a = K(015367);
-                goto L14151;
-            default: // an empty statement
-                goto L14066;
-            }
-        L14046: // *0160B: 'FOR'
-            push(a);
-            m13 = 014047;
-            goto L14655;
-        L14047:
-            m13 = 014050;
-            goto L14020;
-        L14050: // AG14050: the end of a FOR statement
-            a = arx(pop(), K(015274));
-            a |= K(015305);
-            dpush(a);
-            emit((Word(arx(m3_, K(015274))) << 12) | K(015366));
-            stmark();
-            goto L14066;
-        L14056: // *0170B: 'BEGIN'
-            m8 = 014060;
-            setres(m8);
-            lex();
-        L14060: // *0172B
-            if (attr(m4_) & 04000)
-                goto L14257;
-        L14062: // *0174B
-            m13 = 014063;
-            goto L14020;
-        L14063:
-            if (D0() == 051) {
-                lex();
-                goto L14062;
-            }
-            if (D0() != 037)
-                goto L14070;
-            lex();
-        L14066: // *0200B
-            ws_[D_RESPC] = pop();
-            ws_[D_RESSP] = pop();
-            goto L13742;
-        L14070: // *0202B
-            m8           = 036;
-            m14          = 014062;
-            ws_[D_RESPC] = m14;
-            goto L17015;
-        L14074: // *0206B: 'IF'
-            m1  = 0;
-            m13 = 014075;
-            goto L14762;
-        L14075:
-            if (D0() != 030) {
-                m8 = 037;
-                goto L17015;
-            }
-            lex();
-            emit(K(015346));
-            if (D0() == 027) {
-                m8 = 040;
-                goto L17015;
-            }
-            if (D0() == 032)
-                goto L14113;
-            m13 = 014105;
-            goto L14020;
-        L14105:
-            if (D0() != 031)
-                goto L14116;
-            lex();
-            emit(K(015363));
-            m13 = 014111;
-            goto L14020;
-        L14111:
-            m14 = 054;
-        L14112: // *0224B
-            a = m14;
-        L14150: // *0262B
-            emit(a);
-            goto L14066;
-        L14113: // *0225B
-            m13 = 014114;
-            goto L14020;
-        L14114:
-            if (D0() == 031) {
-                m8 = 041;
-                goto L17015;
-            }
-        L14116: // *0230B
-            m14 = 053;
-            goto L14112;
-        L14117: // *0231B: 'GOTO'
-            m1  = 0;
-            m13 = 014120;
-            goto L14762;
-        L14120:
-            m14 = 026;
-            goto L14112;
-        L14121: // *0233B: an identifier: a label, assignment or call
-            push(a);
-            lex();
-            if (D0() != 050)
-                goto L14131;
-            lex();
-            emit((Word(m3_) << 12) | K(015256));
-            dpush((pop() >> 12) | K(015351));
-            goto L14023;
-        L14131: // *0243B
-            m1 = 011;
-            a  = pop();
-            push(014136);
-            push(m1);
-            push(a);
-            goto L15037;
-        L14136: // *0250B
-            if (D0() != 022)
-                goto L14066;
-            a = K(015262);
-        L14140: // *0252B
-            push(a);
-            lex();
-            if (m4_)
-                goto L14146;
-            m1  = 0;
-            m13 = 014143;
-            goto L14762;
-        L14143:
-            if (D0() != 022)
-                goto L14147;
-            a = arx(pop(), K(015262));
-            goto L14140;
-        L14146: // *0260B
-            m1  = 0;
-            m13 = 014147;
-            goto L14762;
-        L14147: // *0261B
-            a = pop() | K(015306);
-            goto L14150;
-        L14151: // *0263B
-            push(a);
-            lex();
-            m1  = 0;
-            m13 = 014153;
-            goto L14762;
-        L14153:
-            a = pop();
-            goto L14150;
-
-            // I/O statements.
-        L14154: // *0266B
-            ws_[02052] = a;
-            lex();
-            if (D0() != 020)
-                goto L14206;
-            lex();
-            m1  = 0;
-            m13 = 014160;
-            goto L14762;
-        L14160:
-            if (D0() == 045)
-                goto L14202;
-            m8 = 0132;
-            if (D0() != 047)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 014165;
-            goto L14762;
-        L14165:
-            m4_ = (m4_ - 045) & R15;
-            m8  = 0132;
-        L14166: // *0300B
-            if (m4_)
-                goto L17015;
-            lex();
-        L14167: // *0301B
-            m14 = 064;
-            a   = m14;
-        L14170: // *0302B
-            emit(a);
-            if ((attr(m4_) & 03600) == 03600)
-                goto L14201;
-        L14174: // *0306B
-            m13 = 014175;
-            goto L14716;
-        L14175:
-            if (!ws_[02117])
-                emit(ws_[02052]);
-            if (D0() == 047) {
-                lex();
-                goto L14174;
-            }
-        L14201: // *0313B
-            m14 = 073;
-            goto L14112;
-        L14202: // *0314B
-            lex();
-            if (D0() != 047)
-                goto L14212;
-            lex();
-            a = K(015300);
-            goto L14170;
-        L14206: // *0320B
-            emit(K(015332));
-            m1  = 0;
-            m13 = 014210;
-            goto L14762;
-        L14210:
-            m4_ = (m4_ - 047) & R15;
-            if (!m4_)
-                goto L14166;
-            m4_ = (m4_ + 047) & R15;
-            goto L14167;
-        L14212: // *0324B
-            a = K(015257);
-            goto L14170;
-        L14213: // *0325B
-            ws_[02052] = a;
-            lex();
-            m4_ = (m4_ - 020) & R15;
-            m8  = 0133;
-            if (m4_)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 014217;
-            goto L14762;
-        L14217:
-            m4_ = (m4_ - 045) & R15;
-            if (!m4_)
-                goto L14226;
-            m4_ = (m4_ - 2) & R15;
-            m8  = 0133;
-            if (m4_)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 014223;
-            goto L14762;
-        L14223:
-            m4_ = (m4_ - 045) & R15;
-            m8  = 0133;
-        L14224: // *0336B
-            if (m4_)
-                goto L17015;
-            lex();
-        L14225: // *0337B
-            a = K(015314);
-            goto L14170;
-        L14226: // *0340B
-            lex();
-            a = K(015315);
-            goto L14170;
-        L14230: // *0342B: 'PRINT'
-            ws_[02052] = a;
-            lex();
-            a = K(015312);
-        L14232: // *0344B
-            emit(a);
-            m1  = 0;
-            m13 = 014234;
-            goto L14762;
-        L14234:
-            m4_ = (m4_ - 047) & R15;
-            if (!m4_)
-                goto L14224;
-            m4_ = (m4_ + 047) & R15;
-            goto L14225;
-        L14236: // *0350B
-            ws_[02052] = a;
-            lex();
-            a = K(015270);
-            goto L14232;
-        L14240: // *0352B
-            ws_[02052] = a;
-            a          = K(015345);
-        L14241: // *0353B
-            push(a);
-            lex();
-            m4_ = (m4_ - 020) & R15;
-            m13 = 014243;
-            goto L14252;
-        L14243:
-            m4_ = (m4_ - 047) & R15;
-            m13 = 014244;
-            goto L14252;
-        L14244:
-            m4_ = (m4_ - 047) & R15;
-            m13 = 014245;
-            goto L14252;
-        L14245:
-            m4_ = (m4_ - 045) & R15;
-            m8  = 0135;
-            if (m4_)
-                goto L17015;
-            lex();
-            a = pop();
-            goto L14170;
-        L14250: // *0362B
-            ws_[02052] = a;
-            a          = K(015341);
-            goto L14241;
-        L14252: // *0364B
-            push(m13);
-            m8 = 0135;
-            if (m4_)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 014256;
-            goto L14762;
-        L14256:
-            pc = pop();
-            goto dispatch;
-
-            //
-            // *0371B: a block with declarations.
-            //
-        L14257:
-            push(m3_);
-            emit(K(015406));
-            m8 = 014504;
-            setres(m8);
-        L14262: // AG14262
-            switch ((attr(m4_) & 0740000) >> 14) {
-            case 0: // the statements
-                m13 = 014301;
-                goto L14020;
-            case 1:
-                a = K(015324);
-                goto L14315;
-            case 2:
-                a = K(015326);
-                goto L14315;
-            case 3:
-                a = K(015330);
-                goto L14315;
-            case 4: // 'PROCEDURE'
-                a = K(015317);
-                goto L14402;
-            case 5: // 'SWITCH'
-                a = K(015374);
-                goto L14460;
-            case 6:
-                m8 = 050;
-                goto L17015;
-            case 7: // 'ARRAY'
-                a = K(015375);
-                goto L14323;
-            case 010:
-                a = K(015331);
-                goto L14315;
-            case 011:
-                a = K(015327);
-                goto L14315;
-            default:
-                throw std::logic_error("pass 1: declaration dispatch");
-            }
-        L14277: // *0411B
-            drop(1);
-            lex();
-            goto L14262;
-        L14301: // *0413B: the end of the block
-            if (D0() == 051) {
-                lex();
-                m13 = 014301;
-                goto L14020;
-            }
-            if (D0() != 037)
-                goto L14313;
-            lex();
-            a = arx(pop(), K(015274));
-            dpush(a);
-            emit((Word(arx(m3_, K(015274))) << 12) | K(015412));
-            setres(m8);
-            goto L14066;
-        L14313: // *0425B
-            m8 = 014265;
-            setres(m8);
-            m8 = 056;
-            goto L17015;
-        L14265:
-            m13 = 014301;
-            goto L14020;
-        L14315: // *0427B: a simple declaration
-            push(a);
-            lex();
-            if (!m4_)
-                goto L14410;
-            if (D0() == 042)
-                goto L14401;
-            m8 = 057;
-            if (D0() != 040)
-                goto L17015;
-            a = pop() | K(015352);
-        L14323: // *0435B: 'ARRAY'
-            push(a);
-            S(2) |= K(015353);
-        L14325: // *0437B: an array segment
-            push(0);
-            push(m3_);
-            lex();
-        L14327: // *0441B
-            m8 = 060;
-            if (m4_)
-                goto L17015;
-            dpush((D0() >> 12) | S(3));
-            S(2) = arx(S(2), K(015262));
-            lex();
-            if (D0() == 047) {
-                lex();
-                goto L14327;
-            }
-            a = arx(D0(), K(015333));
-            push(a);
-            if (D0() != 021 && D0() != 020) {
-                m8 = 061;
-                goto L17015;
-            }
-        L14342: // *0454B
-            m8 = 062;
-            if (S(3) & K(015404))
-                goto L17015;
-            emit((Word(arx(m3_, K(015274))) << 12) | S(3) | K(015255));
-            push(K(015262));
-        L14350: // *0462B: bounds
-            lex();
-            m1  = 0;
-            m13 = 014352;
-            goto L14762;
-        L14352:
-            m8 = 063;
-            if (D0() != 050)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 014356;
-            goto L14762;
-        L14356:
-            if (D0() == 047) {
-                a = arx(pop(), K(015262));
-                push(a);
-                goto L14350;
-            }
-            // *0474B
-            m8 = 064;
-            if (S(2) != D0())
-                goto L17015;
-            emit(S(1) | K(015320));
-            m14 = (S(4) >> 7) & R15;
-            m8  = m3_;
-            do { // *0502B: the dimensions into the D-list words
-                a                   = ((S(1) << 8) & 07777777777777777) | ws_[(m8 + 1) & R15];
-                ws_[(m8 + 1) & R15] = a;
-                m8                  = (m8 + 1) & R15;
-                m14                 = (m14 - 1) & R15;
-            } while (m14);
-            drop(4);
-            lex();
-            if (D0() == 047)
-                goto L14325;
-            if (D0() == 051)
-                goto L14277;
-            m8 = 065;
-            goto L17015;
-        L14401: // *0513B: a typed procedure
-            a = pop() | K(015260);
-        L14402: // *0514B
-            push(a);
-            push(K(015336));
-            m13 = 014404;
-            goto L14510;
-        L14404:
-            m8 = 014504;
-            setres(m8);
-            if (D0() == 051) {
-                lex();
-                goto L14262;
-            }
-            m8 = 066;
-            goto L17015;
-        L14410: // *0522B: a simple variable; in 'COMMON' an array [1:1]
-            x14417 = D0() >> 12;
-            m13    = 0;
-            for (;;) {
-                a = ws_[(027246 + m13) & R15];
-                if (!a)
-                    goto L14446;
-                if ((((a >> 24) & 07777) ^ x14417) == 0)
-                    break;
-                m13 = (m13 + 3) & R15;
-            }
-            // *0532B
-            S(2) |= K(015353);
-            push(0);
-            push(m3_);
-            dpush((D0() >> 12) | S(3));
-            S(2) = arx(S(2), K(015262));
-            push(K(015340));
-            emit((Word(arx(m3_, K(015274))) << 12) | S(3) | K(015255));
-            push(K(015262));
-            emit(K(015357));
-            emit(K(015357));
-            emit(S(1) | K(015320));
-            m14                 = (S(4) >> 7) & R15;
-            m8                  = m3_;
-            a                   = ((S(1) << 8) & 07777777777777777) | ws_[(m8 + 1) & R15];
-            ws_[(m8 + 1) & R15] = a;
-            m8                  = (m8 + 1) & R15;
-            drop(4);
-            goto L14451;
-        L14446: // *0560B
-            a = pop() | K(015321);
-            push(a);
-            dpush((D0() >> 12) | S(1));
-        L14451: // *0563B
-            lex();
-            if (D0() == 051)
-                goto L14277;
-            m8 = 067;
-            if (D0() != 047)
-                goto L17015;
-            lex();
-            if (!m4_)
-                goto L14410;
-            pop();
-            m8 = 070;
-            goto L17015;
-        L14460: // *0572B: 'SWITCH'
-            push(a);
-            lex();
-            m8 = 071;
-            if (m4_)
-                goto L17015;
-            push(m3_);
-            push(0);
-            dpush((D0() >> 12) | S(3));
-            lex();
-            m8 = 072;
-            if (D0() != 022)
-                goto L17015;
-        L14470: // *0602B
-            lex();
-            m1  = 0;
-            m13 = 014472;
-            goto L14762;
-        L14472:
-            a = arx(pop(), K(015262));
-            push(a);
-            if (D0() == 047)
-                goto L14470;
-            m8 = 073;
-            if (D0() != 051)
-                goto L17015;
-            m8 = 074;
-            if (S(1) & K(015404))
-                goto L17015;
-            a = (S(2) << 12) & 07777777777777777;
-            a |= pop();
-            emit(a | K(015277));
-            drop(1);
-            goto L14277;
-        L14504: // AG14504: the point to resume at in the declarations
-            m8 = 014504;
-            setres(m8);
-            if (D0() == 051)
-                lex();
-            goto L14262;
-
-            //
-            // AG14510: a procedure heading. The caller pushed the type word
-            // and K(015336); the return is through the third word below them.
-            //
-        L14510:
-            push(m13);
-            lex();
-            m8 = 0106;
-            if (m4_)
-                goto L17015;
-            a = arx(m3_, K(015274));
-            push(a);
-            a |= K(015301);
-            push(a);
-            a = (D0() >> 12) | S(5);
-            push(a);
-            emit(K(015307));
-            lex();
-            if (D0() == 051)
-                goto L14651;
-            m8 = 0107;
-            if (D0() != 020)
-                goto L17015;
-            lex();
-            push(0);
-        L14526: // *0022B: the formal parameters
-            m8 = 0110;
-            if (m4_)
-                goto L17015;
-            a = arx(pop(), K(015262));
-            push(a);
-            dpush((D0() >> 12) | S(6));
-            lex();
-            if (D0() == 047) {
-                lex();
-                goto L14526;
-            }
-            m8 = 0111;
-            if (D0() != 045)
-                goto L17015;
-            lex();
-            m8 = 0112;
-            if (S(1) & K(015404))
-                goto L17015;
-            m8 = 0113;
-            if (D0() != 051)
-                goto L17015;
-            lex();
-            if (D0() != 061)
-                goto L14563;
-            lex();
-        L14546: // *0042B: 'VALUE'
-            m8 = 0114;
-            if (m4_)
-                goto L17015;
-            m14 = find_formal();
-            m8  = 0116;
-            if (ws_[m14] & K(015261))
-                goto L17015;
-            ws_[m14] = (ws_[m14] & K(015376)) | K(015261);
-            emit((Word(m14) << 12) | K(015302));
-            lex();
-            if (D0() == 047) {
-                lex();
-                goto L14546;
-            }
-            m8 = 0117;
-            if (D0() != 051)
-                goto L17015;
-            lex();
-        L14563: // *0057B: the specifications
-            S(6) = 0;
-        L14564: // *0060B
-            switch ((attr(m4_) & 0740000) >> 14) {
-            case 0:
-                a = S(6);
-                goto L14637;
-            case 1:
-                a = K(015263);
-                goto L14601;
-            case 2:
-                a = K(015264);
-                goto L14601;
-            case 3:
-                a = K(015266);
-                goto L14601;
-            case 4:
-                a = K(015260);
-                goto L14613;
-            case 5:
-                a = K(015352);
-                goto L14613;
-            case 6:
-                a = K(015322);
-                goto L14613;
-            case 7:
-                a = K(015355);
-                goto L14613;
-            case 010:
-                a = K(015267);
-                goto L14601;
-            case 011:
-                a = K(015265);
-                goto L14601;
-            default:
-                throw std::logic_error("pass 1: specification dispatch");
-            }
-        L14601: // *0075B
-            S(7) = a;
-            lex();
-            if (!m4_)
-                goto L14610;
-            if (D0() == 040) {
-                a = K(015352) | S(7);
-                goto L14613;
-            }
-            m8 = 0120;
-            if (D0() != 042)
-                goto L17015;
-            a = K(015260) | S(7);
-            goto L14613;
-        L14610: // *0104B
-            a    = K(015372) | S(7);
-            S(7) = a;
-            goto L14614;
-        L14613: // *0107B
-            S(7) = a;
-            lex();
-        L14614: // *0110B
-            m8 = 0121;
-            if (m4_)
-                goto L17015;
-            S(6) = arx(S(6), K(015262));
-            m14  = find_formal();
-            m8   = 0122;
-            if (ws_[m14] & K(015377))
-                goto L17015;
-            ws_[m14] |= S(7);
-            lex();
-            if (D0() == 051) {
-                lex();
-                goto L14564;
-            }
-            if (D0() == 047) {
-                lex();
-                goto L14614;
-            }
-            m8 = 0123;
-            goto L17015;
-        L14637: // *0133B
-            m8 = 0124;
-            if (a ^ S(1))
-                goto L17015;
-        L14641: // *0135B: the body
-            m13 = 014642;
-            goto L14020;
-        L14642:
-            emit((Word(m3_) << 12) | K(015311));
-            dpush(S(3));
-            a = (pop() << 8) & 07777777777777777;
-            a |= pop();
-            dpush(a);
-            pc = S(3);
-            drop(5);
-            goto dispatch;
-        L14651: // *0145B: no parameters
-            S(1) |= K(015323);
-            push(0);
-            lex();
-            goto L14641;
-
-            //
-            // AG14655: the head of a FOR statement, up to DO.
-            //
-        L14655:
-            push(m13);
-            lex();
-            m8 = 043;
-            if (m4_)
-                goto L17015;
-            emit(K(015401));
-            push(D0());
-            emit(D0() | K(015365));
-            lex();
-            m8 = 044;
-            if (D0() != 022)
-                goto L17015;
-        L14666: // *0162B: a FOR list element
-            lex();
-            m1  = 0;
-            m13 = 014670;
-            goto L14762;
-        L14670:
-            switch ((attr(m4_) & 030000) >> 12) {
-            case 0:
-                m8 = 045;
-                goto L17015;
-            case 1:
-                m14 = 056;
-                goto L14705;
-            case 2: // 'WHILE'
-                lex();
-                m1  = 0;
-                m13 = 014715;
-                goto L14762;
-            default: // 'STEP'
-                lex();
-                m1  = 0;
-                m13 = 014700;
-                goto L14762;
-            }
-        L14700:
-            m8 = 046;
-            if (D0() != 052)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 014704;
-            goto L14762;
-        L14704:
-            m14 = 034;
-        L14705: // *0201B
-            emit(m14);
-            if (D0() == 047)
-                goto L14666;
-            m8 = 047;
-            if (D0() != 033)
-                goto L17015;
-            lex();
-            emit(K(015370) | pop());
-            goto L13742;
-        L14715: // *0210B
-            m14 = 035;
-            goto L14705;
-
-            //
-            // AG14716: an element of an I/O list.
-            //
-        L14716:
-            push(m13);
-            if (D0() == 020)
-                goto L14724;
-            if (D0() == 032)
-                goto L14750;
-            m1  = 0;
-            m13 = 014722;
-            goto L14762;
-        L14722: // *0216B
-            ws_[02117] = 0;
-            pc         = pop();
-            goto dispatch;
-        L14724: // *0220B
-            lex();
-            m13 = 014726;
-            goto L14716;
-        L14726:
-            if (ws_[02117])
-                goto L14736;
-            if (D0() != 045)
-                goto L14746;
-            lex();
-            if (!(attr(m4_) & 0170))
-                goto L14722;
-            m1 = 0;
-            push(014722);
-            push(m1);
-            goto L15016;
-        L14736: // *0232B
-            m8 = 0136;
-            if (D0() == 047)
-                goto L14743;
-            if (D0() != 045)
-                goto L17015;
-            ws_[02117] = ws_[02052];
-            lex();
-            goto L13742;
-        L14743: // *0237B
-            lex();
-            m13 = 014745;
-            goto L14716;
-        L14745:
-            if (ws_[02117])
-                goto L14736;
-        L14746: // *0242B
-            emit(ws_[02052]);
-            goto L14736;
-        L14750: // *0244B: FOR in an I/O list
-            push(m3_);
-            m13 = 014752;
-            goto L14655;
-        L14752:
-            m13 = 014753;
-            goto L14716;
-        L14753:
-            if (!ws_[02117]) {
-                ws_[02117] = ws_[02052];
-                emit(ws_[02117]);
-            }
-            // *0252B
-            ws_[02054] = pop();
-            push(ws_[D_RESSP]);
-            push(ws_[D_RESPC]);
-            push(ws_[02054]);
-            goto L14050;
-
-            //
-            // AG14762: an expression; M1 is the priority of the context.
-            //
-        L14762:
-            push(m13);
-            push(m1);
-            switch (attr(m4_) & 07) {
-            case 0:
-                m8 = 024;
-                goto L17015;
-            case 1: // 'IF'
-                if (!m1)
-                    goto L14775;
-                m8 = 026;
-                goto L17015;
-            case 2: // '('
-                lex();
-                m1  = 0;
-                m13 = 015013;
-                goto L14762;
-            case 3: // 'NOT'
-                m1 = 5;
-                a  = K(015325);
-                goto L15032;
-            case 4: // '+', '-'
-                m1 = 7;
-                a  = arx(D0(), K(015370));
-                goto L15032;
-            case 5: // identifier
-                a = D0();
-                goto L15036;
-            case 6: // constant
-                a = D0();
-                goto L15072;
-            default:
-                goto L14775;
-            }
-        L14775: // *0271B: a conditional expression
-            lex();
-            m13 = 014777;
-            goto L14762;
-        L14777:
-            if (D0() != 030) {
-                m8 = 027;
-                goto L17015;
-            }
-            lex();
-            m1  = 1;
-            m13 = 015004;
-            goto L14762;
-        L15004:
-            m8 = 030;
-            if (D0() != 031)
-                goto L17015;
-            lex();
-            m1  = 0;
-            m13 = 015010;
-            goto L14762;
-        L15010:
-            emit(K(015334));
-        L15011: // *0305B
-            drop(1);
-            goto L13742;
-        L15013:
-            m8 = 025;
-            if (D0() != 045)
-                goto L17015;
-        L15015: // *0311B
-            lex();
-        L15016: // *0312B: operators by priority
-            a = attr(m4_) & 0170;
-            if (!a)
-                goto L15011;
-            m1   = (a >> 3) & R15;
-            rau_ = 026;
-            if (int(m1) - int(S(1) & R15) < 0)
-                goto L15011;
-            push(D0());
-        L15024: // *0320B
-            lex();
-            m1  = (m1 + 1) & R15;
-            m13 = 015026;
-            goto L14762;
-        L15026: // *0322B
-            emit(pop());
-            goto L15016;
-        L15032: // *0326B: a unary operator
-            push(a);
-            m8   = 031;
-            rau_ = 026;
-            if (int(m1) - int(S(2) & R15) < 0)
-                goto L17015;
-            goto L15024;
-        L15036: // *0332B: an identifier
-            push(a);
-            lex();
-        L15037: // AG15037: a designator
-            if (D0() == 020) {
-                push(0);
-                push(K(015334));
-                goto L15043;
-            }
-            if (D0() == 021) {
-                push(0);
-                push(K(015340));
-                lex();
-                m1  = 0;
-                m13 = 015063;
-                goto L14762;
-            }
-            goto L15026;
-        L15043: // *0337B: a call
-            lex();
-            m1  = 0;
-            m13 = 015045;
-            goto L14762;
-        L15045:
-            S(2) = arx(S(2), K(015262));
-            if (D0() == 047)
-                goto L15043;
-            m8 = 032;
-            if (D0() != S(1))
-                goto L17015;
-            if (S(2) & K(015404)) {
-                m8 = 023;
-                goto L17015;
-            }
-            a = pop();
-            a |= pop();
-            a |= pop();
-            a -= K(015333);
-            rau_ = 2;
-        L15072: // *0366B
-            emit(a);
-            goto L15015;
-        L15063: // a subscripted variable
-            S(2) = arx(S(2), K(015262));
-            if (D0() == 047)
-                goto L15043;
-            if (D0() == 050) {
-                // *0370B
-                drop(2);
-                lex();
-                m1  = 0;
-                m13 = 015076;
-                goto L14762;
-            }
-            if (D0() != 046) {
-                m8 = 033;
-                goto L17015;
-            }
-            drop(1);
-            a = pop();
-            a |= pop();
-            a |= K(015303);
-            goto L15072;
-        L15076:
-            emit(pop() | K(015347));
-            if (D0() == 046)
-                goto L15015;
-            m8 = 033;
-            goto L17015;
-
-            //
-            // AG17015: a syntax error with number M8.
-            //
-        L17015:
-            if (++ctx_.flgex == 30)
-                goto L17076;
             rau_ = 6;
-            print_error(m8);
-            if (D0() == 051 || D0() == 037)
-                goto L17056;
-            if (D0() == 075)
-                goto L17066;
-            if (ws_[D_SEMI])
-                goto L17062;
-            ws_[D_WARNED]   = 051;
-            ws_[D_AFTEREND] = 051;
-            ws_[D_KEYWORD]  = 0;
-            lex();
-        L17056: // *2352B: resume
+            print_error(n);
+            if (D0() != 051 && D0() != 037) {
+                if (D0() == 075)
+                    eop_inside();
+                if (ws_[D_SEMI]) {
+                    ws_[D_SEMI] = 0;
+                    lex();
+                    ws_[D_SYM] = 051;
+                    m4_        = 051;
+                } else {
+                    ws_[D_WARNED]   = 051;
+                    ws_[D_AFTEREND] = 051;
+                    ws_[D_KEYWORD]  = 0;
+                    lex();
+                }
+            }
             emit(044);
             ws_[D_WARNED] = 0;
-            stk.resize(ws_[D_RESSP]);
-            pc = ws_[D_RESPC];
-            goto dispatch;
-        L17062: // *2356B
-            ws_[D_SEMI] = 0;
-            lex();
-            ws_[D_SYM] = 051;
-            m4_        = 051;
-            goto L17056;
-        L17066: // AG17066: 'EOP' inside the program
-            print_line("↑EOP↑ BEFORE END OF PROGRAM");
-            ctx_.flgex = 1;
-            throw Finish{};
-        L17076: // *2372B: 30 errors
-            ws_[D_RESPC] = 017103;
-            print_line("30 ERRORS , COMPILATION INTERRUPTED");
-        L17103:
-            lex();
-            if (D0() != 075)
-                goto L17103;
-            throw Finish{};
+            if (checkpoint_.label == THIRTY_ERRORS)
+                skip_to_eop();
+            return checkpoint_;
         } catch (const SyntaxError &e) {
-            m8 = e.number;
-            pc = 017015;
+            n = e.number;
         }
     }
 }
 
-// *0124B: the formal parameter named by the symbol; its D-list address.
-unsigned Pass1::find_formal()
+// *2372B: after 30 errors, the symbols up to 'EOP'.
+void Pass1::skip_to_eop()
 {
-    ws_[D_SYM]   = ws_[D_SYM] >> 12;
-    unsigned m14 = stk_[stk_.size() - 4] & R15;
+    do
+        lex();
+    while (D0() != 075);
+    throw Finish{};
+}
+
+// AG17066: 'EOP' inside the program.
+void Pass1::eop_inside()
+{
+    print_line("↑EOP↑ BEFORE END OF PROGRAM");
+    ctx_.flgex = 1;
+    throw Finish{};
+}
+
+//
+// AG13666: the start of the pass, the program head, the program, and the
+// symbols after it up to 'EOP'.
+//
+void Pass1::program()
+{
+    if (!ctx_.options.no_listing)
+        blank_line(ctx_);
+    ws_[D_LIST] = ctx_.options.no_listing ? 0 : 1;
+    m5_         = 0;
+    m6_         = 0;
+    m3_         = 05753;
+    ws_[02001]  = K(015403);
+    ws_[D_POOL] = K(015371);
+    frame([&](unsigned self, unsigned at) {
+        switch (at) {
+        case START:
+            checkpoint_ = { self, HEAD_NEXT };
+            emit(0102);
+            stmark();
+            lex();
+            ws_[02054] = 0;
+            [[fallthrough]];
+        case HEAD_NEXT:
+            program_head(self, at == HEAD_NEXT);
+            [[fallthrough]];
+        case AFTER_PROGRAM: // *0044B
+            checkpoint_ = { self, SKIP_TO_EOP };
+            if (D0() != 075) {
+                stmark();
+                syntax_error(0143);
+            }
+            break;
+        case SKIP_TO_EOP: // *0122B
+            while (D0() != 075)
+                lex();
+            break;
+        default:
+            throw std::logic_error("pass 1: no checkpoint " + std::to_string(at));
+        }
+        // *0050B: the last sector of the string pool.
+        Word pool   = ws_[D_POOL];
+        ws_[D_POOL] = pool | K(015413);
+        pool_put(ws_[D_POOL]);
+        ws_[D_POOL] = pool;
+    });
+}
+
+//
+// L13711: the program head, up to the program: 'ALGOL': and 'CODE': lists of
+// external names (a type before one, ',' between them, ';' after a list),
+// labels, then 'BEGIN' or a 'PROCEDURE'. In a list (cell 02054: the kind)
+// each name goes to the D-list with its type (02055) and slot (02056).
+// resumed: at HEAD_NEXT, after a name.
+//
+void Pass1::program_head(unsigned self, bool resumed)
+{
+    // *0125B: an error in the program head.
+    auto bad = [&] {
+        if (D0() == 075)
+            eop_inside();
+        if (D0() == 037)
+            lex();
+        syntax_error(0137);
+    };
+    // A name of the list (L13755): to the D-list, then ',' and the next, or
+    // ';'. entry: a name was read (else at L13760, after one).
+    auto names = [&](bool entry) {
+        if (entry && !ws_[02054])
+            bad();
+        for (;;) {
+            if (entry)
+                dpush(ws_[02054] | ws_[02055] | ws_[02056]);
+            entry = true;
+            m4_   = (m4_ - 051) & R15; // L13760
+            if (!m4_) {
+                lex();
+                return;
+            }
+            m4_ = (m4_ + 2) & R15;
+            if (m4_)
+                bad();
+            lex();
+            if (m4_)
+                bad();
+            ws_[02056] = D0() >> 12;
+            lex();
+        }
+    };
+    if (resumed)
+        names(false);
+    for (;;) { // L13711
+        ws_[02055] = K(015316);
+        Word type  = 0;
+        switch ((attr(m4_) & 017000000) >> 18) {
+        case 1: // 'ALGOL' :
+        case 2: // 'CODE' :
+            ws_[02054] = ((attr(m4_) & 017000000) >> 18) == 1 ? K(015275) : K(015360);
+            lex();
+            m4_ = (m4_ - 050) & R15;
+            if (m4_)
+                bad();
+            lex();
+            continue;
+        case 3:
+            type = K(015331);
+            break;
+        case 4:
+            type = K(015324);
+            break;
+        case 5:
+            type = K(015326);
+            break;
+        case 6:
+            type = K(015330);
+            break;
+        case 012:
+            type = K(015327);
+            break;
+        case 7: // 'PROCEDURE'
+            procedure(ws_[02055] | K(015317));
+            return;
+        case 010: // labels before the program, or a name of a list
+            for (;;) {
+                ws_[02056] = D0() >> 12;
+                lex();
+                if (D0() == 047 || D0() == 051)
+                    break;
+                if (D0() != 050)
+                    bad();
+                lex();
+                emit((Word(m3_) << 12) | K(015256));
+                if (!ws_[D_RENAME]) {
+                    ws_[02136]    = ws_[NAMES + ws_[02056]];
+                    ws_[D_RENAME] = apx(ws_[02136], K(015407));
+                }
+                dpush(ws_[02056] | K(015351));
+                if (m4_) {
+                    if (D0() != 036)
+                        bad();
+                    statement(self, AFTER_PROGRAM);
+                    return;
+                }
+            }
+            names(true);
+            continue;
+        case 011: // 'BEGIN'
+            statement(self, AFTER_PROGRAM);
+            return;
+        default:
+            bad();
+        }
+        // L13750: a type before an external name, or before 'PROCEDURE'.
+        ws_[02055] = type;
+        lex();
+        if (D0() == 042) {
+            procedure(ws_[02055] | K(015317));
+            return;
+        }
+        if (m4_)
+            bad();
+        ws_[02056] = D0() >> 12;
+        lex();
+        names(true);
+    }
+}
+
+//
+// AG14020: a statement. Its checkpoint is the point after it in the caller
+// (frame caller, label cont), at the start and at the end.
+//
+void Pass1::statement(unsigned caller, unsigned cont)
+{
+    setres(caller, cont);
+    Word saved = 0; // a FOR: the D-list pointer; a block: its header word
+    frame([&](unsigned self, unsigned at) {
+        switch (at) {
+        case START:
+            statement_body(self, saved);
+            break;
+        case BEGIN_BODY:
+        case NEXT_STATEMENT:
+        case AFTER_COMPOUND:
+            compound(self, at, saved);
+            break;
+        case AFTER_THEN:
+        case AFTER_ELSE:
+        case AFTER_THEN_FOR:
+            if_statement(self, at);
+            break;
+        case AFTER_BODY:
+            for_statement(self, at, saved);
+            break;
+        case AFTER_BLOCK_ST:
+        case BLOCK_ERROR:
+        case DECLARATIONS:
+            block(self, at, saved);
+            break;
+        default:
+            throw std::logic_error("pass 1: no checkpoint " + std::to_string(at));
+        }
+    });
+    checkpoint_ = { caller, cont }; // *0200B
+}
+
+// *0135B: a statement by its first symbol; labels before it.
+void Pass1::statement_body(unsigned self, Word &saved)
+{
     for (;;) {
-        m14    = (m14 - 1) & R15;
-        Word w = ws_[m14];
+        switch ((attr(m4_) & 03600) >> 7) {
+        case 0:
+            syntax_error(042);
+        case 1: // 'BEGIN'
+            compound(self, START, saved);
+            return;
+        case 2: // 'IF'
+            lex();
+            if_statement(self, START);
+            return;
+        case 3: // 'GOTO'
+            lex();
+            expression(0);
+            emit(026);
+            return;
+        case 4: { // *0233B: an identifier: a label, an assignment or a call
+            Word a = D0();
+            lex();
+            if (D0() == 050) {
+                lex();
+                emit((Word(m3_) << 12) | K(015256));
+                dpush((a >> 12) | K(015351));
+                continue;
+            }
+            designator(011, a);
+            assignment();
+            return;
+        }
+        case 5: // 'FOR'
+            for_statement(self, START, saved);
+            return;
+        case 6:
+            io_statement(K(015335));
+            return;
+        case 7:
+            io_format(K(015373));
+            return;
+        case 010:
+            io_three(K(015335), K(015341));
+            return;
+        case 011:
+            io_three(K(015373), K(015345));
+            return;
+        case 012: // 'PRINT'
+            io_print(K(015373), K(015312));
+            return;
+        case 013:
+            io_print(K(015373), K(015270));
+            return;
+        case 014:
+            io_simple(K(015350));
+            return;
+        case 015:
+            io_simple(K(015362));
+            return;
+        case 016:
+            io_simple(K(015367));
+            return;
+        default: // an empty statement
+            return;
+        }
+    }
+}
+
+// *0250B: after a designator at the start of a statement: ':=' and the left
+// parts, then the expression; else it was a call.
+void Pass1::assignment()
+{
+    if (D0() != 022)
+        return;
+    Word left = COUNT;
+    for (;;) { // *0252B
+        lex();
+        if (m4_) {
+            expression(0);
+            break;
+        }
+        expression(0);
+        if (D0() != 022)
+            break;
+        left = arx(left, COUNT);
+    }
+    emit(left | K(015306));
+}
+
+//
+// *0170B: 'BEGIN': a compound statement, or a block when declarations
+// follow. at: where it goes on.
+//
+void Pass1::compound(unsigned self, unsigned at, Word &saved)
+{
+    if (at == START) {
+        setres(self, BEGIN_BODY);
+        lex();
+        at = BEGIN_BODY;
+    }
+    if (at == BEGIN_BODY && (attr(m4_) & 04000)) { // *0172B
+        block(self, START, saved);
+        return;
+    }
+    if (at != AFTER_COMPOUND)
+        statement(self, AFTER_COMPOUND);
+    for (;;) { // L14063
+        if (D0() == 051) {
+            lex();
+            statement(self, AFTER_COMPOUND);
+            continue;
+        }
+        if (D0() != 037) { // *0202B
+            checkpoint_ = { self, NEXT_STATEMENT };
+            syntax_error(036);
+        }
+        lex();
+        return;
+    }
+}
+
+//
+// *0206B: 'IF' b 'THEN' s ['ELSE' s]: 030 after the condition, 031 before
+// the ELSE branch, then 054, or 053 without it. at: where it goes on.
+//
+void Pass1::if_statement(unsigned self, unsigned at)
+{
+    if (at == START) {
+        expression(0);
+        if (D0() != 030)
+            syntax_error(037);
+        lex();
+        emit(K(015346));
+        if (D0() == 027)
+            syntax_error(040);
+        if (D0() == 032) {
+            statement(self, AFTER_THEN_FOR);
+            at = AFTER_THEN_FOR;
+        } else {
+            statement(self, AFTER_THEN);
+            at = AFTER_THEN;
+        }
+    }
+    switch (at) {
+    case AFTER_THEN_FOR:
+        if (D0() == 031)
+            syntax_error(041);
+        emit(053);
+        return;
+    case AFTER_THEN:
+        if (D0() != 031) {
+            emit(053);
+            return;
+        }
+        lex();
+        emit(K(015363));
+        statement(self, AFTER_ELSE);
+        [[fallthrough]];
+    default: // AFTER_ELSE
+        emit(054);
+        return;
+    }
+}
+
+// *0160B: 'FOR': its head, its body, its end. at: where it goes on.
+void Pass1::for_statement(unsigned self, unsigned at, Word &saved)
+{
+    if (at == START) {
+        saved = m3_;
+        for_head();
+        statement(self, AFTER_BODY);
+    }
+    for_end(saved);
+}
+
+// AG14050: the end of a FOR statement: its D-list word and 052.
+void Pass1::for_end(Word saved)
+{
+    dpush(arx(saved, ONE) | K(015305));
+    emit((Word(arx(m3_, ONE)) << 12) | K(015366));
+    stmark();
+}
+
+// AG14655: the head of a FOR statement, up to DO.
+void Pass1::for_head()
+{
+    lex();
+    if (m4_)
+        syntax_error(043);
+    emit(K(015401));
+    Word var = D0();
+    emit(D0() | K(015365));
+    lex();
+    if (D0() != 022)
+        syntax_error(044);
+    for (;;) { // *0162B: a FOR list element
+        lex();
+        expression(0);
+        unsigned code = 0;
+        switch ((attr(m4_) & 030000) >> 12) {
+        case 0:
+            syntax_error(045);
+        case 1:
+            code = 056;
+            break;
+        case 2: // 'WHILE'
+            lex();
+            expression(0);
+            code = 035;
+            break;
+        default: // 'STEP'
+            lex();
+            expression(0);
+            if (D0() != 052)
+                syntax_error(046);
+            lex();
+            expression(0);
+            code = 034;
+            break;
+        }
+        emit(code);
+        if (D0() == 047)
+            continue;
+        if (D0() != 033)
+            syntax_error(047);
+        lex();
+        emit(K(015370) | var);
+        return;
+    }
+}
+
+//
+// *0371B: a block with declarations: 036, the declarations, the statements,
+// its D-list header (saved: m3_ at its start, then bit 48 when it has
+// arrays), 037. at: where it goes on.
+//
+void Pass1::block(unsigned self, unsigned at, Word &saved)
+{
+    switch (at) {
+    case START:
+        saved = m3_;
+        emit(K(015406));
+        setres(self, DECLARATIONS);
+        declarations(self, saved);
+        statement(self, AFTER_BLOCK_ST);
+        break;
+    case DECLARATIONS: // AG14504
+        setres(self, DECLARATIONS);
+        if (D0() == 051)
+            lex();
+        declarations(self, saved);
+        statement(self, AFTER_BLOCK_ST);
+        break;
+    case BLOCK_ERROR:
+        statement(self, AFTER_BLOCK_ST);
+        break;
+    }
+    for (;;) { // *0413B: after a statement
+        if (D0() == 051) {
+            lex();
+            statement(self, AFTER_BLOCK_ST);
+            continue;
+        }
+        if (D0() != 037) { // *0425B
+            setres(self, BLOCK_ERROR);
+            syntax_error(056);
+        }
+        lex();
+        dpush(arx(saved, ONE));
+        emit((Word(arx(m3_, ONE)) << 12) | K(015412));
+        stmark();
+        return;
+    }
+}
+
+// AG14262: the declarations of a block, up to its first statement.
+void Pass1::declarations(unsigned self, Word &saved)
+{
+    for (;;) {
+        Word type = 0;
+        switch ((attr(m4_) & 0740000) >> 14) {
+        case 0: // the statements
+            return;
+        case 1:
+            type = K(015324);
+            break;
+        case 2:
+            type = K(015326);
+            break;
+        case 3:
+            type = K(015330);
+            break;
+        case 010:
+            type = K(015331);
+            break;
+        case 011:
+            type = K(015327);
+            break;
+        case 4: // 'PROCEDURE'
+            procedure_declaration(self, K(015317));
+            continue;
+        case 5: // 'SWITCH'
+            switch_declaration(K(015374));
+            continue;
+        case 6:
+            syntax_error(050);
+        case 7: // 'ARRAY'
+            array_declaration(K(015375), saved);
+            continue;
+        default:
+            throw std::logic_error("pass 1: declaration dispatch");
+        }
+        // *0427B: a simple declaration
+        lex();
+        if (!m4_) {
+            variables(type, saved);
+        } else if (D0() == 042) {
+            procedure_declaration(self, type | K(015260));
+        } else {
+            if (D0() != 040)
+                syntax_error(057);
+            array_declaration(type | K(015352), saved);
+        }
+    }
+}
+
+// *0514B: a procedure declaration; the declarations go on after ';'.
+void Pass1::procedure_declaration(unsigned self, Word type)
+{
+    procedure(type);
+    setres(self, DECLARATIONS);
+    if (D0() != 051)
+        syntax_error(066);
+    lex();
+}
+
+//
+// *0435B: an array declaration: segments of names with their bounds. The
+// D-list words of a segment get the number of dimensions (bits 12-8 << 8).
+// The block's header word gets bit 48.
+//
+void Pass1::array_declaration(Word type, Word &saved)
+{
+    saved |= K(015353);
+    for (;;) { // *0437B: an array segment
+        Word count = 0;
+        lex();
+        for (;;) { // *0441B
+            if (m4_)
+                syntax_error(060);
+            dpush((D0() >> 12) | type);
+            count = arx(count, COUNT);
+            lex();
+            if (D0() == 047) {
+                lex();
+                continue;
+            }
+            break;
+        }
+        Word closer = arx(D0(), K(015333));
+        if (D0() != 021 && D0() != 020)
+            syntax_error(061);
+        if (count & TOO_MANY)
+            syntax_error(062);
+        emit((Word(arx(m3_, ONE)) << 12) | count | K(015255));
+        Word dims = COUNT;
+        for (;;) { // *0462B: bounds
+            lex();
+            expression(0);
+            if (D0() != 050)
+                syntax_error(063);
+            lex();
+            expression(0);
+            if (D0() != 047)
+                break;
+            dims = arx(dims, COUNT);
+        }
+        if (closer != D0())
+            syntax_error(064);
+        emit(dims | K(015320));
+        unsigned n = (count >> 7) & R15;
+        unsigned p = m3_;
+        do { // *0502B
+            p      = (p + 1) & R15;
+            ws_[p] = ((dims << 8) & MASK48) | ws_[p];
+            n      = (n - 1) & R15;
+        } while (n);
+        lex();
+        if (D0() == 047)
+            continue;
+        if (D0() != 051)
+            syntax_error(065);
+        lex(); // *0411B
+        return;
+    }
+}
+
+//
+// *0522B: simple variables. A variable of a 'COMMON' block is an array
+// [1:1] (its block's header gets bit 48); the others get K(015321).
+//
+void Pass1::variables(Word type, Word &saved)
+{
+    for (;;) {
+        Word slot      = D0() >> 12;
+        bool in_common = false;
+        for (unsigned k = 0;; k = (k + 3) & R15) {
+            Word a = ws_[(027246 + k) & R15];
+            if (!a)
+                break;
+            if ((((a >> 24) & 07777) ^ slot) == 0) {
+                in_common = true;
+                break;
+            }
+        }
+        if (in_common) { // *0532B
+            saved |= K(015353);
+            dpush((D0() >> 12) | type);
+            Word count = arx(0, COUNT);
+            emit((Word(arx(m3_, ONE)) << 12) | count | K(015255));
+            Word dims = COUNT;
+            emit(K(015357));
+            emit(K(015357));
+            emit(dims | K(015320));
+            unsigned p = (m3_ + 1) & R15;
+            ws_[p]     = ((dims << 8) & MASK48) | ws_[p];
+        } else { // *0560B
+            type |= K(015321);
+            dpush((D0() >> 12) | type);
+        }
+        lex(); // *0563B
+        if (D0() == 051) {
+            lex();
+            return;
+        }
+        if (D0() != 047)
+            syntax_error(067);
+        lex();
+        if (m4_)
+            syntax_error(070);
+    }
+}
+
+// *0572B: 'SWITCH' s := designational expressions: 041 with s and their number.
+void Pass1::switch_declaration(Word type)
+{
+    lex();
+    if (m4_)
+        syntax_error(071);
+    Word start = m3_;
+    Word count = 0;
+    dpush((D0() >> 12) | type);
+    lex();
+    if (D0() != 022)
+        syntax_error(072);
+    for (;;) { // *0602B
+        lex();
+        expression(0);
+        count = arx(count, COUNT);
+        if (D0() != 047)
+            break;
+    }
+    if (D0() != 051)
+        syntax_error(073);
+    if (count & TOO_MANY)
+        syntax_error(074);
+    emit(((start << 12) & MASK48) | count | K(015277));
+    lex(); // *0411B
+}
+
+//
+// AG14510: a procedure heading and its body. type: its D-list word (name
+// slot ORed in). The formals go to the D-list after its 042, then the
+// VALUE list (061 each), the specifications (each formal exactly once),
+// the body; then 062, its D-list words and the number of formals.
+//
+void Pass1::procedure(Word type)
+{
+    Word start = 0, head = 0, name = 0, count = 0;
+    frame([&](unsigned self, unsigned at) {
+        if (at == START) {
+            lex();
+            if (m4_)
+                syntax_error(0106);
+            start = arx(m3_, ONE);
+            head  = start | K(015301);
+            name  = (D0() >> 12) | type;
+            emit(K(015307));
+            lex();
+            if (D0() == 051) { // *0145B: no parameters
+                name |= K(015323);
+                count = 0;
+                lex();
+            } else {
+                formals(start, count);
+            }
+            statement(self, PROC_END);
+        }
+        emit((Word(m3_) << 12) | K(015311)); // L14642
+        dpush(head);
+        dpush(((count << 8) & MASK48) | name);
+    });
+}
+
+// The formals of a procedure heading: names, VALUE, specifications.
+void Pass1::formals(Word start, Word &count)
+{
+    if (D0() != 020)
+        syntax_error(0107);
+    lex();
+    count = 0;
+    for (;;) { // *0022B
+        if (m4_)
+            syntax_error(0110);
+        count = arx(count, COUNT);
+        dpush((D0() >> 12) | K(015336));
+        lex();
+        if (D0() != 047)
+            break;
+        lex();
+    }
+    if (D0() != 045)
+        syntax_error(0111);
+    lex();
+    if (count & TOO_MANY)
+        syntax_error(0112);
+    if (D0() != 051)
+        syntax_error(0113);
+    lex();
+    if (D0() == 061) { // *0042B: 'VALUE'
+        lex();
+        for (;;) {
+            if (m4_)
+                syntax_error(0114);
+            unsigned f = find_formal(start);
+            if (ws_[f] & K(015261))
+                syntax_error(0116);
+            ws_[f] = (ws_[f] & K(015376)) | K(015261);
+            emit((Word(f) << 12) | K(015302));
+            lex();
+            if (D0() != 047)
+                break;
+            lex();
+        }
+        if (D0() != 051)
+            syntax_error(0117);
+        lex();
+    }
+    Word specified = 0;
+    for (;;) { // *0060B: the specifications
+        Word spec = 0;
+        bool read = true;
+        switch ((attr(m4_) & 0740000) >> 14) {
+        case 0: // *0133B
+            if (specified ^ count)
+                syntax_error(0124);
+            return;
+        case 1:
+        case 2:
+        case 3:
+        case 010:
+        case 011: { // *0075B: a type, then maybe ARRAY or PROCEDURE
+            static const unsigned types[] = {
+                0, 015263, 015264, 015266, 0, 0, 0, 0, 015267, 015265
+            };
+            spec = K(types[(attr(m4_) & 0740000) >> 14]);
+            lex();
+            if (!m4_) {
+                spec = K(015372) | spec;
+                read = false;
+            } else if (D0() == 040) {
+                spec = K(015352) | spec;
+            } else {
+                if (D0() != 042)
+                    syntax_error(0120);
+                spec = K(015260) | spec;
+            }
+            break;
+        }
+        case 4:
+            spec = K(015260);
+            break;
+        case 5:
+            spec = K(015352);
+            break;
+        case 6:
+            spec = K(015322);
+            break;
+        case 7:
+            spec = K(015355);
+            break;
+        default:
+            throw std::logic_error("pass 1: specification dispatch");
+        }
+        if (read) // *0107B
+            lex();
+        for (;;) { // *0110B
+            if (m4_)
+                syntax_error(0121);
+            specified  = arx(specified, COUNT);
+            unsigned f = find_formal(start);
+            if (ws_[f] & K(015377))
+                syntax_error(0122);
+            ws_[f] |= spec;
+            lex();
+            if (D0() == 051) {
+                lex();
+                break;
+            }
+            if (D0() != 047)
+                syntax_error(0123);
+            lex();
+        }
+    }
+}
+
+//
+// I/O statements. Their elements (AG14716) leave 02117 nonzero when they
+// wrote the statement's item (02052) themselves.
+//
+
+// *0302B: the first item, then the elements of the list (unless the next
+// symbol ends the statement), the item after each, and 073.
+void Pass1::io_list(Word first)
+{
+    emit(first);
+    if ((attr(m4_) & 03600) != 03600) {
+        for (;;) { // *0306B
+            io_element();
+            if (!ws_[02117])
+                emit(ws_[02052]);
+            if (D0() != 047)
+                break;
+            lex();
+        }
+    }
+    emit(073);
+}
+
+// *0266B: (e [, e]) or (e) or e, then the list.
+void Pass1::io_statement(Word item)
+{
+    ws_[02052] = item;
+    lex();
+    if (D0() != 020) { // *0320B
+        emit(K(015332));
+        expression(0);
+        m4_ = (m4_ - 047) & R15;
+        if (!m4_) {
+            lex();
+        } else {
+            m4_ = (m4_ + 047) & R15;
+        }
+        io_list(064);
+        return;
+    }
+    lex();
+    expression(0);
+    if (D0() == 045) { // *0314B
+        lex();
+        if (D0() != 047) {
+            io_list(K(015257));
+            return;
+        }
+        lex();
+        io_list(K(015300));
+        return;
+    }
+    if (D0() != 047)
+        syntax_error(0132);
+    lex();
+    expression(0);
+    m4_ = (m4_ - 045) & R15;
+    if (m4_)
+        syntax_error(0132);
+    lex();
+    io_list(064);
+}
+
+// *0325B: (e) or (e, e), then the list.
+void Pass1::io_format(Word item)
+{
+    ws_[02052] = item;
+    lex();
+    m4_ = (m4_ - 020) & R15;
+    if (m4_)
+        syntax_error(0133);
+    lex();
+    expression(0);
+    m4_ = (m4_ - 045) & R15;
+    if (!m4_) { // *0340B
+        lex();
+        io_list(K(015315));
+        return;
+    }
+    m4_ = (m4_ - 2) & R15;
+    if (m4_)
+        syntax_error(0133);
+    lex();
+    expression(0);
+    m4_ = (m4_ - 045) & R15;
+    if (m4_)
+        syntax_error(0133);
+    lex();
+    io_list(K(015314));
+}
+
+// *0342B: PRINT and the like: e, then the list.
+void Pass1::io_print(Word item, Word first)
+{
+    ws_[02052] = item;
+    lex();
+    emit(first); // *0344B
+    expression(0);
+    m4_ = (m4_ - 047) & R15;
+    if (!m4_)
+        lex();
+    else
+        m4_ = (m4_ + 047) & R15;
+    io_list(K(015314));
+}
+
+// *0352B: (e, e, e), then the list after the item first.
+void Pass1::io_three(Word item, Word first)
+{
+    ws_[02052] = item;
+    lex(); // *0353B
+    unsigned sep = 020;
+    for (int k = 0; k < 3; k++) {
+        m4_ = (m4_ - sep) & R15; // *0364B
+        if (m4_)
+            syntax_error(0135);
+        lex();
+        expression(0);
+        sep = 047;
+    }
+    m4_ = (m4_ - 045) & R15;
+    if (m4_)
+        syntax_error(0135);
+    lex();
+    io_list(first);
+}
+
+// *0263B: a statement of one expression, then its item.
+void Pass1::io_simple(Word item)
+{
+    lex();
+    expression(0);
+    emit(item);
+}
+
+//
+// AG14716: an element of an I/O list: an expression, a FOR list element
+// (FOR head, element, then the end of a FOR), or a parenthesized list of
+// elements (which may go on as an expression).
+//
+void Pass1::io_element()
+{
+    // *0232B: after an element inside parentheses: ',' and the next, or ')'.
+    auto rest = [&] {
+        for (;;) {
+            if (D0() == 047) {
+                lex();
+                io_element();
+                if (!ws_[02117])
+                    emit(ws_[02052]);
+                continue;
+            }
+            if (D0() != 045)
+                syntax_error(0136);
+            ws_[02117] = ws_[02052];
+            lex();
+            return;
+        }
+    };
+    if (D0() == 020) { // *0220B
+        lex();
+        io_element();
+        if (ws_[02117]) {
+            rest();
+            return;
+        }
+        if (D0() != 045) {
+            emit(ws_[02052]);
+            rest();
+            return;
+        }
+        lex();
+        if (attr(m4_) & 0170)
+            operators(0);
+        ws_[02117] = 0;
+        return;
+    }
+    if (D0() == 032) { // *0244B: FOR in an I/O list
+        Word saved = m3_;
+        for_head();
+        io_element();
+        if (!ws_[02117]) {
+            ws_[02117] = ws_[02052];
+            emit(ws_[02117]);
+        }
+        ws_[02054] = saved;
+        for_end(saved);
+        return;
+    }
+    expression(0);
+    ws_[02117] = 0;
+}
+
+//
+// AG14762: an expression in a context of priority prio: operands, unary and
+// binary operators by priority (their items after the operands), IF
+// expressions (prio 0 only, or after one), designators.
+//
+void Pass1::expression(unsigned prio)
+{
+    switch (attr(m4_) & 07) {
+    case 0:
+        syntax_error(024);
+    case 1: // 'IF'
+        if (prio)
+            syntax_error(026);
+        conditional(prio);
+        return;
+    case 2: // '('
+        lex();
+        expression(0);
+        if (D0() != 045)
+            syntax_error(025);
+        lex();
+        operators(prio);
+        return;
+    case 3: // 'NOT'
+        unary(prio, 5, K(015325));
+        return;
+    case 4: // '+', '-'
+        unary(prio, 7, arx(D0(), K(015370)));
+        return;
+    case 5: { // identifier
+        Word id = D0();
+        lex();
+        designator(prio, id);
+        return;
+    }
+    case 6: // constant
+        emit(D0());
+        lex();
+        operators(prio);
+        return;
+    default:
+        conditional(prio);
+        return;
+    }
+}
+
+// *0271B: 'IF' b 'THEN' e 'ELSE' e, then 045.
+void Pass1::conditional(unsigned prio)
+{
+    lex();
+    expression(prio);
+    if (D0() != 030)
+        syntax_error(027);
+    lex();
+    expression(1);
+    if (D0() != 031)
+        syntax_error(030);
+    lex();
+    expression(0);
+    emit(K(015334));
+}
+
+// *0312B: binary operators of priority prio or more, after an operand.
+void Pass1::operators(unsigned prio)
+{
+    for (;;) {
+        Word a = attr(m4_) & 0170;
+        if (!a)
+            return;
+        unsigned p = (a >> 3) & R15;
+        rau_       = 026;
+        if (int(p) - int(prio & R15) < 0)
+            return;
+        Word op = D0();
+        lex(); // *0320B
+        expression(p + 1);
+        emit(op);
+    }
+}
+
+// *0326B: a unary operator of priority p, item op.
+void Pass1::unary(unsigned prio, unsigned p, Word op)
+{
+    rau_ = 026;
+    if (int(p) - int(prio & R15) < 0)
+        syntax_error(031);
+    lex();
+    expression(p + 1);
+    emit(op);
+    operators(prio);
+}
+
+//
+// AG15037: after an identifier: a call f(…), an element a[…], a slice
+// s[i:j], or the identifier alone; then the operators.
+//
+void Pass1::designator(unsigned prio, Word id)
+{
+    Word closer = 0;
+    Word count  = 0;
+    if (D0() == 020) {
+        closer = K(015334);
+    } else if (D0() == 021) {
+        closer = K(015340);
+        lex();
+        expression(0);
+        count = arx(count, COUNT); // L15063
+        if (D0() == 050) {         // *0370B: a slice
+            lex();
+            expression(0);
+            emit(id | K(015347));
+            if (D0() != 046)
+                syntax_error(033);
+            lex();
+            operators(prio);
+            return;
+        }
+        if (D0() != 047) {
+            if (D0() != 046)
+                syntax_error(033);
+            emit(count | id | K(015303));
+            lex();
+            operators(prio);
+            return;
+        }
+    } else {
+        emit(id);
+        operators(prio);
+        return;
+    }
+    for (;;) { // *0337B: arguments or subscripts
+        lex();
+        expression(0);
+        count = arx(count, COUNT);
+        if (D0() != 047)
+            break;
+    }
+    if (D0() != closer)
+        syntax_error(032);
+    if (count & TOO_MANY)
+        syntax_error(023);
+    Word a = (closer | count | id) - K(015333);
+    rau_   = 2;
+    emit(a);
+    lex();
+    operators(prio);
+}
+
+// *0124B: the formal parameter named by the symbol; its D-list address,
+// searched down from the heading's start.
+unsigned Pass1::find_formal(Word start)
+{
+    ws_[D_SYM] = ws_[D_SYM] >> 12;
+    unsigned f = start & R15;
+    for (;;) {
+        f      = (f - 1) & R15;
+        Word w = ws_[f];
         if (!w)
             throw SyntaxError{ 0115 };
         if (((w & 07777) ^ ws_[D_SYM]) == 0)
-            return m14;
+            return f;
     }
 }
 
@@ -1812,7 +1448,7 @@ void Pass1::print_error(unsigned n)
 Stream Pass1::run()
 {
     try {
-        parse();
+        program();
     } catch (const NoEop &) {
         print_line("HET ′EOP′ !");
         ctx_.flgex    = 1;

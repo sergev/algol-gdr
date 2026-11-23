@@ -94,20 +94,64 @@ private:
 
     Word cells_[022]{}; // 16111-16132: cells of the 'COMMON' reader in the code
 
-    std::vector<Word> stk_; // the stack of M17
-    Word emit_item_{};      // 15144
+    Word emit_item_{}; // 15144
     Stream out_;
 
-    static constexpr unsigned RET_DRIVER = 0;
+    // Where the parser goes on after a syntax error: a label in a frame.
+    struct Checkpoint {
+        unsigned frame{};
+        unsigned label{};
+    };
+    struct Resume;
+    Checkpoint checkpoint_{};
+    unsigned frames_{};
 
-    void parse();
+    Word D0() const { return ws_[D_SYM]; }
+    template <class Body>
+    void frame(Body body);
+    Checkpoint recover(unsigned n);
+    [[noreturn]] static void syntax_error(unsigned n);
+    [[noreturn]] void skip_to_eop();
+    [[noreturn]] void eop_inside();
     void emit(Word a);
     void stmark();
-    void setres(unsigned addr);
+    void setres(unsigned owner, unsigned label);
     void dpush(Word a);
-    unsigned find_formal();
+    unsigned find_formal(Word start);
     void print_line(const std::string &line);
     void print_error(unsigned n);
+
+    // The parser (doc/passes.md).
+    void program();
+    void program_head(unsigned self, bool resumed);
+    void statement(unsigned caller, unsigned cont);
+    void statement_body(unsigned self, Word &saved);
+    void assignment();
+    void compound(unsigned self, unsigned at, Word &saved);
+    void if_statement(unsigned self, unsigned at);
+    void for_statement(unsigned self, unsigned at, Word &saved);
+    void for_head();
+    void for_end(Word saved);
+    void block(unsigned self, unsigned at, Word &saved);
+    void declarations(unsigned self, Word &saved);
+    void procedure_declaration(unsigned self, Word type);
+    void array_declaration(Word type, Word &saved);
+    void variables(Word type, Word &saved);
+    void switch_declaration(Word type);
+    void procedure(Word type);
+    void formals(Word start, Word &count);
+    void io_list(Word first);
+    void io_statement(Word item);
+    void io_format(Word item);
+    void io_print(Word item, Word first);
+    void io_three(Word item, Word first);
+    void io_simple(Word item);
+    void io_element();
+    void expression(unsigned prio);
+    void conditional(unsigned prio);
+    void operators(unsigned prio);
+    void unary(unsigned prio, unsigned p, Word op);
+    void designator(unsigned prio, Word id);
 
     unsigned nextch(bool advance = true);
     void read_card();
