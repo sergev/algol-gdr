@@ -664,13 +664,14 @@ when set, it emits `13 VJM` to `A/SUBCH` after each subscript computation.
 
 | Address | Role |
 |---|---|
-| 23523 | init; read zone 0; outer block; prologue `7 VTM`, `VJM A/START`, `15 UTM frame` |
-| 23752 | read an item and dispatch: R1 = code, R2 = attribute, R3 = value; jump table at 26056, two codes per word (V) |
-| 23655 | emit one half-word, handling alignment and pseudo-items |
+| 23523 | init (C++): numbers the external table entries (M7+37 counts them, 27245…, 3 words each), marks the names of drum 26 zone 0 (06000); outer block (25525); the main program gets the prologue `7 VTM`, `13 VJM A/START`, `15 UTM frame` (template 23612), a 'CODE'/'ALGOL' module its name as TEXT (G30034) |
+| 23625 | main loop (C++): read and dispatch an item, then 23725, with 02021 kept on the stack |
+| 23752 | read an item and dispatch (C++): R1 = code, R2 = attribute, R3 = value; jump table at 26056, two codes per word (V); 23753 without pushing the return |
+| 23655 | emit one half-word (C++): 7403.0000 dropped; after `0200.0000` (02022 = 1) a half that does not fit the word in progress (tables at 23653, 23654 by opcode) gets a `0200.0000` first; a pending line marker (24632) is written after the half, preceded once by the numbers of the external names |
 | 23712, 23734 | template interpreter; templates at 25747…; 4444 marks the operand, taken from the operand stack |
 | 24324 | address of a subscripted variable, plus the check call |
 | 25525 | block entry: assign storage offsets; enter external and 'CODE' names |
-| 26152 | EOP: `UJ A/STOP`, `0200.0000`, `0211.0000` |
+| 26152 | EOP (C++): the main program ends with `UJ A/STOP`, `0200.0000`, `0211.0000` (template 26160); return to the driver |
 
 Most handlers (codes 001–167) are known only by the code they serve. No error messages (I).
 

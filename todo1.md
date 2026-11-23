@@ -23,8 +23,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 4 (G23523)
 
-- **C16** The frame of pass 4: init (names from drum 26 zone 0, prologue), reading and the
-  dispatch by code (26056), emitting half-words and pseudo-items (23655), EOP.
 - **C17** The template interpreter (23712, 23734, templates at 25747) and the operand stack.
 - **C18** Arithmetic, constants and assignment.
 - **C19** Booleans, relations, IF, GOTO, labels and switches.
