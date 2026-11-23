@@ -61,6 +61,9 @@ the machine's memory and leaving its registers as the original does:
 | 2 | 17371, 17377, 17434 | `inside`, `lookup`, `illegal_use` |
 | 2 | 17454, 17455, 17475 | `open_scope_at`, `open_scope`, `close_scope` |
 | 2 | 17511, 17523 | `end_item`, `begin_item` |
+| 2 | 17605–17775 | identifiers, constants, GOTO's check, TYPE ERROR, the type matrix |
+| 2 | 17777–20154 | subscripts, + − × / |
+| 2 | 20221–20430 | **, boolean operators, NOT, relations, unary + − |
 | 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
 | 3 | 22716 | `intern_constant` (src/pass3.cpp) |
 

@@ -366,6 +366,33 @@ A block header has bit 48 set, and its low 12 bits give the end address.
   slot gets 1), 1 is already reported. A binding inside the block at 02005 is ILLEGAL USE.
   Otherwise M5 = bits 7–5 and M6 = bits 4–1 of the table at 21720, indexed by the
   descriptor's bits 44–41 and by its bits 46, 45, 38, 37, 36 (packed in that order).
+- **The parser (V).** 17352 reads the previous item into M1 (code), M2 (count), M3
+  (operand). 17445 parses a subtree: it reads, pushes M12 and the flag 02027, clears the
+  flag, and jumps through the high half of 21720+code; 17446 does the same with the item
+  already read. A handler returns through 17451 (the flag ORed back, the saved M12), after
+  reading one item ahead. Types (M5): 1 real, 2 integer, 3 boolean, 4 string, 5 octal.
+- **Expressions (V).**
+  - Operands: an identifier writes 017 (a value), 021/0107/022 (procedures without
+    parameters), 024 (a label; bit 48 of its descriptor marks a use outside the procedure
+    at 02004); constants write 023 with their slot (TRUE, FALSE are slots 01625, 01624),
+    strings 070. An operand alone as a statement is ILLEGAL USE.
+  - + − × /: the matrix at 17667 combines the types (0 alike, 1 or 2 integer with real, 3
+    error); the left operand of a mixed pair, and the right operand of / when integer, get
+    064 (to real). The item comes from the operator's word at 20142: the real code in bits
+    30–25, the integer one in bits 36–31 (/ has none), the text for the message. Only +
+    takes strings (the item at 22137).
+  - **: unary signs before the exponent are dropped and counted; a constant exponent
+    1–63 gives `c<<12 ^ 0152` (real base) or `0153` (integer), a negative one `1 / x**c`
+    (023 of slot 01632, 064, 016); an octal base `0352` with 64±c. Otherwise 0147, 0150
+    (after 064 for int**int), 0151 (int ** a constant ≥ 64), 0347, 0350 (octal).
+  - Boolean operators need booleans; on octal OR stays 002, AND and NOT become 0203, 0204.
+  - Relations: real, integer, string; octal only = and ≠; integer with real = ≠ become
+    0105, 0106; strings `(code−4)<<12 ^ 0157`.
+  - Unary −: 047 real, 026 integer; unary + writes nothing.
+  - Subscripts: the item `a<<12 | n<<7 | c` first, then for each subscript (read last to
+    first) a constant below 2048 as `045 c`, `i+c`, `i−c` (c below 2048, 64) as i then
+    `030 c` (−c mod 4096), else the expression and `030 0`. A real subscript gets 063 (to
+    integer). A formal array takes its dimensions from its first use.
 - **Type checking.**
   - Recursive descent over the reversed postfix, driven by a dispatch table at 21720 with
     one word per input code.
