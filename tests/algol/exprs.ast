@@ -278,15 +278,15 @@ block:
       targets:
         - {kind: var, decl: 2, name: "X"}
       value:
-        kind: binary
+        kind: convert
         type: real
-        op: power
-        left:
-          kind: convert
-          type: real
-          conv: int_to_real
-          expr: {kind: int_const, type: integer, value: 2}
-        right: {kind: var, type: integer, decl: 1, name: "I"}
+        conv: int_to_real
+        expr:
+          kind: binary
+          type: integer
+          op: power
+          left: {kind: int_const, type: integer, value: 2}
+          right: {kind: var, type: integer, decl: 1, name: "I"}
     - kind: io
       loc: 22/2
       op: print
@@ -299,21 +299,21 @@ block:
       targets:
         - {kind: var, decl: 2, name: "X"}
       value:
-        kind: binary
+        kind: convert
         type: real
-        op: power
-        left:
-          kind: convert
-          type: real
-          conv: int_to_real
-          expr: {kind: int_const, type: integer, value: 2}
-        right:
-          kind: call
+        conv: int_to_real
+        expr:
+          kind: binary
           type: integer
-          proc: 8
-          name: "IP"
-          args:
-            - {kind: int_const, type: integer, value: 1}
+          op: power
+          left: {kind: int_const, type: integer, value: 2}
+          right:
+            kind: call
+            type: integer
+            proc: 8
+            name: "IP"
+            args:
+              - {kind: int_const, type: integer, value: 1}
     - kind: io
       loc: 23/2
       op: print

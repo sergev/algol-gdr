@@ -31,6 +31,13 @@ std::string extension(const std::string &path)
     return fs::path(path).extension().string();
 }
 
+// Algol source: .alg, or .a60 (usually the publication form).
+bool is_algol(const std::string &path)
+{
+    std::string ext = extension(path);
+    return ext == ".alg" || ext == ".a60";
+}
+
 std::string stem(const std::string &path)
 {
     return fs::path(path).stem().string();
@@ -185,11 +192,11 @@ int compile(const Options &opt)
     // Inputs by kind.
     for (const auto &in : opt.inputs) {
         std::string ext = extension(in);
-        if (ext != ".alg" && ext != ".ll" && ext != ".s" && ext != ".o" && ext != ".a") {
+        if (!is_algol(in) && ext != ".ll" && ext != ".s" && ext != ".o" && ext != ".a") {
             std::cerr << opt.arg0 << ": " << in << ": unknown kind of file\n";
             return EXIT_FAILURE;
         }
-        bool ok = opt.output == Output::EXECUTABLE || ext == ".alg" ||
+        bool ok = opt.output == Output::EXECUTABLE || is_algol(in) ||
                   (ext == ".ll" && opt.output != Output::IR && opt.output != Output::NONE) ||
                   (ext == ".s" && opt.output == Output::OBJECT);
         if (!ok) {
@@ -215,7 +222,7 @@ int compile(const Options &opt)
     std::vector<std::string> sources; // .alg replaced by its .ll
     bool ok = true;
     for (const auto &in : opt.inputs) {
-        if (extension(in) != ".alg") {
+        if (!is_algol(in)) {
             sources.push_back(in);
             continue;
         }
@@ -244,7 +251,7 @@ int compile(const Options &opt)
     std::string exe = opt.output_file;
     if (exe.empty()) {
         auto it = std::find_if(opt.inputs.begin(), opt.inputs.end(),
-                               [](const std::string &in) { return extension(in) == ".alg"; });
+                               [](const std::string &in) { return is_algol(in); });
         exe     = it == opt.inputs.end() ? "a.out" : stem(*it);
     }
     std::string self;

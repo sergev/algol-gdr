@@ -152,6 +152,7 @@ private:
     bool warned_{};
     bool semicolon_{}; // a number ended with '.,'
     bool eof_{};
+    bool publication_{}; // keywords underlined: b̲e̲g̲i̲n̲, strings in `…'
     int string_line_{}; // where an open string began
     Sym last_{ Sym::SEMICOLON };
 
@@ -166,6 +167,10 @@ private:
     Token scan();
     Token name();
     Token keyword_symbol();
+    Token keyword_token(const std::string &kw, int start);
+    bool underlined() const;
+    std::string underlined_word();
+    Token quoted_string(char32_t close);
     Token string();
     Token octal();
     Token number(bool point); // point: after a leading '.'

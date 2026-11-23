@@ -18,8 +18,9 @@
 
 namespace {
 
-constexpr char32_t QUOTE = '\'';
-constexpr char32_t TEN   = U'⏨';
+constexpr char32_t QUOTE     = '\'';
+constexpr char32_t TEN       = U'⏨';
+constexpr char32_t UNDERLINE = 0x332; // combining low line
 
 bool is_letter(char32_t c)
 {
@@ -210,6 +211,32 @@ Lexer::Lexer(const std::string &source, Diagnostics &diag,
         lines_.push_back(text);
         pos = end + 1;
     }
+    publication_ = source.find("\xCC\xB2") != std::string::npos;
+}
+
+// The current letter is underlined: a letter of a keyword.
+bool Lexer::underlined() const
+{
+    return publication_ && col_ + 1 < text_.size() && text_[col_ + 1] == UNDERLINE;
+}
+
+// Underlined letters from ch_, up to anything else; g̲o̲ t̲o̲ is one.
+std::string Lexer::underlined_word()
+{
+    std::string w;
+    for (;;) {
+        while (is_letter(ch_) && underlined()) {
+            append_utf8(w, ch_);
+            col_ += 2;
+            while (text_[col_] == UNDERLINE) // a doubled underline
+                col_++;
+            ch_ = text_[col_];
+        }
+        if (w != "go")
+            return w;
+        if (!is_letter(fetch()) || !underlined())
+            return w;
+    }
 }
 
 // The current character, from the next line when this one is done; blanks
@@ -278,6 +305,13 @@ Token Lexer::scan()
     char32_t c = fetch();
     if (after_end_)
         return after_end();
+    if (is_letter(c) && underlined()) {
+        int start      = line_;
+        std::string kw = underlined_word();
+        if (!keyword(kw))
+            return error("Unknown keyword " + kw);
+        return keyword_token(kw, start);
+    }
     if (is_letter(c))
         return name();
     if (is_digit(c) || c == TEN)
@@ -305,6 +339,10 @@ Token Lexer::scan()
         return error("Unexpected character after a quote");
     case '"':
         return string();
+    case '`':
+        return quoted_string(QUOTE);
+    case U'‘':
+        return quoted_string(U'’');
     case '.':
         if (advance() == ',') {
             step();
@@ -353,7 +391,7 @@ std::string Lexer::word(bool raw)
 {
     std::string w;
     skip_blanks_ = !raw;
-    for (char32_t c = ch_; is_letter(c) || is_digit(c); c = advance())
+    for (char32_t c = ch_; (is_letter(c) || is_digit(c)) && !underlined(); c = advance())
         append_utf8(w, c);
     skip_blanks_ = true;
     return w;
@@ -373,9 +411,14 @@ Token Lexer::keyword_symbol()
 {
     int start      = line_;
     std::string kw = word(true);
-    const Sym *sym = keyword(kw);
-    if (!sym)
+    if (!keyword(kw))
         return error("Unknown keyword _" + kw);
+    return keyword_token(kw, start);
+}
+
+Token Lexer::keyword_token(const std::string &kw, int start)
+{
+    const Sym *sym = keyword(kw);
     switch (*sym) {
     case Sym::ERROR:
         comment();
@@ -425,14 +468,17 @@ Token Lexer::after_end()
             c = advance();
             if (c == ',')
                 break;
-        } else if (is_letter(c) || is_digit(c)) {
-            c = advance();
-            continue;
-        } else if (c == '_' && is_letter(text_[col_ + 1])) {
-            step();
-            ch_            = text_[col_];
-            int start      = line_;
-            const Sym *sym = keyword(word(true));
+        } else if ((is_letter(c) && underlined()) || (c == '_' && is_letter(text_[col_ + 1]))) {
+            int start = line_;
+            std::string w;
+            if (c == '_') {
+                step();
+                ch_ = text_[col_];
+                w   = word(true);
+            } else {
+                w = underlined_word();
+            }
+            const Sym *sym = keyword(w);
             if (sym && (*sym == Sym::END || *sym == Sym::ELSE || *sym == Sym::EOP)) {
                 warned_ = false;
                 if (*sym != Sym::END)
@@ -442,6 +488,9 @@ Token Lexer::after_end()
                 return t;
             }
             c = fetch();
+            continue;
+        } else if (is_letter(c) || is_digit(c)) {
+            c = advance();
             continue;
         }
         if (!warned_) {
@@ -500,6 +549,31 @@ Token Lexer::string()
         append_utf8(text, v);
         skip_blanks_ = false;
     }
+    step();
+    Token t = make(Sym::STRING_CONST);
+    t.line  = start;
+    t.text  = text;
+    return t;
+}
+
+// A string of the publication form: `…' or ‘…’, nested; the inner quotes
+// are kept.
+Token Lexer::quoted_string(char32_t close)
+{
+    char32_t open = ch_;
+    int start     = line_;
+    string_line_  = start;
+    skip_blanks_  = false;
+    std::string text;
+    for (int depth = 1;;) {
+        char32_t c = advance();
+        if (c == open)
+            depth++;
+        else if (c == close && --depth == 0)
+            break;
+        append_utf8(text, c);
+    }
+    skip_blanks_ = true;
     step();
     Token t = make(Sym::STRING_CONST);
     t.line  = start;

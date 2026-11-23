@@ -11,14 +11,16 @@
 -- Concrete syntax, which the abstract syntax leaves out:
 --  * Source is UTF-8. A keyword is '_' and a word, in any case: _begin,
 --    _END; a blank or any other character ends it, so _real_array is two
---    keywords and _integer i needs the blank. Identifiers are Latin, Greek
+--    keywords and _integer i needs the blank. In a file with underlined
+--    letters (U+0332) an underlined word is a keyword too: b̲e̲g̲i̲n̲, g̲o̲ t̲o̲. Identifiers are Latin, Greek
 --    or Cyrillic letters and digits ('_' is not one), of any length,
 --    case-sensitive. Elsewhere outside strings blanks and line ends separate
 --    nothing: "noun phrase" is the identifier "nounphrase", "1 000" is 1000.
 --  * _comment … ; is skipped after ';' or _begin; text after _end is
 --    skipped up to ';', _end, _else or _eop.
 --  * Strings: ''…'' or '('…')'; 'ddd' inside is a character by its octal
---    code point. Strings do not nest, unlike the Revised Report's ‘…’.
+--    code point; these do not nest. In the publication form also `…' and
+--    ‘…’, which nest, the inner quotes kept.
 --  * Numbers: 12, 1.5, .5, 1⏨3, ⏨-2. A number ending in '.,' ends the
 --    statement ('.,' is also ';').
 --  * Operators, by priority from the lowest; all binary ones are left
@@ -36,8 +38,8 @@
 --  * Brackets [ ] may also be written (/ /), and the bounds of an array
 --    declaration ( ).
 --  * A conditional expression as an operand must be in parentheses. After
---    _then there is no conditional statement, and a _for statement there
---    has no _else after it: both must be in _begin _end.
+--    _then a conditional statement takes the _else (a warning), and a _for
+--    statement there has no _else after it.
 --  * Between parameters, in a call or a procedure heading, the delimiter
 --    ") letter string: (" is a comma: p(a) size: (n).
 --

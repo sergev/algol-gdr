@@ -18,7 +18,7 @@ static void print_usage(std::ostream &out)
     out << "Algol 60 compiler, Version " << version_string() << "\n"
         << "Usage:\n"
         << "    " << prog_name << " [options...] files...\n"
-        << "Inputs: .alg (Algol), .ll (LLVM IR), .s, .o, .a\n"
+        << "Inputs: .alg or .a60 (Algol), .ll (LLVM IR), .s, .o, .a\n"
         << "Options:\n"
         << "    -o FILE                 Output file (default: NAME for NAME.alg)\n"
         << "    -c                      Compile to an object file\n"

@@ -135,3 +135,17 @@ TEST(Lexer, errors)
               "x.alg:2: error: Bad character code in a string\n");
     EXPECT_EQ(t.back().sym, Sym::END_OF_FILE);
 }
+
+// The publication form: underlined keywords, `…' strings nested.
+TEST(Lexer, publication)
+{
+    EXPECT_EQ(syms("b̲e̲g̲i̲n̲ x := ab d̲o̲ g̲o̲ t̲o̲ L; i̲f̲ a ≤ b t̲h̲e̲n̲ e̲n̲d̲"),
+              syms("_begin x := ab _do _goto L; _if a _le b _then _end"));
+    auto t = tokens("b̲e̲g̲i̲n̲ P(`Hello `Algol'', ‘a’) e̲n̲d̲");
+    ASSERT_GE(t.size(), 6u);
+    EXPECT_EQ(t[3].text, "Hello `Algol'");
+    EXPECT_EQ(t[5].text, "a");
+    auto n = tokens("b̲e̲g̲i̲n̲ collect garbage s̲t̲e̲p̲ e̲n̲d̲");
+    EXPECT_EQ(n[1].text, "collectgarbage");
+    EXPECT_EQ(n[2].sym, Sym::STEP);
+}

@@ -7,11 +7,14 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <set>
 #include <sstream>
 
 #include "checker.h"
 #include "diag.h"
+#include "frontend.h"
 #include "golden.h"
 #include "parser.h"
 #include "source.h"
@@ -152,7 +155,7 @@ TEST(Checker, messages)
               "x.alg:2: error: Undeclared identifier 'J'\n"
               "x.alg:2: error: A label is expected in _goto\n");
     EXPECT_EQ(check_messages("_begin _real _procedure F; ; F _end _eop"),
-              "x.alg:1: error: Function 'F' does not assign its result\n");
+              "x.alg:1: warning: Function 'F' does not assign its result\n");
     EXPECT_EQ(check_messages("_begin _procedure P(X); _integer X; X := 1;\n"
                              "_real Y; _boolean Z; P(Y); P(Y + 1); P(Z) _end _eop"),
               "x.alg:2: error: Argument 1 of 'P' does not match formal parameter 'X'\n");
@@ -186,4 +189,31 @@ TEST(Checker, scopes_and_conversions)
     EXPECT_NE(text.find("{kind: var, line: 2, name: \"X\", id: 4, type: integer}"),
               std::string::npos)
         << text;
+}
+
+// The programs of x1-algol-compiler in the publication form pass the front
+// end, with their X1 procedures declared as _code (a line before them).
+TEST(Ast, x1_examples)
+{
+    namespace fs = std::filesystem;
+    if (!fs::is_directory(X1_EXAMPLES))
+        GTEST_SKIP() << "no " << X1_EXAMPLES;
+    const std::string x1 =
+        "_code: _real read, RANDOM, TIMEOFDAY, SUM; _code: _integer RESYM; "
+        "_code: NLCR, PRINTTEXT, PRSYM, SPACE, ABSFIXT, FIXT, FLOT, SETRANDOM;\n";
+    // A ';' is missing before NLCR at line 71.
+    const std::set<std::string> broken = { "bulls_and_cows" };
+    int n                              = 0;
+    for (const auto &e : fs::directory_iterator(X1_EXAMPLES)) {
+        if (e.path().extension() != ".a60")
+            continue;
+        std::ostringstream err;
+        Diagnostics diag(e.path().filename().string(), err);
+        front_end(x1 + read_source(e.path().string()), diag, nullptr);
+        if (!broken.count(e.path().stem().string())) {
+            EXPECT_EQ(diag.errors(), 0) << err.str();
+        }
+        n++;
+    }
+    EXPECT_GT(n, 0);
 }

@@ -41,8 +41,7 @@ TEST(Parser, recovery)
               "x.alg:1: error: Expected an expression, found ';'\n");
     EXPECT_EQ(messages("_begin _integer X _end _eop"),
               "x.alg:1: error: Expected ';', found _end\n");
-    EXPECT_EQ(messages("_begin X := 1;"),
-              "x.alg:1: error: Missing _end\n");
+    EXPECT_EQ(messages("_begin X := 1;"), "x.alg:1: error: Missing _end\n");
     EXPECT_EQ(messages("_begin X := (1"), "x.alg:1: error: Unexpected end of the file\n");
 }
 

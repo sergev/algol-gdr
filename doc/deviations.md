@@ -11,8 +11,10 @@ The reference language is printed with underlined keywords and symbols that a ke
 not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60.asdl):
 
 - Keywords are `_word` in any case; strings are `''…''` or `'('…')'` and do not nest; the
-  ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ↑` have ASCII and word forms. Publication-style input
-  (underlined keywords, `‘…’` strings, nesting) is **F9**.
+  ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ÷ ↑` have ASCII and word forms.
+- A file with an underlined letter (U+0332) is in the publication form: keywords are
+  underlined words (`b̲e̲g̲i̲n̲`, `g̲o̲ t̲o̲`), strings `` `…' `` or `‘…’`, nested, the inner
+  quotes kept. Both forms read the same symbols otherwise.
 - The program may end with `_eop`, as on the original.
 - Standard identifiers (`sqrt`, `print`, …) are recognized in any case; a declaration of the
   same name hides them, as in the Report.
@@ -57,6 +59,10 @@ not deviations.
   then; later entries keep it, whatever the bounds would be.
 - A file of procedures alone is a unit: `algc -c` makes an object where they are global
   under their names, for `_algol:` declarations of other programs (an extension).
+- `integer ↑ integer` is integer; a negative exponent is a run-time error.
+- Extensions, after X1: `_then _if … _else` (the `_else` goes with the inner `_if`, with a
+  warning); `÷` on real operands, rounded to integers first. A function that does not
+  assign its result gets a warning, not an error.
 - An array called by value keeps the type of the actual's elements.
 - An unsigned integer as an actual parameter is a label when the formal is specified
   `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.

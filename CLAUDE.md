@@ -108,5 +108,6 @@ keywords in lower case, messages as `_begin`. Blanks are ignored inside names an
 Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as written;
 standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column limit. The exponent
 sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
-`≡`. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
+`≡`, `÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`,
+strings `` `…' `` that nest (`.a60`, as x1-algol-compiler/examples). The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
 first 6 characters.

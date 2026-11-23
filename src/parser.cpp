@@ -708,7 +708,8 @@ StmtPtr Parser::if_stmt(ast::SrcLoc loc)
     s.condition = expression(0);
     expect(Sym::THEN);
     if (tok_.sym == Sym::IF)
-        fail("A conditional statement after _then must be in _begin _end");
+        diag_.warning(tok_.line,
+                      "A conditional statement after _then: _else goes with the inner _if");
     bool is_for = tok_.sym == Sym::FOR;
     s.then_stmt = statement();
     if (tok_.sym == Sym::ELSE) {

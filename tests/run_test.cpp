@@ -64,6 +64,7 @@ const std::vector<std::string> programs = {
     "a60/intdiv",
     "a60/own",
     "a60/parameters",
+    "a60/publication",
     "a60/units",
     "a60/program_form",
 };
@@ -130,6 +131,12 @@ std::string stub_of(const std::string &base)
     return "";
 }
 
+// The program: NAME.alg, or NAME.a60.
+std::string source_of(const std::string &base)
+{
+    return std::filesystem::exists(base + ".a60") ? base + ".a60" : base + ".alg";
+}
+
 // qemu-ARCH for a target triple.
 std::string qemu(const std::string &target)
 {
@@ -187,7 +194,7 @@ TEST_P(RunTest, output)
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = stub_of(base);
-    std::string out = run(base + ".alg", BUILD_DIR "/run_" + test_name(name), check, input, stub);
+    std::string out = run(source_of(base), BUILD_DIR "/run_" + test_name(name), check, input, stub);
     EXPECT_EQ(compare(out, expected(name)), "") << out;
 }
 
@@ -211,8 +218,8 @@ TEST_P(CrossTest, output)
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = stub_of(base);
-    std::string out = run(base + ".alg", BUILD_DIR "/run_" + target + "_" + test_name(name), check,
-                          input, stub, target);
+    std::string out = run(source_of(base), BUILD_DIR "/run_" + target + "_" + test_name(name),
+                          check, input, stub, target);
     EXPECT_EQ(compare(out, expected(name)), "") << out;
 }
 

@@ -16,11 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Input and messages
 
-- **F9** Publication-style input, detected per file: keywords as letters with a combining
-  underline (`b̲e̲g̲i̲n̲`, U+0332), strings in `` `…' `` and `‘…’` quotes, nested; `÷`, `≤` and
-  the other symbols; no `_eop` needed. The `_keyword` form stays. All the `.a60` files of
-  x1-algol-compiler/examples pass `--syntax-only` (their X1 procedures declared as externals
-  for now). Listing and messages as for the other form.
 - **F10** Messages with columns: `file:line:column: error: …`, the column of the symbol
   where the error is found; tokens and AST nodes keep their column. Goldens updated.
 

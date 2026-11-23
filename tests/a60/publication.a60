@@ -1,0 +1,13 @@
+c̲o̲m̲m̲e̲n̲t̲ The publication form: underlined keywords, strings in quotes
+that nest, symbols of the Revised Report;
+b̲e̲g̲i̲n̲ i̲n̲t̲e̲g̲e̲r̲ i, total count; B̲o̲o̲l̲e̲a̲n̲ b;
+    r̲e̲a̲l̲ p̲r̲o̲c̲e̲d̲u̲r̲e̲ half(x); v̲a̲l̲u̲e̲ x; r̲e̲a̲l̲ x;
+        half := x / 2;
+    total count := 0;
+    f̲o̲r̲ i := 1 s̲t̲e̲p̲ 1 u̲n̲t̲i̲l̲ 10 d̲o̲
+        i̲f̲ i ÷ 3 × 3 ≠ i ∧ ¬(i ≥ 8) t̲h̲e̲n̲ total count := total count + i ↑ 2;
+    b := total count > 90 ∨ f̲a̲l̲s̲e̲;
+    i̲f̲ b ≡ t̲r̲u̲e̲ t̲h̲e̲n̲ g̲o̲ t̲o̲ done;
+    PRINT(`missed');
+done: PRINT(`total `count'', total count, half(3), b)
+e̲n̲d̲ of the program

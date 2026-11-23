@@ -750,7 +750,8 @@ void Checker::procedure_body(const syn::decl::Procedure &p, int index, decl::Pro
     }
     functions_.pop_back();
     if (p.type != Type::NONE && !symbols_[index].assigned)
-        error(p.name.line, "Function " + quoted(p.name.name) + " does not assign its result");
+        diag_.warning(p.name.line,
+                      "Function " + quoted(p.name.name) + " does not assign its result");
     scopes_.pop_back();
 }
 
@@ -1294,17 +1295,20 @@ ExprPtr Checker::binary(const syn::expr::Binary &b, int line)
         r = convert(std::move(r), Type::REAL, line, "");
         return make(BinaryOp::DIV, Type::REAL);
     case Sym::INTDIV:
-        if (l->type != Type::INTEGER || r->type != Type::INTEGER)
+        // Real operands are rounded (an extension, after X1).
+        if (!numeric(l->type) || !numeric(r->type))
             return fail();
+        l = convert(std::move(l), Type::INTEGER, line, "");
+        r = convert(std::move(r), Type::INTEGER, line, "");
         return make(BinaryOp::INT_DIV, Type::INTEGER);
     case Sym::POWER: {
         if (l->type == Type::BITS && r->type == Type::INTEGER)
             return make(BinaryOp::POWER, Type::BITS);
         if (!numeric(l->type) || !numeric(r->type))
             return fail();
-        // An integer to a constant power not below 0 stays integer.
-        auto k = std::get_if<expr::IntConst>(&r->node);
-        if (l->type == Type::INTEGER && k && k->value >= 0)
+        // integer ↑ integer is integer (a negative exponent is a run-time
+        // error).
+        if (l->type == Type::INTEGER && r->type == Type::INTEGER)
             return make(BinaryOp::POWER, Type::INTEGER);
         l = convert(std::move(l), Type::REAL, line, "");
         return make(BinaryOp::POWER, Type::REAL);
