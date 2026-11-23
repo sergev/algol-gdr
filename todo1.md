@@ -56,11 +56,9 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 - **B2.2a** 'COMMON' declarations, read by the lexer itself (*1155B in ag14504.asm, not run
   by any test program): add test programs, then translate.
-- **B2.4** Error messages in the listing: check `ERROR nn CLASS`, `↑EOP↑ …`, `HET ′EOP′ !`,
-  `30 ERRORS …` against the `.lst` files (the recovery already matches the streams).
-- **B2.5** Listing: numbered lines, two-line split for the narrow printer, the banner.
-- Done when stream 1, the tables and the listing match for all programs, the `err_*`
-  programs included.
+- **B2.6** Long listings: past a page, `dubna` shows two pages side by side (seen with a
+  127-line program without `setftn`); no test program has one yet. Add one, then match it.
+- **B2.7** `30 ERRORS , COMPILATION INTERRUPTED` and `HET ′EOP′ !`: add test programs.
 
 ### B3. Pass 2
 

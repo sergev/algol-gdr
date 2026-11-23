@@ -3,8 +3,10 @@
 // by label. Labels *nnnnB are offsets in os-dubna/algol/ag14504.asm.
 //
 #include "pass1.h"
+#include <cstdio>
 #include <ostream>
 
+#include "listing.h"
 #include "tables.h"
 
 namespace {
@@ -113,11 +115,30 @@ void Pass1::read_card()
         ws_[CARD + i] = card[i];
 }
 
+//
+// AG27652: the card in the listing. Normally columns 73-80, the line number,
+// columns 1-46, and on a second line columns 47-72; with *call setftn:one,long
+// the line number and all 80 columns on one line.
+//
 void Pass1::print_card()
 {
     if (!ctx_.listing)
         return;
-    // The listing comes with B2.5.
+    Word card[CARD_WORDS];
+    for (unsigned i = 0; i < CARD_WORDS; i++)
+        card[i] = ws_[CARD + i];
+    unsigned line = ws_[D_LINE] & 077777777;
+    char num[16];
+    if (ctx_.options.setftn_one && ctx_.options.setftn_long) {
+        std::snprintf(num, sizeof(num), "%6u.     ", line);
+        print_line(rtrim(num + listing_text(card, 0, 80)));
+        return;
+    }
+    std::snprintf(num, sizeof(num), "%4u. ", line % 10000);
+    print_line(rtrim(listing_text(card, 72, 80) + num + listing_text(card, 0, 46)));
+    std::string rest = rtrim(listing_text(card, 46, 72));
+    if (!rest.empty())
+        print_line(std::string(15, ' ') + rest);
 }
 
 // G27220: put a word into the string pool; a full sector of 256 words goes
@@ -421,8 +442,7 @@ L1475:
             print_card();
             ws_[D_PRINTED] = ws_[D_LINE];
         }
-        if (ctx_.listing)
-            *ctx_.listing << "WARNING SYMBOL AFTER END\n";
+        print_line("WARNING SYMBOL AFTER END");
         ws_[D_WARNED] = ws_[D_CHAR];
     }
     if (ws_[D_CHAR] == ';')

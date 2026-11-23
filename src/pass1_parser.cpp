@@ -1778,6 +1778,10 @@ unsigned Pass1::find_formal()
 // The line of a syntax error: ERROR nn and the class of the error (17166).
 void Pass1::print_error(unsigned n)
 {
+    if (!ws_[D_LIST] && ws_[D_LINE] != ws_[D_PRINTED]) {
+        print_card();
+        ws_[D_PRINTED] = ws_[D_LINE];
+    }
     unsigned cls = (tables::errclass.at(017166 + (n >> 3)) >> (6 * (n & 7))) & 077;
     std::string text;
     // A string of the pieces at 17121: ISO bytes, 0200+k inserts piece k.

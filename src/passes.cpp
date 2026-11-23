@@ -16,6 +16,9 @@ Stream run_pass(int n, Context &ctx, const Stream &input)
 {
     switch (n) {
     case 1:
+        // The driver's banner, then pass 1.
+        if (ctx.listing && !ctx.options.no_listing)
+            *ctx.listing << "A L G O L - Г Д P\n    (7.01.82)\n";
         return Pass1(ctx).run();
     case 5:
         return pass5(ctx, input);

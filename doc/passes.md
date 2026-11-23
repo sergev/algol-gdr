@@ -260,6 +260,14 @@ sector to drum 27 zone 34. (V)
 | 95 | PROGRAM HEAD |
 | 99 | PROGRAM END |
 
+### The listing of a card (AG27652)
+
+- Normally: columns 73–80, the line number `%4u`, `. `, columns 1–46; then a second line of
+  15 blanks and columns 47–72, when they are not blank.
+- With `*call setftn:one,long`: `%6u.`, five blanks and all 80 columns. (`long` alone, or
+  `one` alone, keeps the normal form; `one` makes the empty lines of G01713 visible.)
+- With `*NO LIST` a card is printed only before its first error message.
+
 ### The parser in C++
 
 `src/pass1_parser.cpp` keeps the control flow of the original: one function, labels named

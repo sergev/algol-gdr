@@ -17,6 +17,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     golden.cpp
     item_test.cpp
     lexer_test.cpp
+    listing_test.cpp
     pass1_test.cpp
     pass_test.cpp
     pass5_test.cpp

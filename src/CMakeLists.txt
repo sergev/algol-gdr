@@ -4,6 +4,7 @@ add_library(algol STATIC
     card.cpp
     dump.cpp
     item.cpp
+    listing.cpp
     pass1_lexer.cpp
     pass1_parser.cpp
     pass5.cpp

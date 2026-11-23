@@ -83,3 +83,12 @@ Open questions:
   of the original has been found (the keyword table has none, and `/` gives a real).
 - What to do with lower case: the original makes everything upper case, strings included.
   Keeping lower case in strings changes the output, so it needs an option (Milestone 3).
+
+## The listing
+
+The compiler prints ISO (KOI-7); the line printer gets GOST, and `dubna` writes UTF-8. The
+mapping, measured by compiling a comment with every code, is in `src/listing.cpp`. Most codes
+print as themselves (upper-case Latin, digits, punctuation); some differ: `'` → `′`,
+`#` → `≠`, `$` → `◇`, `&` → `∧`, `?` → `↑`, `@` → `°`, `\` → `‾`, `^` → `|`; codes 0140–0176
+are Cyrillic (with Latin look-alikes: `а` prints as `A`); 020–037 are `‘ ― ↑ ⏨ ≠ ° ÷ ’ ⊃ ≡ ∨
+¬`. Codes 001, 002, 015, 021–024 and 0177 print as nothing, and 003 ends the line.
