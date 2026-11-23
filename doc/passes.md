@@ -389,6 +389,28 @@ A block header has bit 48 set, and its low 12 bits give the end address.
   - Relations: real, integer, string; octal only = and ≠; integer with real = ≠ become
     0105, 0106; strings `(code−4)<<12 ^ 0157`.
   - Unary −: 047 real, 026 integer; unary + writes nothing.
+- **Statements (V).**
+  - `:=` (count n = left parts − 1): the right side first; each left part is checked
+    against the type before it (063, 064; TYPE ERROR ':=' after a right side of type 0) and
+    written as 0100 (a variable, a function's name inside its body: bit 17 of the word after
+    its descriptor marks the result assigned) or 0101 (a formal by name: bit 46 marks it
+    assigned, bit 45 forbids it). A left part that is no variable: ILLEGAL LEFT PART.
+  - IF: the condition must be boolean; it is written after the branches, then 027. A
+    condition ending in a relation becomes a compare-and-jump 0130–0134 (= on an integer and
+    a real: 0105). A conditional expression (045 … 054) writes 031 between its branches; an
+    integer and a real branch give a real result.
+  - FOR (055 v 032, elements, 033, body, d 052): the control variable must be a simple
+    variable or a formal by name of a number type (032, 0141). Elements: a variable or a
+    constant of its type as is (017, 022, 023), else the expression and 0136 (0135 for a
+    formal by name), with a conversion. STEP-UNTIL ends with 0140 (real) or 034 (integer);
+    an integer constant start and step give 0137 and the step is interned without its
+    exponent bits. A FOR with several elements gets bit 48 in its block header.
+  - SWITCH: 0146, the item, the elements (a label 0142, marked used; an expression 0144),
+    0143; each must be designational (TYPE ERROR SWITCH).
+  - Array segments: the bounds are parsed with the block's own names hidden (02005); a block
+    with arrays gets bit 16 and an item 0102 once. Constant bounds (upper below 256, lower
+    below 64) make an array record `bounds<<24 | item` at 04000…, linked at the end.
+  - A syntax-error marker (044) skips items up to the next statement marker.
   - Subscripts: the item `a<<12 | n<<7 | c` first, then for each subscript (read last to
     first) a constant below 2048 as `045 c`, `i+c`, `i−c` (c below 2048, 64) as i then
     `030 c` (−c mod 4096), else the expression and `030 0`. A real subscript gets 063 (to

@@ -77,6 +77,10 @@ constexpr unsigned NUMERIC      = 020317; // by type: nonzero for real and integ
 constexpr unsigned ONE          = 01632;  // the slot of the constant 1
 constexpr unsigned IF_TEXT      = 022160; // 'IF'
 constexpr unsigned FOR_TEXT     = 022120; // 'FOR'
+constexpr unsigned SWITCH_TEXT  = 022114; // SWITCH
+constexpr unsigned BOUNDS       = 02031;  // constant bounds of an array segment, or 0
+constexpr unsigned BOUND_LOOP   = 020176; // *0753B
+constexpr unsigned SET_POSITION = 017535; // *0312B
 constexpr unsigned ELEMENTS     = 02024;  // the elements of the FOR list
 constexpr unsigned STEP_KIND    = 02023;  // the last item of a STEP element: 0137, 0140, 034
 constexpr unsigned FOR_ELEMENT  = 021466; // *2243B: through M11
@@ -106,6 +110,7 @@ constexpr Word ASSIGNED       = 0'0004'0000'0000'0000; // a formal by name assig
 constexpr Word NOT_ASSIGNABLE = 0'0010'0000'0000'0000;
 constexpr Word RESULT_SET     = 0200000; // in a function's word after it: assigned
 constexpr Word MANTISSA       = 0'0017'7777'7777'7777;
+constexpr Word HAS_ARRAYS     = 0100000; // a block header: arrays declared
 constexpr Word IN_COMMON_CLR  = 0'7770'0777'7777'7777;
 constexpr Word IN_COMMON      = 0'0001'0000'0000'0000;
 constexpr Word DIMENSIONS     = 0'0000'0000'0070'0000;
@@ -1894,6 +1899,171 @@ unsigned for_start_item(Machine &m)
     return close_block(m);
 }
 
+//
+// Code 041, a switch declaration with n+1 designational expressions: 0146
+// and the item, then each element: a label (marked used, 0142) or an
+// expression (0144); each must be of type 0, else TYPE ERROR SWITCH. Then
+// 0143, on at *0330B.
+//
+unsigned switch_item(Machine &m)
+{
+    auto at = [&](unsigned k) -> Word & { return m.mem[(m.M[Machine::SP] - k) & 077777]; };
+    m.set_m(14, 0146);
+    m.call(EMIT_M14, 13, 021640);
+    m.call(EMIT_ITEM, 13, 021641);
+    m.push(m.mem[DLIST_TOP]);
+    m.push(m.M[2]);
+    m.acc            = 0;
+    m.mem[DLIST_TOP] = 0;
+    m.call(READ, 13, 021644);
+    for (;;) {
+        if (m.M[1]) {
+            m.call(PARSE_READ, 12, 021664);
+            m.set_m(14, 0144);
+            m.call(EMIT_M14, 13, 021652);
+        } else {
+            m.set_m(13, 021645);
+            lookup(m);
+            if (m.M[6]) {
+                m.set_m(6, m.M[6] - 5);
+                if (m.M[6]) {
+                    m.set_m(8, 021647);
+                    illegal_use(m);
+                }
+            } else {
+                m.acc         = m.mem[m.M[4]] | m.mem[BIT48_WORD];
+                m.mem[m.M[4]] = m.acc;
+            }
+            m.acc         = m.mem[m.M[4]] | m.mem[BIT48_WORD];
+            m.mem[m.M[4]] = m.acc;
+            m.call(READ, 13, 021651);
+            m.set_m(14, 0142);
+            m.call(EMIT_M4, 13, 021652);
+        }
+        if (m.M[5]) {
+            m.acc           = 0;
+            m.mem[ARGS + 1] = 0;
+            m.acc           = m.mem[SWITCH_TEXT];
+            m.set_m(8, 021655);
+            type_error(m);
+        }
+        m.acc = at(1);
+        m.arx(7, 02717);
+        at(1) = m.acc;
+        if (!m.u1a())
+            break;
+    }
+    m.xta(Machine::SP, 0);
+    m.set_m(14, 0143);
+    m.set_m(13, 017553);
+    return EMIT_M14;
+}
+
+//
+// Code 0104, the end of the bounds of an array segment (read first): the
+// block gets bit 16 and the item 0102 once; the bounds are parsed with the
+// block's names hidden (BOUND_LOOP). Two constants, upper below 256, lower
+// below 64, are kept in BOUNDS for the array record.
+//
+unsigned bounds_item(Machine &m)
+{
+    m.set_m(14, unsigned(m.mem[BLOCK]));
+    m.acc = m.mem[m.M[14]] & HAS_ARRAYS;
+    m.set_logical();
+    if (!m.acc) {
+        m.acc          = m.mem[m.M[14]] ^ HAS_ARRAYS;
+        m.mem[m.M[14]] = m.acc;
+        m.set_m(14, 0102);
+        m.acc = m.mem[BLOCK];
+        m.call(EMIT_SHIFTED, 13, 020170);
+    }
+    m.call(EMIT_ITEM, 13, 020171);
+    m.call(READ, 13, 020172);
+    m.acc         = m.mem[BLOCK];
+    m.mem[HIDDEN] = m.acc;
+    m.set_m(14, m.M[1] - 024);
+    if (!m.M[14]) {
+        m.acc = m.mem[NAMES + m.M[3]];
+        m.arith(7, 02715, 005);
+        if (!m.uza()) {
+            m.acc         = m.mem[NAMES + m.M[3]];
+            m.mem[BOUNDS] = m.acc;
+            m.call(PARSE_READ, 12, 020213);
+            m.set_m(14, m.M[1] - 024);
+            if (!m.M[14]) {
+                m.acc = m.mem[NAMES + m.M[3]];
+                m.arith(7, 02713, 005);
+                if (!m.uza()) {
+                    m.acc = m.mem[NAMES + m.M[3]];
+                    m.asn(0, 64 - 12);
+                    m.acc |= m.mem[BOUNDS];
+                    m.mem[BOUNDS] = m.acc;
+                    return BOUND_LOOP;
+                }
+            }
+        }
+    }
+    m.acc         = 0;
+    m.mem[BOUNDS] = 0;
+    return BOUND_LOOP;
+}
+
+// *0753B: a bound; the 040 item of the segment ends the loop by its handler.
+unsigned bound_loop(Machine &m)
+{
+    m.set_m(12, 020177);
+    return PARSE_READ;
+}
+
+// After a bound: it must be an integer.
+unsigned bound_done(Machine &m)
+{
+    m.set_m(13, BOUND_LOOP);
+    return index_type(m);
+}
+
+//
+// Code 040, an array segment: the frame of the bound loop is dropped; with
+// constant bounds an array record BOUNDS<<24 | item goes to ARRAYS_END.
+//
+unsigned array_item(Machine &m)
+{
+    m.acc         = 0;
+    m.mem[HIDDEN] = 0;
+    m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+    m.call(EMIT_ITEM, 13, 020202);
+    m.acc = m.mem[BOUNDS];
+    m.set_logical();
+    if (m.acc) {
+        m.asn(0, 64 - 24);
+        m.acc |= m.mem[02006];
+        m.mem[m.mem[ARRAYS_END] & 077777] = m.acc;
+        m.acc                             = m.mem[ARRAYS_END];
+        m.arx(7, 02646);
+        m.mem[ARRAYS_END] = m.acc;
+    }
+    m.set_m(13, DISPATCH);
+    return READ;
+}
+
+// Codes 060, 031, 053, 054: the item as is.
+unsigned copy_item(Machine &m)
+{
+    m.call(EMIT_ITEM, 13, 021207);
+    m.set_m(13, DISPATCH);
+    return READ;
+}
+
+// Code 044, a syntax error: items are skipped up to a statement marker.
+unsigned syntax_error_item(Machine &m)
+{
+    do {
+        m.call(READ, 13, 017534);
+        m.set_m(1, m.M[1] - 051);
+    } while (m.M[1]);
+    return SET_POSITION;
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -2099,6 +2269,13 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[021617] = control_item;
     pass.m.natives[017567] = close_block;
     pass.m.natives[017543] = for_start_item;
+    pass.m.natives[021637] = switch_item;
+    pass.m.natives[020162] = bounds_item;
+    pass.m.natives[020176] = bound_loop;
+    pass.m.natives[020177] = bound_done;
+    pass.m.natives[020200] = array_item;
+    pass.m.natives[021206] = copy_item;
+    pass.m.natives[017533] = syntax_error_item;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);

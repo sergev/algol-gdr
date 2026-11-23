@@ -64,6 +64,10 @@ the machine's memory and leaving its registers as the original does:
 | 2 | 17605–17775 | identifiers, constants, GOTO's check, TYPE ERROR, the type matrix |
 | 2 | 17777–20154 | subscripts, + − × / |
 | 2 | 20221–20430 | **, boolean operators, NOT, relations, unary + − |
+| 2 | 17675–17737 | assignment |
+| 2 | 21366, 21461 | conditional expressions, IF |
+| 2 | 17543–17601, 21466–21617 | FOR |
+| 2 | 21637, 20162–20200, 21206, 17533 | SWITCH, array segments, copied items, syntax-error marker |
 | 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
 | 3 | 22716 | `intern_constant` (src/pass3.cpp) |
 
