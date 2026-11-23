@@ -9,7 +9,7 @@
 
 #include "util.h"
 
-static const std::string compiler = BUILD_DIR "/src/algol-gdr";
+static const std::string compiler = BUILD_DIR "/src/algc";
 
 TEST(cli, usage)
 {

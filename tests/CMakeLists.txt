@@ -36,7 +36,7 @@ target_compile_definitions(unit_tests PRIVATE
     TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     BUILD_DIR="${CMAKE_BINARY_DIR}"
 )
-add_dependencies(unit_tests algol-gdr)
+add_dependencies(unit_tests algc)
 gtest_discover_tests(unit_tests PROPERTIES TIMEOUT 120)
 
 # The start memory of scripts/capture-streams.py.

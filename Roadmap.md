@@ -1,8 +1,9 @@
 # Roadmap
 
-Re-create the BESM-6 Algol-GDR compiler (ALGOL-ГДР, 7.01.82, Dubna monitor system) in C++20
-with UTF-8 input and output, then retarget it to native code via LLVM, then grow it to full
-Algol-60. Final goal: compile the Algol-60 programs in
+Port the BESM-6 Algol-GDR compiler (ALGOL-ГДР, 7.01.82, Dubna monitor system) to modern
+64-bit machines — x86_64, arm64, riscv64 — as `algc`: first re-create it in C++20 with UTF-8
+input and output, then retarget it to native code with LLVM as an external backend, then grow
+it to full Algol-60. Final goal: compile the Algol-60 programs in
 `/home/vak/Project/Algol/x1-algol-compiler/examples/` (Milestone 4).
 
 The original is about 12,900 lines of Madlen: the root overlay `ALGOL` (driver at 01614, tables
@@ -18,7 +19,7 @@ original is in `doc/`.
 
 ## Milestone 2 — LLVM backend
 
-Goal: `algol-gdr file.alg -o prog` produces a native executable.
+Goal: `algc file.alg -o prog` produces a native executable on x86_64, arm64 and riscv64.
 
 - **Typed shared data instead of the workspace.** The passes share data at the original
   addresses (`Workspace`, about 850 accesses), and words hold addresses into it (slots in
@@ -33,7 +34,8 @@ Goal: `algol-gdr file.alg -o prog` produces a native executable.
   - then `Workspace` goes away, and with it the original's size limits (one-page streams,
     the hash table, the 1K constant page).
 - Find the cleanest point to split the backend: after the last machine-independent pass, or
-  an AST/IR built from it. Keep the BESM-6 backend working as a second target.
+  an AST/IR built from it. The BESM-6 backend is not kept; that version stays on the
+  `besm6` branch.
 - **IR generation** modelled on `blang` (`irbuilder.go`, `driver.go`): emit textual LLVM IR,
   call `clang` to compile and link. Options `-S` (keep `.ll`), `-c`, `-O`.
 - **Semantics on a 64-bit host.** Decide and document:

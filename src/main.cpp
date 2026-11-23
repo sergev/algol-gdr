@@ -14,7 +14,7 @@
 #include "source.h"
 #include "version.h"
 
-static const char *prog_name = "algol-gdr";
+static const char *prog_name = "algc";
 
 static void print_usage(std::ostream &out)
 {

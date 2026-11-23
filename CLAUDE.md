@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Goal: re-create the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
-system) in **C++20**, with UTF-8 input/output. Milestones 0 (groundwork) and 1 (the
+Goal: port the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
+system) to modern 64-bit machines (x86_64, arm64, riscv64) as **`algc`**, in **C++20** with
+UTF-8 input/output and LLVM as an external backend. Milestones 0 (groundwork) and 1 (the
 C++ rewrite, same objects and listings as the original) are done. Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
 task when it is done, in the same commit.
 
@@ -20,8 +21,8 @@ scripts/ref-compile [--full] tests/algol/X.alg [OUTDIR]   # original compiler �
 scripts/ref-run X.std    # run an object under dubna
 scripts/capture-streams tests/algol/X.alg   # pass streams X.s1…X.s5, X.mem, X.lex
 make test                # rebuilds unit_tests; plain make does not
-./build/src/algol-gdr [--list] [--check] -o X.std X.alg   # compile; errors (listing with --list) on stdout
-./build/src/algol-gdr --dump X.std   # decode and disassemble an object
+./build/src/algc [--list] [--check] -o X.std X.alg   # compile; errors (listing with --list) on stdout
+./build/src/algc --dump X.std   # decode and disassemble an object
 ```
 
 Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Format with

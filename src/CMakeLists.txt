@@ -25,7 +25,7 @@ set_source_files_properties(version.cpp PROPERTIES COMPILE_DEFINITIONS
 )
 
 
-add_executable(algol-gdr main.cpp)
-target_link_libraries(algol-gdr algol)
+add_executable(algc main.cpp)
+target_link_libraries(algc algol)
 
-install(TARGETS algol-gdr DESTINATION bin)
+install(TARGETS algc DESTINATION bin)

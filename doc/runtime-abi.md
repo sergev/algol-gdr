@@ -6,7 +6,7 @@ compiler emits. A rewrite must emit the same code.
 ## Sources and notation
 
 - Run-time library: `os-dubna/besmmons/system1.txt` (S1) and `system2.txt` (S2).
-- Examples: `tests/algol/*.std`, decoded with `algol-gdr --dump`. Register numbers are
+- Examples: `tests/algol/*.std`, decoded with `algc --dump`. Register numbers are
   decimal, addresses octal. `@n` is an address relative to the module, `74nnn` is a
   description-table row, and `4nnn` is a short reference to a row.
 - **V**: verified by a run, a trace or an object listing. **I**: inferred from the run-time

@@ -14,7 +14,7 @@
 
 namespace fs = std::filesystem;
 
-static const std::string compiler = BUILD_DIR "/src/algol-gdr";
+static const std::string compiler = BUILD_DIR "/src/algc";
 
 static std::vector<std::string> program_names()
 {

@@ -1,21 +1,23 @@
-# Algol-GDR
+# algc
 
-A re-creation of the BESM-6 Algol-GDR compiler (ALGOL-ГДР, 1982, Dubna monitor system)
-in C++20, with UTF-8 source and output.
+An Algol compiler for modern 64-bit machines (x86_64, arm64, riscv64), using LLVM as the
+backend. It began as a re-creation in C++20 of the BESM-6 Algol-GDR compiler (ALGOL-ГДР,
+1982, Dubna monitor system), with UTF-8 source and output.
 
 ## Status
 
 The compiler is a complete C++ rewrite of the original: for every program in `tests/algol`
 it produces the same BESM-6 object module and the same listing, and the objects run on the
-`dubna` simulator with the same output. Next: an LLVM backend for native executables, full
-Algol-60 with a complete runtime library, and the Algol-60 programs in
+`dubna` simulator with the same output. Next: an LLVM backend for native executables on
+x86_64, arm64 and riscv64, full Algol-60 with a complete runtime library, and the Algol-60
+programs in
 [x1-algol-compiler/examples](https://github.com/sergev/x1-algol-compiler/tree/main/examples).
 The plan is in [Roadmap.md](Roadmap.md).
 
 ## Build
 
 ```
-make            # build/src/algol-gdr
+make            # build/src/algc
 make test       # unit tests and the test programs in tests/algol
 ```
 
@@ -24,7 +26,7 @@ Needs CMake and a C++20 compiler; the tests that run objects need `dubna`.
 ## Usage
 
 ```
-algol-gdr [options...] file.alg
+algc [options...] file.alg
 ```
 
 | Option | Meaning |
