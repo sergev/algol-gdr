@@ -110,5 +110,7 @@ Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as
 standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column limit. The exponent
 sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
 `≡`, `÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`,
-strings `` `…' `` that nest (`.a60`, as x1-algol-compiler/examples). The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
+strings `` `…' `` that nest (`.a60`, as x1-algol-compiler/examples). The X1 library procedures
+(`PRINTTEXT`, `FLOT`, `SUM`, `read`, …) are standard identifiers; `print` is X1's in the
+publication form, Algol-GDR's `PRINT` otherwise. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
 first 6 characters.

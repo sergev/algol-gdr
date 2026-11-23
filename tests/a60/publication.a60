@@ -8,6 +8,8 @@ b̲e̲g̲i̲n̲ i̲n̲t̲e̲g̲e̲r̲ i, total count; B̲o̲o̲l̲e̲a̲n̲ b;
         i̲f̲ i ÷ 3 × 3 ≠ i ∧ ¬(i ≥ 8) t̲h̲e̲n̲ total count := total count + i ↑ 2;
     b := total count > 90 ∨ f̲a̲l̲s̲e̲;
     i̲f̲ b ≡ t̲r̲u̲e̲ t̲h̲e̲n̲ g̲o̲ t̲o̲ done;
-    PRINT(`missed');
-done: PRINT(`total `count'', total count, half(3), b)
+    outstring(1, `missed');
+done: outstring(1, `total `count' ');
+    outinteger(1, total count); outreal(1, half(3));
+    i̲f̲ b t̲h̲e̲n̲ outstring(1, `true')
 e̲n̲d̲ of the program

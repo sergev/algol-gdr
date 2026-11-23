@@ -84,11 +84,16 @@ module AST {
 
     -- Standard procedures used as statements.
     -- The IFIP procedures: the channel first; destinations are Var or Element.
+    -- The X1 library: Print (numbers, any number of them) is print of the
+    -- publication form; FLOT(n, x) is Flot(n, 2, x).
     StdProc = Stop | Load | LoadGo | Assign | Atos | Stoa
             | InInteger | InReal | InSymbol | OutInteger | OutReal | OutString
             | OutSymbol | OutTerminator | Fault
+            | Print | PrintText | PrSym | Space | Tab | Nlcr | AbsFixt | Fixt | Flot
+            | SetRandom
 
-    -- I/O statements. The standard PRINT and READ are Print and Read;
+    -- I/O statements. The standard PRINT and READ are Print and Read (but
+    -- print is X1's in the publication form, and read in an expression);
     -- the keywords _print and _write are Write.
     -- The params come before the list:
     --   Print, Punch: none;
@@ -123,7 +128,10 @@ module AST {
          | SwitchElement(int switch, Expr index)                    -- 025
          attributes(Type type)
 
+    -- The X1 library: Read, Resym, Random, Timeofday without arguments; Xeen(n),
+    -- Even(n); Sum(i, a, b, x) with i a Var or Element, x by name.
     StdFunc = Abs | Sign | Sqrt | Sin | Cos | Arctan | Ln | Exp | Entier | Length
+            | Read | Resym | Xeen | Even | Random | Timeofday | Sum
 
     -- Neg: 047 real, 026 integer; Not: 004, 0204 on bits.
     UnaryOp = Neg | Not

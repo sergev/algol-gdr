@@ -5,9 +5,9 @@ Goal (from [Roadmap.md](Roadmap.md)): every program in
 source and runs natively, with the same output as under `x1sim`. Any example skipped on
 purpose is listed with the reason.
 
-**Where we are.** Every example passes the front end when its X1 procedures are declared as
-`_code` (`ast_test` x1_examples). Without that line, all 22 fail on undeclared X1
-procedures. `print` and `read` currently resolve to Algol-GDR's `PRINT` and `READ`.
+**Where we are.** Every example passes the front end as it is (`ast_test` x1_examples):
+the X1 procedures are standard identifiers, `print` is X1's in the publication form, `read`
+in an expression is X1's (doc/ast.asdl). The code generator does not have them yet.
 
 **Reference.** The behaviour to match is `x1sim`'s, not the X8 manual's where they differ.
 Its sources are in `x1-algol-compiler/`:
@@ -23,23 +23,6 @@ Its sources are in `x1-algol-compiler/`:
 green.
 
 ## Tasks
-
-### Environment
-
-- **G1** X1 procedures as standard identifiers, in any case, hidden by a declaration:
-  - `PRINTTEXT`, `PRSYM`, `SPACE`, `TAB`, `NLCR`, `ABSFIXT`, `FIXT`, `FLOT`;
-  - `RESYM`, `XEEN`;
-  - `SUM`, `EVEN`, `RANDOM`, `SETRANDOM`, `TIMEOFDAY`.
-
-  The names shared with Algol-GDR (`print`, `read`, `stop`) mean X1's procedures in a
-  publication-form source and Algol-GDR's in the `_keyword` form. So the examples compile
-  unchanged, and the dubna programs keep their meaning. `tests/a60/publication.a60` moves
-  to X1's `print`.
-
-  This task covers the checker (kinds, types, argument counts), the AST
-  (`StdProc` entries) and doc/ast.asdl. `ast_test` x1_examples drops its `_code` prelude
-  and the bulls_and_cows exception. Code generation stubs only; the next tasks fill in the
-  runtime.
 
 ### Runtime (`runtime/x1.c`)
 
@@ -64,13 +47,13 @@ green.
   - `RESYM` returns the X1 code of the next UTF-8 character: 255 at the end of the input,
     with CR skipped. A character that has no code stops the program with an error.
   - `XEEN(mask)` reads the console switches as a line of binary digits once, and returns
-    them masked; `stop` makes the next `XEEN` read them again.
+    them masked. (`stop` stays the IFIP one, ending the program; no example calls X1's.)
 
   Tests with `.in` files.
 - **G4** The helpers:
-  - `SUM(i, a, b, x)` is Jensen's device. Write it as an Algol unit,
-    `runtime/x1lib.a60`, compiled by algc into `libalgol.a` at build time (F8); the
-    build order goes in CMake.
+  - `SUM(i, a, b, x)` is Jensen's device, generated inline as the loop of
+    `library/sum.a60`: `i := a`, then while `i ≤ b`, add `x` and step `i`; `b` is
+    evaluated once.
   - `EVEN(n)`.
   - `RANDOM` gives a real in [0, 1), and `SETRANDOM(x)` seeds it. The generator is
     documented and seedable, but needn't match `x1sim`'s.

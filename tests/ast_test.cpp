@@ -196,28 +196,59 @@ TEST(Checker, scopes_and_conversions)
         << text;
 }
 
+// The X1 library: print is X1's in the publication form only.
+TEST(Checker, x1_library)
+{
+    auto dump = [](const std::string &text) {
+        std::ostringstream err, out;
+        Diagnostics diag("x.a60", err);
+        auto program = check(parse(text, diag), diag);
+        EXPECT_EQ(err.str(), "");
+        print(out, program);
+        return out.str();
+    };
+    std::string text = dump(
+        "b̲e̲g̲i̲n̲ i̲n̲t̲e̲g̲e̲r̲ i; r̲e̲a̲l̲ x;\n"
+        "x := read + SUM(i, 1, 10, i) + RANDOM + TIMEOFDAY;\n"
+        "i := RESYM + EVEN(i) + XEEN(3);\n"
+        "print(i, x); FLOT(5, x); PRINTTEXT(`a'); NLCR e̲n̲d̲");
+    for (const char *s : { "func: read", "func: sum", "func: random", "func: timeofday",
+                           "func: resym", "func: even", "func: xeen", "proc: print", "proc: flot",
+                           "proc: printtext", "proc: nlcr" })
+        EXPECT_NE(text.find(s), std::string::npos) << s;
+    // FLOT(n, x) is FLOT(n, 2, x).
+    EXPECT_NE(text.find("{kind: int_const, type: integer, value: 2}"), std::string::npos);
+    text = dump("_begin PRINT(1) _end");
+    EXPECT_NE(text.find("kind: io"), std::string::npos) << text;
+
+    EXPECT_EQ(check_messages("b̲e̲g̲i̲n̲ r̲e̲a̲l̲ x;\n"
+                             "x := SUM(x, 1, 2, x); PRINTTEXT(1); print(`a'); FLOT(1);\n"
+                             "SUM; x := EVEN e̲n̲d̲"),
+              "x.alg:2:10: error: Type error in argument 1 of 'SUM': real instead of integer\n"
+              "x.alg:2:33: error: Type error in argument 1 of 'PRINTTEXT': integer instead of "
+              "string\n"
+              "x.alg:2:43: error: Type error in argument 1 of 'print': string instead of a "
+              "number\n"
+              "x.alg:2:49: error: Wrong number of arguments of 'FLOT'\n"
+              "x.alg:3:1: error: Illegal use of 'SUM'\n"
+              "x.alg:3:11: error: Wrong number of arguments of 'EVEN'\n");
+}
+
 // The programs of x1-algol-compiler in the publication form pass the front
-// end, with their X1 procedures declared as _code (a line before them).
+// end.
 TEST(Ast, x1_examples)
 {
     namespace fs = std::filesystem;
     if (!fs::is_directory(X1_EXAMPLES))
         GTEST_SKIP() << "no " << X1_EXAMPLES;
-    const std::string x1 =
-        "_code: _real read, RANDOM, TIMEOFDAY, SUM; _code: _integer RESYM; "
-        "_code: NLCR, PRINTTEXT, PRSYM, SPACE, ABSFIXT, FIXT, FLOT, SETRANDOM;\n";
-    // A ';' is missing before NLCR at line 71.
-    const std::set<std::string> broken = { "bulls_and_cows" };
-    int n                              = 0;
+    int n = 0;
     for (const auto &e : fs::directory_iterator(X1_EXAMPLES)) {
         if (e.path().extension() != ".a60")
             continue;
         std::ostringstream err;
         Diagnostics diag(e.path().filename().string(), err);
-        front_end(x1 + read_source(e.path().string()), diag, nullptr);
-        if (!broken.count(e.path().stem().string())) {
-            EXPECT_EQ(diag.errors(), 0) << err.str();
-        }
+        front_end(read_source(e.path().string()), diag, nullptr);
+        EXPECT_EQ(diag.errors(), 0) << err.str();
         n++;
     }
     EXPECT_GT(n, 0);

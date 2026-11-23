@@ -14,6 +14,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <tuple>
 
 #include "diag.h"
 
@@ -319,6 +320,22 @@ enum class Std {
     MINREAL,
     MAXINT,
     EPSILON,
+    // The X1 library.
+    PRINTTEXT,
+    PRSYM,
+    SPACE,
+    TAB,
+    NLCR,
+    ABSFIXT,
+    FIXT,
+    FLOT,
+    SETRANDOM,
+    RESYM,
+    XEEN,
+    EVEN,
+    RANDOM,
+    TIMEOFDAY,
+    SUM,
 };
 
 // A standard identifier by its name in any case.
@@ -360,6 +377,21 @@ Std standard(const std::string &name)
         { "MINREAL", Std::MINREAL },
         { "MAXINT", Std::MAXINT },
         { "EPSILON", Std::EPSILON },
+        { "PRINTTEXT", Std::PRINTTEXT },
+        { "PRSYM", Std::PRSYM },
+        { "SPACE", Std::SPACE },
+        { "TAB", Std::TAB },
+        { "NLCR", Std::NLCR },
+        { "ABSFIXT", Std::ABSFIXT },
+        { "FIXT", Std::FIXT },
+        { "FLOT", Std::FLOT },
+        { "SETRANDOM", Std::SETRANDOM },
+        { "RESYM", Std::RESYM },
+        { "XEEN", Std::XEEN },
+        { "EVEN", Std::EVEN },
+        { "RANDOM", Std::RANDOM },
+        { "TIMEOFDAY", Std::TIMEOFDAY },
+        { "SUM", Std::SUM },
     };
     std::string upper = name;
     std::transform(upper.begin(), upper.end(), upper.begin(),
@@ -437,6 +469,7 @@ private:
     std::vector<Scope> scopes_;
     std::vector<int> functions_; // procedures whose bodies are being checked
     std::set<std::string> undeclared_;
+    bool x1_{}; // the publication form: print is X1's
 
     void error(Pos line, const std::string &message) { diag_.error(line, message); }
 
@@ -464,7 +497,10 @@ private:
     std::vector<ForElement> for_elements(const std::vector<syn::ForElement> &list, Type t,
                                          Pos line);
     StmtPtr call_stmt(SrcLoc loc, const syn::Expr &e);
-    StmtPtr ifip(SrcLoc loc, Std s, const std::string &name, const syn::ExprList *args, Pos line);
+    StmtPtr typed_proc(SrcLoc loc, Std s, const std::string &name, const syn::ExprList *args,
+                       Pos line);
+    ExprPtr destination(const syn::Expr &a, char kind, const std::string &what);
+    ExprPtr x1_function(Std s, const std::string &name, const syn::ExprList *args, Pos line);
     ExprPtr arithmetic(const syn::Expr &e, Type t, const std::string &what);
     StmtPtr std_stmt(SrcLoc loc, Std s, const std::string &name, const syn::ExprList *args,
                      Pos line);
@@ -514,6 +550,7 @@ int Checker::lookup(const std::string &name) const
 Program Checker::program(const syn::Program &p)
 {
     Program out;
+    x1_ = p.publication;
     scopes_.emplace_back(); // the externals
     for (const auto &e : p.externals) {
         Symbol s;
@@ -992,12 +1029,12 @@ std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement>
     return out;
 }
 
-// The IFIP procedures: (channel, …), the channel an integer; a destination
-// is a variable or an element.
-StmtPtr Checker::ifip(SrcLoc loc, Std s, const std::string &nm, const syn::ExprList *args, Pos line)
+// The IFIP and X1 procedures, by the kinds of their parameters.
+StmtPtr Checker::typed_proc(SrcLoc loc, Std s, const std::string &nm, const syn::ExprList *args,
+                            Pos line)
 {
-    // The kinds of the parameters: c channel, i integer, r real, s string,
-    // I and R integer and real destinations.
+    // c channel, i integer, r real, s string, I and R integer and real
+    // destinations: a variable or an element.
     static const std::map<Std, std::pair<StdProc, const char *>> table = {
         { Std::ININTEGER, { StdProc::ININTEGER, "cI" } },
         { Std::INREAL, { StdProc::INREAL, "cR" } },
@@ -1008,10 +1045,22 @@ StmtPtr Checker::ifip(SrcLoc loc, Std s, const std::string &nm, const syn::ExprL
         { Std::OUTSYMBOL, { StdProc::OUTSYMBOL, "csi" } },
         { Std::OUTTERMINATOR, { StdProc::OUTTERMINATOR, "c" } },
         { Std::FAULT, { StdProc::FAULT, "sr" } },
+        { Std::PRINTTEXT, { StdProc::PRINTTEXT, "s" } },
+        { Std::PRSYM, { StdProc::PRSYM, "i" } },
+        { Std::SPACE, { StdProc::SPACE, "i" } },
+        { Std::TAB, { StdProc::TAB, "" } },
+        { Std::NLCR, { StdProc::NLCR, "" } },
+        { Std::ABSFIXT, { StdProc::ABSFIXT, "iir" } },
+        { Std::FIXT, { StdProc::FIXT, "iir" } },
+        { Std::FLOT, { StdProc::FLOT, "iir" } },
+        { Std::SETRANDOM, { StdProc::SETRANDOM, "r" } },
     };
     const auto &[proc, kinds] = table.at(s);
     std::string params        = kinds;
     size_t n                  = args ? args->size() : 0;
+    bool short_flot           = s == Std::FLOT && n == 2; // FLOT(n, x): m is 2
+    if (short_flot)
+        params = "ir";
     stmt::StdProc out;
     out.proc = proc;
     if (n != params.size()) {
@@ -1038,26 +1087,79 @@ StmtPtr Checker::ifip(SrcLoc loc, Std s, const std::string &nm, const syn::ExprL
             break;
         }
         default: {
-            Type t  = Type::NONE;
-            auto lp = left_part(a, t);
-            if (!lp)
+            auto d = destination(a, params[k], what);
+            if (!d)
                 return make_stmt(loc, stmt::Dummy{});
-            if (!numeric(t)) {
-                error(a.line, "Type error in " + what + ": " + to_string(t) + " instead of " +
-                                  (params[k] == 'I' ? "integer" : "real"));
-                return make_stmt(loc, stmt::Dummy{});
-            }
-            if (auto v = std::get_if<left::Var>(&*lp)) {
-                out.args.push_back(make_expr(t, expr::Var{ v->decl }));
-            } else {
-                auto &el = std::get<left::Element>(*lp);
-                out.args.push_back(
-                    make_expr(t, expr::Element{ el.array, std::move(el.subscripts) }));
-            }
+            out.args.push_back(std::move(d));
         }
         }
     }
+    if (short_flot)
+        out.args.insert(out.args.begin() + 1, make_expr(Type::INTEGER, expr::IntConst{ 2 }));
     return make_stmt(loc, std::move(out));
+}
+
+// A variable or an element to store a number to: I integer, R real.
+ExprPtr Checker::destination(const syn::Expr &a, char kind, const std::string &what)
+{
+    Type t  = Type::NONE;
+    auto lp = left_part(a, t);
+    if (!lp)
+        return nullptr;
+    if (!numeric(t)) {
+        error(a.line, "Type error in " + what + ": " + to_string(t) + " instead of " +
+                          (kind == 'I' ? "integer" : "real"));
+        return nullptr;
+    }
+    if (auto v = std::get_if<left::Var>(&*lp))
+        return make_expr(t, expr::Var{ v->decl });
+    auto &el = std::get<left::Element>(*lp);
+    return make_expr(t, expr::Element{ el.array, std::move(el.subscripts) });
+}
+
+// The functions of the X1 library; null when s is not one.
+ExprPtr Checker::x1_function(Std s, const std::string &nm, const syn::ExprList *args, Pos line)
+{
+    // The parameters: i integer, r real, I integer destination.
+    static const std::map<Std, std::tuple<StdFunc, Type, const char *>> table = {
+        { Std::READ, { StdFunc::READ, Type::REAL, "" } },
+        { Std::RESYM, { StdFunc::RESYM, Type::INTEGER, "" } },
+        { Std::RANDOM, { StdFunc::RANDOM, Type::REAL, "" } },
+        { Std::TIMEOFDAY, { StdFunc::TIMEOFDAY, Type::REAL, "" } },
+        { Std::XEEN, { StdFunc::XEEN, Type::INTEGER, "i" } },
+        { Std::EVEN, { StdFunc::EVEN, Type::INTEGER, "i" } },
+        { Std::SUM, { StdFunc::SUM, Type::REAL, "Iiir" } },
+    };
+    auto it = table.find(s);
+    if (it == table.end())
+        return nullptr;
+    const auto &[func, type, kinds] = it->second;
+    std::string params              = kinds;
+    size_t n                        = args ? args->size() : 0;
+    if (n != params.size()) {
+        error(line, "Wrong number of arguments of " + quoted(nm));
+        return bad();
+    }
+    expr::StdFunc out;
+    out.func = func;
+    for (size_t k = 0; k < n; k++) {
+        const syn::Expr &a = *(*args)[k];
+        std::string what   = "argument " + std::to_string(k + 1) + " of " + quoted(nm);
+        if (params[k] == 'I') {
+            auto d = destination(a, 'I', what);
+            if (!d)
+                return bad();
+            if (d->type != Type::INTEGER) {
+                error(a.line,
+                      "Type error in " + what + ": " + to_string(d->type) + " instead of integer");
+                return bad();
+            }
+            out.args.push_back(std::move(d));
+        } else {
+            out.args.push_back(arithmetic(a, params[k] == 'i' ? Type::INTEGER : Type::REAL, what));
+        }
+    }
+    return make_expr(type, std::move(out));
 }
 
 // A number converted to type t.
@@ -1096,6 +1198,21 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
     size_t n = args ? args->size() : 0;
     switch (s) {
     case Std::PRINT: {
+        if (x1_) {
+            // X1: numbers, any number of them.
+            stmt::StdProc p;
+            p.proc = StdProc::PRINT;
+            for (size_t k = 0; k < n; k++) {
+                const syn::Expr &a = *(*args)[k];
+                ExprPtr e          = expr(a);
+                if (!numeric(e->type) && e->type != Type::NONE)
+                    error(a.line, "Type error in argument " + std::to_string(k + 1) + " of " +
+                                      quoted(nm) + ": " + to_string(e->type) +
+                                      " instead of a number");
+                p.args.push_back(std::move(e));
+            }
+            return make_stmt(loc, std::move(p));
+        }
         stmt::Io io;
         io.op = IoOp::PRINT;
         for (size_t k = 0; k < n; k++) {
@@ -1176,7 +1293,16 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
     case Std::OUTSYMBOL:
     case Std::OUTTERMINATOR:
     case Std::FAULT:
-        return ifip(loc, s, nm, args, line);
+    case Std::PRINTTEXT:
+    case Std::PRSYM:
+    case Std::SPACE:
+    case Std::TAB:
+    case Std::NLCR:
+    case Std::ABSFIXT:
+    case Std::FIXT:
+    case Std::FLOT:
+    case Std::SETRANDOM:
+        return typed_proc(loc, s, nm, args, line);
     case Std::ASSIGN:
         if (n != 2)
             error(line, quoted(nm) + " needs two arguments");
@@ -1518,6 +1644,8 @@ ExprPtr Checker::named(const std::string &nm, Pos line, bool argument)
     int i = lookup(nm);
     if (i < 0) {
         Std s = standard(nm);
+        if (auto f = x1_function(s, nm, nullptr, line))
+            return f;
         switch (s) {
         case Std::NONE:
             if (undeclared_.insert(nm).second)
@@ -1629,6 +1757,8 @@ ExprPtr Checker::call(const std::string &nm, const syn::ExprList &args, Pos line
             list.push_back(std::move(a));
             return make_expr(t, expr::StdFunc{ f, std::move(list) });
         }
+        if (auto x = x1_function(s, nm, &args, line))
+            return x;
         named(nm, line, false);
         return bad();
     }

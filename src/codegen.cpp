@@ -599,6 +599,8 @@ private:
 
     ir::Value std_func(const expr::StdFunc &f)
     {
+        if (f.args.empty())
+            unsupported(std::string("'") + to_string(f.func) + "'");
         const Expr &arg = *f.args.at(0);
         ir::Value x     = expr(arg);
         // The functions of reals take an integer as a real.
@@ -636,6 +638,8 @@ private:
             return checked_real(libm("exp"));
         case StdFunc::LENGTH:
             return runtime("i64", "algol_string_length", { x });
+        default:
+            unsupported(std::string("'") + to_string(f.func) + "'");
         }
         throw std::logic_error("bad function");
     }
