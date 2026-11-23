@@ -4,9 +4,9 @@ Goal (from [Roadmap.md](Roadmap.md)): `algc file.alg -o prog` makes a native exe
 x86_64, arm64 and riscv64, and every program in `tests/algol/` that ran under `dubna`
 prints the same output natively.
 
-**Where we are.** The front end is new (E7.1): a lexer, a parser to a syntax tree and a
-checker that builds the AST (doc/ast.asdl), with GNU-style messages. The original's passes
-are gone from `main`; the BESM-6 compiler is on the `besm6` branch.
+**Where we are.** The front end (lexer, parser, checker → AST) and the code generator to
+LLVM IR (doc/codegen.md) are done; 30 of the test programs run natively and match `dubna`.
+The BESM-6 compiler is on the `besm6` branch.
 
 **How.** As in `blang` (`/home/vak/Project/Cursor/blang`, `driver.go`): the compiler writes
 textual LLVM IR and runs `clang` to compile and link. No LLVM libraries are linked into
@@ -18,18 +18,6 @@ front end unchanged; the frozen `.out` files from `dubna` are the reference for 
 runs.
 
 ## Tasks
-
-### Code generation
-
-Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is `i64`,
-`real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
-to a NUL-terminated UTF-8 array.
-
-- **E22** _common blocks as named global structs shared between compilation units;
-  _code procedures as external C functions with pointer arguments (C calling convention,
-  documented). `_write` and `_print` with a Fortran format (`''(I2, F7.3, 10HTEXT, /)''`), and
-  READ from standard input. Test common; externals compiles and links against a C stub;
-  quinio (with `.in`) with C stubs for its Fortran and Madlen procedures (`quinio.c`).
 
 ### Targets and finish
 

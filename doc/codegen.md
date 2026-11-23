@@ -135,6 +135,23 @@ then `algol_array_alloc(desc, n)` allocates zeroed storage; `algol_array_free(de
 it on block exit. An array is passed by the address of its descriptor. With `--check`,
 every subscript is checked by `algol_check_index`.
 
+Arrays are row-major (the last subscript varies fastest). The original stored them
+column-major, as Fortran: a `_code` procedure that indexes an array must take that into
+account (see tests/algol/quinio.c).
+
+## External procedures
+
+- **`_code` procedures** are C functions, called with the address of each argument: a
+  variable or an element is its own cell, an array its data (8-byte cells, row-major), an
+  expression a temporary holding its value (a string: a `char *`). The result is the
+  procedure's type in C: `int64_t` (integer), `double` (real), `bool`, `char *` (string),
+  `void`. `_code: _real rndm;` is `double rndm(…)`.
+- **`_algol` procedures**, compiled separately, use the Algol convention:
+  `int64_t name(void *sl, void **args)`, with a null static link.
+- **`_common /NAME/ …`** is a global `NAME` with common linkage, `int64_t NAME[n]`: its
+  elements in order, a variable one cell, an array its elements. C or another unit sees
+  the same storage under the same name.
+
 ## Standard functions and operators
 
 - `sqrt`, `sin`, `cos`, `arctan`, `ln`, `exp`: libm (`sqrt`, `sin`, `cos`, `atan`, `log`,
@@ -170,6 +187,19 @@ tests/run_test.cpp). `NAME.native.out` replaces it where the output really diffe
 | hello, hello_algol | the original prints upper case only |
 | symbols | the original's printer shows `≤ ≥ @` as `⩽ ⩾ °` |
 | quine | the original's printer shows `'` as `′` |
+| quinio | upper case only; `-` lines are dubna's prompts for input |
+
+## Input and output
+
+- `_write`, `_print` and `_punch` with a Fortran format (the last parameter; the unit number
+  is not used) print through `algol_format_*`: `Iw`, `Fw.d`, `Ew.d` (`0.ddddE+xx`), `Gw.d`
+  (as `E`), `Aw`, `Lw`, `nX`, `nH…`, `'…'`, `/`, repeat counts and groups. When the items
+  outrun the format it starts again on a new line; the statement ends its line. There is
+  no carriage-control column.
+- `READ` and `_read` read values separated by white space from standard input (a format is
+  not used): integers, reals, `true`/`false`, words as strings; a whole array element by
+  element. `stdout` is flushed before reading.
+- `_decode`, `_encode`, `_rewind`, `_backspace`, `_endfile` are not supported.
 
 ## Names
 

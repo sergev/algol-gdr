@@ -10,26 +10,28 @@
 #include <string.h>
 
 #include "algol.h"
+#include "internal.h"
 
-// Element types, as ast::Type.
-enum { T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_BITS };
+// The number of elements, from the bounds; dims stored.
+static int64_t count(int64_t *desc, int64_t dims)
+{
+    int64_t n = 1;
+    desc[2]   = dims;
+    for (int64_t k = 0; k < dims; k++) {
+        int64_t lo = desc[3 + 2 * k], hi = desc[4 + 2 * k];
+        n = hi < lo ? 0 : n * (hi - lo + 1);
+    }
+    desc[1] = n;
+    return n;
+}
 
 void algol_array_alloc(int64_t *desc, int64_t dims)
 {
-    int64_t count = 1;
-    desc[2]       = dims;
-    for (int64_t k = 0; k < dims; k++) {
-        int64_t lo = desc[3 + 2 * k], hi = desc[4 + 2 * k];
-        if (hi < lo)
-            count = 0;
-        else
-            count *= hi - lo + 1;
-    }
-    void *data = calloc(count ? count : 1, 8);
+    int64_t n  = count(desc, dims);
+    void *data = calloc(n ? n : 1, 8);
     if (!data)
-        algol_error("No memory for an array of %lld elements", (long long)count);
+        algol_error("No memory for an array of %lld elements", (long long)n);
     desc[0] = (int64_t)(intptr_t)data;
-    desc[1] = count;
 }
 
 void algol_array_free(int64_t *desc)
@@ -90,4 +92,11 @@ void algol_print_array(const int64_t *desc, int64_t type)
             algol_print_bits(data[i]);
         }
     }
+}
+
+// An array of a _common block: its elements at data.
+void algol_array_bind(int64_t *desc, int64_t dims, int64_t *data)
+{
+    count(desc, dims);
+    desc[0] = (int64_t)(intptr_t)data;
 }

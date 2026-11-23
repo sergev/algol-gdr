@@ -49,6 +49,8 @@ struct Symbol {
     bool by_value{};                       // FORMAL
     int index{};                           // LABEL: its number in the owner
     bool far{};                            // LABEL: reached by longjmp
+    std::string common;                    // VAR, ARRAY in a _common block: its global
+    int offset{};                          // and the place there, in words
     const decl::Switch *sw{};              // SWITCH
     ir::Function *sfn{};                   // SWITCH: its function
 };
@@ -108,6 +110,9 @@ public:
             procedure(*f);
         for (int id : switches_)
             switch_function(symbol(id));
+        for (const auto &[global, words] : commons_)
+            module_.global(global + " = common global [" + std::to_string(words) +
+                           " x i64] zeroinitializer, align 8");
         return module_.text();
     }
 
@@ -119,6 +124,7 @@ private:
     std::vector<std::unique_ptr<Func>> funcs_; // procedures
     std::vector<int> switches_;
     std::map<const decl::Procedure *, Func *> proc_funcs_;
+    std::map<std::string, int> commons_; // global → words
     int thunks_{};
     std::vector<const stmt::Block *> path_; // blocks being declared
 
@@ -152,6 +158,9 @@ private:
                     path_.push_back(&n);
                     for (const auto &d : n.decls)
                         declare(f, *d);
+                    for (const auto &d : n.decls)
+                        if (auto c = std::get_if<decl::Common>(&d->node))
+                            common(*c);
                     for (const auto &b : n.body)
                         declare(f, *b);
                     path_.pop_back();
@@ -192,6 +201,8 @@ private:
                         array(f, a.id, a.name, n.type, int(n.bounds.size()));
                 } else if constexpr (std::is_same_v<T, decl::Procedure>) {
                     declare_procedure(f, n);
+                } else if constexpr (std::is_same_v<T, decl::Common>) {
+                    // After the other declarations of the block.
                 } else if constexpr (std::is_same_v<T, decl::Switch>) {
                     Symbol s;
                     s.kind  = Symbol::SWITCH;
@@ -267,6 +278,20 @@ private:
         std::swap(saved, path_);
     }
 
+    // A _common block: its elements at their places in one global.
+    void common(const decl::Common &c)
+    {
+        std::string global = ir::global_name(c.name);
+        int offset         = 0;
+        for (const auto &e : c.elements) {
+            Symbol &s = symbols_.at(e.decl);
+            s.common  = global;
+            s.offset  = offset;
+            offset += e.size;
+        }
+        commons_[global] = std::max(commons_[global], offset);
+    }
+
     void array(Func &f, int id, const std::string &name, Type type, int dims)
     {
         Symbol s;
@@ -313,6 +338,8 @@ private:
         const Symbol &s = symbol(id);
         switch (s.kind) {
         case Symbol::VAR:
+            if (!s.common.empty())
+                return fn_->gep("i64", { "ptr", s.common }, ir::i64(s.offset));
             if (s.slot < 0)
                 return { "ptr", s.global };
             return slot(s.owner, s.slot);
@@ -376,11 +403,15 @@ private:
     ir::Value runtime(const std::string &ret, const std::string &name,
                       const std::vector<ir::Value> &args, const std::string &attrs = "")
     {
+        // A Boolean goes to C as an i8 0 or 1, as _Bool.
+        std::vector<ir::Value> list;
         std::string params;
-        for (const auto &a : args)
-            params += (params.empty() ? "" : ", ") + a.type;
+        for (const auto &a : args) {
+            list.push_back(a.type == "i1" ? fn_->cast("zext", a, "i8") : a);
+            params += (params.empty() ? "" : ", ") + list.back().type;
+        }
         module_.declare(ret, name, params, attrs);
-        return fn_->call(ret, "@" + name, args);
+        return fn_->call(ret, "@" + name, list);
     }
 
     //
@@ -628,7 +659,15 @@ private:
                 ir::Value desc = descriptor(name.id);
                 for (size_t k = 0; k < bounds.size(); k++)
                     fn_->store(bounds[k], fn_->gep("i64", desc, ir::i64(int64_t(3 + k))));
-                runtime("void", "algol_array_alloc", { desc, ir::i64(int64_t(a->bounds.size())) });
+                ir::Value dims  = ir::i64(int64_t(a->bounds.size()));
+                const Symbol &s = symbol(name.id);
+                if (!s.common.empty()) {
+                    runtime(
+                        "void", "algol_array_bind",
+                        { desc, dims, fn_->gep("i64", { "ptr", s.common }, ir::i64(s.offset)) });
+                    continue;
+                }
+                runtime("void", "algol_array_alloc", { desc, dims });
                 active_.back().arrays.push_back(name.id);
             }
         }
@@ -1354,11 +1393,34 @@ private:
         return { element(el.array, el.subscripts), symbol(el.array).type };
     }
 
+    // PRINT, _write with a format, READ.
+    enum class IoMode { PRINT, FORMAT, READ } io_mode_{};
+
     void io(const stmt::Io &s)
     {
-        if (s.op != IoOp::PRINT || !s.params.empty())
-            unsupported("This input or output");
-        io_items(s.items);
+        switch (s.op) {
+        case IoOp::PRINT:
+            io_mode_ = IoMode::PRINT;
+            io_items(s.items);
+            return;
+        case IoOp::WRITE:
+        case IoOp::PUNCH: {
+            ir::Value format = ir::null();
+            if (!s.params.empty() && s.params.back()->type == Type::STRING)
+                format = expr(*s.params.back());
+            io_mode_ = IoMode::FORMAT;
+            runtime("void", "algol_format_begin", { format });
+            io_items(s.items);
+            runtime("void", "algol_format_end", {});
+            return;
+        }
+        case IoOp::READ:
+            io_mode_ = IoMode::READ;
+            io_items(s.items);
+            return;
+        default:
+            unsupported(std::string("'_") + to_string(s.op) + "'");
+        }
     }
 
     void io_items(const IoList &items)
@@ -1368,47 +1430,56 @@ private:
                 [&](const auto &n) {
                     using T = std::decay_t<decltype(n)>;
                     if constexpr (std::is_same_v<T, io::Item>) {
-                        print(*n.expr);
+                        io_item(*n.expr);
                     } else if constexpr (std::is_same_v<T, io::NewLine>) {
                         runtime("void", "algol_newline", {});
                     } else if constexpr (std::is_same_v<T, io::NewPage>) {
                         runtime("void", "algol_newpage", {});
                     } else {
-                        for_loop(n.control, n.elements, [&] { io_items(n.body); });
+                        IoMode mode = io_mode_;
+                        for_loop(n.control, n.elements, [&] {
+                            io_mode_ = mode;
+                            io_items(n.body);
+                        });
                     }
                 },
                 item.node);
         }
     }
 
-    void print(const Expr &e)
+    void io_item(const Expr &e)
     {
-        auto var = std::get_if<expr::Var>(&e.node);
-        if (var && symbol(var->decl).kind == Symbol::ARRAY) {
-            runtime("void", "algol_print_array",
+        static const char *const names[]  = { "integer", "real", "boolean", "string", "bits" };
+        static const char *const prefix[] = { "algol_print_", "algol_format_", "algol_read_" };
+        const char *pre                   = prefix[int(io_mode_)];
+        auto var                          = std::get_if<expr::Var>(&e.node);
+        if (var && (symbol(var->decl).kind == Symbol::ARRAY ||
+                    (symbol(var->decl).kind == Symbol::FORMAL &&
+                     symbol(var->decl).spec.kind == Spec::ARRAY))) {
+            runtime("void", std::string(pre) + "array",
                     { descriptor(var->decl), ir::i64(int64_t(e.type)) });
             return;
         }
-        ir::Value v = expr(e);
-        switch (e.type) {
-        case Type::INTEGER:
-            runtime("void", "algol_print_integer", { v });
-            break;
-        case Type::REAL:
-            runtime("void", "algol_print_real", { v });
-            break;
-        case Type::BOOLEAN:
-            runtime("void", "algol_print_boolean", { v });
-            break;
-        case Type::STRING:
-            runtime("void", "algol_print_string", { v });
-            break;
-        case Type::BITS:
-            runtime("void", "algol_print_bits", { v });
-            break;
-        default:
-            unsupported("This item of PRINT");
+        if (e.type == Type::NONE || e.type == Type::BITS) {
+            if (io_mode_ == IoMode::PRINT && e.type == Type::BITS) {
+                runtime("void", "algol_print_bits", { expr(e) });
+                return;
+            }
+            unsupported("This item of input or output");
         }
+        std::string name = std::string(pre) + names[int(e.type)];
+        if (io_mode_ != IoMode::READ) {
+            runtime("void", name, { expr(e) });
+            return;
+        }
+        ir::Value ptr;
+        if (var)
+            ptr = address(var->decl);
+        else if (auto el = std::get_if<expr::Element>(&e.node))
+            ptr = element(el->array, el->subscripts);
+        else
+            unsupported("READ of an expression");
+        store(e.type, runtime(reg_type(e.type), name, {}), ptr);
     }
 };
 

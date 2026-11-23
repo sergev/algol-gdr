@@ -6,6 +6,7 @@
 // d.ddd±ee read as d.ddde±ee, TRUE and FALSE in lower case, and reals equal
 // to the last digit or so (BESM-6 rounds otherwise). NAME.native.out, in
 // the native layout, is the reference where the output really differs.
+// NAME.c holds C for the _code procedures of a program; NAME.in its input.
 //
 #include <gtest/gtest.h>
 
@@ -30,6 +31,7 @@ const std::vector<std::string> programs = {
     "blocks",
     "boolean",
     "comment",
+    "common",
     "cond",
     "empty",
     "exprs",
@@ -46,6 +48,7 @@ const std::vector<std::string> programs = {
     "print",
     "proc",
     "quine",
+    "quinio",
     "stdfunc",
     "strings",
     "switch",
@@ -108,11 +111,18 @@ std::string expected(const std::string &name)
     return file_contents(TEST_DIR "/algol/" + name + ".out");
 }
 
-// Compile and run a program; its output.
+// Compile and run a program, with the object of stub (C) if given; its
+// output.
 std::string run(const std::string &src, const std::string &exe, bool check,
-                const std::string &input = "/dev/null")
+                const std::string &input = "/dev/null", const std::string &stub = "")
 {
-    auto r = run_command(compiler + (check ? " --check" : "") + " -o " + exe + " " + src);
+    std::string objects;
+    if (!stub.empty()) {
+        auto c = run_command("clang -c -o " + exe + "_stub.o " + stub);
+        EXPECT_EQ(c.exit_code, 0) << c.output;
+        objects = " " + exe + "_stub.o";
+    }
+    auto r = run_command(compiler + (check ? " --check" : "") + " -o " + exe + " " + src + objects);
     EXPECT_EQ(r.exit_code, 0) << r.output;
     return run_command("(" + exe + " < " + input + " 2>/dev/null)").output;
 }
@@ -135,7 +145,8 @@ TEST_P(RunTest, output)
     const std::string base = TEST_DIR "/algol/" + name;
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
-    std::string out        = run(base + ".alg", BUILD_DIR "/run_" + name, check, input);
+    std::string stub       = std::filesystem::exists(base + ".c") ? base + ".c" : "";
+    std::string out        = run(base + ".alg", BUILD_DIR "/run_" + name, check, input, stub);
     EXPECT_EQ(compare(out, expected(name)), "") << out;
 }
 
@@ -310,4 +321,46 @@ TEST(Run, strings)
 _end _eop
 )"),
               "             7 ччёт-42true  false true  true  \n");
+}
+
+// _code procedures in C, and a _common block they share.
+TEST(Run, code_procedures)
+{
+    const std::string stub = BUILD_DIR "/run_code_stub.c";
+    std::ofstream(stub) << R"(#include <stdint.h>
+#include <stdio.h>
+extern int64_t SHARED[2];
+double twice(double *x) { return *x * 2; }
+void show(int64_t *a, int64_t *n, double *x)
+{
+    printf("[%lld %lld %lld] %lld %g %lld\n", (long long)a[0], (long long)a[1],
+           (long long)a[2], (long long)*n, *x, (long long)SHARED[1]);
+}
+)";
+    const std::string src = BUILD_DIR "/run_code.alg";
+    std::ofstream(src) << R"(_code: _real twice; _code: show;
+_begin _real X; _integer _array A[1:3]; _integer N, M;
+  _common /SHARED/ N, M;
+  N := 7; M := 8; A[1] := 1; A[2] := 2; A[3] := 3;
+  X := twice(2.5); PRINT(X, NEWLINE);
+  show(A, N, X + 1)
+_end _eop
+)";
+    EXPECT_EQ(run(src, BUILD_DIR "/run_code", false, "/dev/null", stub),
+              " 5.00000000000e+00   \n[1 2 3] 7 6 8\n");
+}
+
+TEST(Run, format_and_read)
+{
+    const std::string src = BUILD_DIR "/run_format.alg";
+    std::ofstream(src) << R"(_begin _integer I; _real X; _integer _array A[1:3];
+  READ(I, X, A);
+  _write(54, ''(4HI = I3, 2X, F6.2/3(I2, 1X), E12.4)'') I, X, A, X * 100;
+  _print(''(2HA:, 2I3)'') A
+_end _eop
+)";
+    const std::string input = BUILD_DIR "/run_format.in";
+    std::ofstream(input) << "42 3.14159\n1 2 3\n";
+    EXPECT_EQ(run(src, BUILD_DIR "/run_format", false, input),
+              "I =  42    3.14\n 1  2  3   0.3142E+03\nA:  1  2\nA:  3\n");
 }

@@ -31,6 +31,22 @@ void algol_print_string(const char *s);
 void algol_newline(void);
 void algol_newpage(void);
 
+// _write with a format.
+void algol_format_begin(const char *format);
+void algol_format_end(void);
+void algol_format_integer(int64_t v);
+void algol_format_real(double v);
+void algol_format_boolean(_Bool v);
+void algol_format_string(const char *s);
+void algol_format_array(const int64_t *desc, int64_t type);
+
+// READ: values from standard input.
+int64_t algol_read_integer(void);
+double algol_read_real(void);
+_Bool algol_read_boolean(void);
+char *algol_read_string(void);
+void algol_read_array(int64_t *desc, int64_t type);
+
 // Exponentiation.
 int64_t algol_ipow(int64_t base, int64_t exp);
 double algol_rpow(double base, int64_t exp);
@@ -54,6 +70,7 @@ void algol_array_free(int64_t *desc);
 void algol_check_index(const int64_t *desc, int64_t dim, int64_t i);
 int64_t *algol_array_copy(const int64_t *src, int64_t dims);
 void algol_array_release(int64_t *desc);
+void algol_array_bind(int64_t *desc, int64_t dims, int64_t *data);
 void algol_print_array(const int64_t *desc, int64_t type);
 
 #endif
