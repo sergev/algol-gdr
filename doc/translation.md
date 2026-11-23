@@ -87,6 +87,7 @@ the translated passes), each working on the machine's memory and leaving its reg
 | 3 | 22716 | `intern_constant` |
 | 3 | 23343 | `eop` |
 | 4 | 23523–23763, 26152–26157 | `start`, `main_loop`, `emit`, `run_template`, `save_acc`, `operand_done`, `read_dispatch`, `eop` (src/pass4.cpp) |
+| 4 | 23764–24136, 24221–24243, 25276–25362 | operands, operators, assignment, powers (`register_operators`) |
 
 Natives write memory through `Machine::store`, which drops stores to address 0 as the
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep

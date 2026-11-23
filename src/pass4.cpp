@@ -478,6 +478,591 @@ unsigned eop(Machine &m)
     return TEMPLATE;
 }
 
+//
+// Handlers. An item's handler leaves the descriptor of its value on the
+// stack (in place of the return address it pops): an address (with
+// 074000000: on the stack, bit 48: through a register…), or 0 for a
+// value in A, M4 then its stack cell. Operands come first in the stream
+// after the operator; each is dispatched through READ_DISPATCH, which
+// returns to the continuation in M13.
+//
+
+// Load the operand on the stack (23725), through M12 = link.
+void load(Machine &m, unsigned link)
+{
+    m.set_m(12, link);
+    operand_done(m);
+}
+
+// The template t, then the result in A.
+unsigned apply_template(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    m.vtm(12, 024015);
+    return TEMPLATE;
+}
+
+// Dispatch the next item, returning to link.
+unsigned operand(Machine &m, unsigned link)
+{
+    m.set_m(13, link);
+    return READ_DISPATCH;
+}
+
+// 23776: return (the address on the stack) with the descriptor in A in its place.
+unsigned give(Machine &m)
+{
+    m.wtc(Machine::SP, 0);
+    m.vtm(14, 0);
+    m.atx(Machine::SP, 0);
+    return m.M[14];
+}
+
+// 24016: no value.
+unsigned give_none(Machine &m)
+{
+    m.xta(0, 0);
+    return give(m);
+}
+
+// 24015: the value is in A.
+unsigned result_in_acc(Machine &m)
+{
+    m.utc(Machine::SP, 077777);
+    m.vtm(4, 0);
+    return give_none(m);
+}
+
+// 23764: a string (070): its address loaded into A (template 23771, or 23773
+// with A pushed).
+unsigned string_item(Machine &m)
+{
+    m.ita(0, 3);
+    m.arx(0, 02010);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 023771);
+    m.vtm(12, 024015);
+    if (!m.M[4])
+        return TEMPLATE;
+    m.vtm(11, 023773);
+    m.xta(7, 02227);
+    m.atx(4, 0);
+    return TEMPLATE;
+}
+
+// 23775: a constant (023): its address in the constants.
+unsigned constant_item(Machine &m)
+{
+    m.ita(0, 3);
+    m.arx(0, 02010);
+    return give(m);
+}
+
+// 24000: a variable (017): from its descriptor.
+unsigned variable_item(Machine &m)
+{
+    m.xta(3, 0);
+    m.ntr(0, 013);
+    if (m.uza()) {
+        m.asn(0, 073);
+        m.aux(7, 02465);
+    } else {
+        m.aax(7, 02465);
+    }
+    return give(m);
+}
+
+// 24010: a call without parameters (0107), or a formal by name: A saved,
+// the call (template 25747, or 25751 for one on the stack).
+unsigned call_item(Machine &m)
+{
+    m.set_m(12, 024011);
+    save_acc(m);
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.atx(Machine::SP, 0);
+    m.aax(7, 02472);
+    if (m.uza())
+        return apply_template(m, 025751);
+    return apply_template(m, 025747);
+}
+
+// 24005: a formal by name (022): a value parameter as a variable.
+unsigned formal_item(Machine &m)
+{
+    m.xta(3, 0);
+    m.arx(0, 0);
+    if (m.u1a())
+        return call_item(m);
+    m.aax(7, 02513);
+    return give(m);
+}
+
+// 24041: a unary operator, template in M11: the operand loaded, then the
+// template.
+unsigned unary(Machine &m)
+{
+    m.ita(0, 013);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024043);
+}
+
+unsigned unary_2(Machine &m)
+{
+    load(m, 024044);
+    m.wtc(Machine::SP, 0);
+    m.vtm(11, 0);
+    m.vtm(12, 024015);
+    return TEMPLATE;
+}
+
+unsigned unary_with(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    return unary(m);
+}
+
+// 24035: call the routine on the stack (template 25751).
+unsigned routine_call(Machine &m)
+{
+    return apply_template(m, 025751);
+}
+
+// 24030: a standard function n (071): 6 inline (template 25761), else the
+// routine 4030+n of its argument.
+unsigned std_function(Machine &m)
+{
+    m.ita(0, 3);
+    m.aex(7, 02501);
+    if (m.uza())
+        return unary_with(m, 025761);
+    m.utm(3, 04030);
+    m.ita(0, 3);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024034);
+}
+
+unsigned std_function_2(Machine &m)
+{
+    load(m, 024035);
+    return routine_call(m);
+}
+
+// 24037: a standard procedure n without arguments (072).
+unsigned std_procedure(Machine &m)
+{
+    m.utm(3, 04030);
+    m.ita(0, 3);
+    m.atx(Machine::SP, 0);
+    return routine_call(m);
+}
+
+// 24071: the template at M11, the operand on the stack.
+unsigned apply(Machine &m)
+{
+    m.set_m(12, 024072);
+    run_template(m);
+    m.utm(Machine::SP, 077777);
+    return result_in_acc(m);
+}
+
+// The left operand on the stack loaded when neither is in A.
+void left_to_acc(Machine &m, unsigned link)
+{
+    m.xta(Machine::SP, 0);
+    if (m.u1a()) {
+        m.utm(Machine::SP, 2);
+        m.set_m(12, link);
+        load_operand(m);
+        m.utm(Machine::SP, 077776);
+    }
+    m.xta(Machine::SP, 1);
+    m.atx(Machine::SP, 0);
+}
+
+// 24062: a binary operator, template in M11: both operands; the template
+// works on A and the operand on the stack.
+unsigned binary(Machine &m)
+{
+    m.ita(0, 013);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024064);
+}
+
+unsigned binary_2(Machine &m)
+{
+    return operand(m, 024065);
+}
+
+unsigned binary_3(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (!m.uza())
+        left_to_acc(m, 024074);
+    m.wtc(Machine::SP, 077776);
+    m.vtm(11, 0);
+    return apply(m);
+}
+
+unsigned binary_with(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    return binary(m);
+}
+
+// 24122: an operator not commutative, M11 = a word of two templates: the
+// left half for A op stack, the right one when the right operand is in A.
+unsigned paired(Machine &m)
+{
+    m.ita(0, 013);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024124);
+}
+
+unsigned paired_2(Machine &m)
+{
+    return operand(m, 024125);
+}
+
+unsigned paired_3(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.uza()) {
+        m.wtc(Machine::SP, 077776);
+        m.xta(0, 0);
+        m.ati(0, 013);
+        return apply(m);
+    }
+    left_to_acc(m, 024134);
+    m.wtc(Machine::SP, 077776);
+    m.xta(0, 0);
+    m.asn(0, 0130);
+    m.ati(0, 013);
+    return apply(m);
+}
+
+unsigned paired_with(Machine &m, unsigned pair)
+{
+    m.vtm(11, pair);
+    return paired(m);
+}
+
+// 24076: real division (016): both operands on the stack: two halves of
+// its own (M7+2321, M7+2323).
+unsigned divide(Machine &m)
+{
+    m.vtm(11, 024114);
+    m.ita(0, 013);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024100);
+}
+
+unsigned divide_2(Machine &m)
+{
+    return operand(m, 024101);
+}
+
+unsigned divide_3(Machine &m)
+{
+    m.xta(Machine::SP, 077776);
+    m.aex(7, 02472);
+    if (m.u1a())
+        return paired_3(m);
+    m.xta(7, 02321);
+    emit_half(m, 024104);
+    m.xta(7, 02323);
+    emit_half(m, 024105);
+    m.utm(Machine::SP, 077775);
+    return result_in_acc(m);
+}
+
+// 24222: assignment, the target on the stack: the value, then the store
+// (template 25760).
+unsigned assign(Machine &m)
+{
+    m.atx(Machine::SP, 0);
+    return operand(m, 024223);
+}
+
+unsigned assign_2(Machine &m)
+{
+    load(m, 024224);
+    return apply_template(m, 025760);
+}
+
+// 24221: to a variable (0100).
+unsigned assign_variable(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    return assign(m);
+}
+
+// 24240
+unsigned assign_pushed(Machine &m)
+{
+    m.vtm(11, 024242);
+    m.set_m(12, 024241);
+    run_template(m);
+    m.xta(7, 02514);
+    return assign(m);
+}
+
+//
+// 24226: to a formal by name (0101): its address computed (template 25747)
+// and kept in a register counted by 02021 from 5 down, or pushed (template
+// 24242) when none is left.
+//
+unsigned assign_formal(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02513);
+    m.ntr(0, 013);
+    if (m.uza())
+        return assign(m);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025747);
+    m.set_m(12, 024232);
+    run_template(m);
+    m.xta(0, 02021);
+    if (m.uza())
+        return assign_pushed(m);
+    m.aox(7, 0520);
+    emit_half(m, 024234);
+    m.xta(0, 02021);
+    m.asn(0, 054);
+    m.xts(0, 02021);
+    m.ntr(0, 3);
+    m.arith(7, 02453, 005);
+    m.stx(0, 02021);
+    return assign(m);
+}
+
+// 25301: x ** c (c on the stack, then a flag: 1 real, 0 integer): c − 1
+// multiplications (template 25774), then for an integer 25321.
+unsigned power(Machine &m)
+{
+    m.its(0, 3);
+    m.xts(0, 0);
+    m.atx(Machine::SP, 0);
+    return operand(m, 025303);
+}
+
+unsigned power_loop(Machine &m)
+{
+    for (;;) {
+        m.xta(Machine::SP, 077776);
+        m.arx(7, 02522);
+        if (m.uza())
+            break;
+        m.atx(Machine::SP, 077776);
+        m.xta(Machine::SP, 077777);
+        m.atx(Machine::SP, 0);
+        m.vtm(11, 025774);
+        m.set_m(12, 025306);
+        run_template(m);
+    }
+    m.utm(Machine::SP, 077776);
+    m.xta(Machine::SP, 0);
+    if (m.u1a())
+        return result_in_acc(m);
+    return apply_template(m, 025321);
+}
+
+unsigned power_2(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.uza()) {
+        m.xta(7, 01572);
+        m.atx(Machine::SP, 077777);
+        emit_half(m, 025306);
+        return power_loop(m);
+    }
+    m.atx(Machine::SP, 077777);
+    m.utm(Machine::SP, 1);
+    load(m, 025306);
+    return power_loop(m);
+}
+
+// 25330: an octal base ** c (0352): ASN by c.
+unsigned octal_shift(Machine &m)
+{
+    m.ita(0, 3);
+    m.atx(Machine::SP, 0);
+    return operand(m, 025332);
+}
+
+unsigned octal_shift_2(Machine &m)
+{
+    load(m, 025333);
+    m.xta(Machine::SP, 0);
+    m.aox(7, 02245);
+    emit_half(m, 024015);
+    return result_in_acc(m);
+}
+
+// 25276: a real ** c (0152).
+unsigned power_real(Machine &m)
+{
+    m.xta(7, 02453);
+    if (m.M[2])
+        return octal_shift(m);
+    return power(m);
+}
+
+// 25300: an integer ** c (0153).
+unsigned power_integer(Machine &m)
+{
+    m.xta(0, 0);
+    return power(m);
+}
+
+// 25337: a routine of two operands, its address in M14 (pushed): the
+// first loaded, M4 = 02017, the second, then the call.
+unsigned library_call(Machine &m)
+{
+    m.ita(0, 016);
+    m.atx(Machine::SP, 0);
+    return operand(m, 025341);
+}
+
+unsigned library_call_2(Machine &m)
+{
+    load(m, 025342);
+    m.vtm(4, 02017);
+    return operand(m, 025343);
+}
+
+unsigned library_call_3(Machine &m)
+{
+    load(m, 025344);
+    return routine_call(m);
+}
+
+// 0150, 0151, 0147 (** by types), 001 (IMPL), 0157 (string relation n).
+unsigned library_with(Machine &m, unsigned r, unsigned octal)
+{
+    m.vtm(14, r);
+    if (octal && m.M[2])
+        m.vtm(14, octal);
+    return library_call(m);
+}
+
+unsigned string_relation(Machine &m)
+{
+    m.utc(3, 077777);
+    m.vtm(14, 04070);
+    return library_call(m);
+}
+
+// 25346: a string slice (050): the string, then the bounds; routine 4100
+// (template 25361). M2 ≠ 0: the string pushed first.
+unsigned slice(Machine &m)
+{
+    m.ita(0, 2);
+    m.atx(Machine::SP, 0);
+    return operand(m, 025350);
+}
+
+unsigned slice_3(Machine &m)
+{
+    m.vtm(4, 02017);
+    return operand(m, 025354);
+}
+
+unsigned slice_2(Machine &m)
+{
+    load(m, 025351);
+    m.xta(Machine::SP, 0);
+    if (m.uza()) {
+        m.vtm(4, 02017);
+        return operand(m, 025360);
+    }
+    m.xta(7, 02227);
+    emit_half(m, 025353);
+    return slice_3(m);
+}
+
+unsigned slice_4(Machine &m)
+{
+    load(m, 025355);
+    return apply_template(m, 025361);
+}
+
+unsigned slice_5(Machine &m)
+{
+    load(m, 025353);
+    return slice_3(m);
+}
+
+void register_operators(Machine::Natives &n)
+{
+    n[023764] = string_item;
+    n[023775] = constant_item;
+    n[023776] = give;
+    n[024000] = variable_item;
+    n[024005] = formal_item;
+    n[024010] = call_item;
+    n[024015] = result_in_acc;
+    n[024016] = give_none;
+    n[024021] = [](Machine &m) { return unary_with(m, 025753); };
+    n[024022] = [](Machine &m) { return unary_with(m, 025754); };
+    n[024023] = [](Machine &m) { return unary_with(m, m.M[2] ? 025767 : 025756); };
+    n[024026] = [](Machine &m) { return unary_with(m, 025762); };
+    n[024027] = [](Machine &m) { return unary_with(m, 025763); };
+    n[024030] = std_function;
+    n[024034] = std_function_2;
+    n[024037] = std_procedure;
+    n[024043] = unary_2;
+    n[024046] = [](Machine &m) { return binary_with(m, 025773); };
+    n[024047] = [](Machine &m) { return binary_with(m, 025774); };
+    n[024050] = [](Machine &m) { return binary_with(m, 025775); };
+    n[024051] = [](Machine &m) { return binary_with(m, 025777); };
+    n[024052] = [](Machine &m) { return binary_with(m, 026000); };
+    n[024053] = [](Machine &m) { return binary_with(m, m.M[2] ? 026016 : 026001); };
+    n[024055] = [](Machine &m) { return binary_with(m, 026003); };
+    n[024056] = [](Machine &m) { return binary_with(m, 026005); };
+    n[024057] = [](Machine &m) { return binary_with(m, 026007); };
+    n[024060] = [](Machine &m) { return binary_with(m, 026012); };
+    n[024061] = [](Machine &m) { return binary_with(m, 026014); };
+    n[024064] = binary_2;
+    n[024065] = binary_3;
+    n[024075] = [](Machine &m) { return paired_with(m, 024113); };
+    n[024076] = divide;
+    n[024100] = divide_2;
+    n[024101] = divide_3;
+    n[024106] = [](Machine &m) { return paired_with(m, 024115); };
+    n[024107] = [](Machine &m) { return paired_with(m, 024116); };
+    n[024110] = [](Machine &m) { return paired_with(m, 024117); };
+    n[024111] = [](Machine &m) { return paired_with(m, 024120); };
+    n[024112] = [](Machine &m) { return paired_with(m, 024121); };
+    n[024124] = paired_2;
+    n[024125] = paired_3;
+    n[024221] = assign_variable;
+    n[024222] = assign;
+    n[024223] = assign_2;
+    n[024226] = assign_formal;
+    n[024240] = assign_pushed;
+    n[025276] = power_real;
+    n[025300] = power_integer;
+    n[025303] = power_2;
+    n[025306] = power_loop;
+    n[025323] = [](Machine &m) { return library_with(m, 04023, 04122); };
+    n[025325] = [](Machine &m) { return library_with(m, 04024, 0); };
+    n[025326] = [](Machine &m) { return library_with(m, 04025, 04121); };
+    n[025330] = octal_shift;
+    n[025332] = octal_shift_2;
+    n[025335] = [](Machine &m) { return library_with(m, 04026, 0); };
+    n[025336] = string_relation;
+    n[025341] = library_call_2;
+    n[025343] = library_call_3;
+    n[025346] = slice;
+    n[025350] = slice_2;
+    n[025353] = slice_3;
+    n[025354] = slice_4;
+    n[025360] = slice_5;
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -501,5 +1086,6 @@ Stream pass4(Context &ctx, const Stream &input)
     n[DISPATCH_NEXT] = dispatch_next;
     n[026152]        = eop;
     n[026156]        = eop_end;
+    register_operators(n);
     return pass.run(023523, 01633);
 }

@@ -33,7 +33,8 @@ public:
     Workspace *drums{};
 
     // Routines in C++: entered by a jump, they return the address to go on.
-    std::map<unsigned, std::function<unsigned(Machine &)>> natives;
+    using Natives = std::map<unsigned, std::function<unsigned(Machine &)>>;
+    Natives natives;
 
     // Called at the marked entries of the translated code.
     std::function<void(Machine &, unsigned)> on_entry;
