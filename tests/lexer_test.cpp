@@ -69,6 +69,17 @@ TEST(Lexer, strings)
     EXPECT_EQ(t[3].text, "");
     EXPECT_EQ(messages, "");
 
+    // '` in the outer level is an apostrophe; in a nested string it closes
+    // and opens; split by a line end it is two strings.
+    t = tokens("`it'`s' `'`' `see `a'`b' now' `a'\n`b'\n_eop", &messages);
+    ASSERT_EQ(t.size(), 6u);
+    EXPECT_EQ(t[0].text, "it's");
+    EXPECT_EQ(t[1].text, "'");
+    EXPECT_EQ(t[2].text, "see `a'`b' now");
+    EXPECT_EQ(t[3].text, "a");
+    EXPECT_EQ(t[4].text, "b");
+    EXPECT_EQ(messages, "");
+
     tokens("X := `ab\ncd", &messages);
     EXPECT_EQ(messages, "x.alg:1: error: Unterminated string\n");
 }

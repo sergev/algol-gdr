@@ -563,8 +563,8 @@ Token Lexer::string()
     return t;
 }
 
-// A string of the publication form: `…' or ‘…’, nested; the inner quotes
-// are kept.
+// A string: `…' or ‘…’, nested; the inner quotes are kept. In the outer
+// level of `…', '` is an apostrophe.
 Token Lexer::quoted_string(char32_t close)
 {
     char32_t open = ch_;
@@ -574,10 +574,13 @@ Token Lexer::quoted_string(char32_t close)
     std::string text;
     for (int depth = 1;;) {
         char32_t c = advance();
-        if (c == open)
+        if (c == open) {
             depth++;
-        else if (c == close && --depth == 0)
+        } else if (c == close && depth == 1 && open == '`' && text_[col_ + 1] == '`') {
+            step(); // '` in the outer string: an apostrophe
+        } else if (c == close && --depth == 0) {
             break;
+        }
         append_utf8(text, c);
     }
     skip_blanks_ = true;

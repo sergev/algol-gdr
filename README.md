@@ -40,9 +40,9 @@ Hello, World!
 ## Writing programs
 
 - Keywords start with an underscore: `_begin`, `_end`, `_integer`, `_if`, `_then`.
-- Strings are in a backquote and an apostrophe: `` `text' ``. They nest: `` `a `b' c' ``;
-  a string with a lone apostrophe is written `‘…’`. The old `''text''` still works, with
-  a warning.
+- Strings are in a backquote and an apostrophe: `` `text' ``. They nest: `` `a `b' c' ``.
+  An apostrophe in a string is written `` '` ``: `` `it'`s' `` is `it's`. The old
+  `''text''` still works, with a warning.
 - The program ends with `_eop`.
 - Use `PRINT(...)` to print numbers and strings, and `NEWLINE` to start a new line; or the
   standard Algol 60 procedures `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.

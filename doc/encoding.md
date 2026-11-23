@@ -9,7 +9,7 @@ original BESM-6 compiler read KOI-7 cards is in this file on the `besm6` branch.
 - The file is UTF-8 (`src/source.cpp`). A bad sequence stops the compiler:
   `FILE:LINE: invalid UTF-8 sequence`.
 - Lines end with LF or CR LF and have no length limit. The lexer works on code points, one
-  line at a time; `′` (U+2032, the quote of the BESM-6 listings) is read as `'`.
+  line at a time; `′` (U+2032) is read as `'`.
 - Blanks (space, tab, CR, FF) and line ends separate nothing outside strings and keywords
   of the `_word` form: `noun phrase` is the identifier `nounphrase`, `1 000` is 1000.
 - Messages give `file:line:column:`; the column counts code points from 1, a combining
@@ -81,8 +81,13 @@ Any other character outside a string or comment is an error: `Illegal character 
 ## Strings
 
 - A string is in `` `…' `` or in `‘…’`. Quotes of the same kind nest, and the inner ones
-  belong to the string: `` `Hello, `Algol'' `` is ``Hello, `Algol'``. A lone apostrophe
-  goes in `‘'’`.
+  belong to the string: `` `Hello, `Algol'' `` is ``Hello, `Algol'``.
+- A lone apostrophe: `` '` `` in the outer level of `` `…' `` (as if the string closed and
+  opened again): `` `it'`s' `` is `it's`. Only there: in a nested string `` '` `` closes it
+  and opens another (`` `see `a'`b' now' `` is ``see `a'`b' now``), and the two characters
+  must be on one line. Or the whole string in `‘…’`, where `'` is a plain character:
+  `‘it's’`. Neither is X1 Algol: `x1sim` prints `` `it'`s' `` as `it`, and rejects
+  `‘…’`.
 - Inside a string every character counts, blanks and line ends too; the text is kept as
   UTF-8, in its case.
 - Deprecated: the strings of Algol-GDR, `''…''` and `'('…')'` (also opened by `"`), where
@@ -113,7 +118,7 @@ All text a program reads and writes is UTF-8 (runtime/):
   or minus its code point.
 - `_write`, `_print`, `_read`, `_encode`, `_decode` with a Fortran format
   (runtime/format.c): records are lines; an `A` field takes characters. A format's
-  `'…'` edit cannot be written inside `` `…' ``; write the format in `‘…’`.
+  `'…'` edit is written with `` '` ``: `` `(I3, '` items'`)' ``, or the format in `‘…’`.
 - The X1 library works in X1 symbol codes (x1-algol-compiler/doc/algol-encoding.md): `PRSYM`
   writes a code as its UTF-8 symbol (`⎕` for an unused one), `RESYM` reads a UTF-8 symbol
   and gives its code, 255 at the end of the input; `read` takes `⏨` as the exponent
