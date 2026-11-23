@@ -75,6 +75,7 @@ constexpr unsigned REL_TEXT     = 020422; // RELATION, 2 words
 constexpr unsigned REL_MIXED    = 020400; // by relation code: the code for an integer and a real
 constexpr unsigned NUMERIC      = 020317; // by type: nonzero for real and integer
 constexpr unsigned ONE          = 01632;  // the slot of the constant 1
+constexpr unsigned IF_TEXT      = 022160; // 'IF'
 constexpr unsigned ASSIGN_TEXT  = 022110; // ':='
 constexpr unsigned LEFT_PART    = 017702; // *0457B
 constexpr unsigned AFTER_LEFT   = 017720; // *0475B
@@ -1395,6 +1396,187 @@ unsigned assign_item(Machine &m)
     return left_part(m);
 }
 
+// *2221B: TYPE ERROR IN CONNECTION WITH RELATION. Returns through M8.
+unsigned relation_error(Machine &m)
+{
+    m.mem[ARGS + 1] = m.mem[REL_TEXT + 1];
+    m.acc           = m.mem[REL_TEXT];
+    return type_error(m);
+}
+
+//
+// *2205B: a condition ending with a relation (code 0130-0134 in M14): a
+// compare-and-jump item. Its operands must be alike; = (0134) on an
+// integer and a real becomes 0105; strings (code-0127)<<12 ^ 0157.
+// Returns the address to go on at: *2177B or *2200B with the code in A.
+//
+unsigned relation_condition(Machine &m, bool &emit_code)
+{
+    auto at = [&](unsigned k) -> Word & { return m.mem[(m.M[Machine::SP] - k) & 077777]; };
+    m.push(m.M[14]);
+    m.call(PARSE, 12, 021432);
+    m.push(m.M[5]);
+    bool ok = false;
+    switch (m.M[5]) {
+    case 1:
+    case 2:
+    case 4:
+        ok = true;
+        break;
+    case 0:
+    case 3:
+        break;
+    case 5:
+        m.acc = at(2) ^ 0134;
+        ok    = !m.acc;
+        break;
+    default:
+        return 021434 + m.M[5];
+    }
+    m.call(PARSE_READ, 12, ok ? 021450 : 021447);
+    if (!ok) {
+        m.set_m(8, 021450);
+        relation_error(m);
+    }
+    m.xta(Machine::SP, 0);
+    m.set_m(13, 021451);
+    type_pair(m);
+    m.set_m(14, m.M[14] - 3);
+    if (!m.M[14]) {
+        m.set_m(14, 0);
+        m.set_m(8, 021453);
+        relation_error(m);
+    }
+    m.acc = at(1);
+    m.set_m(5, m.M[5] - 4);
+    if (!m.M[5]) {
+        m.xta(Machine::SP, 0);
+        m.arx(7, 02677);
+        m.set_m(14, 0157);
+        m.call(EMIT_SHIFTED, 13, 021422);
+        return 0;
+    }
+    m.acc ^= 0134;
+    m.set_logical();
+    if (m.acc)
+        m.set_m(14, 077775);
+    m.set_m(14, m.M[14] + 3);
+    m.xta(Machine::SP, 0);
+    if (!m.M[14]) {
+        emit_code = true;
+        return 0;
+    }
+    m.set_m(14, 0105);
+    m.call(EMIT_M14, 13, 021422);
+    return 0;
+}
+
+//
+// *2163B: the condition of an IF, the conversion for the result (0 or 064)
+// in A, the type of the ELSE branch under it. It must be boolean; it ends
+// with 027, the conversion, and M5 = the type of the result.
+//
+unsigned condition(Machine &m)
+{
+    m.push(m.acc);
+    m.acc = m.mem[TYPES + m.M[1]];
+    m.set_m(14, unsigned(m.acc >> 15) & 7);
+    m.acc       = m.M[14];
+    bool direct = false;
+    switch (m.M[14]) {
+    case 0:
+    case 6:
+        m.call(PARSE_READ, 12, 021420);
+        m.set_m(5, m.M[5] - 3);
+        if (m.M[5]) {
+            m.acc = m.mem[IF_TEXT];
+            m.set_m(8, 021422);
+            type_error(m);
+        }
+        break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5: {
+        m.set_m(14, 0127 + m.M[14]);
+        unsigned pc = relation_condition(m, direct);
+        if (pc)
+            return pc;
+        break;
+    }
+    default:
+        return 021411 + m.M[14];
+    }
+    if (!direct) {
+        m.set_m(14, 027);
+        m.acc = 027;
+    }
+    m.call(EMIT_A, 13, 021424);
+    m.xta(Machine::SP, 0);
+    if (m.acc)
+        m.call(EMIT_A, 13, 021426);
+    m.xta(Machine::SP, 0);
+    m.set_m(5, unsigned(m.acc));
+    return RETURN_SUB;
+}
+
+//
+// Code 045, the end of a conditional expression (read first): 054, the ELSE
+// branch, 031, the THEN branch, then the condition. Branches of integer and
+// real give a real result (064 after the integer one).
+//
+unsigned cond_expr_item(Machine &m)
+{
+    m.set_m(14, 054);
+    m.call(EMIT_M14, 13, 021367);
+    m.call(PARSE, 12, 021370);
+    m.set_m(14, 031);
+    m.push(m.M[5]);
+    m.acc = 031;
+    m.set_m(13, PARSE_READ);
+    m.call(EMIT_A, 12, 021373);
+    m.acc = m.mem[(m.M[Machine::SP] - 1) & 077777];
+    m.set_m(13, 021374);
+    type_pair(m);
+    switch (m.M[14]) {
+    case 0:
+        break;
+    case 1:
+        m.set_m(14, 064);
+        m.acc = 064;
+        m.call(EMIT_A, 13, 021403);
+        break;
+    case 2:
+        m.acc                                  = 1;
+        m.mem[(m.M[Machine::SP] - 1) & 077777] = 1;
+        m.set_m(14, 064);
+        m.acc = 064;
+        m.set_logical();
+        return condition(m);
+    case 3:
+        m.acc = m.mem[IF_TEXT];
+        m.set_m(8, 021375);
+        type_error(m);
+        break;
+    default:
+        return 021375 + m.M[14];
+    }
+    m.acc = 0;
+    m.set_logical();
+    return condition(m);
+}
+
+// Code 030, THEN of an IF statement: a dummy word pushed, then the condition.
+unsigned then_item(Machine &m)
+{
+    m.set_m(Machine::SP, m.M[Machine::SP] + 1);
+    m.call(READ, 13, 021375);
+    m.acc = 0;
+    m.set_logical();
+    return condition(m);
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -1589,6 +1771,8 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[017720] = after_left;
     pass.m.natives[017736] = next_left;
     pass.m.natives[017737] = left_count;
+    pass.m.natives[021366] = cond_expr_item;
+    pass.m.natives[021461] = then_item;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
