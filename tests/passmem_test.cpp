@@ -23,13 +23,14 @@ struct MemCase {
 
 class PassMem : public ::testing::TestWithParam<MemCase> {};
 
-// Pass 4: cursors 02000-02001, pages 06000-11777, drum 26 from zone 2.
+// Passes 3, 4: registers (no later pass reads them). Pass 4: cursors
+// 02000-02001, pages 06000-11777, drum 26 from zone 2.
 static bool stream_part(int pass, const std::string &line)
 {
+    if (pass >= 3 && line.rfind("reg", 0) == 0)
+        return true;
     if (pass != 4)
         return false;
-    if (line.rfind("reg", 0) == 0)
-        return true;
     std::istringstream f(line);
     f >> std::oct;
     if (line.rfind("drum", 0) == 0) {

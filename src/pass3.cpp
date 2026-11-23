@@ -1,5 +1,6 @@
 #include "pass3.h"
 
+#include "arith.h"
 #include "translated.h"
 
 namespace {
@@ -57,25 +58,52 @@ unsigned intern_constant(Machine &m)
     return m.M[12];
 }
 
-// Next pass of the main loop after the item in A (22170): codes 146, 075
-// (EOP), 055 (FOR), 042, 062 (procedure body: depth), 026, 064 (minus, to
-// real: fold a constant), else copy. M14 counts down as in the original.
-unsigned dispatch(Machine &m);
+constexpr unsigned SP = Machine::SP;
+
+constexpr Word BIT48         = 0'4000'0000'0000'0000;
+constexpr Word ASSIGNED      = 0'0000'0400'0000'0000; // a descriptor: assigned in the loop
+constexpr Word PAGE_MASK     = 0'0000'0077'7770'0000; // the page of a cursor (M7+1254)
+constexpr Word END_FLAG      = 0'4000'0000'0000'1777; // a cursor at the end of its page
+constexpr Word IN_BACK       = 0'7777'7777'7757'7777; // a zone back (cyclic add)
+constexpr Word OUT_CURSOR    = 0'0000'0302'6160'6000; // 06000, drum 26 zone 10
+constexpr Word OUT_LEFT      = 0'4000'0402'6201'1777; // the stream left for pass 4
+constexpr unsigned CODE_FOR  = 055;
+
+Word cyclic_add(Word a, Word b)
+{
+    Word s = a + b;
+    if (s >> 48)
+        s = (s + 1) & WORD_MASK;
+    return s;
+}
+
+// The stream module: the next input item, an item written.
+Word get(Machine &m)
+{
+    m.call(READ, 13, 022170);
+    return m.acc;
+}
+
+void put(Machine &m, Word w)
+{
+    m.acc = w;
+    m.call(WRITE, 13, 022167);
+}
+
+unsigned dispatch(Machine &m, Word item);
 unsigned for_scan(Machine &m);
 
 // 22201: copy the current item, then the next.
 unsigned copy_item(Machine &m)
 {
-    m.xta(0, CUR);
-    m.call(WRITE, 13, 022167);
+    put(m, m.mem[CUR]);
     return 022167;
 }
 
 // 22167: read an item and dispatch it.
 unsigned next_item(Machine &m)
 {
-    m.call(READ, 13, 022170);
-    return dispatch(m);
+    return dispatch(m, get(m));
 }
 
 //
@@ -86,59 +114,45 @@ unsigned next_item(Machine &m)
 unsigned procedure_end(Machine &m)
 {
     for (;;) {
-        m.call(READ, 13, 022204);
-        m.atx(0, CUR);
-        m.aax(7, 01336);
-        m.ati(0, 016);
-        m.utm(14, 077727);
-        if (m.M[14] == 0)
+        Word item  = get(m);
+        m.mem[CUR] = item;
+        unsigned c = item & 0177;
+        if (c == 051)
             continue;
-        m.utm(14, 077704);
-        if (m.M[14] == 0)
+        if (c == 0145)
             return 022167;
-        m.vtm(14, 0146);
-        m.ita(0, 016);
-        m.call(WRITE, 13, 022211);
-        m.xta(0, CUR);
-        return dispatch(m);
+        put(m, 0146);
+        return dispatch(m, m.mem[CUR]);
     }
 }
 
 //
 // 22214: an integer minus (026) or int→real (064) before a constant becomes
-// a constant: negated, or converted. Else both items are written. Returns
-// through M11.
+// a constant: negated, or converted. Else both items are written.
 //
-unsigned fold(Machine &m)
+void fold(Machine &m)
 {
-    m.xta(0, CUR);
-    m.atx(Machine::SP, 0);
-    m.call(READ, 13, 022216);
-    m.atx(0, CUR);
-    m.aax(7, 01336);
-    m.aex(7, 01272);
-    if (!m.uza()) {
-        m.xta(Machine::SP, 0);
-        m.call(WRITE, 13, m.M[11]);
-        return m.M[11];
+    Word op    = m.mem[CUR];
+    Word item  = get(m);
+    m.mem[CUR] = item;
+    if ((item & 0177) != CONST) {
+        put(m, op);
+        return;
     }
-    m.xta(0, CUR);
-    m.asn(0, 0114);
-    m.sti(0, 016);
-    m.aex(7, 01276);
-    if (m.uza()) {
-        m.xta(14, TABLE);
-        m.ntr(0, 2);
-        m.arith(0, 0, 004); // + 0: normalized, real
-    } else {
-        m.xta(14, TABLE);
-        m.ntr(0, 3);
-        m.arith(7, 01250, 014); // the sign changed
+    Word v = m.mem[TABLE + ((item >> 12) & 07777)];
+    if (op == 064) { // + 0: normalized, real
+        Arith u(v, Arith::ROUND_DISABLE);
+        u.add(0);
+        v = u.acc;
+    } else { // the sign changed
+        Arith u(v, Arith::NORM_DISABLE | Arith::ROUND_DISABLE);
+        u.change_sign(true);
+        v = u.acc;
     }
+    m.acc = v;
     m.set_m(12, 022227);
     intern_constant(m);
-    m.atx(0, CUR);
-    return m.M[11];
+    m.mem[CUR] = m.acc;
 }
 
 //
@@ -147,50 +161,38 @@ unsigned fold(Machine &m)
 //
 unsigned eop(Machine &m)
 {
-    m.xta(0, CUR);
-    m.call(WRITE, 13, 023344);
-    m.xta(0, 02001);
-    m.aox(7, 01306);
-    m.atx(0, 02001);
-    m.xta(0, 0);
-    m.call(WRITE, 13, 023347);
-    m.xta(7, 01302);
-    m.atx(0, 02001);
-    m.wtc(Machine::SP, 0);
-    return m.ea(0, m.field(0));
+    put(m, m.mem[CUR]);
+    m.mem[02001] |= END_FLAG;
+    put(m, 0);
+    m.mem[02001] = OUT_LEFT;
+    m.set_m(SP, m.M[SP] - 1);
+    return m.mem[m.M[SP]] & 077777;
 }
 
-unsigned dispatch(Machine &m)
+// 22170: by the code of the item: 146, 075 (EOP), 055 (FOR), 042, 062
+// (procedure body: depth M1), 026, 064 (minus, to real: fold a constant),
+// else copy.
+unsigned dispatch(Machine &m, Word item)
 {
-    m.atx(0, CUR);
-    m.aax(7, 01336);
-    m.ati(0, 016);
-    m.utm(14, 077632);
-    if (m.M[14] == 0)
+    m.mem[CUR] = item;
+    switch (item & 0177) {
+    case 0146:
         return procedure_end(m);
-    m.utm(14, 051);
-    if (m.M[14] == 0)
+    case 075:
         return eop(m);
-    m.utm(14, 020);
-    if (m.M[14] == 0)
+    case CODE_FOR:
         return for_scan(m);
-    m.utm(14, 013);
-    if (m.M[14] == 0) {
-        m.utm(1, 077777);
-        return copy_item(m);
+    case 042:
+        m.set_m(1, m.M[1] - 1);
+        break;
+    case 062:
+        m.set_m(1, m.M[1] + 1);
+        break;
+    case 026:
+    case 064:
+        fold(m);
+        break;
     }
-    m.utm(14, 077760);
-    if (m.M[14] == 0) {
-        m.utm(1, 1);
-        return copy_item(m);
-    }
-    m.utm(14, 034);
-    m.vtm(11, 022201);
-    if (m.M[14] == 0)
-        return fold(m);
-    m.utm(14, 077742);
-    if (m.M[14] == 0)
-        return fold(m);
     return copy_item(m);
 }
 
@@ -198,119 +200,76 @@ unsigned dispatch(Machine &m)
 // 22232: FOR (055 d). First scan: copies the loop, classifying each item;
 // gives up (copies the rest through the main loop) on any item it cannot
 // rewrite. At the end of the body (052, 0160), the variables assigned in it
-// get bit 0000040000000000 in their descriptors, and the rewrite (22327)
-// starts over from START. A nested FOR restarts the scan from it.
+// get ASSIGNED in their descriptors, and the rewrite (22327) starts over
+// from START. A nested FOR restarts the scan from it.
 //
 unsigned for_scan(Machine &m)
 {
+    unsigned set; // the next of SET, from SET−046
 restart:
-    m.xta(0, CUR);
-    m.asn(0, 0114);
-    m.ati(0, 2);
-    m.atx(0, LVAR);
-    m.xta(2, 0);
-    m.arx(0, 0);
-    if (m.uza())
+    m.mem[LVAR] = m.mem[CUR] >> 12;
+    if (m.mem[m.mem[LVAR] & 077777] & BIT48)
         return copy_item(m);
-    m.xta(0, CUR);
-    m.call(WRITE, 13, 022237);
-    m.acc = m.mem[POS];
-    m.atx(0, START);
-    m.set_m(3, 077732); // −046: the first of SET
+    put(m, m.mem[CUR]);
+    m.mem[START] = m.mem[POS];
+    set          = 077732;
     goto read;
 copy:
-    m.xta(0, CUR);
-    m.call(WRITE, 13, 022242);
+    put(m, m.mem[CUR]);
 read:
-    m.call(READ, 13, 022243);
-    m.atx(0, CUR);
+    m.mem[CUR] = get(m);
 classify: {
     unsigned code = unsigned(m.mem[CUR]) & 0177;
-    m.store(m.M[Machine::SP], code & 017); // left above the stack
-    m.set_m(13, code >> 4);
-    unsigned cls = unsigned(m.mem[FOR_CLASSES + (code >> 4)] >> (3 * (code & 017))) & 7;
-    m.acc        = cls;
-    m.set_logical();
-    m.set_m(14, cls);
-    switch (cls) {
+    switch ((m.mem[FOR_CLASSES + (code >> 4)] >> (3 * (code & 017))) & 7) {
     case 0: // copied
         goto copy;
     case 1: // its control variable (032, …)
-        m.xta(0, CUR);
-        m.asn(0, 0114);
-        m.atx(0, CONTROL);
+        m.mem[CONTROL] = m.mem[CUR] >> 12;
         goto copy;
     case 2: // left part (0100, 046, …)
-        m.xta(0, CUR);
-        m.asn(0, 0114);
-        m.atx(3, SET);
-        if (m.vlm(3))
-            goto copy;
-        return copy_item(m); // too many
-    case 3:                  // cannot rewrite
+        m.mem[(SET + set) & 077777] = m.mem[CUR] >> 12;
+        if (!set)
+            return copy_item(m); // too many
+        set = (set + 1) & 077777;
+        goto copy;
+    case 3: // cannot rewrite
         return copy_item(m);
     case 4: // end of the loop
         break;
     case 5: // a FOR inside
         goto restart;
-    case 6: // standard procedure: only 6–8
-        m.xta(0, CUR);
-        m.asn(0, 0114);
-        m.ati(0, 016);
-        m.xta(7, 0117);
-        m.asn(14, 0100);
-        m.aax(7, 01260);
-        if (m.uza())
+    case 6: { // standard procedure: only 6–8
+        unsigned n = (m.mem[CUR] >> 12) & 0177;
+        if (n < 6 || n > 8) // STD_6_8 >> n & 1, the shift as ASN by n
             return copy_item(m);
         goto copy;
+    }
     default: // 026, 064
-        m.set_m(11, 022244);
         fold(m);
         goto classify;
     }
 }
     // Its control variable must not be assigned in it.
-    m.acc = 0;
-    m.atx(3, SET);
-    m.set_m(3, 0);
-    for (;;) {
-        m.xta(3, SET - 046);
-        if (m.uza())
-            break;
-        m.aex(0, CONTROL);
-        m.utm(3, 1);
-        if (!m.u1a())
+    m.mem[(SET + set) & 077777] = 0;
+    for (unsigned i = 0; m.mem[SET - 046 + i]; i++)
+        if (m.mem[SET - 046 + i] == m.mem[CONTROL])
             return copy_item(m);
+    put(m, m.mem[CUR]);
+    for (unsigned i = 0;; i++) {
+        unsigned d = m.mem[SET - 046 + i] & 077777;
+        if (!d)
+            break;
+        m.mem[d] |= ASSIGNED;
     }
-    m.xta(0, CUR);
-    m.call(WRITE, 13, 022312);
-    m.set_m(3, 0);
-    do {
-        m.xta(3, SET - 046);
-        m.ati(0, 2);
-        m.xta(2, 0);
-        m.aox(7, 01256);
-        m.atx(2, 0);
-        m.utm(3, 1);
-    } while (m.M[2]);
-    m.acc = m.mem[02000];
-    m.atx(0, 02015);
-    m.xta(0, START);
-    m.aex(0, POS);
-    m.aax(7, 01254);
-    m.atx(0, SPAN);
-    if (m.uza())
+    m.mem[02015] = m.mem[02000];
+    m.mem[SPAN]  = (m.mem[START] ^ m.mem[POS]) & PAGE_MASK;
+    if (!m.mem[SPAN])
         return 022327;
     // Back to the page of the FOR.
-    m.xta(0, POS);
-    m.aox(7, 01306);
-    m.atx(0, POS);
-    m.xta(0, 0);
-    m.call(WRITE, 13, 022325);
-    m.xta(0, START);
-    m.aox(7, 01306);
-    m.atx(0, 02000);
-    m.call(READ, 13, 022327);
+    m.mem[POS] |= END_FLAG;
+    put(m, 0);
+    m.mem[02000] = m.mem[START] | END_FLAG;
+    get(m);
     return 022327;
 }
 
@@ -321,13 +280,10 @@ classify: {
 unsigned start(Machine &m)
 {
     m.vtm(7, M7);
-    m.ita(0, 015);
-    m.xts(0, 02001);
-    m.arx(7, 01327);
-    m.atx(0, 02000);
-    m.call(READ, 13, 022165);
-    m.xta(7, 01317);
-    m.atx(0, 02001);
+    m.push(m.M[13]);
+    m.mem[02000] = cyclic_add(m.mem[02001], IN_BACK);
+    get(m);
+    m.mem[02001] = OUT_CURSOR;
     m.vtm(1, 5);
     return next_item(m);
 }
@@ -1914,7 +1870,6 @@ Stream pass3(Context &ctx, const Stream &input)
     pass.m.natives[022162] = start;
     pass.m.natives[022167] = next_item;
     pass.m.natives[022201] = copy_item;
-    pass.m.natives[022214] = fold;
     pass.m.natives[022232] = for_scan;
     pass.m.natives[022716] = intern_constant;
     pass.run(022162, 01632);

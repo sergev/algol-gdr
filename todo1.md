@@ -8,7 +8,7 @@ program. Passes 1, 4, 5, 6 are plain C++ on `Context` (pass 4 keeps the continua
 addresses of the original on its own stack). Passes 2 and 3 are C++ on a `Machine`
 (`machine.*`, `translated.*`): routines registered as natives at their original addresses,
 chained by the addresses they return. Their data, stack and registers live in the machine
-(pass 3 is still instruction by instruction: `m.xta`, `m.aex`, …). Their streams
+(pass 3's FOR rewrite is still instruction by instruction: `m.xta`, `m.aex`, …). Their streams
 go through the original stream module (pages, drums, cursors at 02000/02001), a native
 instruction by instruction in `translated.cpp` with 01644, 27733 and 30001
 ([doc/translation.md](doc/translation.md)). What we know about the original is in `doc/`
@@ -35,7 +35,6 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 
 ### Pass 3 off the machine
 
-- **D9** Main loop, folding, procedure end, EOP, FOR first scan (22232), constants.
 - **D10** The FOR rewrite (prefix-tree parser, register allocation, loop end) on vectors;
   `Pass3` a class on `Context`, no `Machine`.
 
