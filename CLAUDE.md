@@ -28,7 +28,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `tables.*` (the name table, D-list and 'COMMON' table the passes share), `symbols.*` (the tables decoded after pass 2), `ast.*` (the AST after doc/ast.asdl, its YAML form), `ast_builder.*` (the AST from the pass-2 stream), `word.h` (48-bit word).
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `tables.*` (the name table, D-list and 'COMMON' table the passes share), `symbols.*` (the tables decoded after pass 2), `ast.*` (the AST after doc/ast.asdl, its YAML form), `ast_builder.*` (the AST from the pass-2 stream), `lexer.*` and `diag.*` (the new front end: symbols, GNU-style messages), `word.h` (48-bit word).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.lst` listings (the original's from the banner on, without the line
   table and summary of passes 5–6; made now by `algc --list --check`),

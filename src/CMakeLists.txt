@@ -3,7 +3,9 @@ add_library(algol STATIC
     ast.cpp
     ast_builder.cpp
     card.cpp
+    diag.cpp
     item.cpp
+    lexer.cpp
     listing.cpp
     pass1_lexer.cpp
     pass1_parser.cpp

@@ -36,11 +36,6 @@ and go on at the next statement). The listing (`--list`) of a correct program st
 is; error messages are no longer in it. Goldens `.err` hold the messages of the error
 programs.
 
-- **E7.1a** Lexer (`lexer.{h,cpp}`) and diagnostics (`diag.{h,cpp}`): tokens with their
-  line from the cards (columns 1–72, KOI-7 until E7.2); 'COMMENT', the text after END,
-  strings, octal constants, numbers as host values (int64, double), 'COMMON' read as one
-  token with its block; lexical errors reported, the lexer going on. A test compares it
-  with the old lexer token by token on the correct programs.
 - **E7.1b** Parser (`parser.cpp`) to a syntax tree (`syntax.h`): names unresolved, the
   statement positions (line, statement on the line), syntax errors with recovery at the
   next statement. Tests: the listing of every correct program; `.err` for the error

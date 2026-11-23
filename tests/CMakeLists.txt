@@ -18,6 +18,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     item_test.cpp
     lexer_test.cpp
     listing_test.cpp
+    new_lexer_test.cpp
     pass_test.cpp
     source_test.cpp
     symbols_test.cpp
