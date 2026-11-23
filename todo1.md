@@ -54,10 +54,13 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ### B3. Pass 2
 
+Pass 2 runs as the translated code of the original (`src/pass2_gen.cpp`,
+[doc/translation.md](doc/translation.md)); its stream, memory and messages match for every
+program. Replace it with hand-written C++, routine by routine, keeping `Pass.stream/*_s2`,
+`Pass2Mem` and `ListingTest` green:
 - **B3.1** Scopes and identifier binding; `TWICE DECLARED`, `IS NOT DECLARED`.
 - **B3.2** Type checking by recursive descent over the reversed stream; the messages in
-  reverse order with `NEXT STATEMENT IS l/s`. `err_split` has long ones on a page of two
-  columns (its listing test is skipped until then).
+  reverse order with `NEXT STATEMENT IS l/s`.
 - **B3.3** The output stream; array records; `* * INCORRECT ALGOL PROGRAM * *`.
 - Decode the rest of the pass-2 output codes along the way (an open point in passes.md).
 

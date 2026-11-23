@@ -1820,5 +1820,10 @@ Stream Pass1::run()
     } catch (const Finish &) {
         ctx_.finished = true;
     }
+    // Registers pass 2 takes over: M3 is the D-list pointer.
+    ctx_.regs[3] = m3_;
+    ctx_.regs[4] = m4_;
+    ctx_.regs[5] = m5_;
+    ctx_.regs[6] = m6_;
     return out_;
 }

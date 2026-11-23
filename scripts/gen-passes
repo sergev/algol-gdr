@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Regenerate the passes translated from the overlay (scripts/gen-pass.py).
+# Each pass gets its own copy of the shared code it calls: the driver's print
+# routine 01644, the streams 27114, the formatter 27733, number to text 30001.
+#
+set -e
+cd "$(dirname "$(realpath "$0")")/.."
+shared="01644-01735 27114-27244 27733-30000 30001-30033"
+hooks="--hook 27114 --hook 27126 --hook 27137"
+scripts/gen-pass.py $hooks pass2 17223-22161 $shared > src/pass2_gen.cpp

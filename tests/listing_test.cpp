@@ -1,13 +1,11 @@
 //
-// The listing: pass 1, then passes 5 and 6 on the expected stream of pass 4,
-// must print NAME.lst from the banner up to *END FILE. Programs with messages
-// of passes 2-4 are compared up to them, on one page only.
+// The listing: passes 1 and 2, then passes 5 and 6 on the expected stream of
+// pass 4, must print NAME.lst from the banner up to *END FILE.
 //
 #include "listing.h"
 
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -17,35 +15,8 @@
 #include "pass6.h"
 #include "passes.h"
 #include "source.h"
-#include "tables.h"
 
 namespace fs = std::filesystem;
-
-// A message of 'COMMON': three words at 16045 + 3n.
-static bool common_message(const std::string &line)
-{
-    for (unsigned n = 0; n < 7; n++) {
-        Word w[3];
-        for (unsigned i = 0; i < 3; i++)
-            w[i] = tables::commsg.at(016045 + 3 * n + i);
-        if (line == rtrim(listing_text(w, 0, 18)))
-            return true;
-    }
-    return false;
-}
-
-static bool pass1_line(const std::string &line)
-{
-    if (line.empty() || common_message(line))
-        return true;
-    for (const char *p :
-         { "ERROR ", "HET ", "↑EOP↑", "WARNING ", "30 ERRORS", "A L G O L", "    (7.01.82)" })
-        if (line.rfind(p, 0) == 0)
-            return true;
-    // A card: columns 73-80, then the line number and a dot; or its second half.
-    return (line.size() > 12 && line[12] == '.') || (line.size() > 6 && line[6] == '.') ||
-           line.rfind("               ", 0) == 0;
-}
 
 // NAME.lst from the banner up to *END FILE.
 static std::string expected(const std::string &name)
@@ -73,29 +44,21 @@ TEST_P(ListingTest, text)
     std::ostringstream out;
     load_options(ctx.options, name);
     Listing listing(out, ctx.options.setftn_one, ctx.options.setftn_long);
-    ctx.listing = &listing;
-    ctx.source  = read_source(path(name, ".alg"));
-    run_pass(1, ctx, {});
+    ctx.listing      = &listing;
+    ctx.source       = read_source(path(name, ".alg"));
+    auto stream      = run_pass(1, ctx, {});
     std::string want = expected(name);
+    if (!ctx.finished)
+        run_pass(2, ctx, stream);
 
-    if (!ctx.finished && fs::exists(path(name, ".s4"))) {
+    // Errors end the compilation after pass 2.
+    if (!ctx.finished && !ctx.flgex) {
+        if (!fs::exists(path(name, ".s4")))
+            GTEST_SKIP() << "no stream of pass 4";
         load_mem(ctx, path(name, ".mem"), 5);
-        auto stream = pass5(ctx, read_stream_file(path(name, ".s4")));
-        pass6(ctx, stream);
+        auto s5 = pass5(ctx, read_stream_file(path(name, ".s4")));
+        pass6(ctx, s5);
         listing.print(summary_line(ctx));
-    } else if (!ctx.finished) {
-        // Up to the messages of pass 2.
-        std::istringstream in(want);
-        std::string line;
-        want.clear();
-        while (std::getline(in, line) && pass1_line(line)) {
-            if (std::count_if(line.begin(), line.end(), [](char c) { return (c & 0xc0) != 0x80; }) >
-                64)
-                GTEST_SKIP() << "messages of pass 2 on a page of two columns";
-            want += line + "\n";
-        }
-        while (want.size() >= 2 && want.substr(want.size() - 2) == "\n\n")
-            want.pop_back();
     }
     listing.finish();
     EXPECT_EQ(out.str(), want);

@@ -19,6 +19,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     lexer_test.cpp
     listing_test.cpp
     pass1_test.cpp
+    pass2_test.cpp
     pass_test.cpp
     pass5_test.cpp
     pass6_test.cpp

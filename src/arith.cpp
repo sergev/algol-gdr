@@ -208,7 +208,7 @@ void Arith::add(Word val, bool negate_acc, bool negate_val)
     r.mantissa = a1.mantissa + a2.mantissa;
     if (r.is_denormal()) {
         round_flag = round_flag || (r.mantissa & 1);
-        mr = (mr >> 1) | ((r.mantissa & 1) << 39);
+        mr         = (mr >> 1) | ((r.mantissa & 1) << 39);
         r.normalize_to_the_right();
     }
     normalize_and_round({ r.mantissa, r.exponent }, mr, round_flag);
@@ -303,6 +303,18 @@ void Arith::add_exponent(int n)
 {
     ME a(acc);
     a.exponent += n;
+    rmr = 0;
+    normalize_and_round({ a.mantissa, a.exponent }, 0, false);
+}
+
+void Arith::change_sign(bool negate)
+{
+    ME a(acc);
+    if (negate) {
+        a.negate();
+        if (a.is_denormal())
+            a.normalize_to_the_right();
+    }
     rmr = 0;
     normalize_and_round({ a.mantissa, a.exponent }, 0, false);
 }

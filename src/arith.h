@@ -39,6 +39,7 @@ public:
     void mul(Word x);                            // A*X
     void div(Word x);                            // A/X
     void add_exponent(int n);                    // E+N, E-N
+    void change_sign(bool negate);               // AVX
 
 private:
     struct Value {

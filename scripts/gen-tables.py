@@ -100,6 +100,15 @@ def main():
         p('};')
         p(f'const Table {name}{{ 0{lo:05o}, {name}_words }};')
     p()
+    p(f'// {BASE:05o}-{BASE + len(img) - 1:05o}: the whole overlay, for the translated passes')
+    p(f'const unsigned image_base = 0{BASE:05o};')
+    p('const Word image[] = {')
+    for a in range(BASE, BASE + len(img), 4):
+        ws = ', '.join(f'0{at(b):016o}' for b in range(a, min(a + 4, BASE + len(img))))
+        p(f'    {ws}, // {a:05o}')
+    p('};')
+    p('const size_t image_size = std::size(image);')
+    p()
     p('} // namespace tables')
 
 

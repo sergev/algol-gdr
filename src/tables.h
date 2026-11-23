@@ -33,6 +33,11 @@ struct InitWord {
     Word value{};
 };
 
+// The whole overlay ALGOL, from image_base.
+extern const unsigned image_base;
+extern const Word image[];
+extern const size_t image_size;
+
 extern const InitWord workspace_init[];
 extern const size_t workspace_init_size;
 

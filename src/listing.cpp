@@ -88,6 +88,11 @@ void Listing::print(const std::string &text, unsigned indent)
     row(std::string(indent, ' ') + join(cols, 0, cols.size()));
 }
 
+void Listing::blank()
+{
+    row("");
+}
+
 void Listing::row(const std::string &cell)
 {
     if (one_column_) {

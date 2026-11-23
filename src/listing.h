@@ -40,7 +40,8 @@ public:
     }
 
     void print(const std::string &text, unsigned indent = 0); // AG01644
-    void blank() { row(""); }                                 // AG01713
+    void blank();                                             // AG01713
+    void row(const std::string &cell);                        // ASMPRINT: one row
     void finish();                                            // G44504: the last page
 
 private:
@@ -50,7 +51,6 @@ private:
     std::vector<std::string> rows_; // the page
     unsigned pages_{};
 
-    void row(const std::string &cell);
     void print_page();
     unsigned rows_per_column() const { return pages_ ? 66 : 65; }
 };
