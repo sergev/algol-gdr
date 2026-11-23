@@ -76,6 +76,12 @@ constexpr unsigned REL_MIXED    = 020400; // by relation code: the code for an i
 constexpr unsigned NUMERIC      = 020317; // by type: nonzero for real and integer
 constexpr unsigned ONE          = 01632;  // the slot of the constant 1
 constexpr unsigned IF_TEXT      = 022160; // 'IF'
+constexpr unsigned FOR_TEXT     = 022120; // 'FOR'
+constexpr unsigned ELEMENTS     = 02024;  // the elements of the FOR list
+constexpr unsigned STEP_KIND    = 02023;  // the last item of a STEP element: 0137, 0140, 034
+constexpr unsigned FOR_ELEMENT  = 021466; // *2243B: through M11
+constexpr unsigned AFTER_STEP   = 021600; // *2355B
+constexpr unsigned EMIT_ITEM    = 017363; // *0140B: the item read, through M13
 constexpr unsigned ASSIGN_TEXT  = 022110; // ':='
 constexpr unsigned LEFT_PART    = 017702; // *0457B
 constexpr unsigned AFTER_LEFT   = 017720; // *0475B
@@ -92,12 +98,14 @@ constexpr Word HEADER         = 0'4000'0000'0000'0000; // D-list: a block header
 constexpr Word DESCRIPTOR     = 0'2000'0000'0000'0000;
 constexpr Word BIT41          = 0'0020'0000'0000'0000;
 constexpr Word BIT48          = 0'4000'0000'0000'0000;
+constexpr unsigned BIT48_WORD = 021667; // a word with bit 48
 constexpr Word BIT39          = 0'0000'4000'0000'0000;
 constexpr Word PARAMS         = 0'0000'0000'0370'0000; // number of parameters
 constexpr Word VARIABLE       = 020000;                // TYPES: the item can be a left part
 constexpr Word ASSIGNED       = 0'0004'0000'0000'0000; // a formal by name assigned to
 constexpr Word NOT_ASSIGNABLE = 0'0010'0000'0000'0000;
 constexpr Word RESULT_SET     = 0200000; // in a function's word after it: assigned
+constexpr Word MANTISSA       = 0'0017'7777'7777'7777;
 constexpr Word IN_COMMON_CLR  = 0'7770'0777'7777'7777;
 constexpr Word IN_COMMON      = 0'0001'0000'0000'0000;
 constexpr Word DIMENSIONS     = 0'0000'0000'0070'0000;
@@ -227,6 +235,20 @@ unsigned kind_index(Word d)
     return ((d >> 41) & 030) | ((d >> 35) & 07);
 }
 
+// *0162B: M5 = the type, M6 = the kind of the descriptor at M4. Returns through M8.
+unsigned descriptor_types(Machine &m)
+{
+    Word d = m.mem[m.M[4]];
+    m.set_m(14, unsigned(d >> 40) & 017);
+    m.set_m(5, unsigned(m.mem[TYPES + m.M[14]] >> 4) & 7);
+    m.set_m(14, kind_index(d));
+    m.acc = m.mem[TYPES + m.M[14]] & 017;
+    m.set_m(6, unsigned(m.acc));
+    m.rmr = 0;
+    m.set_logical();
+    return m.M[8];
+}
+
 //
 // *0154B: the identifier of slot M3. M4 = its descriptor, M5 = its type,
 // M6 = its kind (TYPES). An undeclared one is reported once (its slot gets
@@ -258,15 +280,7 @@ unsigned lookup(Machine &m)
         if (m.acc)
             return illegal_use(m);
     }
-    Word d = m.mem[m.M[4]];
-    m.set_m(14, unsigned(d >> 40) & 017);
-    m.set_m(5, unsigned(m.mem[TYPES + m.M[14]] >> 4) & 7);
-    m.set_m(14, kind_index(d));
-    m.acc = m.mem[TYPES + m.M[14]] & 017;
-    m.set_m(6, unsigned(m.acc));
-    m.rmr = 0;
-    m.set_logical();
-    return m.M[8];
+    return descriptor_types(m);
 }
 
 //
@@ -1577,6 +1591,309 @@ unsigned then_item(Machine &m)
     return condition(m);
 }
 
+//
+// *2243B: an element of a FOR list (its last item read), against the
+// control variable's type at [M15-1]. A variable of that type (017), a
+// formal by name (022, M12 = 0135) or a constant of that type (023) is
+// written as is; else the expression (M12 = 0136) with a conversion, TYPE
+// ERROR 'FOR' if none. Returns through M11, the next item read.
+//
+unsigned for_element(Machine &m)
+{
+    auto type = [&] { return m.mem[(m.M[Machine::SP] - 1) & 077777]; };
+    auto read = [&] {
+        m.call(READ, 13, m.M[11]);
+        return m.M[11];
+    };
+    auto same_constant = [&] {
+        m.acc = m.M[3];
+        m.set_m(14, 023);
+        m.set_m(12, 0);
+        m.call(EMIT_SHIFTED, 13, 021474);
+        return read();
+    };
+    if (!m.M[1]) {
+        m.set_m(13, 021467);
+        lookup(m);
+        bool ok = false;
+        if (!m.M[6]) {
+            m.acc = type();
+            m.set_m(13, 021471);
+            type_pair(m);
+            if (!m.M[14]) {
+                m.set_m(12, 0);
+                m.set_m(14, 017);
+                ok = true;
+            }
+        } else {
+            m.set_m(6, m.M[6] - 5);
+            if (!m.M[6]) {
+                m.acc = type();
+                m.set_m(13, 021477);
+                type_pair(m);
+                if (!m.M[14]) {
+                    m.set_m(12, 0135);
+                    m.set_m(14, 022);
+                    ok = true;
+                }
+            }
+        }
+        if (ok) {
+            m.call(EMIT_M4, 13, 021474);
+            return read();
+        }
+    } else {
+        m.set_m(14, m.M[1] - 024);
+        if (!m.M[14]) {
+            m.acc = type() ^ 2;
+            if (!m.acc)
+                return same_constant();
+        } else {
+            m.set_m(14, m.M[14] + 1);
+            if (!m.M[14]) {
+                m.acc = type() ^ 1;
+                if (!m.acc)
+                    return same_constant();
+            }
+        }
+    }
+    m.call(PARSE_READ, 12, 021513);
+    m.set_m(12, 0136);
+    m.acc = type();
+    m.set_m(13, 021515);
+    type_pair(m);
+    switch (m.M[14]) {
+    case 0:
+        return m.M[11];
+    case 1:
+        m.set_m(14, 064);
+        break;
+    case 2:
+        m.set_m(14, 063);
+        break;
+    case 3:
+        m.set_m(8, m.M[11]);
+        m.acc = m.mem[FOR_TEXT];
+        return type_error(m);
+    default:
+        return 021516 + m.M[14];
+    }
+    m.call(EMIT_M14, 13, m.M[11]);
+    return m.M[11];
+}
+
+// *2356B: one element more.
+unsigned count_element(Machine &m)
+{
+    m.acc = m.mem[ELEMENTS];
+    m.arx(7, 02646);
+    m.mem[ELEMENTS] = m.acc;
+    return DISPATCH;
+}
+
+// Code 052, end of a FOR statement (read first): its block becomes BLOCK.
+unsigned for_end_item(Machine &m)
+{
+    m.push(m.mem[BLOCK]);
+    m.acc        = m.M[3];
+    m.mem[BLOCK] = m.acc;
+    m.set_m(12, 017603);
+    open_scope_at(m);
+    m.call(EMIT_ITEM, 13, 017604);
+    m.set_m(13, AFTER_END);
+    return READ;
+}
+
+// Code 033, DO: the control variable (its descriptor and type pushed) must be a number.
+unsigned do_item(Machine &m)
+{
+    m.call(EMIT_ITEM, 13, 021525);
+    m.set_m(13, 021526);
+    lookup(m);
+    m.call(READ, 13, 021527);
+    m.push(m.M[4]);
+    m.push(m.M[5]);
+    m.mem[ELEMENTS] = 0;
+    m.acc           = m.mem[NUMERIC + m.M[5]];
+    m.set_logical();
+    if (m.acc)
+        return DISPATCH;
+    m.set_m(8, DISPATCH);
+    m.acc = m.mem[FOR_TEXT];
+    return type_error(m);
+}
+
+// Code 056: a plain element.
+unsigned plain_item(Machine &m)
+{
+    m.call(READ, 13, 021535);
+    m.set_m(11, 021536);
+    for_element(m);
+    m.set_m(14, 056);
+    m.call(EMIT_M14, 13, 021601);
+    return count_element(m);
+}
+
+// Code 035: e WHILE b.
+unsigned while_item(Machine &m)
+{
+    m.call(PARSE, 12, 021541);
+    m.set_m(5, m.M[5] - 3);
+    m.set_m(8, 021543);
+    if (m.M[5]) {
+        m.acc = m.mem[FOR_TEXT];
+        type_error(m);
+    }
+    m.set_m(11, 021544);
+    for_element(m);
+    m.set_m(14, 035);
+    m.call(EMIT_M14, 13, 021601);
+    return count_element(m);
+}
+
+//
+// Code 034: a STEP b UNTIL c, then the item STEP_KIND (0140 real, 034
+// integer). An integer constant step b with an integer constant start a is
+// 0137, with b interned without its exponent bits and a as 023.
+//
+unsigned step_item(Machine &m)
+{
+    auto at = [&](unsigned k) -> Word & { return m.mem[(m.M[Machine::SP] - k) & 077777]; };
+    m.call(READ, 13, 021547);
+    m.set_m(11, 021550);
+    for_element(m);
+    m.acc = m.M[12];
+    if (m.acc)
+        m.call(EMIT_A, 13, 021552);
+    m.acc            = m.mem[021614 + (at(1) & 077777)];
+    m.mem[STEP_KIND] = m.acc;
+    m.acc            = at(1) ^ 2;
+    bool general     = m.acc;
+    if (!general) {
+        m.set_m(1, m.M[1] - 024);
+        if (m.M[1]) {
+            m.set_m(1, m.M[1] + 024);
+            general = true;
+        }
+    }
+    if (general) {
+        m.set_m(11, 021605);
+        for_element(m);
+        m.acc = m.M[12];
+        if (m.acc)
+            m.call(EMIT_A, 13, 021607);
+        m.set_m(11, AFTER_STEP);
+        for_element(m);
+    } else {
+        m.set_m(12, m.M[3]);
+        m.call(READ, 13, 021557);
+        m.set_m(1, m.M[1] - 024);
+        if (m.M[1]) {
+            m.set_m(1, m.M[1] + 024);
+            m.acc = (Word(m.M[12]) << 12) ^ 023;
+            m.set_m(14, 023);
+            m.set_logical();
+            m.call(EMIT_A, 13, FOR_ELEMENT);
+            m.set_m(11, AFTER_STEP);
+            for_element(m);
+        } else {
+            m.set_m(14, 0137);
+            m.acc            = 0137;
+            m.mem[STEP_KIND] = m.acc;
+            m.set_m(14, unsigned(m.mem[FREE_SAVED]));
+            m.acc            = m.mem[NAMES + m.M[12]] & MANTISSA;
+            m.mem[BLOCK_END] = m.acc;
+            for (;;) {
+                m.acc = m.mem[(NAMES + m.M[14]) & 077777];
+                if (!m.acc) {
+                    m.mem[(NAMES + m.M[14]) & 077777] = m.mem[BLOCK_END];
+                    m.acc                             = m.M[14];
+                    m.arx(7, 02717);
+                    m.mem[FREE_CONST] = m.acc;
+                    break;
+                }
+                if (m.acc == m.mem[BLOCK_END])
+                    break;
+                m.set_m(14, m.M[14] - 1);
+            }
+            m.acc = (Word(m.M[14]) << 12) ^ 023;
+            m.set_m(13, 023);
+            m.set_logical();
+            m.call(EMIT_A, 13, 021575);
+            m.acc = m.mem[02006];
+            m.arx(7, 02717);
+            m.call(EMIT_A, 13, 021577);
+            m.call(READ, 13, AFTER_STEP);
+        }
+    }
+    m.acc = m.mem[STEP_KIND];
+    m.call(EMIT_A, 13, 021601);
+    return count_element(m);
+}
+
+//
+// Code 032, the control variable: a FOR with several elements gets bit 48
+// in its block header. A simple variable (032) or a formal by name (0141,
+// marked assigned) of a number type; else ILLEGAL USE.
+//
+unsigned control_item(Machine &m)
+{
+    m.acc       = m.mem[ELEMENTS] ^ 1;
+    unsigned at = 0;
+    if (m.acc) {
+        at    = m.mem[BLOCK] & 077777;
+        m.acc = m.mem[BIT48_WORD] | m.mem[at];
+    }
+    m.stx(0, at);
+    m.xta(Machine::SP, 0);
+    m.set_m(4, unsigned(m.acc));
+    m.set_m(8, 021625);
+    descriptor_types(m);
+    m.set_m(14, 032);
+    if (m.M[6]) {
+        m.set_m(6, m.M[6] - 5);
+        m.set_m(8, 021627);
+        if (m.M[6])
+            return illegal_use(m);
+        m.acc = m.mem[m.M[4]] & NOT_ASSIGNABLE;
+        if (m.acc)
+            return illegal_use(m);
+        m.acc         = m.mem[m.M[4]] | ASSIGNED;
+        m.mem[m.M[4]] = m.acc;
+        m.set_m(14, 0141);
+    }
+    m.call(EMIT_M4, 13, 021627);
+    m.mem[REPORTED] = 0;
+    m.acc           = 0;
+    m.set_m(13, DISPATCH);
+    return READ;
+}
+
+//
+// *0344B: close the scope of BLOCK, write the item BLOCK<<12 ^ M1, BLOCK
+// back from the stack; read on and return through M10.
+//
+unsigned close_block(Machine &m)
+{
+    m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+    m.set_m(12, 017570);
+    close_scope(m);
+    m.acc = m.mem[BLOCK];
+    m.set_m(14, m.M[1]);
+    m.call(EMIT_SHIFTED, 13, 017572);
+    m.xta(Machine::SP, 0);
+    m.mem[BLOCK] = m.acc;
+    m.set_m(13, m.M[10]);
+    return READ;
+}
+
+// Code 055, the start of a FOR statement.
+unsigned for_start_item(Machine &m)
+{
+    m.set_m(10, DISPATCH);
+    return close_block(m);
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -1773,6 +2090,15 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[017737] = left_count;
     pass.m.natives[021366] = cond_expr_item;
     pass.m.natives[021461] = then_item;
+    pass.m.natives[021466] = for_element;
+    pass.m.natives[017601] = for_end_item;
+    pass.m.natives[021524] = do_item;
+    pass.m.natives[021534] = plain_item;
+    pass.m.natives[021540] = while_item;
+    pass.m.natives[021546] = step_item;
+    pass.m.natives[021617] = control_item;
+    pass.m.natives[017567] = close_block;
+    pass.m.natives[017543] = for_start_item;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
