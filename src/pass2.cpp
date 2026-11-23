@@ -50,6 +50,19 @@ constexpr unsigned TYPES        = 021720; // per index: type in bits 7-5, kind i
 constexpr unsigned UNDECLARED   = 021676; // formats
 constexpr unsigned ILLEGAL_USE  = 021704;
 constexpr unsigned TWICE        = 021712;
+constexpr unsigned TYPE_ERROR   = 017655; // format: TYPE ERROR IN CONNECTION WITH ...
+constexpr unsigned GOTO_TEXT    = 022141; // its argument
+constexpr unsigned TYPE_PAIRS   = 017667; // 6 rows by type: 3-bit fields, the shift in the exponent
+constexpr unsigned READ         = 017352; // *0127B: the previous item into M1-M3, through M13
+constexpr unsigned PARSE        = 017445; // *0222B: a subtree, through M12
+constexpr unsigned DISPATCH     = 017450; // *0225B: the handler of the item read
+constexpr unsigned RETURN_SUB   = 017451; // *0226B: return from a subtree
+constexpr unsigned EMIT_M4      = 017365; // *0142B: item M4<<12 ^ M14, through M13
+constexpr unsigned NEXT_RETURN  = 017625; // *0402B: read the next item, return from the subtree
+constexpr unsigned PARSE_READ   = 017446; // *0223B: the subtree of the item read, through M12
+constexpr unsigned EMIT_A       = 017364; // *0141B: item A, through M13
+constexpr unsigned OPS          = 020142; // + - * /: real code <<24, integer code <<30, text
+constexpr unsigned STRING_PLUS  = 022137; // the item of + on strings
 constexpr unsigned NOT_DECLARED = 017311; // text, name at +010
 constexpr unsigned WRONG_ORDER  = 017322; // text, name at +010
 constexpr unsigned INCORRECT    = 022051; // text up to 022056
@@ -60,6 +73,8 @@ constexpr Word HEADER        = 0'4000'0000'0000'0000; // D-list: a block header
 constexpr Word DESCRIPTOR    = 0'2000'0000'0000'0000;
 constexpr Word BIT41         = 0'0020'0000'0000'0000;
 constexpr Word BIT48         = 0'4000'0000'0000'0000;
+constexpr Word BIT39         = 0'0000'4000'0000'0000;
+constexpr Word PARAMS        = 0'0000'0000'0370'0000; // number of parameters
 constexpr Word IN_COMMON_CLR = 0'7770'0777'7777'7777;
 constexpr Word IN_COMMON     = 0'0001'0000'0000'0000;
 constexpr Word DIMENSIONS    = 0'0000'0000'0070'0000;
@@ -370,6 +385,334 @@ unsigned begin_item(Machine &m)
     return MAIN_LOOP;
 }
 
+// *0402B: read the next item and return from the subtree.
+unsigned next_and_return(Machine &m)
+{
+    m.set_m(13, RETURN_SUB);
+    return READ;
+}
+
+//
+// *0377B: write the item A<<12 ^ M14. An operand alone as a statement (the
+// subtree called from the statement loop) is an illegal use.
+//
+unsigned emit_operand(Machine &m)
+{
+    m.call(EMIT_SHIFTED, 13, 017623);
+    m.rmr = m.mem[(m.M[Machine::SP] - 2) & 077777];
+    m.acc = m.rmr ^ AFTER_END;
+    m.rmr = m.acc;
+    m.set_logical();
+    if (!m.acc)
+        return illegal_use(m);
+    return next_and_return(m);
+}
+
+//
+// *0416B: a procedure without parameters used as an operand: with parameters
+// it is an illegal use (returns through M8); else bit 39 of its descriptor
+// is flipped unless bit 48 is set. Returns through M13.
+//
+unsigned proc_operand(Machine &m)
+{
+    m.acc = m.mem[m.M[4]] & PARAMS;
+    m.rmr = 0;
+    m.set_logical();
+    if (m.acc)
+        return illegal_use(m);
+    m.acc = m.mem[m.M[4]];
+    m.rau = 013;
+    m.rmr = m.acc;
+    if (m.acc & BIT48)
+        return m.M[13];
+    m.acc ^= BIT39;
+    m.set_logical();
+    m.mem[m.M[4]] = m.acc;
+    return m.M[13];
+}
+
+//
+// Code 000, an identifier: looked up, then by its kind (M6) the item for its
+// value (017), a call (021, 022, 0107), a label (024: bit 48 of the
+// descriptor marks it used outside the procedure at DLIST_TOP); arrays and
+// procedures with parameters are illegal here.
+//
+unsigned identifier(Machine &m)
+{
+    m.set_m(13, 017606);
+    lookup(m);
+    if (!m.M[4])
+        return next_and_return(m);
+    m.set_m(8, NEXT_RETURN);
+    bool label = false;
+    switch (m.M[6]) {
+    case 0:
+    case 5:
+        if (m.M[5]) {
+            m.set_m(14, m.M[6] ? 022 : 017);
+            m.acc = m.M[4];
+            return emit_operand(m);
+        }
+        label = true;
+        break;
+    case 1:
+    case 2:
+        return illegal_use(m);
+    case 3:
+    case 4:
+    case 6:
+    case 7:
+        if (m.M[6] == 4 || m.M[6] == 6) {
+            unsigned ret = m.M[6] == 4 ? 017634 : 017617;
+            m.set_m(13, ret);
+            unsigned pc = proc_operand(m);
+            if (pc != ret)
+                return pc;
+        }
+        if (m.M[6] <= 4) {
+            m.set_m(14, 021);
+            m.acc = m.mem[m.M[4]];
+            m.rau = 013;
+            m.rmr = m.acc;
+            if (m.acc & BIT48)
+                m.set_m(14, 0107);
+        } else {
+            m.set_m(14, 022);
+        }
+        m.set_m(13, NEXT_RETURN);
+        return EMIT_M4;
+    default:
+        return 017610 + m.M[6];
+    }
+    if (label) {
+        m.acc = m.mem[DLIST_TOP];
+        m.set_m(13, 017627);
+        inside(m);
+        m.rmr = m.acc;
+        if (!m.acc) {
+            m.acc         = m.mem[m.M[4]] | BIT48;
+            m.mem[m.M[4]] = m.acc;
+        }
+        m.set_m(14, 024);
+        m.acc = m.M[4];
+    }
+    return emit_operand(m);
+}
+
+// *0550B: a constant of type M5 in slot M3: item 023.
+unsigned constant(Machine &m)
+{
+    m.set_m(14, 023);
+    m.acc = m.M[3];
+    m.set_logical();
+    return emit_operand(m);
+}
+
+// Codes 076, 077: TRUE, FALSE are the constants of slots 01625, 01624.
+unsigned true_item(Machine &m)
+{
+    m.set_m(3, 01625);
+    m.set_m(5, 3);
+    return constant(m);
+}
+
+unsigned false_item(Machine &m)
+{
+    m.set_m(3, 01624);
+    m.set_m(5, 3);
+    return constant(m);
+}
+
+// Codes 023, 024, 0105: real, integer, octal constants.
+unsigned real_item(Machine &m)
+{
+    m.set_m(5, 1);
+    return constant(m);
+}
+
+unsigned integer_item(Machine &m)
+{
+    m.set_m(5, 2);
+    return constant(m);
+}
+
+unsigned octal_item(Machine &m)
+{
+    m.set_m(5, 5);
+    return constant(m);
+}
+
+// Code 025: a string, item 070.
+unsigned string_item(Machine &m)
+{
+    m.set_m(5, 4);
+    m.set_m(14, 070);
+    m.acc = m.M[3];
+    m.set_logical();
+    return emit_operand(m);
+}
+
+//
+// *0430B: TYPE ERROR IN CONNECTION WITH the text at ARGS, unless reported in
+// this subtree. Returns through M8.
+//
+unsigned type_error_args(Machine &m)
+{
+    m.set_m(13, TYPE_ERROR);
+    m.acc = m.mem[REPORTED];
+    m.rmr = m.acc;
+    m.set_logical();
+    if (m.acc)
+        return m.M[8];
+    return message(m);
+}
+
+// *0427B: the same with the text in A; FLGEX* gets it too.
+unsigned type_error(Machine &m)
+{
+    m.mem[ARGS]  = m.acc;
+    m.mem[FLGEX] = m.acc;
+    return type_error_args(m);
+}
+
+//
+// *0440B: how types M5 and A combine (TYPE_PAIRS): M14 = 0 the same, 1 or 2
+// an integer and a real, 3 an error. Returns through M13.
+//
+unsigned type_pair(Machine &m)
+{
+    m.set_m(14, unsigned(m.acc));
+    m.acc = m.mem[(TYPE_PAIRS + m.M[5]) & 077777];
+    m.asx(14, TYPE_PAIRS);
+    m.acc &= 7;
+    m.rmr = 0;
+    m.set_m(14, unsigned(m.acc));
+    return m.M[13];
+}
+
+//
+// *0665B: the left operand of + - * / (the right one's type pushed, over the
+// operator's word). Both of type 0 or not alike is a TYPE ERROR; with an
+// integer and a real (/ on two integers too) the left one gets 064 and the
+// result is real; strings only add. The item: the operator's code for the
+// type.
+//
+unsigned arith_left(Machine &m)
+{
+    m.push(m.M[5]);
+    m.call(PARSE_READ, 12, 020112);
+    m.xta(Machine::SP, 0);
+    m.set_m(13, 020113);
+    type_pair(m);
+    unsigned left = m.M[5];
+    auto op_code  = [&](int shift, unsigned type) {
+        m.xta(Machine::SP, 0);
+        m.set_m(5, type);
+        m.acc = (m.acc >> shift) & 077;
+        m.rmr = 0;
+        m.set_logical();
+        m.set_m(13, RETURN_SUB);
+        return EMIT_A;
+    };
+    auto error = [&] {
+        m.wtc(Machine::SP, 0);
+        m.xta(0, 0);
+        m.set_m(8, RETURN_SUB);
+        return type_error(m);
+    };
+    switch (m.M[14]) {
+    case 0:
+        if (!left)
+            return error();
+        if (left == 1)
+            break;
+        m.set_m(5, left - 2);
+        if (left == 2)
+            return op_code(30, 2);
+        m.set_m(5, left - 4);
+        if (left != 4 || m.mem[(m.M[Machine::SP] - 1) & 077777] != m.mem[OPS])
+            return error();
+        m.acc = m.mem[STRING_PLUS];
+        m.set_m(13, RETURN_SUB);
+        m.set_m(5, 4);
+        m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+        return EMIT_A;
+    case 1:
+        m.acc = m.mem[(m.M[Machine::SP] - 1) & 077777] ^ m.mem[OPS + 3];
+        if (!m.acc) {
+            m.acc = m.M[5] ^ 2;
+            if (!m.acc) {
+                m.set_m(14, 064);
+                m.call(EMIT_M14, 13, 020126);
+            }
+        }
+        break;
+    case 2:
+        break;
+    case 3:
+        return error();
+    default:
+        return 020114 + m.M[14];
+    }
+    return op_code(24, 1);
+}
+
+// Codes 013-015: + - *.
+unsigned arith_op(Machine &m, unsigned op)
+{
+    m.acc = m.mem[op];
+    m.push(m.acc);
+    m.call(PARSE, 12, 020110);
+    return arith_left(m);
+}
+
+unsigned plus_item(Machine &m)
+{
+    return arith_op(m, OPS);
+}
+
+unsigned minus_item(Machine &m)
+{
+    return arith_op(m, OPS + 1);
+}
+
+unsigned times_item(Machine &m)
+{
+    return arith_op(m, OPS + 2);
+}
+
+// Code 016, /: an integer right operand gets 064.
+unsigned divide_item(Machine &m)
+{
+    m.acc = m.mem[OPS + 3];
+    m.push(m.acc);
+    m.call(PARSE, 12, 020156);
+    m.acc = m.M[5] ^ 2;
+    m.set_logical();
+    if (m.acc)
+        return arith_left(m);
+    m.set_m(14, 064);
+    m.set_m(5, 1);
+    m.call(EMIT_M14, 13, 020110);
+    return arith_left(m);
+}
+
+// Code 026, GOTO: the designational expression after it must be a label.
+unsigned goto_item(Machine &m)
+{
+    m.call(PARSE, 12, 017647);
+    if (!m.M[5])
+        return DISPATCH;
+    m.acc = m.mem[REPORTED];
+    m.rmr = m.acc;
+    m.set_logical();
+    if (m.acc)
+        return DISPATCH;
+    m.set_m(8, DISPATCH);
+    m.acc = m.mem[GOTO_TEXT];
+    return type_error(m);
+}
+
 //
 // *0312B, at a statement marker: the position text "line/ s" from M3 and M2,
 // then the marker is written. Goes on at the main loop.
@@ -513,6 +856,21 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[017475] = close_scope;
     pass.m.natives[017511] = end_item;
     pass.m.natives[017523] = begin_item;
+    pass.m.natives[017605] = identifier;
+    pass.m.natives[017646] = goto_item;
+    pass.m.natives[017652] = type_error;
+    pass.m.natives[017653] = type_error_args;
+    pass.m.natives[017663] = type_pair;
+    pass.m.natives[017765] = true_item;
+    pass.m.natives[017766] = false_item;
+    pass.m.natives[017770] = real_item;
+    pass.m.natives[017771] = octal_item;
+    pass.m.natives[017772] = integer_item;
+    pass.m.natives[017775] = string_item;
+    pass.m.natives[020106] = plus_item;
+    pass.m.natives[020152] = minus_item;
+    pass.m.natives[020153] = times_item;
+    pass.m.natives[020154] = divide_item;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
