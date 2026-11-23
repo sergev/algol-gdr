@@ -3,6 +3,7 @@
 #include <array>
 #include <functional>
 #include <map>
+#include <string_view>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -12,6 +13,8 @@
 #include "tables.h"
 
 namespace {
+
+using namespace std::string_view_literals;
 
 // Cells of the workspace.
 constexpr unsigned FREE_CONST  = 02003; // the lowest constant slot
@@ -48,34 +51,6 @@ constexpr unsigned BASE      = 017223;
 
 constexpr unsigned TYPES       = 021720; // per code: handler (UJ) high; type, kind bits low
 constexpr unsigned TYPE_PAIRS  = 017667; // 6 rows by type: 3-bit fields, the shift in the exponent
-constexpr unsigned UNDECLARED  = 021676; // formats
-constexpr unsigned ILLEGAL_USE = 021704;
-constexpr unsigned TWICE       = 021712;
-constexpr unsigned TYPE_ERROR  = 017655; // TYPE ERROR IN CONNECTION WITH ...
-constexpr unsigned NO_ASSIGNMENT     = 017563;
-constexpr unsigned BAD_LEFT          = 017757; // ILLEGAL LEFT PART OR INPUT ELEMENT
-constexpr unsigned IO_ERROR          = 020437; // ILLEGAL ARGUMENT OF I/O STATEMENT
-constexpr unsigned BAD_INPUT         = 020502; // ILLEGAL INPUT OF
-constexpr unsigned NO_CORRESPONDENCE = 020743;
-constexpr unsigned LABEL_ARG         = 021154; // LABEL AS ARGUMENT OF NON-ALGOL CALL
-constexpr unsigned BAD_VALUE         = 021232; // ILLEGAL VALUE PARAMETER
-constexpr unsigned BAD_LENGTH        = 021267; // ILLEGAL ARGUMENT OF LENGTH
-constexpr unsigned BAD_PRINT         = 021306; // ILLEGAL ARGUMENT OF PRINT
-constexpr unsigned NOT_DECLARED      = 017311; // texts, the name at +010
-constexpr unsigned WRONG_ORDER       = 017322;
-constexpr unsigned INCORRECT         = 022051; // text up to 022056
-constexpr unsigned SCRATCH           = 017333;
-constexpr unsigned POSITION_SRC      = 021670;
-constexpr unsigned GOTO_TEXT         = 022141; // arguments of TYPE ERROR
-constexpr unsigned INDEX_TEXT        = 022121;
-constexpr unsigned POWER_TEXT        = 022065;
-constexpr unsigned BOOL_TEXT         = 020352; // 2 words
-constexpr unsigned REL_TEXT          = 020422; // 2 words
-constexpr unsigned IF_TEXT           = 022160;
-constexpr unsigned FOR_TEXT          = 022120;
-constexpr unsigned SWITCH_TEXT       = 022114;
-constexpr unsigned ASSIGN_TEXT       = 022110;
-constexpr unsigned OPS_TEXT          = 020146; // '+', '-'
 constexpr unsigned OPS               = 020142; // + - * /: real code <<24, integer code <<30, text
 constexpr unsigned STRING_PLUS       = 022137; // the item of + on strings
 constexpr unsigned REL_MIXED      = 020400; // by relation code: the code for an integer and a real
@@ -88,12 +63,79 @@ constexpr unsigned IO_ITEMS       = 022126; // items of I/O statements: +0, +2, 
 constexpr unsigned IO_073         = 022145;
 constexpr unsigned IO_101         = 022112;
 constexpr unsigned CORRESPONDENCE = 021075; // by actual kind: 4-bit fields by formal kind
-constexpr unsigned BY_KIND        = 020744; // texts of actuals that are not names, by kind
 constexpr unsigned BIT48_WORD     = 021667;
 constexpr unsigned ONE            = 01632; // the slot of the constant 1
 constexpr unsigned TRUE_SLOT      = 01625;
 constexpr unsigned FALSE_SLOT     = 01624;
 constexpr unsigned STD_PROC       = 05776; // the standard procedure with an expression argument
+
+// Message formats (G27733): ISO text, 0200+k inserts data word k.
+using Format = std::vector<Word>;
+
+Format iso_format(std::string_view text)
+{
+    return tables::iso_words(text);
+}
+
+const Format UNDECLARED        = iso_format("IDENTIFIER ′\200′ IS NOT DECLARED\202");
+const Format ILLEGAL_USE       = iso_format("ILLEGAL USE OF IDENTIFIER ′\200′\202");
+const Format TWICE             = iso_format("TWICE DECLARED IDENTIFIER ′\200′\202");
+const Format TYPE_ERROR        = iso_format("TYPE ERROR IN CONNECTION WITH \200\202");
+const Format NO_ASSIGNMENT     = iso_format("NO ASSIGNMENT TO ′\200′\202");
+const Format BAD_LEFT          = iso_format("ILLEGAL LEFT PART OR INPUT ELEMENT\202");
+const Format IO_ERROR          = iso_format("ILLEGAL ARGUMENT OF I/O STATEMENT\202");
+const Format BAD_INPUT         = iso_format("ILLEGAL INPUT OF ′\200′\202");
+const Format NO_CORRESPONDENCE = iso_format("NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′\210′ AND ′\200′\202");
+const Format LABEL_ARG         = iso_format("LABEL AS ARGUMENT OF NON-ALGOL CALL \202");
+const Format BAD_VALUE         = iso_format("ILLEGAL VALUE PARAMETER ′\200′\202");
+const Format BAD_LENGTH        = iso_format("ILLEGAL ARGUMENT OF LENGTH\202");
+const Format BAD_PRINT         = iso_format("ILLEGAL ARGUMENT OF PRINT\202");
+const Format INCORRECT         = iso_format(" * * INCORRECT ALGOL PROGRAM * * ");
+
+// The position of the next statement (copied to POSITION, 6 words): the
+// format, then the texts of the line and the statement number.
+const Format POSITION_TEXT = iso_format(". NEXT STATEMENT IS \206/\207\0PROGR\0END\0  "sv);
+
+// Messages of the 'COMMON' check: 8 words padded with blanks, then the
+// element's name.
+Format blank_padded(std::string_view text)
+{
+    Format w = iso_format(text);
+    w.resize(010);
+    for (Word &x : w)
+        for (int shift = 0; shift < 48; shift += 8)
+            if (!((x >> shift) & 0377))
+                x |= Word(' ') << shift;
+    return w;
+}
+
+const Format NOT_DECLARED = blank_padded("**HECOOTBETCTBИE B OПИCAHИЯX COMMON ЭЛ-TA");
+const Format WRONG_ORDER  = blank_padded("*****ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA");
+
+// Arguments of TYPE ERROR IN CONNECTION WITH (one word; two for some).
+const Word GOTO_TEXT      = tables::iso_word("GOTO\0 "sv);
+const Word INDEX_TEXT     = tables::iso_word("INDEX\0"sv);
+const Word POWER_TEXT     = tables::iso_word("′**′\0 "sv);
+const Word IF_TEXT        = tables::iso_word("′IF′\0 "sv);
+const Word FOR_TEXT       = tables::iso_word("′FOR′\0"sv);
+const Word SWITCH_TEXT    = tables::iso_word("SWITCH");
+const Word ASSIGN_TEXT    = tables::iso_word("′:=′\0 "sv);
+const Format BOOL_TEXT    = iso_format("BOOLEAN OP\0 "sv);
+const Format REL_TEXT     = iso_format("RELATION\0   "sv);
+const Word OP_TEXT[]      = {
+    tables::iso_word("′+′\0  "sv),
+    tables::iso_word("′-′\0  "sv),
+    tables::iso_word("′*′\0  "sv),
+    tables::iso_word("′/′\0  "sv),
+};
+
+// The actual of NO ACTUAL-FORMAL CORRESPONDENCE that is not a name, by kind
+// 010-012 (two words).
+const Format ACTUAL_TEXT[] = {
+    iso_format("CONSTANT\0   "sv),
+    iso_format("SUBSCR.VAR.\0"sv),
+    iso_format("EXPRESSION\0 "sv),
+};
 
 // Addresses of the original: handlers by item code and continuations,
 // kept on the stack as return addresses.
@@ -320,11 +362,11 @@ private:
 
     // Messages.
     void print_words(const std::vector<Word> &w);
-    void format_line(unsigned format, unsigned data);
-    void common_message(unsigned text, Word element);
+    void format_line(const Format &format, unsigned data);
+    void common_message(const Format &text, Word element);
     Word after_message();
-    Word message(unsigned format);
-    Word message_name(unsigned format);
+    Word message(const Format &format);
+    Word message_name(const Format &format);
     Word illegal_use();
     Word type_error_args();
     Word type_error(Word text);
@@ -562,25 +604,25 @@ void Pass2::print_words(const std::vector<Word> &w)
 }
 
 //
-// G27733: print a line of the format at format, with the data at data:
-// bytes 0200+k insert the text of data word k (a format itself), 0 ends it.
+// G27733: print a line of the format with the data at data: bytes 0200+k
+// insert the text of data word k (a format itself), 0 ends it.
 //
-void Pass2::format_line(unsigned format, unsigned data)
+void Pass2::format_line(const Format &format, unsigned data)
 {
     std::vector<unsigned> chars;
-    std::function<void(unsigned)> expand = [&](unsigned a) {
-        for (;; a++)
+    std::function<void(const std::function<Word(unsigned)> &)> expand = [&](const auto &word) {
+        for (unsigned i = 0;; i++)
             for (int shift = 40; shift >= 0; shift -= 8) {
-                unsigned c = (mem(a) >> shift) & 0377;
+                unsigned c = (word(i) >> shift) & 0377;
                 if (!c)
                     return;
                 if (c & 0200)
-                    expand(data + c - 0200);
+                    expand([this, a = data + c - 0200](unsigned j) { return mem(a + j); });
                 else
                     chars.push_back(c);
             }
     };
-    expand(format);
+    expand([&](unsigned i) { return i < format.size() ? format[i] : 0; });
     std::vector<Word> w(chars.size() / 6 + 1);
     for (size_t i = 0; i < chars.size(); i++)
         w[i / 6] |= Word(chars[i]) << (40 - 8 * (i % 6));
@@ -588,13 +630,11 @@ void Pass2::format_line(unsigned format, unsigned data)
 }
 
 // A message of the 'COMMON' check: the text with the element's name.
-void Pass2::common_message(unsigned text, Word element)
+void Pass2::common_message(const Format &text, Word element)
 {
-    store(text + 010, element);
     flgex_ = cyclic_add(flgex_, 1);
-    std::vector<Word> w;
-    for (unsigned a = text; a <= text + 010; a++)
-        w.push_back(mem(a));
+    Format w = text;
+    w.push_back(element);
     print_words(w);
 }
 
@@ -614,14 +654,14 @@ Word Pass2::after_message()
 }
 
 // *0203B: the message of the format, with the data at ARGS.
-Word Pass2::message(unsigned format)
+Word Pass2::message(const Format &format)
 {
     format_line(format, ARGS);
     return after_message();
 }
 
 // *0175B: the message of the format about the name of slot operand_.
-Word Pass2::message_name(unsigned format)
+Word Pass2::message_name(const Format &format)
 {
     swap_out();
     mem(ARGS)     = saved_name(operand_);
@@ -793,8 +833,7 @@ unsigned Pass2::start()
             common_message(NOT_DECLARED, name_w);
             continue;
         }
-        mem(SCRATCH) = mem(unsigned(info >> 36)) & 07777;
-        if (mem(SCRATCH) != slot_of(info))
+        if ((mem(unsigned(info >> 36)) & 07777) != slot_of(info))
             common_message(WRONG_ORDER, name_w);
     }
 
@@ -803,9 +842,8 @@ unsigned Pass2::start()
         Word &d = mem(p);
         if (d & HEADER)
             continue;
-        mem(SCRATCH) = d & 077777;
         for (unsigned k = 0; mem(COMMON + 1 + k); k += 3) {
-            if (slot_of(mem(COMMON + 1 + k)) != mem(SCRATCH))
+            if (slot_of(mem(COMMON + 1 + k)) != (d & 077777))
                 continue;
             d = (d & IN_COMMON_CLR) | IN_COMMON;
             if (!(d & DIMENSIONS))
@@ -823,7 +861,7 @@ unsigned Pass2::start()
     store(operand_, DLIST_END);
     open_scope(operand_, DLIST_END);
     for (unsigned i = 0; i < 6; i++)
-        mem(POSITION + i) = mem(POSITION_SRC + i);
+        mem(POSITION + i) = POSITION_TEXT.at(i);
     emit_code_ = 075;
     emit_code();
     read();
@@ -849,7 +887,7 @@ unsigned Pass2::finish()
         } while (count_);
     }
     if (flgex_)
-        format_line(INCORRECT, INCORRECT + 5);
+        format_line(INCORRECT, 0);
     return addr(pop());
 }
 
@@ -1074,7 +1112,7 @@ void Pass2::index_type()
     case 3:
     case 4:
     case 5:
-        type_error(mem(INDEX_TEXT));
+        type_error(INDEX_TEXT);
         break;
     default:
         throw std::runtime_error("pass 2: type " + std::to_string(type_));
@@ -1235,7 +1273,7 @@ unsigned Pass2::power_item()
         return RETURN_SUB;
     };
     auto error = [&] {
-        type_error(mem(POWER_TEXT));
+        type_error(POWER_TEXT);
         return done();
     };
     if (code_ == 024) {
@@ -1324,8 +1362,8 @@ unsigned Pass2::power_item()
 unsigned Pass2::bool_error()
 {
     pop();
-    mem(ARGS)     = mem(BOOL_TEXT);
-    mem(ARGS + 1) = mem(BOOL_TEXT + 1);
+    mem(ARGS)     = BOOL_TEXT[0];
+    mem(ARGS + 1) = BOOL_TEXT[1];
     type_error_args();
     return RETURN_SUB;
 }
@@ -1445,7 +1483,7 @@ unsigned Pass2::uplus_item()
 {
     parse_sub(020425);
     if (!mem(NUMERIC + type_))
-        type_error(mem(OPS_TEXT));
+        type_error(OP_TEXT[0]);
     return RETURN_SUB;
 }
 
@@ -1454,7 +1492,7 @@ unsigned Pass2::uminus_item()
 {
     parse_sub(020431);
     if (!mem(NUMERIC + type_)) {
-        type_error(mem(OPS_TEXT + 1));
+        type_error(OP_TEXT[1]);
         return RETURN_SUB;
     }
     emit_code_ = type_ == 2 ? 026 : 047;
@@ -1570,7 +1608,7 @@ unsigned Pass2::left_part()
     top(2) = type_;
     if (top(1))
         return after_left();
-    type_error(mem(ASSIGN_TEXT));
+    type_error(ASSIGN_TEXT);
     return AFTER_LEFT;
 }
 
@@ -1582,7 +1620,7 @@ unsigned Pass2::assign_item()
     push(type_);
     push(type_);
     if (!type_) {
-        type_error(mem(ASSIGN_TEXT));
+        type_error(ASSIGN_TEXT);
         return LEFT_PART;
     }
     return left_part();
@@ -1595,8 +1633,8 @@ unsigned Pass2::assign_item()
 // *2221B: TYPE ERROR IN CONNECTION WITH RELATION.
 Word Pass2::relation_error()
 {
-    mem(ARGS + 1) = mem(REL_TEXT + 1);
-    return type_error(mem(REL_TEXT));
+    mem(ARGS + 1) = REL_TEXT[1];
+    return type_error(REL_TEXT[0]);
 }
 
 //
@@ -1667,7 +1705,7 @@ unsigned Pass2::condition(Word conversion)
         subtree(021420);
         type_ = (type_ - 3) & 077777;
         if (type_)
-            type_error(mem(IF_TEXT));
+            type_error(IF_TEXT);
         break;
     case 1:
     case 2:
@@ -1717,7 +1755,7 @@ unsigned Pass2::cond_expr_item()
         emit_code_ = 064;
         return condition(064);
     default:
-        type_error(mem(IF_TEXT));
+        type_error(IF_TEXT);
         break;
     }
     return condition(0);
@@ -1793,7 +1831,7 @@ unsigned Pass2::for_element()
         emit_code_ = 063;
         break;
     default:
-        type_error(mem(FOR_TEXT));
+        type_error(FOR_TEXT);
         return 0136;
     }
     emit_code();
@@ -1828,7 +1866,7 @@ unsigned Pass2::do_item()
     push(type_);
     mem(ELEMENTS) = 0;
     if (!mem(NUMERIC + type_))
-        type_error(mem(FOR_TEXT));
+        type_error(FOR_TEXT);
     return DISPATCH;
 }
 
@@ -1848,7 +1886,7 @@ unsigned Pass2::while_item()
     parse_sub(021541);
     type_ = (type_ - 3) & 077777;
     if (type_)
-        type_error(mem(FOR_TEXT));
+        type_error(FOR_TEXT);
     for_element();
     emit_code_ = 035;
     emit_code();
@@ -1990,7 +2028,7 @@ unsigned Pass2::switch_item()
         }
         if (type_) {
             mem(ARGS + 1) = 0;
-            type_error(mem(SWITCH_TEXT));
+            type_error(SWITCH_TEXT);
         }
         top(1) = cyclic_add(top(1), MINUS_ONE);
         if (top(1) & BIT48)
@@ -2178,7 +2216,7 @@ unsigned Pass2::goto_item()
 {
     parse_sub(017647);
     if (type_ && !mem(REPORTED))
-        type_error(mem(GOTO_TEXT));
+        type_error(GOTO_TEXT);
     return DISPATCH;
 }
 
@@ -2393,7 +2431,7 @@ unsigned Pass2::actual_done()
 
 //
 // *1501B: NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN the actual (its name, or
-// for an expression a word of the table BY_KIND) AND the formal.
+// for an expression its kind) AND the formal.
 //
 unsigned Pass2::mismatch()
 {
@@ -2404,10 +2442,9 @@ unsigned Pass2::mismatch()
     mem(ARGS2)     = saved_name(addr(mem(desc_)));
     mem(ARGS + 1)  = 0;
     mem(ARGS2 + 1) = 0;
-    if (kind_ & mem(022127)) {
-        kind_          = (kind_ + BY_KIND) & 077777;
-        mem(ARGS2)     = mem(kind_);
-        mem(ARGS2 + 1) = mem(kind_ + 3);
+    if (kind_ & 010) {
+        mem(ARGS2)     = ACTUAL_TEXT[kind_ - 010][0];
+        mem(ARGS2 + 1) = ACTUAL_TEXT[kind_ - 010][1];
     }
     message(NO_CORRESPONDENCE);
     return actual_count();
