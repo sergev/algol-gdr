@@ -24,6 +24,7 @@ import re
 import sys
 
 PASSES = {'13666': 1, '17223': 2, '22162': 3, '23523': 4, '26260': 5, '26666': 6}
+RETURNS = {1: '01626', 2: '01627', 3: '01632', 4: '01633', 5: '01634', 6: '01635'}
 CALL = re.compile(r'^016[23][0-7] [LR]: 15 31 (\d{5}) vjm')
 WRITER = re.compile(r'^27(114|126|137) L: 00 003 2001 xts 2001')
 MEM = re.compile(r'^\s+Memory (Read|Write) \[([0-7]{5})\] = ([0-7 ]{19})')
@@ -80,6 +81,11 @@ def main():
                 npass = PASSES[m.group(1)]
                 start = (dict(mem), dict(drum))
                 continue
+            if npass and line[:7] in (RETURNS[npass] + ' L', '01716 L'):
+                # Back in the driver, or its end: the pass is over.
+                end_pass()
+                npass = 0
+                continue
             if npass == 1 and LEXRET.match(line) and int(line[:5], 8) <= 0o16471:
                 lex.append((mem.get(0o2000, 0), regs.get(4, 0)))
                 continue
@@ -103,7 +109,7 @@ def main():
             regs[int(m.group(1), 8)] = int(m.group(2), 8)
             continue
         m = DRUM.match(line)
-        if m and npass:
+        if m:
             unit, op = m.group(1), m.group(2)
             lo, hi = int(m.group(3), 8), int(m.group(4), 8)
             zone = int(m.group(5), 8)

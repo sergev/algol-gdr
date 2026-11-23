@@ -76,7 +76,9 @@ Run:
   `ADDR VALUE`, and in the drum zones that carry data between passes (drum 26 zone 0, drum 27
   zones 33 and 34) as `drum UNIT ZONE OFFSET VALUE`; all numbers octal. The workspace at the
   start of pass N is the driver's data (`src/tables_data.cpp`) plus the changes of the passes
-  before N.
+  before N. A pass ends when the driver goes on after it (01626 after pass 1, 01627, 01632,
+  01633, 01634, 01635 after pass 6) or at its end 01716; then `reg N VALUE` gives the index
+  registers it left (N octal; M17 is not listed).
 
 - `NAME.lex`: at each return of the lexer (AG15414), the symbol word 02000 and register M4.
   The parser changes 02000 between calls, so the values are taken at the returns.
