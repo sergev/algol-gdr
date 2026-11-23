@@ -599,8 +599,21 @@ private:
 
     ir::Value std_func(const expr::StdFunc &f)
     {
-        if (f.args.empty())
+        switch (f.func) {
+        case StdFunc::READ:
+            return runtime("double", "algol_x1_read", {});
+        case StdFunc::RESYM:
+            return runtime("i64", "algol_x1_resym", {});
+        case StdFunc::XEEN:
+            return runtime("i64", "algol_x1_xeen", { expr(*f.args.at(0)) });
+        case StdFunc::EVEN:
+        case StdFunc::RANDOM:
+        case StdFunc::TIMEOFDAY:
+        case StdFunc::SUM:
             unsupported(std::string("'") + to_string(f.func) + "'");
+        default:
+            break;
+        }
         const Expr &arg = *f.args.at(0);
         ir::Value x     = expr(arg);
         // The functions of reals take an integer as a real.

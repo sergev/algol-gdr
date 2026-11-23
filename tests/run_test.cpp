@@ -71,6 +71,7 @@ const std::vector<std::string> programs = {
     "a60/publication",
     "a60/revised_report",
     "a60/units",
+    "x1/input",
     "x1/output",
 };
 // clang-format on
@@ -320,6 +321,25 @@ TEST(Run, fault_and_stop)
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_EQ(r.output, "5 \nError: bad value 2.5\n");
     EXPECT_EQ(run_text("stop", "_begin PRINT(1); STOP; PRINT(2) _end\n"), "             1 \n");
+}
+
+// X1 input: at the end of the input, or a bad number, read stops the program;
+// RESYM gives 255.
+TEST(Run, x1_input_errors)
+{
+    const std::string src = BUILD_DIR "/run_x1_read.a60";
+    const std::string exe = BUILD_DIR "/run_x1_read";
+    std::ofstream(src) << "b̲e̲g̲i̲n̲ print(RESYM); NLCR; print(read); NLCR; print(read) e̲n̲d̲\n";
+    auto c = run_command(compiler + " -o " + exe + " " + src);
+    ASSERT_EQ(c.exit_code, 0) << c.output;
+    auto r = run_command("printf '5 2' | " + exe);
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "5\n2\nError: No input\n");
+    r = run_command("printf '5 x' | " + exe);
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "5\nError: Bad input\n");
+    r = run_command(exe + " < /dev/null");
+    EXPECT_EQ(r.output, "255\nError: No input\n");
 }
 
 // Units, formats, _encode and _decode: unit 7 a file of its own.

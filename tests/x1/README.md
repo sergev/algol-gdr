@@ -2,10 +2,11 @@
 
 Programs in the publication form for the library of the Electrologica X1, as
 `x1sim` of x1-algol-compiler runs them. `NAME.out` is the output of `x1sim NAME.a60`
-(frozen); `run_test` compiles and runs them on x86_64, aarch64 and riscv64.
+(frozen), with `NAME.in` as its input; `run_test` compiles and runs them on x86_64, aarch64 and riscv64.
 
 | Program | What |
 |---|---|
+| input | `read`, `RESYM`, `XEEN` (`input.in`) |
 | output | `PRINTTEXT`, `PRSYM`, `SPACE`, `TAB`, `NLCR`, `print`, `FIXT`, `ABSFIXT`, `FLOT`: their corner cases |
 
 The numbers of `output` are exact in the 40-bit mantissa of an X1 real, and none is an

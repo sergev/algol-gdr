@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "algol.h"
@@ -224,4 +225,217 @@ void algol_x1_fixt(int64_t n, int64_t m, double x)
 void algol_x1_absfixt(int64_t n, int64_t m, double x)
 {
     fixed(n, m, x, 0);
+}
+
+//
+// Input from stdin. A few bytes can be put back.
+//
+static unsigned char pushed[8];
+static int npushed;
+static int stdin_tty = -1;
+
+static int next_byte(void)
+{
+    return npushed > 0 ? pushed[--npushed] : getchar();
+}
+
+static void put_back(int c)
+{
+    if (c != EOF && npushed < (int)sizeof(pushed))
+        pushed[npushed++] = (unsigned char)c;
+}
+
+static int interactive(void)
+{
+    if (stdin_tty < 0)
+        stdin_tty = isatty(0);
+    return stdin_tty;
+}
+
+// The next code point; EOF at the end of the input.
+static int32_t next_symbol(void)
+{
+    int c = next_byte();
+    if (c == EOF || c < 0x80)
+        return c;
+    int n     = c < 0xe0 ? 1 : c < 0xf0 ? 2 : 3;
+    int32_t v = c & (0x3f >> n);
+    while (n-- > 0) {
+        c = next_byte();
+        if (c == EOF)
+            return EOF;
+        v = v << 6 | (c & 0x3f);
+    }
+    return v;
+}
+
+// Put back a code point read by next_symbol.
+static void put_back_symbol(int32_t v)
+{
+    char buf[4];
+    int n = 0;
+    if (v < 0x80) {
+        buf[n++] = (char)v;
+    } else if (v < 0x800) {
+        buf[n++] = (char)(0xc0 | v >> 6);
+        buf[n++] = (char)(0x80 | (v & 0x3f));
+    } else {
+        buf[n++] = (char)(0xe0 | v >> 12);
+        buf[n++] = (char)(0x80 | (v >> 6 & 0x3f));
+        buf[n++] = (char)(0x80 | (v & 0x3f));
+    }
+    while (n > 0)
+        put_back((unsigned char)buf[--n]);
+}
+
+// The rest of the line dropped.
+static void skip_line(void)
+{
+    int c;
+    while ((c = next_byte()) != EOF && c != '\n')
+        continue;
+}
+
+// A number as C++ streams read it: blanks skipped; sign, digits, point,
+// exponent with E, e or ⏨. 0 when there is none.
+static int scan_number(double *v)
+{
+    char buf[128];
+    int n = 0;
+    int32_t c;
+    while ((c = next_symbol()) == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
+           c == '\v')
+        continue;
+    if (c == EOF)
+        algol_error("No input");
+    if (c == '+' || c == '-') {
+        buf[n++] = (char)c;
+        c        = next_symbol();
+    }
+    int digits = 0;
+    for (; c >= '0' && c <= '9' && n < 100; c = next_symbol(), digits++)
+        buf[n++] = (char)c;
+    if (c == '.') {
+        buf[n++] = '.';
+        for (c = next_symbol(); c >= '0' && c <= '9' && n < 100; c = next_symbol(), digits++)
+            buf[n++] = (char)c;
+    }
+    if (digits > 0 && (c == 'e' || c == 'E' || c == 0x23e8)) {
+        buf[n++] = 'e';
+        c        = next_symbol();
+        if (c == '+' || c == '-') {
+            buf[n++] = (char)c;
+            c        = next_symbol();
+        }
+        int exp_digits = 0;
+        for (; c >= '0' && c <= '9' && n < 120; c = next_symbol(), exp_digits++)
+            buf[n++] = (char)c;
+        if (exp_digits == 0)
+            digits = 0;
+    }
+    // As x1sim: the symbol after a number is gone; one that is not a number
+    // stays.
+    if (c != EOF && digits == 0)
+        put_back_symbol(c);
+    if (digits == 0)
+        return 0;
+    buf[n] = 0;
+    *v     = strtod(buf, NULL);
+    return 1;
+}
+
+// read: the next number. On a terminal it asks, and asks again after a bad
+// one; otherwise a bad number stops the program.
+double algol_x1_read(void)
+{
+    for (;;) {
+        if (interactive())
+            out("Enter number: ");
+        fflush(stdout);
+        double v;
+        if (scan_number(&v))
+            return v;
+        if (!interactive())
+            algol_error("Bad input");
+        out("Bad input, try again.\n");
+        skip_line();
+    }
+}
+
+// RESYM: the X1 code of the next symbol; 255 at the end of the input.
+int64_t algol_x1_resym(void)
+{
+    fflush(stdout);
+    for (;;) {
+        int32_t c = next_symbol();
+        if (c == EOF)
+            return 0377;
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (c >= 'a' && c <= 'z')
+            return c - 'a' + 10;
+        if (c >= 'A' && c <= 'Z')
+            return c - 'A' + 37;
+        switch (c) {
+        case '\r':
+            continue;
+        case '\t':
+            return 118;
+        case '\n':
+            return 119;
+        case '*':
+            return 66;
+        case '@':
+            return 89;
+        case '|':
+            return 162;
+        case '_':
+            return 163;
+        }
+        for (int k = 64; k < 128; k++)
+            if (k != 92 && k != 118 && k != 119 && strcmp(x1_symbols[k], "⎕") != 0) {
+                int32_t s = 0;
+                // The code point of a symbol of the table.
+                const unsigned char *p = (const unsigned char *)x1_symbols[k];
+                int len                = *p < 0x80 ? 0 : *p < 0xe0 ? 1 : *p < 0xf0 ? 2 : 3;
+                s                      = len == 0 ? *p : *p & (0x3f >> len);
+                for (p++; len-- > 0; p++)
+                    s = s << 6 | (*p & 0x3f);
+                if (s == c)
+                    return k;
+            }
+        algol_error("Bad input character %#o", (unsigned)c);
+    }
+}
+
+// XEEN(mask): the console switches, read once as a line of binary digits,
+// masked.
+int64_t algol_x1_xeen(int64_t mask)
+{
+    static int valid;
+    static int64_t switches;
+    while (!valid) {
+        if (interactive())
+            out("\nEnter console switches (up to 27 binary digits)\n> ");
+        fflush(stdout);
+        char line[256];
+        int n = 0, c;
+        while ((c = next_byte()) != EOF && c != '\n')
+            if (n < (int)sizeof(line) - 1)
+                line[n++] = (char)c;
+        line[n] = 0;
+        if (c == EOF && n == 0)
+            algol_error("No input");
+        char *end;
+        long long v = strtoll(line, &end, 2);
+        if (end != line) {
+            switches = v;
+            valid    = 1;
+        } else if (!interactive()) {
+            algol_error("Bad input");
+        } else {
+            out("Bad input, try again.\n");
+        }
+    }
+    return switches & mask;
 }

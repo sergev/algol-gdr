@@ -119,5 +119,8 @@ void algol_x1_print_real(double v);
 void algol_x1_flot(int64_t n, int64_t m, double x);
 void algol_x1_fixt(int64_t n, int64_t m, double x);
 void algol_x1_absfixt(int64_t n, int64_t m, double x);
+double algol_x1_read(void);
+int64_t algol_x1_resym(void);
+int64_t algol_x1_xeen(int64_t mask);
 
 #endif

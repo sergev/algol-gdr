@@ -7,7 +7,7 @@ purpose is listed with the reason.
 
 **Where we are.** Every example passes the front end as it is (`ast_test` x1_examples):
 the X1 procedures are standard identifiers, `print` is X1's in the publication form, `read`
-in an expression is X1's (doc/ast.asdl). The output procedures run (runtime/x1.c); input and the helpers do not yet.
+in an expression is X1's (doc/ast.asdl). The output and input procedures run (runtime/x1.c); the helpers do not yet.
 
 **Reference.** The behaviour to match is `x1sim`'s, not the X8 manual's where they differ.
 Its sources are in `x1-algol-compiler/`:
@@ -26,17 +26,6 @@ green.
 
 ### Runtime (`runtime/x1.c`)
 
-- **G3** Input:
-  - `read` takes a real or integer from stdin, with `⏨` or `@` as the exponent. It prompts
-    `Enter number: ` only when stdin is a terminal. On a bad number, it retries on a
-    terminal and stops with an error otherwise. At the end of the input, it stops with an
-    error.
-  - `RESYM` returns the X1 code of the next UTF-8 character: 255 at the end of the input,
-    with CR skipped. A character that has no code stops the program with an error.
-  - `XEEN(mask)` reads the console switches as a line of binary digits once, and returns
-    them masked. (`stop` stays the IFIP one, ending the program; no example calls X1's.)
-
-  Tests with `.in` files.
 - **G4** The helpers:
   - `SUM(i, a, b, x)` is Jensen's device, generated inline as the loop of
     `library/sum.a60`: `i := a`, then while `i ≤ b`, add `x` and step `i`; `b` is
