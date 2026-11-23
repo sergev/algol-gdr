@@ -58,6 +58,7 @@ const std::vector<std::string> programs = {
     "algol/test1",
     "algol/test2",
     "algol/test3",
+    "a60/for",
     "a60/intdiv",
     "a60/own",
     "a60/parameters",

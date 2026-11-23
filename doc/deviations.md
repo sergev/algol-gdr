@@ -21,7 +21,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 | Deviation | Where | Task |
 |---|---|---|
-| The controlled variable of `for` must be a simple variable | parser, checker | F6 |
 | Arrays of the blocks left by a non-local `goto` (through `longjmp`) are not freed | code generator | F7 |
 
 ## Program structure

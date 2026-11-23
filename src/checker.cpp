@@ -75,8 +75,7 @@ public:
                     if (x.else_stmt)
                         stmt(*x.else_stmt);
                 } else if constexpr (std::is_same_v<T, syn::stmt::For>) {
-                    if (x.var.name == name_)
-                        other = true;
+                    operand(*x.var);
                     elements(x.elements);
                     stmt(*x.body);
                 } else if constexpr (std::is_same_v<T, syn::stmt::Call>) {
@@ -909,17 +908,15 @@ StmtPtr Checker::assignment(SrcLoc loc, const syn::stmt::Assign &a)
 StmtPtr Checker::for_stmt(SrcLoc loc, const syn::stmt::For &f)
 {
     stmt::For out;
-    int i  = lookup(f.var.name);
-    Type t = Type::NONE;
-    if (i < 0) {
-        named(f.var.name, f.var.line, false);
-    } else if (sym(i).kind != Kind::SIMPLE || !numeric(sym(i).type)) {
-        error(f.var.line, "The variable of _for must be a simple integer or real variable");
-    } else {
-        t = sym(i).type;
+    int line     = f.var->line;
+    Type t       = Type::NONE;
+    auto control = left_part(*f.var, t);
+    if (control && !numeric(t)) {
+        error(line, "The variable of _for must be an integer or real variable");
+        t = Type::NONE;
     }
-    out.control  = left::Var{ i >= 0 ? sym(i).id : 0 };
-    out.elements = for_elements(f.elements, t, f.var.line);
+    out.control  = control ? std::move(*control) : LeftPart{ left::Var{ 0 } };
+    out.elements = for_elements(f.elements, t, line);
     out.body     = statement(*f.body);
     return make_stmt(loc, std::move(out));
 }

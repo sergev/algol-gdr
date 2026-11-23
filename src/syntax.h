@@ -131,7 +131,7 @@ struct If {
     StmtPtr else_stmt; // or null
 };
 struct For {
-    Ident var;
+    ExprPtr var; // Name or Index
     std::vector<ForElement> elements;
     StmtPtr body;
 };

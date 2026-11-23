@@ -140,7 +140,8 @@ The body is generated once. Each element stores its number in a state cell and j
 after the body a `switch` on the state goes back to the element. A step-until element
 follows the Revised Report: `V := A`; while not `(V − C) × sign(B) > 0`: the body, then
 `V := V + B`, with `B` and `C` evaluated again each time, in real when one of `V`, `B`, `C`
-is real. After the loop `V` keeps its last value.
+is real. After the loop `V` keeps its last value. A subscripted `V` is evaluated at each
+use: its subscripts may change in the body.
 
 ## Arrays
 

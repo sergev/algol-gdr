@@ -16,9 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F6** The `for` statement in full: a subscripted controlled variable (its subscripts
-  evaluated at each assignment), side effects in the list elements, `goto` out of the body.
-  Tests after the Revised Report section 4.6.
 - **F7** Storage on non-local `goto`: arrays of the blocks left by `longjmp` are freed (a
   list of live arrays per frame), so that loops through non-local jumps do not leak.
 - **F8** Separate compilation: a file with procedures only (`_procedure p…; _eop`) compiles

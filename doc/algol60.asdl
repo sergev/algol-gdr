@@ -99,8 +99,9 @@ module Algol60 {
          | Assign(Expr* targets, Expr value)
          | Goto(Expr target)                     -- a designational expression
          | If(Expr condition, Stmt then_stmt, Stmt? else_stmt)
-         -- the controlled variable is simple; a subscripted one: todo
-         | For(identifier var, ForElement* elements, Stmt body)
+         -- the controlled variable: Var or Index, its subscripts evaluated at
+         -- each use
+         | For(Expr var, ForElement* elements, Stmt body)
          -- p, or p(args): Var or Call
          | Call(Expr proc)
          -- GDR: _print (params) items, or _print param, items

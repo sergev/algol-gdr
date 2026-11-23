@@ -723,7 +723,7 @@ StmtPtr Parser::for_stmt(ast::SrcLoc loc)
 {
     advance();
     stmt::For s;
-    s.var = ident();
+    s.var = designator();
     expect(Sym::ASSIGN);
     s.elements = for_list();
     expect(Sym::DO);
