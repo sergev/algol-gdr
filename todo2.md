@@ -25,8 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E11** doc/codegen.md: data representation, frames, calling convention for procedures,
-  name parameters, labels, arrays, runtime names. Update it with each task below.
 - **E12** Expressions and assignment: constants, simple variables (locals as `alloca`,
   globals of the outer block), arithmetic with integer/real conversion, `/` and `**` (the
   runtime's `A/RHOCHI`, `A/IHOCHI`, `POWER` rules), relations, Boolean operators,
