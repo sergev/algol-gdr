@@ -1,16 +1,2 @@
-*NAME STDFUNC
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/NLINE  E 01344                ENTIER*  E 01474                EXP*     E 01533
-         A/STOP     01054                A/NPAGE  E 01346                A/RHOCHI E 01476                STOP*      01536
-         A/START  E 01060                A/I*ISO  E 01421                A/IHOCHI E 01511                EXIT     E 01537
-         A/DRUCK    01134                A/R*ISO  E 01424                A/SIGN   E 01516                A/ARRD/K   01565
-         A/IPRI   E 01166                A/AND      01457                SIN*       01526                A/ARRD/V E 01570
-         A/RPRI   E 01220                A/EQUIV  E 01462                COS*     E 01527                STOPFLG* C 01661
-         A/BPRI   E 01254                A/NOT    E 01463                SQRT*    E 01530                PRINT8     01662
-         A/SPRI   E 01263                A/IMPL   E 01466                LN*      E 01531                SYSBACK*   02043
-         A/LPRI   E 01300                A/RTOI   E 01471                ARCTAN*  E 01532                CBOБOДHO   02053
-≠
   2.00000000000+00    2.50000000000+00               -1              0              1  4.00000000000+00    0.00000000000+00
   1.00000000000+00    0.00000000000+00    1.00000000000+00    0.00000000000+00                2             -3

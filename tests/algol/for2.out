@@ -1,17 +1,3 @@
-*NAME FOR2
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/SPRI   E 01773                A/PROCRT E 02201                STOP*      02336
-         A/STOP     01470                A/LPRI   E 02010                A/PARCON E 02224                EXIT     E 02337
-         A/START  E 01474                A/NLINE  E 02054                A/PARVAR E 02233                STOPFLG* C 02365
-         A/ARRD/K   01550                A/NPAGE  E 02056                A/PARPAR E 02244                SYSBACK*   02366
-         A/ARRD/V E 01553                A/I*ISO  E 02131                A/PARVAL E 02253                PRINT8     02376
-         A/DRUCK    01644                A/R*ISO  E 02134                A/PAREXP E 02260                CBOБOДHO   02557
-         A/IPRI   E 01676                A/VLM1     02167                A/PARLAB E 02271
-         A/RPRI   E 01730                A/CALLP    02173                A/PARSTR E 02300
-         A/BPRI   E 01764                A/CALLS  E 02174                A/OPTLIN   02311
-≠
               0              0              0              0              0              0              0              0
               0              0              0              1              1              1              1              0
               0              0              0              0              0              0              0              0

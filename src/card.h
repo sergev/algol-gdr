@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-#include "stdarray.h"
+#include "word.h"
 
 //
 // Source cards as the original compiler reads them (READ* into 02010…):

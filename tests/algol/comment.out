@@ -1,12 +1,1 @@
-*NAME COMMENT
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/BPRI   E 01216                A/R*ISO  E 01366                PRINT8     01545
-         A/STOP     01016                A/SPRI   E 01225                STOP*      01421                SYSBACK*   01726
-         A/START  E 01022                A/LPRI   E 01242                EXIT     E 01422                CBOБOДHO   01736
-         A/DRUCK    01076                A/NLINE  E 01306                A/ARRD/K   01450
-         A/IPRI   E 01130                A/NPAGE  E 01310                A/ARRD/V E 01453
-         A/RPRI   E 01162                A/I*ISO  E 01363                STOPFLG* C 01544
-≠
               2

@@ -1,12 +1,1 @@
-*NAME BLOCKS
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/BPRI   E 01226                A/R*ISO  E 01376                PRINT8     01555
-         A/STOP     01026                A/SPRI   E 01235                STOP*      01431                SYSBACK*   01736
-         A/START  E 01032                A/LPRI   E 01252                EXIT     E 01432                CBOБOДHO   01746
-         A/DRUCK    01106                A/NLINE  E 01316                A/ARRD/K   01460
-         A/IPRI   E 01140                A/NPAGE  E 01320                A/ARRD/V E 01463
-         A/RPRI   E 01172                A/I*ISO  E 01373                STOPFLG* C 01554
-≠
   3.50000000000+00                2             11

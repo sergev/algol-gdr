@@ -1,15 +1,2 @@
-*NAME BOOLEAN
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                ENTIER*  E 01206                A/SPRI   E 01367                A/ARRD/K   01612
-         A/STOP     01111                A/RHOCHI E 01210                A/LPRI   E 01404                A/ARRD/V E 01615
-         A/START  E 01115                A/IHOCHI E 01223                A/NLINE  E 01450                STOPFLG* C 01706
-         A/AND      01171                A/SIGN   E 01230                A/NPAGE  E 01452                PRINT8     01707
-         A/EQUIV  E 01174                A/DRUCK    01240                A/I*ISO  E 01525                SYSBACK*   02070
-         A/NOT    E 01175                A/IPRI   E 01272                A/R*ISO  E 01530                CBOБOДHO   02100
-         A/IMPL   E 01200                A/RPRI   E 01324                STOP*      01563
-         A/RTOI   E 01203                A/BPRI   E 01360                EXIT     E 01564
-≠
  FALSE TRUE  FALSE FALSE FALSE FALSE FALSE TRUE  TRUE  TRUE  FALSE FALSE TRUE  TRUE  FALSE TRUE  FALSE TRUE  FALSE TRUE  TRUE
  FALSE

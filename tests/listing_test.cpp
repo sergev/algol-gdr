@@ -1,9 +1,10 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The listing: the whole compiler in check mode must print NAME.lst (from
-// the original with *call setftn:one,long, which sets check mode) from the
-// banner up to *END FILE.
+// The listing: the compiler in check mode must print NAME.lst (from the
+// original with *call setftn:one,long, which sets check mode) from the banner
+// up to *END FILE, without what passes 5 and 6 printed: the line table and
+// the summary line.
 //
 #include "listing.h"
 
@@ -27,6 +28,15 @@ static std::string expected(const std::string &name)
             on = true;
         if (line.rfind("*END FILE", 0) == 0)
             break;
+        if (line.rfind("CTPOKИ", 0) == 0) {
+            // The line table up to an empty line, then the summary and its
+            // empty line.
+            while (std::getline(lst, line) && !line.empty()) {
+            }
+            std::getline(lst, line);
+            std::getline(lst, line);
+            continue;
+        }
         if (on)
             text += line + "\n";
     }
@@ -45,8 +55,8 @@ TEST_P(ListingTest, text)
     Listing listing(out);
     ctx.listing = &listing;
     ctx.source  = read_source(path(name, ".alg"));
-    StdArray object;
-    compile(ctx, object);
+    Stream stream;
+    compile(ctx, stream);
     EXPECT_EQ(out.str(), expected(name));
 }
 

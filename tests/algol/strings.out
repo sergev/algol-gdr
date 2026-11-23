@@ -1,21 +1,2 @@
-*NAME STRINGS
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/RPRI   E 01401                STOP*      02320                A/PARSTR E 02646
-         A/STOP     01054                A/BPRI   E 01435                EXIT     E 02321                A/GETINC   02657
-         A/START  E 01060                A/SPRI   E 01444                STOPFLG* C 02347                *HEAP*   C 02712
-         A/ARRD/K   01134                A/LPRI   E 01461                SYSBACK*   02350                A/RECORD C 03312
-         A/ARRD/V E 01137                A/NLINE  E 01525                PRINT8     02360                A/SYMB   C 03343
-         LENGTH     01230                A/NPAGE  E 01527                A/CALLP    02541                READ*      03344
-         A/SEQS   E 01273                A/I*ISO  E 01602                A/CALLS  E 02542                MONREAD*   03372
-         A/SNES   E 01277                A/R*ISO  E 01605                A/PROCRT E 02547                READ*ERR E 03452
-         A/SGTS   E 01303                A/SPLUSS   01640                A/PARCON E 02572                DRUMTAP*   03476
-         A/SLTS   E 01305                A/SLICE  E 01672                A/PARVAR E 02601                COSYTISO   03527
-         A/SGES   E 01307                ATOS     E 01743                A/PARPAR E 02612                CHKWORD* C 03603
-         A/SLES   E 01311                STOA     E 01761                A/PARVAL E 02621                CBOБOДHO   03604
-         A/DRUCK    01315                A/SREAD  E 02012                A/PAREXP E 02626
-         A/IPRI   E 01347                A/ARGSTR E 02023                A/PARLAB E 02637
-≠
               6              2 ABCDEF
  ABCDEFXYABCDEF

@@ -13,7 +13,6 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     arith_test.cpp
     card_test.cpp
     cli_test.cpp
-    compile_test.cpp
     golden.cpp
     item_test.cpp
     lexer_test.cpp
@@ -21,12 +20,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     pass1_test.cpp
     passmem_test.cpp
     pass_test.cpp
-    pass5_test.cpp
-    pass6_test.cpp
-    printm_test.cpp
-    run_test.cpp
     source_test.cpp
-    stdarray_test.cpp
     util.cpp
     version_test.cpp
     workspace_test.cpp

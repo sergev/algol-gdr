@@ -1,16 +1,1 @@
-*NAME TEST3
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/PARPAR E 01410                ENTIER*  E 01472                A/NLINE  E 01734
-         A/STOP     01163                A/PARVAL E 01417                A/RHOCHI E 01474                A/NPAGE  E 01736
-         A/START  E 01167                A/PAREXP E 01424                A/IHOCHI E 01507                A/I*ISO  E 02011
-         A/ARRD/K   01243                A/PARLAB E 01435                A/SIGN   E 01514                A/R*ISO  E 02014
-         A/ARRD/V E 01246                A/PARSTR E 01444                A/DRUCK    01524                STOP*      02047
-         A/CALLP    01337                A/AND      01455                A/IPRI   E 01556                EXIT     E 02050
-         A/CALLS  E 01340                A/EQUIV  E 01460                A/RPRI   E 01610                STOPFLG* C 02076
-         A/PROCRT E 01345                A/NOT    E 01461                A/BPRI   E 01644                SYSBACK*   02077
-         A/PARCON E 01370                A/IMPL   E 01464                A/SPRI   E 01653                PRINT8     02107
-         A/PARVAR E 01377                A/RTOI   E 01467                A/LPRI   E 01670                CBOБOДHO   02270
-≠
              25  4.50000000000+00   TRUE  FALSE              5 HELLO FROM ALGOL

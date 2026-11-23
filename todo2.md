@@ -23,11 +23,6 @@ reference for the native runs.
 
 ### Cut the BESM-6 back end
 
-- **E1** Remove passes 3–6, `printm`, `stdarray`, `besm6`, `dump`, `workspace` parts used only
-  by them, the options `--full`, `--dump`, `--stop-after=3..5`, and their tests. The driver
-  stops after pass 2. Delete the goldens `.std`, `.full.lst`, `.s3`–`.s5`; strip the run
-  goldens `.out` to the program output (no loader table); keep `.s1`, `.s2`, `.mem`,
-  `.lex`, `.in`.
 - **E2** Listing without the back end: source lines and messages as before; the line-address
   table and the `PROGRAM ДЛИHA` line go. Regenerate `.lst` from our compiler and check by
   diff that only those parts changed. `--check` stays (it will mean bounds checks).

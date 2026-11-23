@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-#include "stdarray.h"
+#include "word.h"
 
 //
 // BESM-6 arithmetic unit: floating point as the original compiler computes

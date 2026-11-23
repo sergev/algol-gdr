@@ -14,7 +14,6 @@
 #include "item.h"
 #include "listing.h"
 #include "options.h"
-#include "stdarray.h"
 #include "workspace.h"
 
 //
@@ -28,12 +27,9 @@ struct Context {
 
     // What the original keeps on its scratch drums.
     std::vector<Word> saved_names; // drum 26 zone 0: page 02000-03777 as pass 2 starts
-    std::vector<Word> constants;   // drum 27 zone 33 from its end: the numbers (pass 5)
     std::vector<Word> strings;     // drum 27 zones 34..: the string pool (pass 1)
 
-    // Index registers a pass leaves for the next: M3-M6 after pass 1 (pass 2
-    // starts with them, M3 the outer block), M5 after pass 5 (the number of
-    // symbol rows, for pass 6).
+    // Index registers M3-M6 that pass 1 leaves for pass 2 (M3 the outer block).
     std::array<unsigned, 16> regs{};
 
     unsigned flgex{}; // FLGEX*: errors found
@@ -48,16 +44,15 @@ struct NotImplemented : std::runtime_error {
 void blank_line(const Context &ctx);
 
 //
-// Run pass n (1-5) on the stream of the previous pass (ignored by pass 1)
+// Run pass n (1-2) on the stream of the previous pass (ignored by pass 1)
 // and return its own stream.
 //
 Stream run_pass(int n, Context &ctx, const Stream &input);
 
 //
-// The driver (01614): the passes in turn; pass 3 not in check mode, none
-// after pass 2 when there are errors. The listing ends with the summary line.
-// Returns false when no object is made.
+// The driver (01614): passes 1 and 2. Returns the stream of pass 2, or
+// false when there are errors.
 //
-bool compile(Context &ctx, StdArray &object);
+bool compile(Context &ctx, Stream &stream);
 
 #endif

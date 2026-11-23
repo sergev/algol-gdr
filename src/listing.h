@@ -8,7 +8,7 @@
 #include <iosfwd>
 #include <string>
 
-#include "stdarray.h"
+#include "word.h"
 
 //
 // The listing as dubna prints it: the compiler's ISO (KOI-7) characters go to

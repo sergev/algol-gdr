@@ -1,16 +1,3 @@
-*NAME ARITH
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/LPRI   E 01344                A/IMPL   E 01532                A/ARRD/K   01621
-         A/STOP     01120                A/NLINE  E 01410                A/RTOI   E 01535                A/ARRD/V E 01624
-         A/START  E 01124                A/NPAGE  E 01412                ENTIER*  E 01540                STOPFLG* C 01715
-         A/DRUCK    01200                A/I*ISO  E 01465                A/RHOCHI E 01542                PRINT8     01716
-         A/IPRI   E 01232                A/R*ISO  E 01470                A/IHOCHI E 01555                SYSBACK*   02077
-         A/RPRI   E 01264                A/AND      01523                A/SIGN   E 01562                CBOБOДHO   02107
-         A/BPRI   E 01320                A/EQUIV  E 01526                STOP*      01572
-         A/SPRI   E 01327                A/NOT    E 01527                EXIT     E 01573
-≠
              10              4             21  2.33333333333+00               13             20             -4              3
              49           1024  5.00000000000-01    1.25000000000+00   -3.75000000000-01   -6.00000000001+00
   1.75000000000+00                2  8.50000000001+00    1.00000000000+03    2.50000000000-02

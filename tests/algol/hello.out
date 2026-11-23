@@ -1,12 +1,1 @@
-*NAME HELLO
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/BPRI   E 01220                A/R*ISO  E 01370                PRINT8     01547
-         A/STOP     01020                A/SPRI   E 01227                STOP*      01423                SYSBACK*   01730
-         A/START  E 01024                A/LPRI   E 01244                EXIT     E 01424                CBOБOДHO   01740
-         A/DRUCK    01100                A/NLINE  E 01310                A/ARRD/K   01452
-         A/IPRI   E 01132                A/NPAGE  E 01312                A/ARRD/V E 01455
-         A/RPRI   E 01164                A/I*ISO  E 01365                STOPFLG* C 01546
-≠
  HELLO, WORLD!

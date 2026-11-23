@@ -26,7 +26,7 @@ static std::vector<PassCase> pass_cases()
 {
     std::vector<PassCase> cases;
     for (auto &name : program_names())
-        for (int n = 1; n <= 5; n++)
+        for (int n = 1; n <= 2; n++)
             if (fs::exists(path(name, ".s" + std::to_string(n))))
                 cases.push_back({ name, n });
     return cases;
@@ -45,14 +45,7 @@ TEST_P(Pass, stream)
     if (pass == 1) {
         ctx.source = read_source(path(name, ".alg"));
     } else {
-        // Pass 3 is skipped in check mode: take the latest stream before.
-        for (int k = pass - 1; k >= 1; k--) {
-            auto file = path(name, ".s" + std::to_string(k));
-            if (fs::exists(file)) {
-                input = read_stream_file(file);
-                break;
-            }
-        }
+        input = read_stream_file(path(name, ".s" + std::to_string(pass - 1)));
     }
     Stream got;
     try {

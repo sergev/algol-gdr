@@ -1,21 +1,13 @@
 add_library(algol STATIC
     arith.cpp
-    besm6.cpp
     card.cpp
-    dump.cpp
     item.cpp
     listing.cpp
     pass1_lexer.cpp
     pass1_parser.cpp
     pass2.cpp
-    pass3.cpp
-    pass4.cpp
-    pass5.cpp
-    pass6.cpp
     passes.cpp
-    printm.cpp
     source.cpp
-    stdarray.cpp
     version.cpp
     workspace.cpp
 )

@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "stdarray.h"
+#include "word.h"
 
 //
 // Shared data of the passes as 48-bit words at their original addresses:

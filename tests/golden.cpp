@@ -37,8 +37,6 @@ Word *drum_word(Context &ctx, unsigned unit, unsigned zone, unsigned offset)
     };
     if (unit == 026 && zone == 0)
         return at(ctx.saved_names, offset);
-    if (unit == 027 && zone == 033)
-        return at(ctx.constants, 01777 - offset);
     if (unit == 027 && zone >= 034)
         return at(ctx.strings, (zone - 034) * 1024 + offset);
     return nullptr;

@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Goal: port the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
 system) to modern 64-bit machines (x86_64, arm64, riscv64) as **`algc`**, in **C++20** with
 UTF-8 input/output and LLVM as an external backend. Milestones 0 (groundwork) and 1 (the
-C++ rewrite, same objects and listings as the original) are done. Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
+C++ rewrite, same objects and listings as the original) are done; the BESM-6 back end
+(passes 3–6) is on the `besm6` branch, `main` keeps passes 1–2. Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
 task when it is done, in the same commit.
 
 ## Commands
@@ -15,14 +16,14 @@ task when it is done, in the same commit.
 ```
 make                     # build (CMake, build/), cppcheck runs as part of it
 make test                # unit tests via ctest
-./build/tests/unit_tests --gtest_filter='stdarray.*'   # one test group
+./build/tests/unit_tests --gtest_filter='cli.*'   # one test group
 make goldens             # regenerate tests/algol expected outputs (needs dubna)
 scripts/ref-compile [--full] tests/algol/X.alg [OUTDIR]   # original compiler → X.std, X.lst (setftn:one,long)
 scripts/ref-run X.std    # run an object under dubna
 scripts/capture-streams tests/algol/X.alg   # pass streams X.s1…X.s5, X.mem, X.lex
 make test                # rebuilds unit_tests; plain make does not
-./build/src/algc [--list] [--check] -o X.std X.alg   # compile; errors (listing with --list) on stdout
-./build/src/algc --dump X.std   # decode and disassemble an object
+./build/src/algc [--list] [--check] X.alg   # check; errors (listing with --list) on stdout
+./build/src/algc --stop-after=2 X.alg      # print the pass-2 stream
 ```
 
 Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Format with
@@ -30,14 +31,13 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `pass3*` (optimizer), `pass4*` (code generator), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`), `pass5.*` (addresses, line table), `pass6.*` (object assembly), `printm.*` (object listing of `--full`), `workspace.*` (its shared data as words), `stdarray.*` (object
-  format), `besm6.*` + `dump.*` (disassembly).
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `workspace.*` (its shared data as words), `word.h` (48-bit word).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
-  original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output,
-  `.s1`…`.s5`/`.mem`/`.lex` pass streams; side files
+  original compiler: `.lst` listings (without the line table and summary of passes 5–6),
+  `.out` run output under `dubna`, `.s1`/`.s2`/`.mem`/`.lex` pass streams; side files
   `.pre` (`*check`)/`.run`/`.in`/`.norun` ([doc/reference-toolchain.md](doc/reference-toolchain.md)).
-  `compile_test` and `run_test` compare our compiler with them, `pass_test` each pass on its
-  own (input: the previous expected stream, workspace from `.mem`); skipped until implemented.
+  `listing_test` compares our listings with them, `pass_test` each pass on its own (input:
+  the previous expected stream, workspace from `.mem`).
 - `doc/` — findings about the original compiler: [passes.md](doc/passes.md) (driver, the six
   passes, their streams), [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
   [runtime-abi.md](doc/runtime-abi.md) (run-time calls, generated code),

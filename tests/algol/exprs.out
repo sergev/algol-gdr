@@ -1,19 +1,2 @@
-*NAME EXPRS
-*-CM-*    PROGRA
-*EXECUTE
-≠
-         PROGRAM    01000                A/PAREXP E 01460                A/DRUCK    01560                A/BAPRI  E 02105
-         A/STOP     01217                A/PARLAB E 01471                A/IPRI   E 01612                A/SAPRI  E 02106
-         A/START  E 01223                A/PARSTR E 01500                A/RPRI   E 01644                A/LAPRI  E 02107
-         A/ARRD/K   01277                A/AND      01511                A/BPRI   E 01700                STOP*      02117
-         A/ARRD/V E 01302                A/EQUIV  E 01514                A/SPRI   E 01707                EXIT     E 02120
-         A/CALLP    01373                A/NOT    E 01515                A/LPRI   E 01724                STOPFLG* C 02146
-         A/CALLS  E 01374                A/IMPL   E 01520                A/NLINE  E 01770                SYSBACK*   02147
-         A/PROCRT E 01401                A/RTOI   E 01523                A/NPAGE  E 01772                PRINT8     02157
-         A/PARCON E 01424                ENTIER*  E 01526                A/I*ISO  E 02045                CBOБOДHO   02340
-         A/PARVAR E 01433                A/RHOCHI E 01530                A/R*ISO  E 02050
-         A/PARPAR E 01444                A/IHOCHI E 01543                A/RAPRI    02103
-         A/PARVAL E 01453                A/SIGN   E 01550                A/IAPRI  E 02104
-≠
               2              2 FALSE FALSE  4.00000000000+00    2.00000000000+00                1              2
               3              3              3              3              3              3              3
