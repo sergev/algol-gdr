@@ -1,0 +1,123 @@
+# Milestone 4 — The X1 Algol examples
+
+Goal (from [Roadmap.md](Roadmap.md)): every program in
+`/home/vak/Project/Algol/x1-algol-compiler/examples/` compiles without changes to its
+source and runs natively, with the same output as under `x1sim`. Any example skipped on
+purpose is listed with the reason.
+
+**Where we are.** Every example passes the front end when its X1 procedures are declared as
+`_code` (`ast_test` x1_examples). Without that line, all 22 fail on undeclared X1
+procedures. `print` and `read` currently resolve to Algol-GDR's `PRINT` and `READ`.
+
+**Reference.** The behaviour to match is `x1sim`'s, not the X8 manual's where they differ.
+Its sources are in `x1-algol-compiler/`:
+- `simulator/opcodes.cpp`: `print`, `SPACE`, `NLCR`, `TAB`, `FLOT`, `FIXT`, `ABSFIXT`, `XEEN`.
+- `simulator/machine.cpp`: fixed and floating formats, `RANDOM`, `TIMEOFDAY`, the output
+  of `PRSYM`.
+- `simulator/input.cpp`: `read`, `RESYM`, the console switches.
+- `simulator/encoding.cpp` and `doc/algol-encoding.md`: the symbol codes.
+- `library/*.a60`, `*.src`: `SUM`, `PRSYM`, `PRINTTEXT`, `RANDOM`, `SETRANDOM`.
+- `doc/library-procedures.md`: the X8 manual.
+
+**Guards.** The goldens and `run_test` (dubna programs, `tests/a60/`, three targets) stay
+green.
+
+## Tasks
+
+### Environment
+
+- **G1** X1 procedures as standard identifiers, in any case, hidden by a declaration:
+  - `PRINTTEXT`, `PRSYM`, `SPACE`, `TAB`, `NLCR`, `ABSFIXT`, `FIXT`, `FLOT`;
+  - `RESYM`, `XEEN`;
+  - `SUM`, `EVEN`, `RANDOM`, `SETRANDOM`, `TIMEOFDAY`.
+
+  The names shared with Algol-GDR (`print`, `read`, `stop`) mean X1's procedures in a
+  publication-form source and Algol-GDR's in the `_keyword` form. So the examples compile
+  unchanged, and the dubna programs keep their meaning. `tests/a60/publication.a60` moves
+  to X1's `print`.
+
+  This task covers the checker (kinds, types, argument counts), the AST
+  (`StdProc` entries) and doc/ast.asdl. `ast_test` x1_examples drops its `_code` prelude
+  and the bulls_and_cows exception. Code generation stubs only; the next tasks fill in the
+  runtime.
+
+### Runtime (`runtime/x1.c`)
+
+- **G2** Output, as `x1sim` prints it:
+  - `PRINTTEXT(s)` prints the string without its outer quotes, with inner `` `…' `` kept.
+  - `PRSYM(n)` prints by the X1 symbol code (doc/algol-encoding.md); unused codes print `⎕`.
+  - `SPACE(n)`, `TAB` (a tab character) and `NLCR`.
+  - `print(…)` takes any number of arguments, separated by one space. An integer prints in
+    decimal; a real prints as `%.13Lg` of `x1sim`.
+  - `FIXT(n, m, x)` and `ABSFIXT(n, m, x)` use the fixed-point format, falling back to
+    `FLOT(13, 3, x)`.
+  - `FLOT(n, m, x)` and `FLOT(n, x)` (where m is 2) use the floating format with `⏨`.
+  - Output is flushed after each call, so interactive programs work.
+
+  Tests in `tests/x1/` cover the corner cases: rounding up to the next power of 10,
+  zero, negative zero, the fallbacks, and `n + m` = 21.
+- **G3** Input:
+  - `read` takes a real or integer from stdin, with `⏨` or `@` as the exponent. It prompts
+    `Enter number: ` only when stdin is a terminal. On a bad number, it retries on a
+    terminal and stops with an error otherwise. At the end of the input, it stops with an
+    error.
+  - `RESYM` returns the X1 code of the next UTF-8 character: 255 at the end of the input,
+    with CR skipped. A character that has no code stops the program with an error.
+  - `XEEN(mask)` reads the console switches as a line of binary digits once, and returns
+    them masked; `stop` makes the next `XEEN` read them again.
+
+  Tests with `.in` files.
+- **G4** The helpers:
+  - `SUM(i, a, b, x)` is Jensen's device. Write it as an Algol unit,
+    `runtime/x1lib.a60`, compiled by algc into `libalgol.a` at build time (F8); the
+    build order goes in CMake.
+  - `EVEN(n)`.
+  - `RANDOM` gives a real in [0, 1), and `SETRANDOM(x)` seeds it. The generator is
+    documented and seedable, but needn't match `x1sim`'s.
+  - `TIMEOFDAY` gives local seconds since midnight, with microseconds.
+
+  Tests.
+
+### Running the examples
+
+- **G5** Goldens from `x1sim`:
+  - Build `x1sim` natively. The binary in `x1-algol-compiler/build` is for another
+    machine.
+  - Copy each example into `tests/x1/NAME.a60`, noting the x1-algol-compiler revision in
+    `tests/x1/README.md`.
+  - Take the inputs (`NAME.in`) from the `*.sh` scripts and `*.md` pages: lisp, outer_planets,
+    pentomino (four sizes: `pentomino6x10.in` and so on), quinio (a game from quinio.md),
+    and a game for bulls_and_cows.
+  - Record `NAME.out` from `x1sim < NAME.in`. These are frozen, like the dubna ones; the
+    script that makes them goes in `tests/x1/`.
+- **G6** `run_test` runs `tests/x1/`: each example is compiled, run on the three targets
+  and compared with `NAME.out`, or with `NAME.native.out` where the reason is documented.
+  - Reals: X1 has a 40-bit mantissa and doubles have 53, so the last of the 13 printed
+    digits may differ. Numbers compare with a relative tolerance (e.g. whetstone), as the
+    dubna comparison allows.
+  - `time`: the output is checked against a pattern, since it is the time of day.
+  - `bulls_and_cows`: the secret comes from `SETRANDOM(TIMEOFDAY)`. An environment variable
+    (`ALGC_TIMEOFDAY`) fixes the time for the test, and a `.native.out` replaces the
+    `x1sim` output. The reason goes in the README.
+  - Integers are 64-bit in algc and 27-bit on X1. An example whose output depends on that
+    is a documented `.native.out`.
+- **G7** The stress cases are correct and fast enough:
+  - `man_or_boy` and its stack;
+  - `lisp`, with the missionaries and cannibals in lisp.md;
+  - `pentomino`, with all four sizes;
+  - `sieve` (a million), `sqrt_test` (exact `sqrt`), `whetstone`, and `quine`, whose output
+    is its source except for the underlines.
+
+  Time each at `-O1` and `-O2` against `x1sim` and record the times in
+  `tests/x1/README.md`. A case that runs too long for `make test` runs only under a
+  separate label (`ctest -L slow`). Fix any codegen bug found; each fix gets its own test.
+
+### Finish
+
+- **G8** Documentation:
+  - doc/codegen.md: the X1 runtime names.
+  - doc/deviations.md: the X1 differences (integer width, real precision, `RANDOM`) and
+    any example skipped, with the reason.
+  - README.md: how to run X1 programs.
+  - Roadmap.md: Milestone 4 marked done.
+  - CLAUDE.md: `tests/x1/` in the layout.
