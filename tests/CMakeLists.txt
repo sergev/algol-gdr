@@ -13,9 +13,11 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     ast_test.cpp
     cli_test.cpp
     golden.cpp
+    ir_test.cpp
     lexer_test.cpp
     listing_test.cpp
     parser_test.cpp
+    run_test.cpp
     source_test.cpp
     util.cpp
     version_test.cpp

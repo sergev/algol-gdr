@@ -5,6 +5,7 @@ add_library(algol STATIC
     diag.cpp
     driver.cpp
     frontend.cpp
+    ir.cpp
     lexer.cpp
     listing.cpp
     parser.cpp

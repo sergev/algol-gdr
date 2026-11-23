@@ -30,7 +30,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 ## Layout
 
 - `src/` — compiler: `main.cpp` (CLI), `driver.*` (runs clang), `codegen.*` (AST → LLVM
-  IR), `frontend.*` (parse, check, listing), `source.*`
+  IR), `ir.*` (the IR text builder), `frontend.*` (parse, check, listing), `source.*`
   (UTF-8 input), `lexer.*` (symbols), `parser.*` and
   `syntax.h` (the syntax tree), `checker.*` (scopes and types: the AST), `ast.*` (the AST
   after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages), `listing.*`
@@ -44,7 +44,9 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   `.pre` (`*check`), `.in` (input of the run), `.run` (the extra `dubna` cards of the run:
   libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`). The goldens
   from `dubna` are frozen: the tools that made them are on the `besm6` branch.
-  `listing_test` checks the `.lst` files, `ast_test` the `.ast` and `.err` files.
+  `listing_test` checks the `.lst` files, `ast_test` the `.ast` and `.err` files; `run_test`
+  compiles the programs it lists natively and compares their output with `NAME.native.out`
+  (where the native run differs for a reason) or `NAME.out`.
 - `doc/` — findings about the original compiler (history: the code they describe is on the
   `besm6` branch): [passes.md](doc/passes.md) (driver, passes 1–2, their streams),
   [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),

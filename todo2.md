@@ -19,12 +19,6 @@ runs.
 
 ## Tasks
 
-### Driver and runtime
-
-- **E10** IR emitter (`ir.cpp`): a small text builder for functions, blocks, SSA names,
-  types, globals, string constants. Hello, World end to end: `PRINT` of a string,
-  `run_test` compiling natively and comparing with `.out`.
-
 ### Code generation
 
 Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is `i64`,

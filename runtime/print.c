@@ -28,3 +28,29 @@ void algol_flush_output(void)
     line_bytes = 0;
     column     = 0;
 }
+
+// One character, of n bytes; a full line is printed first.
+static void put_char(const char *s, int n)
+{
+    if (column >= LINE_WIDTH)
+        algol_flush_output();
+    memcpy(line + line_bytes, s, n);
+    line_bytes += n;
+    column++;
+}
+
+void algol_print_string(const char *s)
+{
+    while (*s) {
+        int n           = 1;
+        unsigned char c = *s;
+        if (c >= 0xf0)
+            n = 4;
+        else if (c >= 0xe0)
+            n = 3;
+        else if (c >= 0xc0)
+            n = 2;
+        put_char(s, n);
+        s += n;
+    }
+}

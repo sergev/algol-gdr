@@ -18,4 +18,7 @@ _Noreturn void algol_error(const char *fmt, ...);
 // The end of the program: the print line flushed.
 _Noreturn void algol_stop(void);
 
+// PRINT.
+void algol_print_string(const char *s);
+
 #endif
