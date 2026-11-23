@@ -4,10 +4,10 @@ Goal (from [Roadmap.md](Roadmap.md)): `algc file.alg -o prog` makes a native exe
 x86_64, arm64 and riscv64, and every program in `tests/algol/` that ran under `dubna`
 prints the same output natively.
 
-**Where we start.** Passes 1–6 reproduce the original bit for bit. Passes 1 and 2 are the
-machine-independent front end: pass 2 writes a type-checked postfix stream (doc/passes.md,
-"Output stream"). Passes 3–6, `printm`, `stdarray`, `besm6`, `dump` and the `dubna`
-scripts are BESM-6 only; they stay on the `besm6` branch.
+**Where we are.** The compiler is the front end of the original: passes 1 and 2 (the
+BESM-6 back end is on the `besm6` branch). Pass 2 writes a type-checked postfix stream
+(doc/passes.md, "Output stream"); `Symbols` (src/symbols.h) decodes the declarations, scopes,
+constants and strings its items refer to.
 
 **How.** As in `blang` (`/home/vak/Project/Cursor/blang`, `driver.go`): the compiler writes
 textual LLVM IR and runs `clang` to compile and link. No LLVM libraries are linked into
@@ -15,13 +15,11 @@ textual LLVM IR and runs `clang` to compile and link. No LLVM libraries are link
 later milestones (full Algol-60, publication syntax) do not depend on the stream format.
 The runtime library is C in `runtime/`, built with the compiler.
 
-**Guards.** The pass-1 and pass-2 streams (`.s1`, `.s2`) and the listings of the error
-programs keep the front end unchanged; the frozen `.out` files from `dubna` are the
+**Guards.** The pass-1 and pass-2 streams (`.s1`, `.s2`), the listings (`.lst`) and the
+decoded tables (`.sym`) keep the front end unchanged; the frozen `.out` files from `dubna` are the
 reference for the native runs.
 
 ## Tasks
-
-### Cut the BESM-6 back end
 
 ### Tree
 
