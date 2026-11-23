@@ -1,5 +1,8 @@
 # Symbol names
 
+> History: this describes the original compiler and its C++ rewrite on the `besm6` branch;
+> `algc` on `main` has a new front end (src/lexer.cpp, parser.cpp, checker.cpp).
+
 Suggested names for the entry points and tables of the original compiler, from the analysis in
 [passes.md](passes.md) and [tables.md](tables.md). The Madlen sources in `os-dubna/algol` still
 use address names (`AG15414`). The names here can go into `os-dubna/algol/algol.sym`; that is

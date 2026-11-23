@@ -6,9 +6,9 @@ backend. It began as a re-creation in C++20 of the BESM-6 Algol-GDR compiler (AL
 
 ## Status
 
-The front end (passes 1 and 2) is a complete C++ rewrite of the original: for every
-program in `tests/algol` it gives the same listing and diagnostics. The BESM-6 back end that
-made the same object modules as the original is on the `besm6` branch. Next: an LLVM backend for native executables on
+The front end reads the language of the original and builds a typed AST; its messages are
+GNU style (`file.alg:12: error: …`). The C++ rewrite of the original compiler, which made
+the same listings and object modules, is on the `besm6` branch. Next: an LLVM backend for native executables on
 x86_64, arm64 and riscv64, full Algol-60 with a complete runtime library, and the Algol-60
 programs in
 [x1-algol-compiler/examples](https://github.com/sergev/x1-algol-compiler/tree/main/examples).
@@ -31,9 +31,8 @@ algc [options...] file.alg
 
 | Option | Meaning |
 | --- | --- |
-| `--list` | Listing of the program; otherwise errors only |
+| `--list` | Listing of the program |
 | `--check` | Run-time checks (like `*CHECK`) |
-| `--stop-after=N` | Print the stream of pass N (1-2) and stop |
 | `--dump-ast` | Print the AST in YAML |
 
 The source is the original notation in UTF-8: keywords in quotes (`'BEGIN'`), strings in

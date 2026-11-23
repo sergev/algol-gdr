@@ -36,18 +36,6 @@ const char *listing_char(unsigned c)
     return koi7_listing[c & 0177];
 }
 
-std::string listing_text(const Word *words, unsigned first, unsigned last)
-{
-    std::string s;
-    for (unsigned i = first; i < last; i++) {
-        unsigned c = (words[i / 6] >> (8 * (5 - i % 6))) & 0377;
-        if (c == 3)
-            break;
-        s += listing_char(c);
-    }
-    return s;
-}
-
 std::string rtrim(std::string s)
 {
     s.erase(s.find_last_not_of(' ') + 1);

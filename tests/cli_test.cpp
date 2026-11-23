@@ -78,21 +78,7 @@ TEST(cli, errors)
 {
     auto r = run_command(compiler + " " TEST_DIR "/algol/err_type.alg");
     EXPECT_EQ(r.exit_code, 1);
-    EXPECT_NE(r.output.find("TYPE ERROR"), std::string::npos) << r.output;
-}
-
-TEST(cli, stop_after)
-{
-    auto r = run_command(compiler + " --stop-after=2 " TEST_DIR "/algol/hello.alg");
-    EXPECT_EQ(r.exit_code, 0);
-    EXPECT_EQ(r.output, file_contents(TEST_DIR "/algol/hello.s2"));
-}
-
-TEST(cli, bad_stop_after)
-{
-    auto r = run_command(compiler + " --stop-after=3 " TEST_DIR "/algol/hello.alg");
-    EXPECT_NE(r.exit_code, 0);
-    EXPECT_NE(r.output.find("--stop-after"), std::string::npos);
+    EXPECT_NE(r.output.find("err_type.alg:6: error: Type error"), std::string::npos) << r.output;
 }
 
 TEST(cli, dump_ast)

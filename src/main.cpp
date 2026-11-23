@@ -8,11 +8,10 @@
 #include <iostream>
 
 #include "ast.h"
-#include "checker.h"
 #include "diag.h"
+#include "frontend.h"
+#include "listing.h"
 #include "options.h"
-#include "parser.h"
-#include "passes.h"
 #include "source.h"
 #include "version.h"
 
@@ -24,9 +23,8 @@ static void print_usage(std::ostream &out)
         << "Usage:\n"
         << "    " << prog_name << " [options...] file.alg\n"
         << "Options:\n"
-        << "    --list                  Listing of the program (else errors only)\n"
+        << "    --list                  Listing of the program\n"
         << "    --check                 Run-time checks\n"
-        << "    --stop-after=N          Print the stream of pass N (1-2) and stop\n"
         << "    --dump-ast              Print the AST in YAML\n"
         << "    -h, --help              Display available options\n"
         << "    -V, --version           Print the version number and exit\n";
@@ -34,12 +32,11 @@ static void print_usage(std::ostream &out)
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_LIST = 256, OPT_STOP_AFTER, OPT_CHECK, OPT_DUMP_AST };
+    enum { OPT_LIST = 256, OPT_CHECK, OPT_DUMP_AST };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
         { "list", no_argument, nullptr, OPT_LIST },
-        { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
         { "check", no_argument, nullptr, OPT_CHECK },
         { "dump-ast", no_argument, nullptr, OPT_DUMP_AST },
         {},
@@ -73,15 +70,6 @@ int main(int argc, char *argv[])
         case OPT_DUMP_AST:
             opt.dump_ast = true;
             break;
-        case OPT_STOP_AFTER: {
-            std::string arg = optarg;
-            if (arg.size() != 1 || arg[0] < '1' || arg[0] > '2') {
-                std::cerr << prog_name << ": --stop-after: pass number 1-2 expected\n";
-                return EXIT_FAILURE;
-            }
-            opt.stop_after = arg[0] - '0';
-            break;
-        }
         default:
             print_usage(std::cerr);
             return EXIT_FAILURE;
@@ -93,30 +81,14 @@ int main(int argc, char *argv[])
     }
 
     try {
-        if (opt.dump_ast) {
-            // The new front end.
-            Diagnostics diag(opt.source_file, std::cerr);
-            auto tree    = parse(read_source(opt.source_file), diag);
-            auto program = check(tree, diag);
-            if (diag.errors())
-                return EXIT_FAILURE;
-            ast::print(std::cout, program);
-            return EXIT_SUCCESS;
-        }
-        Context ctx;
-        ctx.options = opt;
-        ctx.source  = read_source(opt.source_file);
-        if (opt.stop_after) {
-            Stream stream;
-            for (int n = 1; n <= opt.stop_after; n++)
-                stream = run_pass(n, ctx, stream);
-            write_stream(std::cout, stream);
-            return EXIT_SUCCESS;
-        }
+        Diagnostics diag(opt.source_file, std::cerr);
         Listing listing(std::cout);
-        ctx.listing = &listing;
-        Stream stream;
-        return compile(ctx, stream) ? EXIT_SUCCESS : EXIT_FAILURE;
+        auto program = front_end(read_source(opt.source_file), diag, opt.list ? &listing : nullptr);
+        if (!program)
+            return EXIT_FAILURE;
+        if (opt.dump_ast)
+            ast::print(std::cout, *program);
+        return EXIT_SUCCESS;
     } catch (const std::exception &e) {
         std::cerr << prog_name << ": " << e.what() << "\n";
         return EXIT_FAILURE;

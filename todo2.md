@@ -4,41 +4,23 @@ Goal (from [Roadmap.md](Roadmap.md)): `algc file.alg -o prog` makes a native exe
 x86_64, arm64 and riscv64, and every program in `tests/algol/` that ran under `dubna`
 prints the same output natively.
 
-**Where we are.** The compiler is the front end of the original: passes 1 and 2 (the
-BESM-6 back end is on the `besm6` branch). Pass 2 writes a type-checked postfix stream
-(doc/passes.md, "Output stream"); `Symbols` (src/symbols.h) decodes the declarations, scopes,
-constants and strings its items refer to.
+**Where we are.** The front end is new (E7.1): a lexer, a parser to a syntax tree and a
+checker that builds the AST (doc/ast.asdl), with GNU-style messages. The original's passes
+are gone from `main`; the BESM-6 compiler is on the `besm6` branch.
 
 **How.** As in `blang` (`/home/vak/Project/Cursor/blang`, `driver.go`): the compiler writes
 textual LLVM IR and runs `clang` to compile and link. No LLVM libraries are linked into
-`algc`. Between the stream and the IR there is a tree (AST), so the IR generator and the
-later milestones (full Algol-60, publication syntax) do not depend on the stream format.
+`algc`. The IR generator works on the AST.
 The runtime library is C in `runtime/`, built with the compiler.
 
-**Guards.** The pass-1 and pass-2 streams (`.s1`, `.s2`), the listings (`.lst`) and the
-decoded tables (`.sym`) keep the front end unchanged; the frozen `.out` files from `dubna` are the
-reference for the native runs.
+**Guards.** The listings (`.lst`), the ASTs (`.ast`) and the messages (`.err`) keep the
+front end unchanged; the frozen `.out` files from `dubna` are the reference for the native
+runs.
 
 ## Tasks
 
 ### Tree
 
-A new front end replaces passes 1 and 2 (E7.1a–d): a lexer, a parser to a syntax tree and a
-checker that builds the AST, on real data structures (a scope tree of declarations,
-constants and strings as values) instead of D-list addresses, name slots, the cells at
-02000…/04000…/016111… and the continuation addresses of pass 2. The old passes stay as
-the reference until the new front end matches the goldens of correct programs, then go.
-The size limits of the original (hash table, constant page, D-list, string pool) go.
-
-Errors need not be those of the original: messages are in sentence case, GNU style
-(`file.alg:12: error: Undeclared identifier 'X'`), on stderr, with better recovery (report
-and go on at the next statement). The listing (`--list`) of a correct program stays as it
-is; error messages are no longer in it. Goldens `.err` hold the messages of the error
-programs.
-
-- **E7.1d** Switch over: `algc` on the new front end; passes 1–2, `Tables`, `Symbols`,
-  the stream items, `ast_builder` and the `.s1`/`.s2`/`.lex`/`.sym` goldens go; docs
-  updated (doc/passes.md and doc/tables.md become history of the original).
 - **E7.2** UTF-8 throughout: no more ISO (KOI-7) or TEXT encoding inside the compiler, and
   no forced uppercase. Source, names, strings and messages stay UTF-8; keywords are
   recognized and printed in lowercase; user identifiers keep their spelling as written.

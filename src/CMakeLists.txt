@@ -1,21 +1,13 @@
 add_library(algol STATIC
-    arith.cpp
     ast.cpp
-    ast_builder.cpp
     card.cpp
     checker.cpp
     diag.cpp
-    item.cpp
+    frontend.cpp
     lexer.cpp
     listing.cpp
-    pass1_lexer.cpp
-    pass1_parser.cpp
-    pass2.cpp
     parser.cpp
-    passes.cpp
     source.cpp
-    symbols.cpp
-    tables.cpp
     version.cpp
 )
 target_include_directories(algol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

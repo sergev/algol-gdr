@@ -10,19 +10,14 @@ include(GoogleTest)
 enable_testing()
 
 add_executable(unit_tests EXCLUDE_FROM_ALL
-    arith_test.cpp
     ast_test.cpp
     card_test.cpp
     cli_test.cpp
     golden.cpp
-    item_test.cpp
     lexer_test.cpp
     listing_test.cpp
-    new_lexer_test.cpp
     parser_test.cpp
-    pass_test.cpp
     source_test.cpp
-    symbols_test.cpp
     util.cpp
     version_test.cpp
 )

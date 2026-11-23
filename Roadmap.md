@@ -21,12 +21,10 @@ original is in `doc/`.
 
 Goal: `algc file.alg -o prog` produces a native executable on x86_64, arm64 and riscv64.
 
-- **Front end only** (done). The BESM-6 back end (passes 3–6) is gone; that version stays on
-  the `besm6` branch. Passes 1 and 2 share `Tables` (the name table by slot, the D-list by
-  address) instead of the workspace, and `Symbols` decodes them for the back end. The
-  numbering of slots and D-list addresses is kept, so the original's size limits (the hash
-  table, the constant page, the D-list) remain until the stream format is replaced.
-- **Split point**: the pass-2 stream, turned into an AST (todo2.md).
+- **Front end** (done). The passes of the original are gone; that version stays on the
+  `besm6` branch. A new lexer, parser and checker build the AST (doc/ast.asdl), without the
+  size limits of the original, with GNU-style messages.
+- **Split point**: the AST (todo2.md).
 - **IR generation** modelled on `blang` (`irbuilder.go`, `driver.go`): emit textual LLVM IR,
   call `clang` to compile and link. Options `-S` (keep `.ll`), `-c`, `-O`.
 - **Semantics on a 64-bit host.** Decide and document:

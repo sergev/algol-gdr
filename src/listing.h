@@ -8,7 +8,6 @@
 #include <iosfwd>
 #include <string>
 
-#include "word.h"
 
 //
 // The listing as dubna prints it: the compiler's ISO (KOI-7) characters go to
@@ -18,9 +17,6 @@
 
 // One character; some print as nothing.
 const char *listing_char(unsigned c);
-
-// Characters bytes[first…last) of ISO words, 6 per word; code 003 ends the line.
-std::string listing_text(const Word *words, unsigned first, unsigned last);
 
 // Without trailing blanks.
 std::string rtrim(std::string s);

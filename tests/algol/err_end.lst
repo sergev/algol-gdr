@@ -5,10 +5,8 @@ A L G O L - Г Д P
      2.         ′COMMENT′ MISSING END, EXPONENT OVERFLOW;
      3.         ′REAL′ X;
      4.         X := 1.0⏨20;
-ERROR 11    REAL OVERFLOW
      5.         ′BEGIN′
      6.             X := 0
      7.     ′END′
      8.     ′EOP′
-ERROR 46    STATEMENT
-↑EOP↑ BEFORE END OF PROGRAM
+

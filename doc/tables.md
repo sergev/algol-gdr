@@ -1,5 +1,8 @@
 # Tables of the original compiler
 
+> History: this describes the original compiler and its C++ rewrite on the `besm6` branch;
+> `algc` on `main` has a new front end (src/lexer.cpp, parser.cpp, checker.cpp).
+
 The data areas of overlay `ALGOL`, and the tables inside the pass modules. Addresses are
 octal. The details of how each pass uses them are in [passes.md](passes.md).
 

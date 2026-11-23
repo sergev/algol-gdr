@@ -5,66 +5,33 @@ A L G O L - Г Д P
      2.         ′COMMENT′ MORE THAN 30 ERRORS;
      3.         ′INTEGER′ I;
      4.         I := (1;
-ERROR 21    EXPRESSION
      5.         I := (1;
-ERROR 21    EXPRESSION
      6.         I := (1;
-ERROR 21    EXPRESSION
      7.         I := (1;
-ERROR 21    EXPRESSION
      8.         I := (1;
-ERROR 21    EXPRESSION
      9.         I := (1;
-ERROR 21    EXPRESSION
     10.         I := (1;
-ERROR 21    EXPRESSION
     11.         I := (1;
-ERROR 21    EXPRESSION
     12.         I := (1;
-ERROR 21    EXPRESSION
     13.         I := (1;
-ERROR 21    EXPRESSION
     14.         I := (1;
-ERROR 21    EXPRESSION
     15.         I := (1;
-ERROR 21    EXPRESSION
     16.         I := (1;
-ERROR 21    EXPRESSION
     17.         I := (1;
-ERROR 21    EXPRESSION
     18.         I := (1;
-ERROR 21    EXPRESSION
     19.         I := (1;
-ERROR 21    EXPRESSION
     20.         I := (1;
-ERROR 21    EXPRESSION
     21.         I := (1;
-ERROR 21    EXPRESSION
     22.         I := (1;
-ERROR 21    EXPRESSION
     23.         I := (1;
-ERROR 21    EXPRESSION
     24.         I := (1;
-ERROR 21    EXPRESSION
     25.         I := (1;
-ERROR 21    EXPRESSION
     26.         I := (1;
-ERROR 21    EXPRESSION
     27.         I := (1;
-ERROR 21    EXPRESSION
     28.         I := (1;
-ERROR 21    EXPRESSION
     29.         I := (1;
-ERROR 21    EXPRESSION
     30.         I := (1;
-ERROR 21    EXPRESSION
     31.         I := (1;
-ERROR 21    EXPRESSION
     32.         I := (1;
-ERROR 21    EXPRESSION
     33.         I := (1;
-30 ERRORS , COMPILATION INTERRUPTED
-    34.         I := (1;
-    35.         I := (1;
-    36.     ′END′
-    37.     ′EOP′
+

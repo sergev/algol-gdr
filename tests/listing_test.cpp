@@ -1,18 +1,21 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The listing: the compiler in check mode must print NAME.lst. It was the
-// listing of the original with *call setftn:one,long (which sets check mode),
-// from the banner on, without what passes 5 and 6 printed.
+// The listing of each program must be NAME.lst: the cards as the original
+// printed them (its messages are not in it any more). With
+// ALGC_UPDATE_GOLDENS set, NAME.lst is written instead.
 //
 #include "listing.h"
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
+#include <fstream>
 #include <sstream>
 
+#include "diag.h"
+#include "frontend.h"
 #include "golden.h"
-#include "passes.h"
 #include "source.h"
 #include "util.h"
 
@@ -21,15 +24,14 @@ class ListingTest : public ::testing::TestWithParam<std::string> {};
 TEST_P(ListingTest, text)
 {
     const std::string &name = GetParam();
-    Context ctx;
-    std::ostringstream out;
-    load_options(ctx.options, name);
-    ctx.options.check_mode = true;
+    std::ostringstream out, err;
     Listing listing(out);
-    ctx.listing = &listing;
-    ctx.source  = read_source(path(name, ".alg"));
-    Stream stream;
-    compile(ctx, stream);
+    Diagnostics diag(name + ".alg", err);
+    front_end(read_source(path(name, ".alg")), diag, &listing);
+    if (std::getenv("ALGC_UPDATE_GOLDENS")) {
+        std::ofstream(path(name, ".lst")) << out.str();
+        return;
+    }
     EXPECT_EQ(out.str(), file_contents(path(name, ".lst")));
 }
 

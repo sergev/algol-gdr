@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "passes.h"
+#include "options.h"
 
 // Names of the test programs tests/algol/NAME.alg, sorted.
 std::vector<std::string> program_names();

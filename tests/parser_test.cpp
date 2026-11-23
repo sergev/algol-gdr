@@ -1,58 +1,15 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The parser on every program: its listing is that of the original up to
-// the messages there.
+// The parser: precedence, recovery, procedure headings.
 //
 #include "parser.h"
 
 #include <gtest/gtest.h>
 
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
 #include <sstream>
 
 #include "diag.h"
-#include "golden.h"
-#include "listing.h"
-#include "source.h"
-#include "util.h"
-
-class ParserTest : public ::testing::TestWithParam<std::string> {};
-
-TEST_P(ParserTest, listing_and_messages)
-{
-    const std::string &name = GetParam();
-    std::ostringstream lst, err;
-    Listing listing(lst);
-    listing.print("A L G O L - Г Д P");
-    listing.print("    (7.01.82)");
-    listing.blank();
-    Diagnostics diag(name + ".alg", err);
-    parse(read_source(path(name, ".alg")), diag, &listing);
-
-    // The cards up to the first message of the original.
-    std::string want = file_contents(path(name, ".lst"));
-    std::string got  = lst.str();
-    size_t n         = 0;
-    while (n < got.size() && n < want.size() && got[n] == want[n])
-        n++;
-    std::string rest = want.substr(n);
-    if (n < got.size()) {
-        EXPECT_TRUE(rest.empty() || rest.rfind("     ", 0) != 0) << "listing differs at:\n"
-                                                                 << got.substr(n, 200);
-    }
-
-    // The messages are checked with the AST (ast_test).
-}
-
-static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
-{
-    return p.param;
-}
-
-INSTANTIATE_TEST_SUITE_P(algol, ParserTest, ::testing::ValuesIn(program_names()), param_name);
 
 static std::string messages(const std::string &text)
 {

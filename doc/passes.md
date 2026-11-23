@@ -1,5 +1,8 @@
 # Passes of the original compiler
 
+> History: this describes the original compiler and its C++ rewrite on the `besm6` branch;
+> `algc` on `main` has a new front end (src/lexer.cpp, parser.cpp, checker.cpp).
+
 The root overlay `ALGOL` (loaded at 01604, entry 01614) is a driver that calls the passes one
 after another. Sources: `os-dubna/algol/*.asm` (copy in `tmp/asm-sources/`). Addresses are
 octal. The BESM-6 back end (passes 3–6) is described on the `besm6` branch; this note keeps

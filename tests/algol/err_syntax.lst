@@ -5,16 +5,10 @@ A L G O L - Г Д P
      2.         ′COMMENT′ SYNTAX ERRORS;
      3.         ′INTEGER′ I;
      4.         I := (1 + 2;
-ERROR 21    EXPRESSION
      5.         I := 1 + * 2;
-ERROR 20    EXPRESSION
      6.         ′IF′ I ′DO′ I := 0;
-ERROR 31    IF STATEMENT
      7.         ′FOR′ I := 1 ′UNTIL′ 2 ′DO′ ;
-ERROR 37    FOR STATEMENT
      8.         I = 1;
-ERROR 46    STATEMENT
      9.     ′END′
     10.     ′EOP′
-ILLEGAL USE OF IDENTIFIER ′I′. NEXT STATEMENT IS    8/ 2
- * * INCORRECT ALGOL PROGRAM * *
+
