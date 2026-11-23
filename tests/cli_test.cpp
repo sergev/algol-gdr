@@ -38,22 +38,74 @@ TEST(cli, bad_option)
     EXPECT_EQ(r.exit_code, 1);
 }
 
-TEST(cli, two_files)
+TEST(cli, unknown_input)
 {
-    auto r = run_command(compiler + " a.alg b.alg");
+    auto r = run_command(compiler + " a.txt");
     EXPECT_EQ(r.exit_code, 1);
-    EXPECT_NE(r.output.find("too many input files"), std::string::npos);
+    EXPECT_NE(r.output.find("a.txt: unknown kind of file"), std::string::npos);
+}
+
+TEST(cli, bad_level)
+{
+    auto r = run_command(compiler + " -O7 x.alg");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_NE(r.output.find("bad optimization level"), std::string::npos);
+}
+
+TEST(cli, output_of_several)
+{
+    auto r = run_command(compiler + " -c -o x.o a.alg b.alg");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_NE(r.output.find("-o with several inputs"), std::string::npos);
+}
+
+// --emit-llvm writes IR; -S and -c take it on to clang.
+TEST(cli, outputs)
+{
+    const std::string base = BUILD_DIR "/cli_hello";
+    const std::string src  = " " TEST_DIR "/algol/hello.alg";
+    auto r                 = run_command(compiler + " --emit-llvm -o " + base + ".ll" + src);
+    ASSERT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_NE(file_contents(base + ".ll").find("define"), std::string::npos);
+
+    r = run_command(compiler + " -S -o " + base + ".s " + base + ".ll");
+    ASSERT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_NE(file_contents(base + ".s").find("algol_main"), std::string::npos);
+
+    r = run_command(compiler + " -c -o " + base + ".o" + src);
+    ASSERT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_FALSE(file_contents(base + ".o").empty());
+
+    r = run_command(compiler + " -v -c -o " + base + ".o " + base + ".s");
+    ASSERT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_NE(r.output.find("running"), std::string::npos);
+}
+
+// The intermediate .ll stays with --save-temps.
+TEST(cli, save_temps)
+{
+    const std::string dir = BUILD_DIR "/cli_temps";
+    auto r = run_command("rm -rf " + dir + " && mkdir " + dir + " && cd " + dir + " && " +
+                         compiler + " --save-temps -c " TEST_DIR "/algol/hello.alg && ls");
+    ASSERT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_NE(r.output.find("hello.ll"), std::string::npos);
+    EXPECT_NE(r.output.find("hello.o"), std::string::npos);
+
+    r = run_command("rm -rf " + dir + " && mkdir " + dir + " && cd " + dir + " && " + compiler +
+                    " -c " TEST_DIR "/algol/hello.alg && ls");
+    ASSERT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_EQ(r.output, "hello.o\n");
 }
 
 // Without --list only the errors print, as with *NO LIST.
 TEST(cli, list)
 {
     const std::string out = " " TEST_DIR "/algol/hello.alg";
-    auto r                = run_command(compiler + out);
+    auto r                = run_command(compiler + " --syntax-only" + out);
     EXPECT_EQ(r.exit_code, 0);
     EXPECT_EQ(r.output.find("A L G O L"), std::string::npos) << r.output;
 
-    r = run_command(compiler + " --list" + out);
+    r = run_command(compiler + " --syntax-only --list" + out);
     EXPECT_EQ(r.exit_code, 0);
     EXPECT_EQ(r.output.rfind("A L G O L", 0), 0u) << r.output;
 }
@@ -76,7 +128,7 @@ TEST(cli, invalid_utf8)
 
 TEST(cli, errors)
 {
-    auto r = run_command(compiler + " " TEST_DIR "/algol/err_type.alg");
+    auto r = run_command(compiler + " --syntax-only " TEST_DIR "/algol/err_type.alg");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_NE(r.output.find("err_type.alg:6: error: Type error"), std::string::npos) << r.output;
 }

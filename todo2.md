@@ -21,11 +21,6 @@ runs.
 
 ### Driver and runtime
 
-- **E8** Command line as `blang`: default output is an executable (`file` for `file.alg`);
-  `-c` object, `-S` assembly, `--emit-llvm` IR (`.ll`); `-O0..3` (default `-O1`), `-g`,
-  `-v`, `--save-temps`, `-L`, `-l`, `--target=TRIPLE`; inputs `.alg`, `.ll`, `.s`, `.o`,
-  `.a`. `clang` found in `PATH` (or `$ALGC_CLANG`). Temporary `.ll` removed unless
-  `--save-temps`. CLI tests.
 - **E9** Runtime skeleton `runtime/` → `libalgol.a`, built by CMake for the host, installed
   to `lib/`. Unlike `blang`, it uses libc and libm (math functions and number formatting);
   linked with `-lalgol -lm`. The compiler finds it next to itself (build tree) or under the

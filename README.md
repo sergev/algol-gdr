@@ -26,14 +26,27 @@ Needs CMake and a C++20 compiler.
 ## Usage
 
 ```
-algc [options...] file.alg
+algc [options...] files...
 ```
+
+Inputs are `.alg` (Algol), `.ll` (LLVM IR), `.s`, `.o` and `.a`. The compiler writes LLVM IR
+and runs `clang` (from `PATH`, or `$ALGC_CLANG`) to make the output; by default an executable
+named after the first `.alg` file, linked with `libalgol.a` and `-lm`.
 
 | Option | Meaning |
 | --- | --- |
+| `-o FILE` | Output file |
+| `-c`, `-S`, `--emit-llvm` | Stop at an object file, assembly, LLVM IR |
+| `--syntax-only` | Only check the program |
+| `-O0`…`-O3` | Optimization level (default `-O1`) |
+| `-g` | Debug information |
+| `-L DIR`, `-l LIB` | Libraries to link with |
+| `--target=TRIPLE` | Target machine, as for clang |
+| `--save-temps` | Keep the intermediate `.ll` files |
+| `-v` | Show the commands run |
 | `--list` | Listing of the program |
 | `--check` | Run-time checks (like `*CHECK`) |
-| `--dump-ast` | Print the AST in YAML |
+| `--dump-ast` | Print the AST in YAML, no output |
 
 The source is UTF-8. Keywords are written with a leading underscore, in any case (`_begin`,
 `_BEGIN`; the original had them in quotes, `'BEGIN'`), strings in `''…''`, `_eop` at the end.

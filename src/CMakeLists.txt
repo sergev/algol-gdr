@@ -1,7 +1,9 @@
 add_library(algol STATIC
     ast.cpp
     checker.cpp
+    codegen.cpp
     diag.cpp
+    driver.cpp
     frontend.cpp
     lexer.cpp
     listing.cpp

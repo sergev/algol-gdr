@@ -18,8 +18,10 @@ make                     # build (CMake, build/), cppcheck runs as part of it
 make test                # unit tests via ctest
 ./build/tests/unit_tests --gtest_filter='cli.*'   # one test group
 make test                # rebuilds unit_tests; plain make does not
-./build/src/algc [--list] [--check] X.alg   # check; listing on stdout, errors on stderr
+./build/src/algc X.alg -o X                # executable (clang, libalgol.a)
+./build/src/algc --syntax-only [--list] X.alg   # check; listing on stdout, errors on stderr
 ./build/src/algc --dump-ast X.alg          # print the AST (YAML)
+./build/src/algc --emit-llvm X.alg         # X.ll
 ```
 
 Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Format with
@@ -27,7 +29,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `frontend.*` (parse, check, listing), `source.*`
+- `src/` — compiler: `main.cpp` (CLI), `driver.*` (runs clang), `codegen.*` (AST → LLVM
+  IR), `frontend.*` (parse, check, listing), `source.*`
   (UTF-8 input), `lexer.*` (symbols), `parser.*` and
   `syntax.h` (the syntax tree), `checker.*` (scopes and types: the AST), `ast.*` (the AST
   after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages), `listing.*`
