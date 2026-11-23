@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "tables.h"
 
 namespace {
 
@@ -24,6 +23,22 @@ constexpr unsigned COMTAB      = 027246;
 constexpr Word BIT48 = 04000000000000000;
 
 const char *const HEADING = "CTPOKИ             OTHOCИTEЛЬHЫE AДPECA";
+
+// Names of the run-time routines (G30120), in TEXT at 02400…: code address
+// 04000+k calls routine k.
+const char *const RUNTIME_NAMES[] = {
+    "A/MINUS", "A/NOT", "A/RTOI", "A/SIGN", "A/AND", "A/EQUIV", "A/I0", "A/CALLS", "A/CALLP",
+    "A/PARCON", "A/PARVAR", "A/PARPAR", "A/START", "A/PARLAB", "A/PARVAL", "A/PAREXP", "A/PROCRT",
+    "A/ARRD/V", "A/ARRD/K", "A/RHOCHI", "A/IHOCHI", "POWER", "A/IMPL", "A/PARSTR", "SIN*", "COS*",
+    "SQRT*", "LN*", "ARCTAN*", "EXP*", "BCDDEC*", "A/SIGN", "ENTIER*", "A/RPRI", "A/IPRI", "A/BPRI",
+    "A/SPRI", "A/LPRI", "A/NPAGE", "A/STOP", "A/RAPRI", "A/IAPRI", "A/BAPRI", "A/SAPRI", "A/LAPRI",
+    "BINREAD*", "BINWRIT*", "IOAC*", "A/GETARR", "A/PUTARR", "IOEND*", "*BACKS", "*REWIN", "*ENDFI",
+    "A/LOADGO", "LOADGO", "A/SLTS", "A/SLES", "A/SGES", "A/SGTS", "A/SEQS", "A/SNES", "A/SPLUSS",
+    "A/SSULPS", "A/SLICE", "BCDREAD*", "A/RREAD", "A/IREAD", "A/BREAD", "A/SREAD", "A/LREAD",
+    "A/NLINE", "BCDWRIT*", "A/ARGSTR", "A/RNLINE", "BCDENC*", "A/SUBCH", "A/OPTLIN", "A/VLM1",
+    "A/VLMX", "A/NOTL", "A/LHOCHR", "A/LHOCHI", "A/RAREAD", "A/IAREAD", "A/BAREAD", "A/SAREAD",
+    "A/LAREAD", "LENGTH", "A/COMMON",
+};
 
 // Label table access as in the original: 074400 with C = h & 077777.
 unsigned label_addr(unsigned h)
@@ -88,8 +103,9 @@ private:
 
 void restore_rtnames(Workspace &ws)
 {
-    for (unsigned i = 0; i < tables::rtnames.words.size(); i++)
-        ws[RTNAMES + i] = tables::rtnames.words[i];
+    unsigned i = 0;
+    for (const char *name : RUNTIME_NAMES)
+        ws[RTNAMES + i++] = utf8_to_text(name);
 }
 
 Stream pass5(Context &ctx, const Stream &input)

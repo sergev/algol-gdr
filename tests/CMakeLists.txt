@@ -28,6 +28,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     source_test.cpp
     stdarray_test.cpp
     tables_test.cpp
+    tables_image_test.cpp
     util.cpp
     version_test.cpp
     workspace_test.cpp
