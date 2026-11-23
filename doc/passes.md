@@ -674,6 +674,8 @@ when set, it emits `13 VJM` to `A/SUBCH` after each subscript computation.
 | 24021–24136 | operators (C++): unary through 24041, binary through 24062 (template in M11; both operands dispatched, the left loaded when neither is in A), not commutative through 24122 (a word of two templates: left half for A op stack, right half when the right operand is in A), real division 24076 (two halves of its own when both are on the stack); standard functions 071 (routine 4030+n; 6 inline), procedures 072 |
 | 24221, 24226 | assignment (C++): to a variable 0100 (template 25760), to a formal by name 0101 (its address kept in a register counted down by 02021 from 5, else pushed) |
 | 25276–25362 | powers and library calls (C++): x**c by c − 1 multiplications (0152, 0153; an octal base 0352: `ASN`); 0147–0151, 001, 0157 call a routine of two operands (4021–4026, 4121, 4122, 4070+n); string slice 050 (routine 4100) |
+| 24137–24220 | IF and jumps (C++): IF 027 (the condition loaded, U1A to a new label, pushed); compare-and-jump 0130–0133 (a word of two templates, as for 24122) and 0134 (strings, template 26040); end of IF 053, 054 and ELSE 031 define the pushed label (template 26051). 02004 is the next label number |
+| 24661, 24666, 25010–25041 | GOTO a label 024 (UJ, template 24671), a switch element 025; switch (in pass 4's order): 0143 pushes the table's label, elements 0142 (a label), 0144 (an expression, with its own label), then 041 emits template 25040 and a UJ per element (C++) |
 | 24324 | address of a subscripted variable, plus the check call |
 | 25525 | block entry: assign storage offsets; enter external and 'CODE' names |
 | 26152 | EOP (C++): the main program ends with `UJ A/STOP`, `0200.0000`, `0211.0000` (template 26160); return to the driver |

@@ -11,6 +11,7 @@ constexpr unsigned READ        = 027154; // the next item of the input stream in
 constexpr unsigned WRITE       = 027126; // A to the output stream
 constexpr unsigned PAGE        = 02000;  // page and position of the streams
 constexpr unsigned POS         = 02001;
+constexpr unsigned LABELS      = 02004;      // the next label number
 constexpr unsigned EMIT_MODE   = 02022;      // 1 after 0200.0000: the next half starts a word
 constexpr unsigned NAMES       = 06000;      // the names, from drum 26 zone 0
 constexpr unsigned EXT_NAMES   = 027245;     // external table: 3 words per name
@@ -1063,6 +1064,287 @@ void register_operators(Machine::Natives &n)
     n[025360] = slice_5;
 }
 
+//
+// Jumps. LABELS (02004) is the next label number; a forward jump pushes
+// its label for the item that defines it.
+//
+
+// 24142: emit the jump in A, push its label, next label; on to the main loop.
+unsigned jump_ahead(Machine &m)
+{
+    emit_half(m, 024143);
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 0);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    return MAIN_LOOP;
+}
+
+// 24137: IF (027): the condition loaded, U1A to a new label.
+unsigned if_item(Machine &m)
+{
+    return operand(m, 024140);
+}
+
+unsigned if_item_2(Machine &m)
+{
+    load(m, 024141);
+    m.xta(7, 02302);
+    m.aox(0, LABELS);
+    return jump_ahead(m);
+}
+
+// 24146: compare-and-jump of a string (0134): both operands, template
+// 26040, then U1A ahead.
+unsigned string_jump(Machine &m)
+{
+    return operand(m, 024147);
+}
+
+unsigned string_jump_2(Machine &m)
+{
+    return operand(m, 024150);
+}
+
+unsigned string_jump_3(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.u1a()) {
+        m.xta(Machine::SP, 0);
+        if (m.u1a()) {
+            m.utm(Machine::SP, 2);
+            load(m, 024160);
+        } else {
+            m.xta(Machine::SP, 1);
+            m.atx(Machine::SP, 0);
+        }
+    }
+    m.vtm(11, 026040);
+    m.set_m(12, 024152);
+    run_template(m);
+    m.vtm(4, 0);
+    m.xta(7, 02304);
+    m.aox(0, LABELS);
+    return jump_ahead(m);
+}
+
+//
+// 24165: compare-and-jump (0130–0133), M11 = a word of two templates (as
+// for 24122): the label pushed under the operands; the template jumps to it.
+//
+unsigned compare_jump(Machine &m)
+{
+    m.ita(0, 013);
+    m.xts(0, LABELS);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024167);
+}
+
+unsigned compare_jump_2(Machine &m)
+{
+    return operand(m, 024170);
+}
+
+unsigned compare_jump_3(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.u1a()) {
+        m.xta(Machine::SP, 0);
+        if (m.u1a()) {
+            m.utm(Machine::SP, 2);
+            m.set_m(12, 024205);
+            load_operand(m);
+            m.utm(Machine::SP, 077776);
+        }
+        m.xta(Machine::SP, 1);
+        m.atx(Machine::SP, 0);
+        m.wtc(Machine::SP, 077775);
+        m.xta(0, 0);
+        m.asn(0, 0130);
+        m.ati(0, 013);
+    } else {
+        m.wtc(Machine::SP, 077775);
+        m.xta(0, 0);
+        m.ati(0, 013);
+    }
+    m.vtm(4, 0);
+    m.set_m(12, 024174);
+    run_template(m);
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 077777);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    return MAIN_LOOP;
+}
+
+unsigned compare_jump_with(Machine &m, unsigned pair)
+{
+    m.vtm(11, pair);
+    return compare_jump(m);
+}
+
+// 24210: define the label in A (template 26051), the value in A.
+unsigned define_label(Machine &m)
+{
+    m.utm(Machine::SP, 077776);
+    m.atx(0, LABELS);
+    return apply_template(m, 026051);
+}
+
+// 24206: the end of an IF statement (053): its label.
+unsigned if_end(Machine &m)
+{
+    m.xta(Machine::SP, 077775);
+    return define_label(m);
+}
+
+// 24207: the end of a conditional expression (054): the label before.
+unsigned if_expression_end(Machine &m)
+{
+    m.xta(Machine::SP, 077775);
+    m.arx(7, 02522);
+    return define_label(m);
+}
+
+// 24213: ELSE (031): UJ to a new label, then the IF's label defined.
+unsigned else_item(Machine &m)
+{
+    m.utm(Machine::SP, 077776);
+    m.xta(7, 02317);
+    m.aox(0, LABELS);
+    emit_half(m, 024215);
+    m.vtm(11, 026051);
+    m.set_m(12, 024216);
+    run_template(m);
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 0);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    return MAIN_LOOP;
+}
+
+// 24666: GOTO a label (024): UJ (template 24671).
+unsigned goto_label(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 024671);
+    m.vtm(12, 024016);
+    return TEMPLATE;
+}
+
+// 24661: an element of a switch (025), the index on the stack: loaded
+// (template 24360) unless in A, the half M7+1147 with it, then as 024.
+unsigned switch_element(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (!m.uza()) {
+        m.atx(Machine::SP, 0);
+        m.vtm(11, 024360);
+        m.set_m(12, 024664);
+        run_template(m);
+    }
+    m.xta(7, 01147);
+    m.aox(Machine::SP, 0);
+    emit_half(m, 024666);
+    return goto_label(m);
+}
+
+// 25010: switch elements start (0143): the label of the table pushed.
+unsigned switch_start(Machine &m)
+{
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 0);
+    return DISPATCH_NEXT;
+}
+
+// 25012: an element expression (0144): its own label, the expression.
+unsigned switch_expression(Machine &m)
+{
+    m.xta(0, LABELS);
+    m.aox(7, 0746);
+    emit_half(m, 025014);
+    m.xta(0, LABELS);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    return operand(m, 025016);
+}
+
+unsigned switch_expression_2(Machine &m)
+{
+    m.xta(0, LABELS);
+    m.arx(7, 02533);
+    m.atx(Machine::SP, 077777);
+    return DISPATCH_NEXT;
+}
+
+// 25020: an element label (0142).
+unsigned switch_label(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.aox(7, 02317);
+    m.atx(Machine::SP, 0);
+    return DISPATCH_NEXT;
+}
+
+// 25023: the switch (041) with M2 elements: template 25040, then UJ to each
+// element (M7+744 after each) from the stack.
+unsigned switch_end(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02526);
+    m.atx(Machine::SP, 0);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025040);
+    m.set_m(12, 025026);
+    run_template(m);
+    m.ita(0, 2);
+    m.aex(7, 02526);
+    m.ati(0, 014);
+    m.utm(12, 1);
+    m.mtj(12, 013);
+    do {
+        m.utc(Machine::SP, 0);
+        m.xta(12, 0);
+        emit_half(m, 025033);
+        m.xta(7, 0744);
+        emit_half(m, 025034);
+        m.utm(12, 1);
+    } while (m.M[12]);
+    m.utc(11, 0);
+    m.utm(Machine::SP, 0);
+    m.xta(Machine::SP, 0);
+    m.atx(0, LABELS);
+    return DISPATCH_NEXT;
+}
+
+void register_jumps(Machine::Natives &n)
+{
+    n[024137] = if_item;
+    n[024140] = if_item_2;
+    n[024146] = string_jump;
+    n[024147] = string_jump_2;
+    n[024150] = string_jump_3;
+    n[024161] = [](Machine &m) { return compare_jump_with(m, 026052); };
+    n[024162] = [](Machine &m) { return compare_jump_with(m, 026053); };
+    n[024163] = [](Machine &m) { return compare_jump_with(m, 026054); };
+    n[024164] = [](Machine &m) { return compare_jump_with(m, 026055); };
+    n[024167] = compare_jump_2;
+    n[024170] = compare_jump_3;
+    n[024206] = if_end;
+    n[024207] = if_expression_end;
+    n[024213] = else_item;
+    n[024661] = switch_element;
+    n[024666] = goto_label;
+    n[025010] = switch_start;
+    n[025012] = switch_expression;
+    n[025016] = switch_expression_2;
+    n[025020] = switch_label;
+    n[025023] = switch_end;
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -1087,5 +1369,6 @@ Stream pass4(Context &ctx, const Stream &input)
     n[026152]        = eop;
     n[026156]        = eop_end;
     register_operators(n);
+    register_jumps(n);
     return pass.run(023523, 01633);
 }
