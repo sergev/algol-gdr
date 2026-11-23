@@ -179,6 +179,8 @@ public:
         for (const auto &e : p.externals) {
             Node x = mapping(e.kind == External::CODE ? "code" : "algol", true);
             x.add("name", quoted(e.name)).add("id", scalar(number(e.id)));
+            if (e.type != Type::NONE)
+                x.add("type", scalar(to_string(e.type)));
             extern_list.seq.push_back(std::move(x));
         }
         n.add("externals", std::move(extern_list));

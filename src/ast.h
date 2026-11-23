@@ -302,6 +302,7 @@ struct External {
     std::string name;
     int id{};
     Kind kind{};
+    Type type{ Type::NONE }; // of a function
 };
 
 struct Program {

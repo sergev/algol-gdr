@@ -25,10 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E19** Call by name: thunks as `{code, env}` pairs giving the address (or the value
-  for expressions); assignment to a name parameter; actual parameters that are constants,
-  variables, array elements, expressions, procedures, labels, strings (runtime-abi.md
-  `A/PARxxx`). Test man_or_boy, mixed; juggle compiles.
 - **E20** Labels and switches across procedures: non-local GOTO out of a procedure or a
   thunk (setjmp/longjmp, only for labels pass 2 marks as used outside), switches and
   designational expressions, labels as parameters. Test switch.

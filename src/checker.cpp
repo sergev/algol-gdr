@@ -231,7 +231,7 @@ Program Checker::program(const syn::Program &p)
         s.type = e.type;
         s.mode = Mode::EXTERNAL;
         int i  = declare(e.name.line, e.name.name, s);
-        out.externals.push_back(External{ e.name.name, sym(i).id, e.kind });
+        out.externals.push_back(External{ e.name.name, sym(i).id, e.kind, e.type });
     }
     Decls decls = ptrs(p.decls);
     if (p.module) {

@@ -1,5 +1,5 @@
 externals:
-  - {kind: code, name: "rndm", id: 1}
+  - {kind: code, name: "rndm", id: 1, type: real}
   - {kind: algol, name: "BOZP", id: 2}
   - {kind: algol, name: "YBYB", id: 3}
 block:

@@ -1,6 +1,6 @@
 externals:
-  - {kind: code, name: "xeen", id: 1}
-  - {kind: code, name: "available", id: 2}
+  - {kind: code, name: "xeen", id: 1, type: integer}
+  - {kind: code, name: "available", id: 2, type: integer}
   - {kind: code, name: "draw", id: 3}
 block:
   kind: block

@@ -22,7 +22,7 @@ module AST {
     -- outer block.
     Program = (External* externals, Stmt block)
 
-    External = (identifier name, int id, ExternalKind kind)
+    External = (identifier name, int id, ExternalKind kind, Type type)   -- None: no value
     ExternalKind = Code | Algol
 
     Type = Integer | Real | Boolean | String

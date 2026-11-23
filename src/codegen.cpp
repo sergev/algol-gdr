@@ -82,6 +82,14 @@ public:
         fn_      = main_.fn;
         scope_   = &main_;
         frame_   = { "ptr", "%frame" };
+        for (const auto &e : program.externals) {
+            Symbol s;
+            s.kind         = Symbol::EXTERNAL;
+            s.type         = e.type;
+            s.name         = e.name;
+            s.by_value     = e.kind == External::CODE; // C convention
+            symbols_[e.id] = s;
+        }
         declare(main_, *program.block);
         statement(*program.block);
         fn_->ret_void();
@@ -879,7 +887,9 @@ private:
     // A call: the actual parameters as thunks; the i64 result.
     ir::Value call(int id, const ExprList &args)
     {
-        const Symbol &s                    = symbol(id);
+        const Symbol &s = symbol(id);
+        if (s.kind == Symbol::EXTERNAL && s.by_value)
+            return c_call(s, args);
         const std::vector<Formal> *formals = nullptr;
         if (s.kind == Symbol::PROC)
             formals = &s.func->proc->formals;
@@ -897,6 +907,8 @@ private:
         if (s.kind == Symbol::PROC)
             return fn_->call("i64", ir::global_name(s.func->fn->name()),
                              { frame_of(s.func->parent), list });
+        if (s.kind == Symbol::EXTERNAL && !s.by_value)
+            return fn_->call("i64", ir::global_name(s.name), { ir::null(), list });
         if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::PROCEDURE) {
             ir::Value pair = slot(s.owner, s.slot);
             ir::Value code = fn_->load("ptr", pair);
@@ -904,6 +916,37 @@ private:
             return fn_->call("i64", code.ref, { sl, list });
         }
         unsupported("This call");
+    }
+
+    // A _code procedure: a C function with the address of each argument
+    // (the data of an array); the result in the i64 form.
+    ir::Value c_call(const Symbol &s, const ExprList &args)
+    {
+        std::vector<ir::Value> list;
+        std::string params;
+        for (const auto &a : args) {
+            ir::Value cell;
+            auto var = std::get_if<expr::Var>(&a->node);
+            if (var && (symbol(var->decl).kind == Symbol::ARRAY ||
+                        (symbol(var->decl).kind == Symbol::FORMAL &&
+                         symbol(var->decl).spec.kind == Spec::ARRAY))) {
+                cell = fn_->load("ptr", descriptor(var->decl));
+            } else if (var && (symbol(var->decl).kind == Symbol::VAR ||
+                               symbol(var->decl).kind == Symbol::FORMAL)) {
+                cell = address(var->decl);
+            } else if (auto el = std::get_if<expr::Element>(&a->node)) {
+                cell = element(el->array, el->subscripts);
+            } else {
+                cell = fn_->stack_alloc("i64");
+                store(a->type, expr(*a), cell);
+            }
+            list.push_back(cell);
+            params += (params.empty() ? "" : ", ") + std::string("ptr");
+        }
+        std::string ret = s.type == Type::NONE ? "void" : reg_type(s.type);
+        module_.declare(ret, s.name, params);
+        ir::Value r = fn_->call(ret, ir::global_name(s.name), list);
+        return s.type == Type::NONE ? ir::i64(0) : to_result(r, s.type);
     }
 
     //

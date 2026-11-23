@@ -232,3 +232,35 @@ _end _eop
 )"),
               "            99        3628800  1.50000000000e+00   \n");
 }
+
+// Jensen's device, assignment through a name parameter, a procedure and
+// strings as parameters.
+TEST(Run, by_name)
+{
+    EXPECT_EQ(run_text("by_name", R"(_begin _integer I; _real S; _real _array A[1:4]; _string T;
+  _real _procedure SUM(K, LO, HI, TERM); _value LO, HI; _integer K, LO, HI; _real TERM;
+  _begin _real R; R := 0;
+    _for K := LO _step 1 _until HI _do R := R + TERM;
+    SUM := R
+  _end;
+  _procedure INC(X); _integer X; X := X + 1;
+  _real _procedure TWICE(F, X); _real _procedure F; _real X; TWICE := F(F(X));
+  _real _procedure SQ(Y); _value Y; _real Y; SQ := Y * Y;
+  _procedure SAY(W); _string W; PRINT(W);
+  _for I := 1 _step 1 _until 4 _do A[I] := I;
+  S := SUM(I, 1, 4, A[I] * A[I]);
+  PRINT(S);
+  I := 5; INC(I); PRINT(I);
+  PRINT(TWICE(SQ, 3));
+  T := ''HI''; SAY(T); SAY(''THERE'')
+_end _eop
+)"),
+              " 3.00000000000e+01                6  8.10000000000e+01   HITHERE\n");
+}
+
+// juggle needs its _code procedures to run, but it compiles.
+TEST(Run, juggle_compiles)
+{
+    auto r = run_command(compiler + " -c -o " BUILD_DIR "/juggle.o " TEST_DIR "/algol/juggle.alg");
+    EXPECT_EQ(r.exit_code, 0) << r.output;
+}
