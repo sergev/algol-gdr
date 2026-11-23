@@ -94,8 +94,8 @@ the AST of `ast.h`, after doc/ast.asdl:
   (doc/deviations.md has the rules).
 - Standard identifiers, in their documented case, unless declared (`SQRT` is undeclared,
   with a hint to `sqrt`): the functions (`sqrt`, `entier`, …),
-  Algol-GDR's (`READ`, `NEWLINE`, …), the IFIP procedures, and the X1 library (`print`,
-  `read`, `PRINTTEXT`, …). Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
+  Algol-GDR's (`NEWLINE`, `LOAD`, …), the IFIP procedures, and the X1 library (`print`,
+  `read`, `PRINTTEXT`, …; `read` with arguments is a statement). Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
   arguments checked.
 - A function that never assigns its result gets a warning.
 
@@ -127,5 +127,5 @@ The driver (`driver.cpp`) writes the IR of each Algol file to a temporary `NAME.
   `--target=T`, in `T/` there), or in `$ALGC_RUNTIME`.
 
 The runtime (`runtime/`, C) has `main`, which calls the program's `algol_main` and then ends
-the output; the input and output of Algol-GDR (`print.c`, `read.c`, `format.c`), IFIP
+the output; the input and output of Algol-GDR (`print.c`, `read.c`, `format.c`, on stdin through `input.c`), IFIP
 (`ifip.c`) and the X1 (`x1.c`); strings, arrays, arithmetic and the checks.

@@ -321,7 +321,6 @@ enum class Std {
     MAXINT,
     EPSILON,
     // The X1 library.
-    X1_READ,
     PRINTTEXT,
     PRSYM,
     SPACE,
@@ -369,7 +368,6 @@ const std::map<std::string, Std> &standard_names()
         { "minreal", Std::MINREAL },
         { "maxint", Std::MAXINT },
         { "epsilon", Std::EPSILON },
-        { "READ", Std::READ },
         { "NEWLINE", Std::NEWLINE },
         { "NEWPAGE", Std::NEWPAGE },
         { "NEWLIN", Std::NEWLINE },
@@ -381,7 +379,7 @@ const std::map<std::string, Std> &standard_names()
         { "ATOS", Std::ATOS },
         { "STOA", Std::STOA },
         { "print", Std::PRINT },
-        { "read", Std::X1_READ },
+        { "read", Std::READ },
         { "PRINTTEXT", Std::PRINTTEXT },
         { "PRSYM", Std::PRSYM },
         { "SPACE", Std::SPACE },
@@ -1143,7 +1141,7 @@ ExprPtr Checker::x1_function(Std s, const std::string &nm, const syn::ExprList *
 {
     // The parameters: i integer, r real, I integer destination.
     static const std::map<Std, std::tuple<StdFunc, Type, const char *>> table = {
-        { Std::X1_READ, { StdFunc::READ, Type::REAL, "" } },
+        { Std::READ, { StdFunc::READ, Type::REAL, "" } },
         { Std::RESYM, { StdFunc::RESYM, Type::INTEGER, "" } },
         { Std::RANDOM, { StdFunc::RANDOM, Type::REAL, "" } },
         { Std::TIMEOFDAY, { StdFunc::TIMEOFDAY, Type::REAL, "" } },
@@ -1261,6 +1259,9 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
         return make_stmt(loc, std::move(io));
     }
     case Std::READ: {
+        // read(v, …): each variable, element or whole array by its type.
+        if (n == 0)
+            break;
         stmt::Io io;
         io.op = IoOp::READ;
         for (size_t k = 0; k < n; k++) {
@@ -1330,9 +1331,10 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
         return make_stmt(loc, std::move(p));
     }
     default:
-        error(line, "Illegal use of " + quoted(nm));
-        return make_stmt(loc, stmt::Dummy{});
+        break;
     }
+    error(line, "Illegal use of " + quoted(nm));
+    return make_stmt(loc, stmt::Dummy{});
 }
 
 // _print, _write and the other I/O statements.

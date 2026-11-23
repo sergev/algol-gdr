@@ -91,7 +91,7 @@ module AST {
             | PrintText | PrSym | Space | Tab | Nlcr | AbsFixt | Fixt | Flot
             | SetRandom
 
-    -- I/O statements. The standard print and READ are Print and Read; the
+    -- I/O statements. The standard print and read(…) are Print and Read; the
     -- keywords _print and _write are Write.
     -- The params come before the list:
     --   Print, Punch: none;

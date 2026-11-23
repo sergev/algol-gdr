@@ -118,5 +118,6 @@ sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`
 strings `` `…' `` as in the other form (`.a60`, as x1-algol-compiler/examples). The X1 library procedures
 (`PRINTTEXT`, `FLOT`, `SUM`, `read`, …) are standard identifiers. `print` is one procedure in
 both forms, in X1's layout: values, strings, Booleans, whole arrays, `NEWLINE`, `NEWPAGE`.
-Algol-GDR's `PRINT` is gone. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
+`read` is X1's function, and with arguments a statement reading each variable by its type;
+Algol-GDR's `PRINT` and `READ` are gone. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
 first 6 characters.

@@ -109,7 +109,7 @@ All text a program reads and writes is UTF-8 (runtime/):
 - A string is a NUL-terminated UTF-8 C string; its indices (`s[i]`, `s[i:j]`, `length`)
   count code points from 1.
 - `print` writes values with a blank between them, strings as they are (runtime/print.c);
-  `READ` reads words separated by white space (runtime/read.c).
+  `read(…)` reads words separated by white space, a real with `⏨` or `e` (runtime/read.c).
 - The IFIP `outsymbol` and `insymbol` work in code points: a symbol's place in the string,
   or minus its code point.
 - `_write`, `_print`, `_read`, `_encode`, `_decode` with a Fortran format

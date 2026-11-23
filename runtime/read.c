@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// READ and _read: values from standard input, separated by white space; a
-// format, if any, is not used.
+// read(…) and _read: values from standard input, separated by white space; a
+// format, if any, is not used. A real may have ⏨ for E.
 //
 #include <ctype.h>
 #include <stdio.h>
@@ -19,14 +19,14 @@ static char *word(void)
     int c;
     size_t n = 0;
     fflush(stdout);
-    while ((c = getchar()) != EOF && isspace(c))
+    while ((c = algol_in_byte()) != EOF && isspace(c))
         continue;
     if (c == EOF)
         algol_error("End of the input");
     while (c != EOF && !isspace(c)) {
         if (n + 1 < sizeof(buf))
             buf[n++] = (char)c;
-        c = getchar();
+        c = algol_in_byte();
     }
     buf[n] = 0;
     return buf;
@@ -44,6 +44,10 @@ int64_t algol_read_integer(void)
 double algol_read_real(void)
 {
     char *end, *w = word();
+    for (char *p; (p = strstr(w, "⏨")) != NULL;) {
+        *p = 'e';
+        memmove(p + 1, p + 3, strlen(p + 3) + 1);
+    }
     double v = strtod(w, &end);
     if (*end)
         algol_error("Not a number in the input: %s", w);

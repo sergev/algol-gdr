@@ -175,10 +175,12 @@ TEST(Checker, names)
               "x.alg:2:40: error: Undeclared identifier 'COUNTER1'\n"
               "x.alg:3:13: error: Undeclared identifier 'SQRT' (the standard one is 'sqrt')\n"
               "x.alg:3:23: error: Undeclared identifier 'Entier' (the standard one is 'entier')\n");
-    // READ is Algol-GDR's statement, read X1's function.
-    EXPECT_EQ(check_messages("_begin _real x; x := READ; read(x); READ(x); x := read _end"),
-              "x.alg:1:22: error: Illegal use of 'READ'\n"
-              "x.alg:1:28: error: Illegal use of 'read'\n");
+    // read: a function without arguments, a statement with them; no READ.
+    EXPECT_EQ(
+        check_messages("_begin _real x; x := read; read(x); READ(x); x := read(x); read _end"),
+        "x.alg:1:37: error: Undeclared identifier 'READ' (the standard one is 'read')\n"
+        "x.alg:1:51: error: Wrong number of arguments of 'read'\n"
+        "x.alg:1:60: error: Illegal use of 'read'\n");
 }
 
 TEST(Checker, scopes_and_conversions)

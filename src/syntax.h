@@ -138,7 +138,7 @@ struct For {
 struct Call {
     ExprPtr call; // Name or Call
 };
-// 'READ', 'PRINT', 'WRITE' and the like.
+// _read, _print, _write and the like.
 struct Io {
     Sym op{};
     ExprList params;

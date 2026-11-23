@@ -248,9 +248,10 @@ program.
 - `_read (unit, format)` reads records through `algol_fread_*` with the same edits: a
   field of width `w`; `Fw.d` without a point takes the last `d` digits as the fraction; a
   width of 0 takes the next word.
-- `READ` and `_read` without a format read values separated by white space from standard
-  input: integers, reals, `true`/`false`, words as strings; a whole array element by
-  element. `stdout` is flushed before reading.
+- `read(…)` and `_read` without a format read values separated by white space from standard
+  input: integers, reals (`⏨` for `e`), `true`/`false`, words as strings; a whole array
+  element by element. `stdout` is flushed before reading; bad input stops the program.
+  The X1 procedures, IFIP and these share one input stream (runtime/input.c).
 - `_encode (n, format, s)` writes the items into the string variable `s`, `n` characters
   (padded with blanks or cut); `_decode (n, format, s)` reads them from the first `n`
   characters of `s`. Records of a string are separated by `'\n'`. The order of the

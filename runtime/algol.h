@@ -54,7 +54,7 @@ void algol_format_boolean(_Bool v);
 void algol_format_string(const char *s);
 void algol_format_array(const int64_t *desc, int64_t type);
 
-// READ: values from standard input.
+// read(…) and _read: values from standard input.
 int64_t algol_read_integer(void);
 double algol_read_real(void);
 _Bool algol_read_boolean(void);

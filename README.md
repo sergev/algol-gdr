@@ -43,6 +43,8 @@ Hello, World!
 - Use `print(...)` to print numbers, strings, Booleans and whole arrays, with a blank
   between them, and `NEWLINE` to start a new line; or the standard Algol 60 procedures
   `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
+- `read(...)` reads variables, array elements and whole arrays, each by its type, from
+  standard input; `x := read` reads one number.
 - Standard names are written as documented: `sqrt`, `print`, `outreal`, `NEWLINE`.
 
 ```

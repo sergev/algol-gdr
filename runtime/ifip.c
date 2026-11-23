@@ -42,13 +42,13 @@ double algol_inreal(int64_t channel)
 // The next code point of standard input.
 static int32_t getsym(void)
 {
-    int c = getchar();
+    int c = algol_in_byte();
     if (c == EOF)
         algol_error("End of the input");
     int n     = c < 0x80 ? 0 : c < 0xe0 ? 1 : c < 0xf0 ? 2 : 3;
     int32_t v = n == 0 ? c : c & (0x3f >> n);
     while (n-- > 0) {
-        c = getchar();
+        c = algol_in_byte();
         if (c == EOF)
             algol_error("End of the input");
         v = v << 6 | (c & 0x3f);

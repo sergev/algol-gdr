@@ -1,13 +1,13 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     _comment CALLS OF _code PROCEDURES, READ AND LOAD, A LOOP THAT
+     1.     _comment CALLS OF _code PROCEDURES, read AND LOAD, A LOOP THAT
      2.         NEVER ENDS;
      3.     _code: CP;
      4.     _begin _integer I; _real X;
      5.       _integer _array IA[1:3];
      6.       CP(IA[1]); CP(IA); CP(CP); CP(`S'+`T');
-     7.       READ(I); READ(IA[1]); READ(IA); READ(length);
+     7.       read(I); read(IA[1]); read(IA); read(length);
      8.       LOAD(I);
      9.       _for I := 1 _step 1 _until I _do X := 1
     10.     _end

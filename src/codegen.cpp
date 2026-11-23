@@ -1813,7 +1813,7 @@ private:
         }
     }
 
-    // PRINT; _write, _print, _punch with a format; READ, free or with a
+    // print; _write, _print, _punch with a format; read and _read, free or with a
     // format; _encode, _decode; the units (runtime/format.c).
     enum class IoMode { PRINT, FORMAT, READ, FREAD } io_mode_{};
 
@@ -1960,7 +1960,7 @@ private:
         else if (auto el = std::get_if<expr::Element>(&e.node))
             c = element_cell(el->array, el->subscripts);
         else
-            unsupported("READ of an expression");
+            unsupported("read of an expression");
         store(c, runtime(reg_type(e.type), name, {}));
     }
 };

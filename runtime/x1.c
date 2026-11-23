@@ -12,7 +12,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "algol.h"
 #include "internal.h"
@@ -207,75 +206,6 @@ void algol_x1_absfixt(int64_t n, int64_t m, double x)
     fixed(n, m, x, 0);
 }
 
-//
-// Input from stdin. A few bytes can be put back.
-//
-static unsigned char pushed[8];
-static int npushed;
-static int stdin_tty = -1;
-
-static int next_byte(void)
-{
-    return npushed > 0 ? pushed[--npushed] : getchar();
-}
-
-static void put_back(int c)
-{
-    if (c != EOF && npushed < (int)sizeof(pushed))
-        pushed[npushed++] = (unsigned char)c;
-}
-
-static int interactive(void)
-{
-    if (stdin_tty < 0)
-        stdin_tty = isatty(0);
-    return stdin_tty;
-}
-
-// The next code point; EOF at the end of the input.
-static int32_t next_symbol(void)
-{
-    int c = next_byte();
-    if (c == EOF || c < 0x80)
-        return c;
-    int n     = c < 0xe0 ? 1 : c < 0xf0 ? 2 : 3;
-    int32_t v = c & (0x3f >> n);
-    while (n-- > 0) {
-        c = next_byte();
-        if (c == EOF)
-            return EOF;
-        v = v << 6 | (c & 0x3f);
-    }
-    return v;
-}
-
-// Put back a code point read by next_symbol.
-static void put_back_symbol(int32_t v)
-{
-    char buf[4];
-    int n = 0;
-    if (v < 0x80) {
-        buf[n++] = (char)v;
-    } else if (v < 0x800) {
-        buf[n++] = (char)(0xc0 | v >> 6);
-        buf[n++] = (char)(0x80 | (v & 0x3f));
-    } else {
-        buf[n++] = (char)(0xe0 | v >> 12);
-        buf[n++] = (char)(0x80 | (v >> 6 & 0x3f));
-        buf[n++] = (char)(0x80 | (v & 0x3f));
-    }
-    while (n > 0)
-        put_back((unsigned char)buf[--n]);
-}
-
-// The rest of the line dropped.
-static void skip_line(void)
-{
-    int c;
-    while ((c = next_byte()) != EOF && c != '\n')
-        continue;
-}
-
 // A number as C++ streams read it: blanks skipped; sign, digits, point,
 // exponent with E, e or ⏨. 0 when there is none.
 static int scan_number(double *v)
@@ -283,32 +213,33 @@ static int scan_number(double *v)
     char buf[128];
     int n = 0;
     int32_t c;
-    while ((c = next_symbol()) == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
+    while ((c = algol_in_symbol()) == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
            c == '\v')
         continue;
     if (c == EOF)
         algol_error("No input");
     if (c == '+' || c == '-') {
         buf[n++] = (char)c;
-        c        = next_symbol();
+        c        = algol_in_symbol();
     }
     int digits = 0;
-    for (; c >= '0' && c <= '9' && n < 100; c = next_symbol(), digits++)
+    for (; c >= '0' && c <= '9' && n < 100; c = algol_in_symbol(), digits++)
         buf[n++] = (char)c;
     if (c == '.') {
         buf[n++] = '.';
-        for (c = next_symbol(); c >= '0' && c <= '9' && n < 100; c = next_symbol(), digits++)
+        for (c = algol_in_symbol(); c >= '0' && c <= '9' && n < 100;
+             c = algol_in_symbol(), digits++)
             buf[n++] = (char)c;
     }
     if (digits > 0 && (c == 'e' || c == 'E' || c == 0x23e8)) {
         buf[n++] = 'e';
-        c        = next_symbol();
+        c        = algol_in_symbol();
         if (c == '+' || c == '-') {
             buf[n++] = (char)c;
-            c        = next_symbol();
+            c        = algol_in_symbol();
         }
         int exp_digits = 0;
-        for (; c >= '0' && c <= '9' && n < 120; c = next_symbol(), exp_digits++)
+        for (; c >= '0' && c <= '9' && n < 120; c = algol_in_symbol(), exp_digits++)
             buf[n++] = (char)c;
         if (exp_digits == 0)
             digits = 0;
@@ -316,7 +247,7 @@ static int scan_number(double *v)
     // As x1sim: the symbol after a number is gone; one that is not a number
     // stays.
     if (c != EOF && digits == 0)
-        put_back_symbol(c);
+        algol_in_unget_symbol(c);
     if (digits == 0)
         return 0;
     buf[n] = 0;
@@ -329,16 +260,16 @@ static int scan_number(double *v)
 double algol_x1_read(void)
 {
     for (;;) {
-        if (interactive())
+        if (algol_in_tty())
             out("Enter number: ");
         fflush(stdout);
         double v;
         if (scan_number(&v))
             return v;
-        if (!interactive())
+        if (!algol_in_tty())
             algol_error("Bad input");
         out("Bad input, try again.\n");
-        skip_line();
+        algol_in_skip_line();
     }
 }
 
@@ -347,7 +278,7 @@ int64_t algol_x1_resym(void)
 {
     fflush(stdout);
     for (;;) {
-        int32_t c = next_symbol();
+        int32_t c = algol_in_symbol();
         if (c == EOF)
             return 0377;
         if (c >= '0' && c <= '9')
@@ -395,12 +326,12 @@ int64_t algol_x1_xeen(int64_t mask)
     static int valid;
     static int64_t switches;
     while (!valid) {
-        if (interactive())
+        if (algol_in_tty())
             out("\nEnter console switches (up to 27 binary digits)\n> ");
         fflush(stdout);
         char line[256];
         int n = 0, c;
-        while ((c = next_byte()) != EOF && c != '\n')
+        while ((c = algol_in_byte()) != EOF && c != '\n')
             if (n < (int)sizeof(line) - 1)
                 line[n++] = (char)c;
         line[n] = 0;
@@ -411,7 +342,7 @@ int64_t algol_x1_xeen(int64_t mask)
         if (end != line) {
             switches = v;
             valid    = 1;
-        } else if (!interactive()) {
+        } else if (!algol_in_tty()) {
             algol_error("Bad input");
         } else {
             out("Bad input, try again.\n");

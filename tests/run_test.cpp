@@ -468,6 +468,25 @@ TEST(Run, x1_input_errors)
     EXPECT_EQ(r.output, "255\nError: No input\n");
 }
 
+// read(…): each target by its type; the function and the statement share
+// the input.
+TEST(Run, read_statement)
+{
+    const std::string src = BUILD_DIR "/run_read.alg";
+    const std::string exe = BUILD_DIR "/run_read";
+    std::ofstream(src) << R"(_begin _integer i; _real x, y, z; _boolean b; _string s;
+  _integer _array A[1:3];
+  read(i, x, b, s, A); print(i, x, b, s, A, NEWLINE);
+  y := read; read(z); print(y, z, NEWLINE); read(i)
+_end
+)";
+    auto c = run_command(compiler + " -o " + exe + " " + src);
+    ASSERT_EQ(c.exit_code, 0) << c.output;
+    auto r = run_command("printf '7 1.5⏨2 TRUE word 1 2 3\\n4 5' | " + exe);
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "7 150 true word 1 2 3\n4 5\nError: End of the input\n");
+}
+
 // Units, formats, _encode and _decode: unit 7 a file of its own.
 TEST(Run, gdr_io)
 {
@@ -662,7 +681,7 @@ TEST(Run, format_and_read)
 {
     const std::string src = BUILD_DIR "/run_format.alg";
     std::ofstream(src) << R"(_begin _integer I; _real X; _integer _array A[1:3];
-  READ(I, X, A);
+  read(I, X, A);
   _write(54, `(4HI = I3, 2X, F6.2/3(I2, 1X), E12.4)') I, X, A, X * 100;
   _print(`(2HA:, 2I3)') A
 _end
