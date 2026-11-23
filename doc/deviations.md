@@ -21,7 +21,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 | Deviation | Where | Task |
 |---|---|---|
-| No `own` | parser | F5 |
 | The controlled variable of `for` must be a simple variable | parser, checker | F6 |
 | Arrays of the blocks left by a non-local `goto` (through `longjmp`) are not freed | code generator | F7 |
 
@@ -62,6 +61,8 @@ not deviations.
   it, otherwise a simple variable: Boolean when used as a condition or an operand of a
   logical operator, integer when an operand of `÷`, real otherwise (an integer actual
   converted on each access). One that is only passed on takes any actual.
+- An `own` array is allocated at the first entry of its block, with the bounds evaluated
+  then; later entries keep it, whatever the bounds would be.
 - An array called by value keeps the type of the actual's elements.
 - An unsigned integer as an actual parameter is a label when the formal is specified
   `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.

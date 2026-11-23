@@ -2,7 +2,7 @@ A L G O L - Г Д P
     (7.01.82)
 
      1.     _begin
-     2.         _comment OWN IS NOT SUPPORTED: ERROR 34;
+     2.         _comment AN OWN VARIABLE;
      3.         _own _integer N;
      4.         N := 1;
      5.         PRINT(N)

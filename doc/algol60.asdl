@@ -62,9 +62,9 @@ module Algol60 {
          | Bits     -- GDR: octal words
 
     -- Declarations, at the head of a block or of the program.
-    Decl = Vars(bool own, Type type, identifier* names)          -- own: todo
+    Decl = Vars(bool own, Type type, identifier* names)
          -- _array alone is _real _array
-         | Arrays(bool own, Type type, ArraySegment* segments)   -- own: todo
+         | Arrays(bool own, Type type, ArraySegment* segments)
          -- _switch s := L1, L2, …
          | Switch(identifier name, Expr* elements)
          -- [type] _procedure p(formals); _value …; specifications; body

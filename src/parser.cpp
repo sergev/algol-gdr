@@ -167,7 +167,7 @@ private:
     bool at_declaration() const;
     DeclPtr declaration();
     DeclPtr procedure(ast::Type type);
-    DeclPtr arrays(ast::Type type);
+    DeclPtr arrays(ast::Type type, bool own = false);
     DeclPtr switch_decl();
     StmtPtr if_stmt(ast::SrcLoc loc);
     StmtPtr for_stmt(ast::SrcLoc loc);
@@ -435,8 +435,6 @@ StmtPtr Parser::unlabeled(ast::SrcLoc loc)
         return for_stmt(loc);
     case Sym::IDENT:
         return assignment_or_call(loc);
-    case Sym::OWN:
-        fail("_own is not supported");
     default:
         if (is_io(tok_.sym))
             return io(loc);
@@ -496,6 +494,7 @@ bool Parser::at_declaration() const
     case Sym::SWITCH:
     case Sym::PROCEDURE:
     case Sym::COMMON:
+    case Sym::OWN:
         return true;
     default:
         return false;
@@ -536,10 +535,19 @@ DeclPtr Parser::declaration()
     default:
         break;
     }
-    ast::Type type = *type_of(tok_.sym);
+    // _own type [_array]: a variable or an array kept between entries.
+    bool own = accept(Sym::OWN);
+    if (own && tok_.sym == Sym::ARRAY)
+        return arrays(ast::Type::REAL, true);
+    auto t = type_of(tok_.sym);
+    if (!t)
+        fail("Expected a type after _own, found " + found());
+    ast::Type type = *t;
     advance();
     if (tok_.sym == Sym::ARRAY)
-        return arrays(type);
+        return arrays(type, own);
+    if (own && tok_.sym == Sym::PROCEDURE)
+        fail("A procedure cannot be _own");
     if (tok_.sym == Sym::PROCEDURE) {
         DeclPtr d = procedure(type);
         expect(Sym::SEMICOLON);
@@ -547,6 +555,7 @@ DeclPtr Parser::declaration()
     }
     decl::Vars v;
     v.type = type;
+    v.own  = own;
     for (;;) {
         v.names.push_back(ident());
         if (!accept(Sym::COMMA))
@@ -557,12 +566,13 @@ DeclPtr Parser::declaration()
 }
 
 // _array segments: names [bounds] (or with '(' ')'), separated by ','.
-DeclPtr Parser::arrays(ast::Type type)
+DeclPtr Parser::arrays(ast::Type type, bool own)
 {
     int line = tok_.line;
     advance();
     decl::Arrays a;
     a.type = type;
+    a.own  = own;
     for (;;) {
         decl::Arrays::Segment seg;
         for (;;) {

@@ -273,9 +273,11 @@ struct Var {
     std::string name;
     int id{};
     Type type{};
+    bool own{};
 };
 struct Arrays {
     Type type{};
+    bool own{};
     std::vector<ArrayName> arrays;
     std::vector<BoundPair> bounds;
 };

@@ -30,7 +30,9 @@ The program body is `void @algol_main()`. Each procedure is one LLVM function; b
 function are not functions of their own.
 
 - **Globals.** Variables of `algol_main` (the program and all its inner blocks, outside any
-  procedure) are internal globals, `@V.<id>.<name>`: the program is entered once.
+  procedure) are internal globals, `@V.<id>.<name>`: the program is entered once. So are
+  `own` variables and the descriptors of `own` arrays, wherever declared; an `own` array
+  is allocated when its block is entered with a null data pointer, and never freed.
 - **Frames.** A procedure's variables, of all its blocks, live in its frame: an `alloca` of
   8-byte slots, each declaration its own slots. `algol_main` has a frame too, with the header
   only.
@@ -225,7 +227,7 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
 | Name | What |
 |---|---|
 | `@algol_main` | the program |
-| `@V.<id>.<name>` | a variable or array descriptor of `algol_main` |
+| `@V.<id>.<name>` | a variable or array descriptor of `algol_main`, or an `own` one |
 | `@P.<id>.<name>` | a procedure |
 | `@T.<n>` | a thunk |
 | `@S.<id>.<name>` | a switch |

@@ -16,9 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F5** `own` variables and arrays: one storage per declaration, kept between entries of
-  the block; `own` arrays with dynamic bounds allocated at the first entry (the choice
-  documented in doc/deviations.md). Tests.
 - **F6** The `for` statement in full: a subscripted controlled variable (its subscripts
   evaluated at each assignment), side effects in the list elements, `goto` out of the body.
   Tests after the Revised Report section 4.6.

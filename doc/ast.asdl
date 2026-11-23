@@ -30,9 +30,11 @@ module AST {
          | None     -- a procedure without a value
 
     -- Declarations of a block, or of the body of a procedure.
-    Decl = Var(identifier name, int id, Type type)
+    -- own: one storage for all entries of the block, kept between them; the
+    -- bounds of own arrays are evaluated at the first entry only.
+    Decl = Var(identifier name, int id, Type type, bool own)
          -- a segment: arrays with the same bounds, evaluated once at block entry (040 … 0104)
-         | Arrays(Type type, ArrayName* arrays, BoundPair* bounds)
+         | Arrays(Type type, bool own, ArrayName* arrays, BoundPair* bounds)
          | Switch(identifier name, int id, Expr* elements)              -- 0146 0142/0144 … 0143
          | Label(identifier name, int id)
          | Procedure(identifier name, int id, Type type, Formal* formals, Stmt body)

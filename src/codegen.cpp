@@ -193,7 +193,7 @@ private:
             [&](const auto &n) {
                 using T = std::decay_t<decltype(n)>;
                 if constexpr (std::is_same_v<T, decl::Var>) {
-                    variable(f, n.id, n.name, n.type);
+                    variable(f, n.id, n.name, n.type, n.own);
                 } else if constexpr (std::is_same_v<T, decl::Label>) {
                     Symbol s;
                     s.kind         = Symbol::LABEL;
@@ -205,7 +205,7 @@ private:
                     symbols_[n.id] = s;
                 } else if constexpr (std::is_same_v<T, decl::Arrays>) {
                     for (const auto &a : n.arrays)
-                        array(f, a.id, a.name, n.type, int(n.bounds.size()));
+                        array(f, a.id, a.name, n.type, int(n.bounds.size()), n.own);
                 } else if constexpr (std::is_same_v<T, decl::Procedure>) {
                     declare_procedure(f, n);
                 } else if constexpr (std::is_same_v<T, decl::Common>) {
@@ -227,14 +227,15 @@ private:
             d.node);
     }
 
-    void variable(Func &f, int id, const std::string &name, Type type)
+    // A variable of algol_main or an own one is a global.
+    void variable(Func &f, int id, const std::string &name, Type type, bool own = false)
     {
         Symbol s;
         s.kind  = Symbol::VAR;
         s.type  = type;
         s.name  = name;
         s.owner = &f;
-        if (&f == &main_) {
+        if (&f == &main_ || own) {
             s.global = ir::global_name("V." + std::to_string(id) + "." + name);
             module_.global(s.global + " = internal global " + mem_type(type) + " " +
                            (type == Type::STRING ? "null"
@@ -314,7 +315,7 @@ private:
         commons_[global] = std::max(commons_[global], offset);
     }
 
-    void array(Func &f, int id, const std::string &name, Type type, int dims)
+    void array(Func &f, int id, const std::string &name, Type type, int dims, bool own)
     {
         Symbol s;
         s.kind  = Symbol::ARRAY;
@@ -323,7 +324,7 @@ private:
         s.owner = &f;
         s.dims  = dims;
         int n   = 3 + 2 * dims;
-        if (&f == &main_) {
+        if (&f == &main_ || own) {
             s.global = ir::global_name("V." + std::to_string(id) + "." + name);
             module_.global(s.global + " = internal global [" + std::to_string(n) +
                            " x i64] zeroinitializer, align 8");
@@ -746,6 +747,15 @@ private:
             auto a = std::get_if<decl::Arrays>(&d->node);
             if (!a)
                 continue;
+            // Own arrays: allocated at the first entry, never freed.
+            ir::Block *done = nullptr;
+            if (a->own) {
+                auto *first    = fn_->new_block("own.alloc");
+                done           = fn_->new_block("own.done");
+                ir::Value data = fn_->load("ptr", descriptor(a->arrays.front().id));
+                fn_->cond_br(fn_->icmp("eq", data, ir::null()), first, done);
+                fn_->set_block(first);
+            }
             std::vector<ir::Value> bounds;
             for (const auto &bp : a->bounds) {
                 bounds.push_back(subscript(*bp.lower));
@@ -764,7 +774,12 @@ private:
                     continue;
                 }
                 runtime("void", "algol_array_alloc", { desc, dims });
-                active_.back().arrays.push_back(name.id);
+                if (!a->own)
+                    active_.back().arrays.push_back(name.id);
+            }
+            if (done) {
+                fn_->br(done);
+                fn_->set_block(done);
             }
         }
         for (const auto &s : b.body)

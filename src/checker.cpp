@@ -552,13 +552,14 @@ StmtPtr Checker::make_block(SrcLoc loc, const Decls &decls, const Stmts &body)
                         Symbol s;
                         s.type = x.type;
                         int i  = declare(n.line, n.name, s);
-                        out.decls.push_back(
-                            make_decl(SrcLoc{ n.line, 0 }, decl::Var{ n.name, sym(i).id, x.type }));
+                        out.decls.push_back(make_decl(
+                            SrcLoc{ n.line, 0 }, decl::Var{ n.name, sym(i).id, x.type, x.own }));
                     }
                 } else if constexpr (std::is_same_v<T, syn::decl::Arrays>) {
                     for (const auto &seg : x.segments) {
                         decl::Arrays a;
                         a.type = x.type;
+                        a.own  = x.own;
                         for (const auto &n : seg.names) {
                             Symbol s;
                             s.kind  = Kind::ARRAY;

@@ -1,5 +1,5 @@
 _begin
-    _comment OWN IS NOT SUPPORTED: ERROR 34;
+    _comment AN OWN VARIABLE;
     _own _integer N;
     N := 1;
     PRINT(N)

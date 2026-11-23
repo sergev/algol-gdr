@@ -166,6 +166,7 @@ struct Spec {
 namespace decl {
 struct Vars {
     ast::Type type{};
+    bool own{};
     std::vector<Ident> names;
 };
 // Segments: arrays with the same bounds.
@@ -175,6 +176,7 @@ struct Arrays {
         std::vector<BoundPair> bounds;
     };
     ast::Type type{};
+    bool own{};
     std::vector<Segment> segments;
 };
 struct Switch {

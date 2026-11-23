@@ -527,10 +527,14 @@ private:
                            n = head("var", true);
                            n.add("name", quoted(v.name)).add("id", scalar(number(v.id)));
                            n.add("type", scalar(to_string(v.type)));
+                           if (v.own)
+                               n.add("own", scalar("true"));
                        },
                        [&](const decl::Arrays &a) {
                            n = head("arrays");
                            n.add("type", scalar(to_string(a.type)));
+                           if (a.own)
+                               n.add("own", scalar("true"));
                            Node names = sequence();
                            for (const auto &x : a.arrays) {
                                Node m;
