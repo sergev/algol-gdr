@@ -1726,6 +1726,42 @@ private:
             fn_->unreachable();
             return;
         }
+        case StdProc::PRINT:
+            for (size_t k = 0; k < p.args.size(); k++) {
+                if (k > 0)
+                    runtime("void", "algol_x1_space", { ir::i64(1) });
+                if (p.args[k]->type == Type::INTEGER)
+                    runtime("void", "algol_x1_print_integer", { arg(k) });
+                else
+                    runtime("void", "algol_x1_print_real", { arg(k) });
+            }
+            return;
+        case StdProc::PRINTTEXT:
+            runtime("void", "algol_x1_printtext", { arg(0) });
+            return;
+        case StdProc::PRSYM:
+            runtime("void", "algol_x1_prsym", { arg(0) });
+            return;
+        case StdProc::SPACE:
+            runtime("void", "algol_x1_space", { arg(0) });
+            return;
+        case StdProc::TAB:
+            runtime("void", "algol_x1_tab", {});
+            return;
+        case StdProc::NLCR:
+            runtime("void", "algol_x1_nlcr", {});
+            return;
+        case StdProc::ABSFIXT:
+        case StdProc::FIXT:
+        case StdProc::FLOT: {
+            const char *name = p.proc == StdProc::ABSFIXT ? "algol_x1_absfixt"
+                               : p.proc == StdProc::FIXT  ? "algol_x1_fixt"
+                                                          : "algol_x1_flot";
+            ir::Value n      = arg(0);
+            ir::Value m      = arg(1);
+            runtime("void", name, { n, m, arg(2) });
+            return;
+        }
         default:
             unsupported(std::string("'") + to_string(p.proc) + "'");
         }

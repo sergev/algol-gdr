@@ -1,0 +1,22 @@
+c̲o̲m̲m̲e̲n̲t̲ The output procedures of the X1 library, their corner cases, the
+numbers are exact in the 40 bits of an X1 real, so x1sim prints them alike;
+b̲e̲g̲i̲n̲ i̲n̲t̲e̲g̲e̲r̲ i; r̲e̲a̲l̲ x;
+    PRINTTEXT(`text `nested' quotes'); NLCR;
+    f̲o̲r̲ i := 0, 9, 10, 35, 37, 62, 64, 80, 87, 92, 93, 98, 103, 121, 122, 36, 127 d̲o̲
+        PRSYM(i);
+    NLCR;
+    SPACE(3); PRSYM(1); TAB; PRSYM(2); SPACE(0); SPACE(-1); NLCR;
+    i := 5; x := 0.25;
+    print(0, -7, 123456789, 1.5, -0.125, 1.0, 0.333984375, 2.0 ↑ 70, 2.0 ↑ (-70), 2.0 ↑ 45);
+    NLCR;
+    print(i); print(x); NLCR;
+    ABSFIXT(3, 2, 3.140625); ABSFIXT(3, 2, -3.140625); ABSFIXT(3, 0, 0.375);
+    ABSFIXT(3, 0, 0); ABSFIXT(0, 2, 0.5); ABSFIXT(1, 2, 9.99609375); NLCR;
+    FIXT(3, 2, 3.140625); FIXT(3, 2, -3.140625); FIXT(5, 0, -42); FIXT(2, 3, 0.0576171875);
+    FIXT(2, 1, 99.96875); FIXT(-1, 2, 1); FIXT(11, 10, 0.333984375);
+    FIXT(12, 10, 0.333984375); NLCR;
+    FLOT(5, 2, 0); FLOT(5, 2, 123.5); FLOT(5, 2, -0.0001220703125); FLOT(3, 1, 0.99951171875);
+    FLOT(4, 2, 2.0 ↑ 40); FLOT(4, 1, 2.0 ↑ (-40)); FLOT(4, 3, 2.0 ↑ (-500)); FLOT(14, 2, 1);
+    NLCR;
+    FLOT(12, 2.0 ↑ 79); FLOT(2, 1.5); FLOT(13, 3, -(2.0 ↑ 1000)); NLCR
+e̲n̲d̲

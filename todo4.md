@@ -7,7 +7,7 @@ purpose is listed with the reason.
 
 **Where we are.** Every example passes the front end as it is (`ast_test` x1_examples):
 the X1 procedures are standard identifiers, `print` is X1's in the publication form, `read`
-in an expression is X1's (doc/ast.asdl). The code generator does not have them yet.
+in an expression is X1's (doc/ast.asdl). The output procedures run (runtime/x1.c); input and the helpers do not yet.
 
 **Reference.** The behaviour to match is `x1sim`'s, not the X8 manual's where they differ.
 Its sources are in `x1-algol-compiler/`:
@@ -26,19 +26,6 @@ green.
 
 ### Runtime (`runtime/x1.c`)
 
-- **G2** Output, as `x1sim` prints it:
-  - `PRINTTEXT(s)` prints the string without its outer quotes, with inner `` `…' `` kept.
-  - `PRSYM(n)` prints by the X1 symbol code (doc/algol-encoding.md); unused codes print `⎕`.
-  - `SPACE(n)`, `TAB` (a tab character) and `NLCR`.
-  - `print(…)` takes any number of arguments, separated by one space. An integer prints in
-    decimal; a real prints as `%.13Lg` of `x1sim`.
-  - `FIXT(n, m, x)` and `ABSFIXT(n, m, x)` use the fixed-point format, falling back to
-    `FLOT(13, 3, x)`.
-  - `FLOT(n, m, x)` and `FLOT(n, x)` (where m is 2) use the floating format with `⏨`.
-  - Output is flushed after each call, so interactive programs work.
-
-  Tests in `tests/x1/` cover the corner cases: rounding up to the next power of 10,
-  zero, negative zero, the fallbacks, and `n + m` = 21.
 - **G3** Input:
   - `read` takes a real or integer from stdin, with `⏨` or `@` as the exponent. It prompts
     `Enter number: ` only when stdin is a terminal. On a bad number, it retries on a

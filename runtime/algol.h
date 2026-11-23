@@ -108,4 +108,16 @@ void algol_array_release(int64_t *desc);
 void algol_array_bind(int64_t *desc, int64_t dims, int64_t *data);
 void algol_print_array(const int64_t *desc, int64_t type);
 
+// The X1 library (x1.c).
+void algol_x1_printtext(const char *s);
+void algol_x1_prsym(int64_t code);
+void algol_x1_space(int64_t n);
+void algol_x1_tab(void);
+void algol_x1_nlcr(void);
+void algol_x1_print_integer(int64_t v);
+void algol_x1_print_real(double v);
+void algol_x1_flot(int64_t n, int64_t m, double x);
+void algol_x1_fixt(int64_t n, int64_t m, double x);
+void algol_x1_absfixt(int64_t n, int64_t m, double x);
+
 #endif

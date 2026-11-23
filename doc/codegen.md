@@ -260,6 +260,14 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
   (padded with blanks or cut); `_decode (n, format, s)` reads them from the first `n`
   characters of `s`. Records of a string are separated by `'\n'`. The order of the
   parameters is Fortran's `ENCODE (n, format, buffer)`.
+- The X1 library (runtime/x1.c), as x1sim prints: `PRINTTEXT` is `algol_x1_printtext`,
+  `PRSYM` `algol_x1_prsym` (by the X1 code), `SPACE`, `TAB`, `NLCR` `algol_x1_space`,
+  `algol_x1_tab`, `algol_x1_nlcr`; `print` calls `algol_x1_print_integer` or
+  `algol_x1_print_real` (`%.13g`) for each argument, a blank between them; `FIXT`,
+  `ABSFIXT`, `FLOT` are `algol_x1_fixt`, `algol_x1_absfixt`, `algol_x1_flot`. The formats
+  round the exact decimal value of the double half up, the same on every target (x1sim
+  rounds an exact half either way, by the error of its `long double`). Output to a
+  terminal is flushed after each call.
 
 ## Names
 
