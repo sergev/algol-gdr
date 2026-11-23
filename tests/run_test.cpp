@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <regex>
 #include <sstream>
 
@@ -87,6 +88,14 @@ std::string run(const std::string &src, const std::string &exe, bool check,
     return run_command("(" + exe + " < " + input + " 2>/dev/null)").output;
 }
 
+// The output of a program given as text.
+std::string run_text(const std::string &name, const std::string &text, bool check = false)
+{
+    const std::string src = BUILD_DIR "/run_" + name + ".alg";
+    std::ofstream(src) << text;
+    return run(src, BUILD_DIR "/run_" + name, check);
+}
+
 class RunTest : public ::testing::TestWithParam<std::string> {};
 
 } // namespace
@@ -121,4 +130,19 @@ TEST(Run, compare)
     EXPECT_NE(compare("1.0001e+00", "1.0e+00"), "");
     EXPECT_NE(compare("12", "13"), "");
     EXPECT_NE(compare("1 2", "1"), "");
+}
+
+TEST(Run, control)
+{
+    EXPECT_EQ(run_text("control", R"(_begin _integer I, S;
+  I := 0; S := 0;
+L: I := I + 1;
+  _if I _le 10 _then _begin S := S + I; _goto L _end;
+  _if S = 55 _then PRINT(''OK'') _else PRINT(''BAD'');
+  _if S > 100 _then PRINT(''BAD'');
+  _begin _integer J; J := I; _if J = 11 _then _goto M; PRINT(''BAD'') _end;
+M: PRINT(S, I)
+_end _eop
+)"),
+              "OK            55             11 \n");
 }

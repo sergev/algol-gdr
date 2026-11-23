@@ -34,6 +34,7 @@ struct Symbol {
     Func *owner{};      // the function whose frame or globals hold it
     int slot{ -1 };     // in the owner's frame; -1 for a global
     std::string global; // @V.id.name
+    ir::Block *block{}; // LABEL: its block in the owner's function
 };
 
 // The memory type of a value type.
@@ -133,6 +134,13 @@ private:
                 using T = std::decay_t<decltype(n)>;
                 if constexpr (std::is_same_v<T, decl::Var>) {
                     variable(f, n.id, n.name, n.type);
+                } else if constexpr (std::is_same_v<T, decl::Label>) {
+                    Symbol s;
+                    s.kind         = Symbol::LABEL;
+                    s.name         = n.name;
+                    s.owner        = &f;
+                    s.block        = f.fn->new_block("L." + n.name);
+                    symbols_[n.id] = s;
                 } else {
                     unsupported("This declaration");
                 }
@@ -380,6 +388,15 @@ private:
                     for (const auto &b : n.body)
                         statement(*b);
                 } else if constexpr (std::is_same_v<T, stmt::Dummy>) {
+                } else if constexpr (std::is_same_v<T, stmt::Labeled>) {
+                    ir::Block *b = symbol(n.label).block;
+                    fn_->br(b);
+                    fn_->set_block(b);
+                    statement(*n.stmt);
+                } else if constexpr (std::is_same_v<T, stmt::Goto>) {
+                    go_to(*n.target);
+                } else if constexpr (std::is_same_v<T, stmt::If>) {
+                    if_stmt(n);
                 } else if constexpr (std::is_same_v<T, stmt::Assign>) {
                     assign(n);
                 } else if constexpr (std::is_same_v<T, stmt::Io>) {
@@ -389,6 +406,32 @@ private:
                 }
             },
             s.node);
+    }
+
+    void if_stmt(const stmt::If &s)
+    {
+        ir::Value cond = expr(*s.condition);
+        auto *yes      = fn_->new_block("then");
+        auto *done     = fn_->new_block("endif");
+        auto *no       = s.else_stmt ? fn_->new_block("else") : done;
+        fn_->cond_br(cond, yes, no);
+        fn_->set_block(yes);
+        statement(*s.then_stmt);
+        fn_->br(done);
+        if (s.else_stmt) {
+            fn_->set_block(no);
+            statement(*s.else_stmt);
+            fn_->br(done);
+        }
+        fn_->set_block(done);
+    }
+
+    void go_to(const Expr &target)
+    {
+        auto ref = std::get_if<expr::LabelRef>(&target.node);
+        if (!ref || symbol(ref->label).owner != scope_ || fn_ != scope_->fn)
+            unsupported("This goto");
+        fn_->br(symbol(ref->label).block);
     }
 
     // The left parts first, from left to right, then the value.

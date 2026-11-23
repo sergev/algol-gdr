@@ -25,8 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E14** Control flow: statement sequences, IF, GOTO to local labels, compound statements,
-  blocks. Test cond, goto, blocks, empty.
 - **E15** FOR: STEP-UNTIL (integer and real, the sign of the step known or not), WHILE,
   plain elements, lists of elements; the control variable after the loop. Test for, for2.
 - **E16** Standard functions: `ABS`, `SIGN`, `SQRT`, `SIN`, `COS`, `ARCTAN`, `LN`, `EXP`,
