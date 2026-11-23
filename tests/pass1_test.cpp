@@ -8,8 +8,8 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <iterator>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 
 #include "golden.h"
@@ -46,6 +46,9 @@ TEST_P(Pass1Mem, workspace)
             // The listing state, the card and the lexer's scratch cells differ
             // or do not matter; the tables do.
             if (addr < Pass1::NAMES && addr != Pass1::D_CONST && addr != Pass1::D_STRINGS)
+                continue;
+            // The stream pages: the stream is checked by pass_test.
+            if (addr >= 06000 && addr < 012000)
                 continue;
             got = ctx.ws[addr];
         }

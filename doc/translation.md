@@ -46,9 +46,20 @@ Native routines:
 
 ## Input stream
 
-The stream of the previous pass is written again as that pass wrote it: pass 1 forward
-through 27126 from the cursor at 15403 (02001). Pages, drum zones and the cursors are then
+A translated pass reads the stream of the previous pass where that pass left it: in the
+stream pages (06000–11777) and on drums 26 and 27, with the cursors 02000/02001. After a
+translated pass they are in the `Context`; for the tests, `NAME.mem` has them. Pass 1 is
+C++ and keeps its stream in a vector, so pass 2 first writes it again as the original pass 1
+does: forward through 27126 from the cursor at 15403. Pages, drum zones and cursors are then
 those of the original.
+
+| Pass | Entry | Returns to | Reads | Writes |
+|---|---|---|---|---|
+| 2 | 17223 | 01627 | backward (27143) | backward (27114), from the cursor at 22113 |
+| 3 | 22162 | 01632 | forward (27154) | forward (27126), from the cursor at 23501 |
+| 4 | 23523 | 01633 | forward (27154) | forward (27126) |
+
+Pass 4 also calls 30034–30117 (ISO name to TEXT).
 
 ## Debugging
 

@@ -31,7 +31,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (pass 2 translated from the overlay, see [doc/translation.md](doc/translation.md)), `machine.*` + `translated.*` (BESM-6 state and setup for translated passes), `listing.*` (printer characters, pages), `item.*` (pass stream items), `passes.*` (pass interface, `Context`), `pass5.*` (addresses, line table), `pass6.*` (object assembly), `tables.*` (generated tables of the original), `workspace.*` (its shared data as words), `stdarray.*` (object
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*`, `pass3*`, `pass4*` (passes translated from the overlay, see [doc/translation.md](doc/translation.md)), `machine.*` + `translated.*` (BESM-6 state and setup for translated passes), `listing.*` (printer characters, pages), `item.*` (pass stream items), `passes.*` (pass interface, `Context`), `pass5.*` (addresses, line table), `pass6.*` (object assembly), `tables.*` (generated tables of the original), `workspace.*` (its shared data as words), `stdarray.*` (object
   format), `besm6.*` + `dump.*` (disassembly).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output,

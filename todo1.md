@@ -66,12 +66,14 @@ program. Replace it with hand-written C++, routine by routine, keeping `Pass.str
 
 ### B4. Pass 3
 
+Pass 3 runs as translated code (`src/pass3_gen.cpp`); replace it under `Pass.stream/*_s3`:
 - **B4.1** Constant folding, merging of procedure jumps.
 - **B4.2** Strength reduction of subscripts in FOR loops: register choice, preamble,
   increments.
 
 ### B5. Pass 4 (the largest pass; many handlers still unknown)
 
+Pass 4 runs as translated code (`src/pass4_gen.cpp`); replace it under `Pass.stream/*_s4`:
 - **B5.1** The template interpreter and the dispatch by item code (generated tables).
 - **B5.2** Handlers group by group, each tested by stream 4 on the feature programs: arithmetic
   and constants, assignment, booleans, IF/goto/labels, FOR, blocks and frames, arrays,

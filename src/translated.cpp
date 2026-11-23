@@ -11,7 +11,6 @@ namespace {
 constexpr unsigned STACK    = 053401; // M17 when the driver calls a pass
 constexpr unsigned RETURN   = 077777; // M13: a jump there ends the run
 constexpr unsigned REGIM    = 00523;  // *REGIM//: bit 48 setftn:one, bit 47 setftn:long
-constexpr unsigned CHECKFL  = 00521;
 constexpr unsigned FLGEX    = 00702;
 constexpr unsigned NOLISFL  = 00705;
 constexpr unsigned DATED    = 01730;  // the header with the date is printed
@@ -46,13 +45,18 @@ TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), co
     };
 }
 
-void TranslatedPass::write_stream(const Stream &s, unsigned entry, Word cursor)
+void TranslatedPass::write_stream(const Stream &s, unsigned entry, Word cursor, bool keep_cursors)
 {
+    Word saved[2]   = { m.mem[CURSOR_W - 1], m.mem[CURSOR_W] };
     m.mem[CURSOR_W] = cursor;
     for (const Item &item : s) {
         m.acc = item.bits;
         m.set_m(13, RETURN);
         m.run(code_, entry);
+    }
+    if (keep_cursors) {
+        m.mem[CURSOR_W - 1] = saved[0];
+        m.mem[CURSOR_W]     = saved[1];
     }
 }
 

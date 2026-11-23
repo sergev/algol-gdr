@@ -34,8 +34,8 @@ REG = re.compile(r'^\s+M([0-7]+) = ([0-7]{5})$')
 LEXRET = re.compile(r'^1(5[4-7]|6[0-4])[0-7]{2} [LR]: 14 30 00000 uj')
 INSN = re.compile(r'^[0-7]{5} [LR]: ')
 INIT = re.compile(r'^    \{ 0([0-7]+), 0([0-7]+) \},')
-RANGES = [(0o1736, 0o6000), (0o27245, 0o27645)]
-DRUMS = {('26', 0), ('27', 0o33), ('27', 0o34)}     # zones kept across passes
+RANGES = [(0o1736, 0o12000), (0o27245, 0o27645)]
+DRUMS = {'26', '27'}     # scratch drums: data and streams between passes
 
 
 def in_ranges(a):
@@ -68,7 +68,7 @@ def main():
     def end_pass(final=True):
         dm = {a: v for a, v in mem.items() if in_ranges(a) and start[0].get(a, 0) != v}
         dd = {k: v for k, v in drum.items()
-              if k[:2] in DRUMS and start[1].get(k, 0) != v}
+              if k[0] in DRUMS and start[1].get(k, 0) != v}
         dumps.append((npass, dm, dd, dict(regs) if final else {}))
 
     for line in open(trace, errors='replace'):

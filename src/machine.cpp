@@ -263,7 +263,7 @@ void Machine::e70(Word info)
     unsigned nwords  = 1024;
     unsigned drumoff = 0;
     if (unit >= 030 && unit < 070)
-        throw std::runtime_error("*70: disk i/o not implemented");
+        throw std::runtime_error("*70: disk i/o not implemented, info " + std::to_string(info));
     if (sector_io) {
         if ((info >> 35) & 1) {
             sector = info & 3;

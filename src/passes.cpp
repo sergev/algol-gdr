@@ -4,6 +4,8 @@
 
 #include "pass1.h"
 #include "pass2.h"
+#include "pass3.h"
+#include "pass4.h"
 #include "pass5.h"
 
 void blank_line(const Context &ctx)
@@ -27,8 +29,9 @@ Stream run_pass(int n, Context &ctx, const Stream &input)
     case 2:
         return pass2(ctx, input);
     case 3:
+        return pass3(ctx, input);
     case 4:
-        throw NotImplemented("pass " + std::to_string(n) + " not implemented yet");
+        return pass4(ctx, input);
     default:
         throw std::invalid_argument("no pass " + std::to_string(n));
     }

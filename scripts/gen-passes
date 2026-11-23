@@ -9,3 +9,5 @@ cd "$(dirname "$(realpath "$0")")/.."
 shared="01644-01735 27114-27244 27733-30000 30001-30033"
 hooks="--hook 27114 --hook 27126 --hook 27137"
 scripts/gen-pass.py $hooks pass2 17223-22161 $shared > src/pass2_gen.cpp
+scripts/gen-pass.py $hooks pass3 22162-23522 $shared > src/pass3_gen.cpp
+scripts/gen-pass.py $hooks pass4 23523-26257 $shared 30034-30117 > src/pass4_gen.cpp
