@@ -43,31 +43,168 @@ constexpr unsigned DLIST_END   = 06000;
 constexpr unsigned COMMON      = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
 constexpr unsigned FLGEX       = 00702;
 
-// Pass 2's part of the overlay (tables, texts, formats, a few cells), and
-// the base of its constants (M7).
-constexpr unsigned OWN_BEGIN = 017223;
-constexpr unsigned OWN_END   = 022162;
-constexpr unsigned BASE      = 017223;
-
-constexpr unsigned TYPES       = 021720; // per code: handler (UJ) high; type, kind bits low
-constexpr unsigned TYPE_PAIRS  = 017667; // 6 rows by type: 3-bit fields, the shift in the exponent
-constexpr unsigned OPS               = 020142; // + - * /: real code <<24, integer code <<30, text
-constexpr unsigned STRING_PLUS       = 022137; // the item of + on strings
-constexpr unsigned REL_MIXED      = 020400; // by relation code: the code for an integer and a real
-constexpr unsigned NUMERIC        = 020317; // by type: nonzero for real and integer
-constexpr unsigned STEP_KINDS     = 021614; // by type
-constexpr unsigned SLICE_CODE     = 022125; // 050
-constexpr unsigned STRING_DESC    = 022134; // a string's descriptor under STRING_MASK
-constexpr unsigned STRING_MASK    = 022111;
-constexpr unsigned IO_ITEMS       = 022126; // items of I/O statements: +0, +2, +4
-constexpr unsigned IO_073         = 022145;
-constexpr unsigned IO_101         = 022112;
-constexpr unsigned CORRESPONDENCE = 021075; // by actual kind: 4-bit fields by formal kind
-constexpr unsigned BIT48_WORD     = 021667;
 constexpr unsigned ONE            = 01632; // the slot of the constant 1
 constexpr unsigned TRUE_SLOT      = 01625;
 constexpr unsigned FALSE_SLOT     = 01624;
 constexpr unsigned STD_PROC       = 05776; // the standard procedure with an expression argument
+
+// Per item code 0-0105 (TYPES at 21720…): the handler (a UJ in the high
+// half) and the classes of the code in some contexts.
+struct CodeAttr {
+    unsigned handler;
+    unsigned subscript; // how a subscript ends: 1 a constant, 2 +, 3 -
+    bool variable;      // can be a left part
+    unsigned condition; // a relation 1-6
+    unsigned actual;    // the kind of an actual parameter
+    unsigned io;        // an argument of I/O: 1 a name, 2 a string, 3 an element
+};
+
+// clang-format off
+const CodeAttr CODES[0106] = {
+    { 017605, 0, 1, 0, 1, 1 }, // 000
+    { 020325, 0, 0, 0, 0, 0 }, // 001
+    { 020325, 0, 0, 0, 0, 0 }, // 002
+    { 020325, 0, 0, 0, 0, 0 }, // 003
+    { 020350, 0, 0, 0, 0, 0 }, // 004
+    { 020354, 0, 0, 1, 0, 0 }, // 005
+    { 020354, 0, 0, 2, 0, 0 }, // 006
+    { 020354, 0, 0, 3, 0, 0 }, // 007
+    { 020354, 0, 0, 4, 0, 0 }, // 010
+    { 020354, 0, 0, 5, 0, 0 }, // 011
+    { 020354, 0, 0, 6, 0, 0 }, // 012
+    { 020106, 2, 0, 0, 0, 0 }, // 013
+    { 020152, 3, 0, 0, 0, 0 }, // 014
+    { 020153, 0, 0, 0, 0, 0 }, // 015
+    { 020154, 0, 0, 0, 0, 0 }, // 016
+    { 020221, 0, 0, 0, 0, 0 }, // 017
+    { 020571, 0, 0, 0, 0, 0 }, // 020
+    { 020002, 0, 1, 0, 6, 3 }, // 021
+    { 017675, 0, 0, 0, 0, 0 }, // 022
+    { 017770, 0, 0, 0, 3, 0 }, // 023
+    { 017772, 1, 0, 0, 2, 0 }, // 024
+    { 017775, 0, 0, 0, 8, 2 }, // 025
+    { 017646, 0, 0, 0, 0, 0 }, // 026
+    { 022026, 0, 0, 0, 0, 0 }, // 027
+    { 021461, 0, 0, 0, 0, 0 }, // 030
+    { 021206, 0, 0, 0, 0, 0 }, // 031
+    { 021617, 0, 0, 0, 0, 0 }, // 032
+    { 021524, 0, 0, 0, 0, 0 }, // 033
+    { 021546, 0, 0, 0, 0, 0 }, // 034
+    { 021540, 0, 0, 0, 0, 0 }, // 035
+    { 017523, 0, 0, 0, 0, 0 }, // 036
+    { 017511, 0, 0, 0, 0, 0 }, // 037
+    { 020200, 0, 0, 0, 0, 0 }, // 040
+    { 021637, 0, 0, 0, 0, 0 }, // 041
+    { 017544, 0, 0, 0, 0, 0 }, // 042
+    { 020325, 0, 0, 0, 0, 0 }, // 043
+    { 017533, 0, 0, 0, 0, 0 }, // 044
+    { 021366, 0, 0, 0, 0, 0 }, // 045
+    { 020424, 0, 0, 0, 0, 0 }, // 046
+    { 020430, 0, 0, 0, 0, 0 }, // 047
+    { 020546, 0, 0, 0, 0, 0 }, // 050
+    { 017535, 0, 0, 0, 0, 0 }, // 051
+    { 017601, 0, 0, 0, 0, 0 }, // 052
+    { 021206, 0, 0, 0, 0, 0 }, // 053
+    { 021206, 0, 0, 0, 0, 0 }, // 054
+    { 017543, 0, 0, 0, 0, 0 }, // 055
+    { 021534, 0, 0, 0, 0, 0 }, // 056
+    { 022026, 0, 0, 0, 0, 0 }, // 057
+    { 021206, 0, 0, 0, 0, 0 }, // 060
+    { 021210, 0, 0, 0, 0, 0 }, // 061
+    { 017574, 0, 0, 0, 0, 0 }, // 062
+    { 020446, 0, 0, 0, 0, 0 }, // 063
+    { 020445, 0, 0, 0, 0, 0 }, // 064
+    { 020466, 0, 0, 0, 0, 0 }, // 065
+    { 020541, 0, 0, 0, 0, 0 }, // 066
+    { 020542, 0, 0, 0, 0, 0 }, // 067
+    { 020535, 0, 0, 0, 0, 0 }, // 070
+    { 020534, 0, 0, 0, 0, 0 }, // 071
+    { 020536, 0, 0, 0, 0, 0 }, // 072
+    { 020521, 0, 0, 0, 0, 0 }, // 073
+    { 020511, 0, 0, 0, 0, 0 }, // 074
+    { 022026, 0, 0, 0, 0, 0 }, // 075
+    { 017765, 0, 0, 0, 4, 0 }, // 076
+    { 017766, 0, 0, 0, 5, 0 }, // 077
+    { 020447, 0, 0, 0, 0, 0 }, // 100
+    { 020523, 0, 0, 0, 0, 0 }, // 101
+    { 022027, 0, 0, 0, 0, 0 }, // 102
+    { 020450, 0, 0, 0, 0, 0 }, // 103
+    { 020162, 0, 0, 0, 0, 0 }, // 104
+    { 017771, 0, 0, 0, 7, 0 }, // 105
+};
+// clang-format on
+
+// The same table read by the type field of a descriptor (bits 44-41): its
+// type (3 bits), a formal's type (4 bits); by kind_index(); by the packed
+// kind bits of a formal (its class in CORRESPONDENCE).
+const unsigned TYPE_OF[020]        = { 0, 1, 2, 5, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0 };
+const unsigned FORMAL_TYPE_OF[020] = { 00, 01, 02, 05, 03, 00, 00, 00, 04, 00, 00, 00, 010, 00, 00, 00 };
+const unsigned KIND_OF[040]        = { 00, 00, 01, 00, 02, 03, 00, 00, 00, 01, 00, 00, 04, 03, 00, 00, 00, 05, 01, 00, 06, 07, 00, 00, 00, 05, 01, 00, 06, 07, 00, 00 };
+const unsigned FORMAL_CLASS[0100]  = { 00, 02, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 04, 012, 00, 014, 016, 00, 00, 00, 06, 00, 00, 00, 00, 00, 00, 00, 010, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00 };
+constexpr Word FORMAL_BITS = 01017400000000000; // packed for FORMAL_CLASS
+
+// How a type combines with another (TYPE_PAIRS, 17667…): 0 the same, 1 or 2
+// an integer and a real, 3 an error. Rows 6, 7 are other words there.
+const unsigned TYPE_COMBINE[8][8] = {
+    { 0, 3, 3, 3, 3, 3, 0, 0, }, // 0
+    { 3, 0, 2, 3, 3, 3, 0, 0, }, // 1
+    { 3, 1, 0, 3, 3, 3, 0, 0, }, // 2
+    { 3, 3, 3, 0, 3, 3, 0, 0, }, // 3
+    { 3, 3, 3, 3, 0, 3, 0, 0, }, // 4
+    { 3, 3, 3, 3, 3, 0, 0, 0, }, // 5
+    { 0, 0, 0, 0, 0, 0, 0, 0, }, // 6
+    { 2, 0, 0, 0, 0, 0, 0, 2, }, // 7
+};
+
+// Actual of kind k (row) for a formal of class c (column c/2): which marks
+// they exchange and what must agree (CORRESPONDENCE, 21075…).
+const unsigned CORRESPONDENCE[013][8] = {
+    { 00, 00, 00, 00, 00, 010, 010, 010, }, // 000
+    { 00, 00, 010, 010, 010, 01, 010, 010, }, // 001
+    { 00, 00, 010, 010, 010, 010, 01, 010, }, // 002
+    { 00, 00, 05, 010, 03, 010, 02, 00, }, // 003
+    { 00, 00, 07, 010, 06, 010, 01, 06, }, // 004
+    { 00, 00, 03, 04, 03, 010, 010, 010, }, // 005
+    { 00, 00, 07, 010, 06, 010, 01, 06, }, // 006
+    { 00, 00, 07, 010, 03, 010, 02, 00, }, // 007
+    { 00, 00, 05, 010, 00, 010, 010, 010, }, // 010
+    { 00, 00, 03, 03, 03, 010, 010, 010, }, // 011
+    { 00, 00, 07, 010, 03, 010, 02, 00, }, // 012
+};
+
+// The relations of an integer and a real, by relation code 5-012 (20405…).
+const Word REL_MIXED[] = { 05, 06, 07, 010, 0105, 0106 };
+
+// The numeric types: real and integer (20317…; 6, 7 are other words there).
+const bool NUMERIC[8] = { false, true, true, false, false, false, true, true };
+
+// The last item of a STEP element by the type of the step (21614…): 0140
+// real, 034 integer; the others are other words there.
+const Word STEP_KINDS[8] = { 05642160003017364, 0140, 034, 010202434122646, 0262162334102444, 0230203000150000, 0230203002200000, 01000074100000 };
+
+// The arithmetic operators + - * / (20142…): the item for integers at bits
+// 35-30, for reals at 29-24; their texts are OP_TEXT.
+// The low bits hold the operator's index.
+const Word OPS[] = { 067'13'00000000, 076'14'00000000 | 1, 077'15'00000000 | 2, 000'16'00000000 | 3 };
+
+// Items and constants of the module.
+constexpr Word STRING_PLUS   = 070157;              // + on strings
+constexpr Word SLICE_CODE    = 050;
+constexpr Word STRING_DESC   = 0363400000000000;    // a string's descriptor under STRING_MASK
+constexpr Word STRING_MASK   = 0200400000000000;
+constexpr unsigned STRING_TYPE = 4;
+constexpr Word STD_PROC_BITS = 0340000000000;       // bits 39-37
+constexpr Word IO_ITEM       = 0270072;             // I/O items
+constexpr Word IO_ITEM_NAME  = 0300071;
+constexpr Word IO_ITEM_ARRAY = 0310071;
+constexpr Word IO_073        = 0320072;
+constexpr Word IO_101        = 016300024;
+constexpr Word IO_TWO_0101   = 060673;
+constexpr Word IO_TWO_0102   = 0630673;
+constexpr Word INTEGER       = 06400000000000000;   // an integer's exponent
+constexpr Word MINUS_4       = 07777777777777773;   // cyclic -4
+constexpr Word MINUS_0127    = 07777777777777650;   // cyclic -0127
+constexpr Word LEVEL_DOWN    = 07777777777767777;   // cyclic -(1 << 12)
 
 // Message formats (G27733): ISO text, 0200+k inserts data word k.
 using Format = std::vector<Word>;
@@ -185,7 +322,6 @@ constexpr Word NEGATIVE       = 0'0020'0000'0000'0000; // bit 41
 constexpr Word BIT48          = 0'4000'0000'0000'0000;
 constexpr Word BIT39          = 0'0000'4000'0000'0000;
 constexpr Word PARAMS         = 0'0000'0000'0370'0000; // number of parameters
-constexpr Word VARIABLE       = 020000;                // TYPES: the item can be a left part
 constexpr Word ASSIGNED       = 0'0004'0000'0000'0000; // a formal by name assigned to
 constexpr Word NOT_ASSIGNABLE = 0'0010'0000'0000'0000;
 constexpr Word RESULT_SET     = 0200000; // in a function's word after it: assigned
@@ -227,13 +363,6 @@ unsigned kind_index(Word d)
 }
 
 // A shift of the machine: right by n, left when n < 0.
-Word shift(Word w, int n)
-{
-    if (n >= 48 || n <= -48)
-        return 0;
-    return n >= 0 ? w >> n : (w << -n) & WORD_MASK;
-}
-
 // a - x, x - a on the arithmetic unit without normalization or rounding.
 Word raw_sub(Word a, Word x)
 {
@@ -308,7 +437,6 @@ private:
     Stream out_; // in the order written
     std::map<unsigned, Handler> handlers_;
 
-    std::vector<Word> own_;
     std::array<Word, STACK_SIZE> stack_{};
     unsigned sp_{ STACK };
     Word zero_{};
@@ -322,7 +450,6 @@ private:
     unsigned emit_code_{}; // M14: the code of the item written next
 
     Word &mem(unsigned a);
-    Word base(unsigned k) { return mem(BASE + k); } // the constants at M7+k
     void store(unsigned a, Word w)
     {
         a &= 077777;
@@ -400,7 +527,7 @@ private:
     unsigned left_designator();
     unsigned index_offset(Word c);
     unsigned index_general(unsigned op);
-    bool small_constant(unsigned limit) { return less(name(operand_), base(limit)); }
+    bool small_constant(Word limit) { return less(name(operand_), limit); }
     unsigned next_subscript();
     unsigned subscript_done();
     unsigned index_done();
@@ -436,7 +563,7 @@ private:
     unsigned bounds_item();
     unsigned array_item();
     unsigned syntax_error_item();
-    bool outermost(Word a) { return raw_sub(a, mem(DLIST_TOP2)) == base(02651); }
+    bool outermost(Word a) { return raw_sub(a, mem(DLIST_TOP2)) == 2; }
     unsigned decl_end();
     unsigned procedure_item();
     unsigned body_end_item();
@@ -454,7 +581,7 @@ private:
     unsigned io_065();
     unsigned io_074();
     unsigned io_101();
-    unsigned io_two(unsigned item);
+    unsigned io_two(Word item);
 
     // Calls.
     unsigned call_end();
@@ -500,8 +627,6 @@ Word &Pass2::mem(unsigned a)
     a &= 077777;
     if (Workspace::contains(a))
         return ctx_.ws[a];
-    if (a >= OWN_BEGIN && a < OWN_END)
-        return own_[a - OWN_BEGIN];
     if (a >= STACK && a < STACK + STACK_SIZE)
         return stack_[a - STACK];
     if (a == FLGEX)
@@ -574,13 +699,13 @@ void Pass2::loop(unsigned pc, unsigned stop)
     }
 }
 
-// *0225B: the handler of the item's code, from the high half of TYPES+code (a UJ).
+// *0225B: the handler of the item's code.
 unsigned Pass2::dispatch()
 {
-    unsigned half = unsigned(mem(TYPES + code_) >> 24);
-    if ((half >> 20) || !(half & (1u << 19)) || ((half >> 12) & 0370) != 0300)
+    unsigned h = code_ < std::size(CODES) ? CODES[code_].handler : 0;
+    if (!h)
         throw std::runtime_error("pass 2: no handler for item code " + std::to_string(code_));
-    return half & 077777;
+    return h;
 }
 
 // *0226B: return from a subtree, its REPORTED ORed into the caller's.
@@ -707,13 +832,13 @@ bool Pass2::inside(unsigned block)
     return desc_ > block && desc_ < end;
 }
 
-// *0162B: type_ and kind_ of the descriptor at desc_ (TYPES).
+// *0162B: type_ and kind_ of the descriptor at desc_.
 void Pass2::descriptor_types()
 {
     Word d     = mem(desc_);
-    type_      = unsigned(mem(TYPES + ((d >> 40) & 017)) >> 4) & 7;
+    type_      = TYPE_OF[(d >> 40) & 017];
     emit_code_ = kind_index(d);
-    kind_      = mem(TYPES + emit_code_) & 017;
+    kind_      = KIND_OF[emit_code_];
 }
 
 //
@@ -799,13 +924,10 @@ void Pass2::close_scope()
     }
 }
 
-// *0440B: how types type_ and other combine (TYPE_PAIRS): 0 the same, 1 or
-// 2 an integer and a real, 3 an error.
+// *0440B: how types type_ and other combine (TYPE_COMBINE).
 unsigned Pass2::type_pair(Word other)
 {
-    emit_code_ = addr(other);
-    int n      = int((mem(TYPE_PAIRS + emit_code_) >> 41) & 0177) - 64;
-    emit_code_ = shift(mem(TYPE_PAIRS + type_), n) & 7;
+    emit_code_ = TYPE_COMBINE[type_ & 7][addr(other) & 7];
     return emit_code_;
 }
 
@@ -1043,7 +1165,7 @@ unsigned Pass2::arith_left()
         return RETURN_SUB;
     };
     auto error = [&] {
-        type_error(mem(addr(pop())));
+        type_error(OP_TEXT[addr(pop()) & 3]);
         return RETURN_SUB;
     };
     switch (r) {
@@ -1056,14 +1178,14 @@ unsigned Pass2::arith_left()
         if (left == 2)
             return op_code(30, 2);
         type_ = (left - 4) & 077777;
-        if (left != 4 || top(1) != mem(OPS))
+        if (left != 4 || top(1) != OPS[0])
             return error();
         type_ = 4;
         pop();
-        emit(mem(STRING_PLUS));
+        emit(STRING_PLUS);
         return RETURN_SUB;
     case 1:
-        if (top(1) == mem(OPS + 3) && type_ == 2) {
+        if (top(1) == OPS[3] && type_ == 2) {
             emit_code_ = 064;
             emit_code();
         }
@@ -1081,14 +1203,14 @@ unsigned Pass2::arith_left()
 // Codes 013-015: + - *.
 unsigned Pass2::arith_op(unsigned op)
 {
-    push(mem(op));
+    push(OPS[op]);
     return parse(ARITH_LEFT);
 }
 
 // Code 016, /: an integer right operand gets 064.
 unsigned Pass2::divide_item()
 {
-    push(mem(OPS + 3));
+    push(OPS[3]);
     parse_sub(020156);
     if (type_ == 2) {
         emit_code_ = 064;
@@ -1189,8 +1311,8 @@ unsigned Pass2::index_general(unsigned op)
     push(0);
     push(INDEX_DONE);
     push(0);
-    push(mem(op));
-    emit_code_ = op;
+    push(OPS[op]);
+    emit_code_ = 020142 + op;
     return parse_read(ARITH_LEFT);
 }
 
@@ -1201,10 +1323,10 @@ unsigned Pass2::index_general(unsigned op)
 //
 unsigned Pass2::next_subscript()
 {
-    emit_code_ = (mem(TYPES + code_) >> 7) & 3;
+    emit_code_ = CODES[code_].subscript;
     switch (emit_code_) {
     case 1:
-        if (small_constant(02720)) {
+        if (small_constant(INTEGER | 2048)) {
             emit_code_ = 045;
             emit_shifted(name(operand_) & 07777);
             read();
@@ -1216,21 +1338,21 @@ unsigned Pass2::next_subscript()
         return parse_read(INDEX_DONE);
     case 2:
         read();
-        if (code_ != 024 || !small_constant(02720))
-            return index_general(OPS);
+        if (code_ != 024 || !small_constant(INTEGER | 2048))
+            return index_general(0);
         return index_offset(name(operand_) & 07777);
     default:
         read();
-        if (code_ != 024 || !small_constant(02713))
-            return index_general(OPS + 1);
-        return index_offset(raw_rsub(name(operand_), base(02731)) & 07777);
+        if (code_ != 024 || !small_constant(INTEGER | 64))
+            return index_general(1);
+        return index_offset(raw_rsub(name(operand_), INTEGER | 4096) & 07777);
     }
 }
 
 // *0621B: one subscript less; after the last, type_ back and return.
 unsigned Pass2::subscript_done()
 {
-    top(2) = raw_sub(top(2), base(02646));
+    top(2) = raw_sub(top(2), 1);
     if (top(2))
         return NEXT_SUB;
     type_ = addr(pop());
@@ -1280,11 +1402,11 @@ unsigned Pass2::power_item()
         Word c     = name(operand_);
         top(2)     = c;
         emit_code_ = addr(c);
-        if (emit_code_ && less(c, base(02713))) {
+        if (emit_code_ && less(c, INTEGER | 64)) {
             parse_sub(020270);
             emit_code_ = type_ == 2 ? 0153 : 0152;
             if (type_ == 5) {
-                Word e     = top(1) ? raw_rsub(top(2), base(02713)) : raw_add(top(2), base(02713));
+                Word e     = top(1) ? raw_rsub(top(2), INTEGER | 64) : raw_add(top(2), INTEGER | 64);
                 emit_code_ = 0352;
                 emit_shifted(e);
                 sp_ -= 2;
@@ -1454,7 +1576,7 @@ unsigned Pass2::relation_item()
             break;
         case 1:
         case 2:
-            code = mem(REL_MIXED + addr(pop()));
+            code = REL_MIXED[addr(pop()) - 5];
             break;
         default:
             pop();
@@ -1470,7 +1592,7 @@ unsigned Pass2::relation_item()
     if (!type_) {
         emit_code_ = 0157;
         type_      = 3;
-        emit_shifted(cyclic_add(code, base(02706)));
+        emit_shifted(cyclic_add(code, MINUS_4));
         return RETURN_SUB;
     }
     type_ = 3;
@@ -1482,7 +1604,7 @@ unsigned Pass2::relation_item()
 unsigned Pass2::uplus_item()
 {
     parse_sub(020425);
-    if (!mem(NUMERIC + type_))
+    if (!NUMERIC[type_ & 7])
         type_error(OP_TEXT[0]);
     return RETURN_SUB;
 }
@@ -1491,7 +1613,7 @@ unsigned Pass2::uplus_item()
 unsigned Pass2::uminus_item()
 {
     parse_sub(020431);
-    if (!mem(NUMERIC + type_)) {
+    if (!NUMERIC[type_ & 7]) {
         type_error(OP_TEXT[1]);
         return RETURN_SUB;
     }
@@ -1583,7 +1705,7 @@ unsigned Pass2::after_left()
 //
 unsigned Pass2::left_part()
 {
-    if (!(mem(TYPES + code_) & VARIABLE)) {
+    if (!CODES[code_].variable) {
         subtree(017755);
         message(BAD_LEFT);
         return LEFT_COUNT;
@@ -1674,7 +1796,7 @@ bool Pass2::relation_condition(Word &code)
     type_    = (type_ - 4) & 077777;
     if (!type_) {
         emit_code_ = 0157;
-        emit_shifted(cyclic_add(pop(), base(02677)));
+        emit_shifted(cyclic_add(pop(), MINUS_0127));
         return false;
     }
     if (rel != 0134)
@@ -1696,7 +1818,7 @@ bool Pass2::relation_condition(Word &code)
 unsigned Pass2::condition(Word conversion)
 {
     push(conversion);
-    emit_code_  = (mem(TYPES + code_) >> 15) & 7;
+    emit_code_  = CODES[code_].condition;
     Word code   = 0;
     bool direct = false;
     switch (emit_code_) {
@@ -1841,7 +1963,7 @@ unsigned Pass2::for_element()
 // *2356B: one element more.
 unsigned Pass2::count_element()
 {
-    mem(ELEMENTS) = cyclic_add(mem(ELEMENTS), base(02646));
+    mem(ELEMENTS) = cyclic_add(mem(ELEMENTS), 1);
     return DISPATCH;
 }
 
@@ -1865,7 +1987,7 @@ unsigned Pass2::do_item()
     push(desc_);
     push(type_);
     mem(ELEMENTS) = 0;
-    if (!mem(NUMERIC + type_))
+    if (!NUMERIC[type_ & 7])
         type_error(FOR_TEXT);
     return DISPATCH;
 }
@@ -1903,7 +2025,7 @@ unsigned Pass2::step_item()
     read();
     if (unsigned after = for_element())
         emit(after);
-    mem(STEP_KIND) = mem(STEP_KINDS + addr(top(1)));
+    mem(STEP_KIND) = STEP_KINDS[addr(top(1)) & 7];
     bool general   = top(1) != 2 || code_ != 024;
     if (general) {
         if (unsigned after = for_element())
@@ -1950,7 +2072,7 @@ unsigned Pass2::control_item()
 {
     if (mem(ELEMENTS) != 1) {
         unsigned block = addr(mem(BLOCK));
-        store(block, mem(BIT48_WORD) | mem(block));
+        store(block, BIT48 | mem(block));
     }
     pop();
     desc_ = addr(pop());
@@ -2019,9 +2141,9 @@ unsigned Pass2::switch_item()
                 if (kind_)
                     illegal_use();
             } else {
-                store(desc_, mem(desc_) | mem(BIT48_WORD));
+                store(desc_, mem(desc_) | BIT48);
             }
-            store(desc_, mem(desc_) | mem(BIT48_WORD));
+            store(desc_, mem(desc_) | BIT48);
             read();
             emit_code_ = 0142;
             emit_shifted(desc_);
@@ -2058,11 +2180,11 @@ unsigned Pass2::bounds_item()
     read();
     mem(HIDDEN) = mem(BLOCK);
     emit_code_  = (code_ - 024) & 077777;
-    if (!emit_code_ && small_constant(02715)) {
+    if (!emit_code_ && small_constant(INTEGER | 256)) {
         mem(BOUNDS) = name(operand_);
         subtree(020213);
         emit_code_ = (code_ - 024) & 077777;
-        if (!emit_code_ && small_constant(02713)) {
+        if (!emit_code_ && small_constant(INTEGER | 64)) {
             mem(BOUNDS) |= (name(operand_) << 12) & WORD_MASK;
             return BOUND_LOOP;
         }
@@ -2082,7 +2204,7 @@ unsigned Pass2::array_item()
     emit_item();
     if (Word b = mem(BOUNDS)) {
         store(addr(mem(ARRAYS_END)), ((b << 24) & WORD_MASK) | mem(ITEM));
-        mem(ARRAYS_END) = cyclic_add(mem(ARRAYS_END), base(02646));
+        mem(ARRAYS_END) = cyclic_add(mem(ARRAYS_END), 1);
     }
     read();
     return DISPATCH;
@@ -2157,7 +2279,7 @@ unsigned Pass2::slice()
 {
     lookup();
     if (desc_) {
-        if ((mem(desc_) ^ mem(STRING_DESC)) & mem(STRING_MASK)) {
+        if ((mem(desc_) ^ STRING_DESC) & STRING_MASK) {
             illegal_use();
         } else {
             emit_code_ = kind_ ? 022 : 017;
@@ -2166,7 +2288,7 @@ unsigned Pass2::slice()
     }
     parse_sub(020557);
     index_type();
-    if (top(1) == mem(SLICE_CODE)) {
+    if (top(1) == SLICE_CODE) {
         subtree(020562);
         index_type();
     }
@@ -2327,12 +2449,12 @@ unsigned Pass2::io_065()
         if (!kind_) {
             emit_code_ = 017;
             emit_shifted(desc_);
-            emit(mem(IO_ITEMS + 2));
+            emit(IO_ITEM_NAME);
             read();
             return RETURN_SUB;
         }
     }
-    emit(mem(IO_ITEMS));
+    emit(IO_ITEM);
     lookup();
     push(1);
     push(type_);
@@ -2350,12 +2472,12 @@ unsigned Pass2::io_074()
         if (!kind_) {
             emit_code_ = 017;
             emit_shifted(desc_);
-            emit(mem(IO_ITEMS + 4));
+            emit(IO_ITEM_ARRAY);
             read();
             return RETURN_SUB;
         }
     }
-    emit(mem(IO_ITEMS));
+    emit(IO_ITEM);
     return parse_read(RETURN_SUB);
 }
 
@@ -2370,7 +2492,7 @@ unsigned Pass2::io_101()
     type_ = (type_ - 4) & 077777;
     if (type_)
         message(IO_ERROR);
-    emit(mem(IO_101));
+    emit(IO_101);
     emit_code_ = 0125;
     emit_code();
     emit_code_ = 0121;
@@ -2379,9 +2501,9 @@ unsigned Pass2::io_101()
 }
 
 // Codes 066, 067: their item, then two arguments as 064, 063.
-unsigned Pass2::io_two(unsigned item)
+unsigned Pass2::io_two(Word item)
 {
-    emit(mem(item));
+    emit(item);
     read();
     loop(io_arg(020453), 020453);
     return io_string();
@@ -2406,7 +2528,7 @@ unsigned Pass2::call_end()
 unsigned Pass2::formal_type()
 {
     emit_code_ = (mem(formal_) >> 40) & 017;
-    return (mem(TYPES + emit_code_) >> 4) & 017;
+    return FORMAL_TYPE_OF[emit_code_];
 }
 
 // *1421B: one argument less, the next formal; after the last, 0110.
@@ -2466,11 +2588,8 @@ unsigned Pass2::check_types()
 //
 unsigned Pass2::correspond()
 {
-    emit_code_ = addr(pack_bits(mem(formal_), base(02723)) >> 42);
-    emit_code_ = (mem(TYPES + emit_code_) >> 8) & base(02721);
-    int n      = int((074 + emit_code_) & 0177) - 64;
-    Word row   = mem(CORRESPONDENCE + kind_);
-    emit_code_ = shift(shift(shift(row, n), n), n) & base(02726);
+    emit_code_ = addr(pack_bits(mem(formal_), FORMAL_BITS) >> 42);
+    emit_code_ = CORRESPONDENCE[kind_][FORMAL_CLASS[emit_code_] / 2];
 
     unsigned f = formal_, a = desc_;
     auto get     = [&](unsigned p) { return mem(p); };
@@ -2545,7 +2664,7 @@ void Pass2::thunk()
     mem(DLIST_TOP) = 0;
     Word level     = mem(BLOCK_DLIST);
     push(level);
-    mem(BLOCK_DLIST) = cyclic_add(level, base(02712));
+    mem(BLOCK_DLIST) = cyclic_add(level, LEVEL_DOWN);
     emit_code_       = 0116;
     emit(0116 | top(1));
 }
@@ -2599,7 +2718,7 @@ unsigned Pass2::actual_ident()
         emit_code_ = 0112;
         if (!type_) {
             emit_code_ = 0113;
-            store(desc_, mem(desc_) | mem(BIT48_WORD));
+            store(desc_, mem(desc_) | BIT48);
         }
         return actual_emit(desc_);
     case 1:
@@ -2632,7 +2751,7 @@ unsigned Pass2::actual_ident()
 // *1434B: an argument by how it ends.
 unsigned Pass2::actual_kind()
 {
-    emit_code_   = (mem(TYPES + code_) >> 18) & 017;
+    emit_code_   = CODES[code_].actual;
     auto by_type = [&](unsigned type) {
         type_      = type;
         kind_      = 010;
@@ -2782,7 +2901,7 @@ unsigned Pass2::arg_item()
 unsigned Pass2::io_arg(unsigned ret)
 {
     push(ret);
-    emit_code_ = (mem(TYPES + code_) >> 13) & base(02654);
+    emit_code_ = CODES[code_].io;
     switch (emit_code_) {
     case 0:
         return parse_read(ARG_EXPRESSION);
@@ -2826,7 +2945,7 @@ unsigned Pass2::arg_ident()
     };
     if (mem(REPORTED))
         return item();
-    if (type_ == mem(022107))
+    if (type_ == STRING_TYPE)
         return parse_read(ARG_EXPRESSION);
     switch (kind_) {
     case 0:
@@ -2951,7 +3070,7 @@ unsigned Pass2::as_left_part(unsigned ret)
 unsigned Pass2::read_arg()
 {
     auto general = [&] {
-        if (!(raw_sub(mem(desc_) & mem(022101), base(02653)) & NEGATIVE)) {
+        if (!(raw_sub(mem(desc_) & STD_PROC_BITS, 0200000000000) & NEGATIVE)) {
             desc_      = 062;
             emit_code_ = 072;
             emit_shifted(desc_);
@@ -3033,7 +3152,7 @@ unsigned Pass2::std_proc(Word number)
     push(desc_);
     parse_sub(021251);
     desc_ = addr(pop());
-    if (!mem(NUMERIC + type_)) {
+    if (!NUMERIC[type_ & 7]) {
         operand_ = addr(mem(desc_));
         illegal_use();
     }
@@ -3050,7 +3169,7 @@ unsigned Pass2::std_proc(Word number)
 //
 unsigned Pass2::code_call()
 {
-    if (Word bits = pack_bits(mem(desc_), base(02656)))
+    if (Word bits = pack_bits(mem(desc_), STD_PROC_BITS))
         return std_proc(bits >> 45);
     return CODE_CALL_ARGS;
 }
@@ -3132,9 +3251,9 @@ void Pass2::register_handlers()
     h[017771]         = [this] { return constant(5); }; // octal
     h[017772]         = [this] { return constant(2); }; // integer
     h[017775]         = [this] { return string_item(); };
-    h[020106]         = [this] { return arith_op(OPS); };
-    h[020152]         = [this] { return arith_op(OPS + 1); };
-    h[020153]         = [this] { return arith_op(OPS + 2); };
+    h[020106]         = [this] { return arith_op(0); };
+    h[020152]         = [this] { return arith_op(1); };
+    h[020153]         = [this] { return arith_op(2); };
     h[020154]         = [this] { return divide_item(); };
     h[ARITH_LEFT]     = [this] { return arith_left(); };
     h[020002]         = [this] { return subscripted(044); }; // code 021, an array element
@@ -3148,7 +3267,7 @@ void Pass2::register_handlers()
     h[020424]         = [this] { return uplus_item(); };
     h[020430]         = [this] { return uminus_item(); };
     h[020546]         = [this] { // code 050: a slice S[i:j]
-        push(mem(SLICE_CODE));
+        push(SLICE_CODE);
         return slice();
     };
     h[021366] = [this] { return cond_expr_item(); };
@@ -3176,7 +3295,7 @@ void Pass2::register_handlers()
     h[020466] = [this] { return io_065(); };
     h[020511] = [this] { return io_074(); };
     h[020521] = [this] { // code 073
-        emit(mem(IO_073));
+        emit(IO_073);
         read();
         return RETURN_SUB;
     };
@@ -3184,8 +3303,8 @@ void Pass2::register_handlers()
     h[020534] = [this] { return io_control(033); };
     h[020535] = [this] { return io_control(034); };
     h[020536] = [this] { return io_control(035); };
-    h[020541] = [this] { return io_two(022117); };
-    h[020542] = [this] { return io_two(022073); };
+    h[020541] = [this] { return io_two(IO_TWO_0101); };
+    h[020542] = [this] { return io_two(IO_TWO_0102); };
 
     // Calls.
     h[020571]      = [this] { return call_item(); };
@@ -3225,8 +3344,6 @@ void Pass2::register_handlers()
 
 Pass2::Pass2(Context &ctx, const Stream &input)
     : ctx_(ctx), in_(input), pos_(input.size()),
-      own_(tables::image + (OWN_BEGIN - tables::image_base),
-           tables::image + (OWN_END - tables::image_base)),
       flgex_(ctx.flgex)
 {
     operand_ = ctx.regs[3] & 077777;
