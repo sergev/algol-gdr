@@ -693,7 +693,7 @@ Most handlers (codes 001–167) are known only by the code they serve. No error 
 - Converts 6 eight-bit characters into up to 8 six-bit TEXT characters, left-justified.
   Latin letters map to their code − 040.
 - Example: `ASSIGN` → `4163 6351 4756 0000`.
-- Called by pass 4 (25653). C++ (`iso_to_text` in src/pass4.cpp): the letters by the bit tables at 30116, 30117, the shifts at 30060…30076.
+- Called by pass 4 (25653). C++ (`iso_text` in src/pass4.cpp): character k from the right (byte k) gives the six-bit code at field c%8 of the word 30076+c/8 (letters 30106–30111, digits 30104–30105), placed at bits 12+6k; a zero byte gives nothing. The shifts come from the exponents of 30060–30103, the masks from 30116, 30117.
 
 ## Pass 5: G26260 (V)
 

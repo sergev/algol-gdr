@@ -30,6 +30,9 @@ constexpr unsigned DISPATCH      = 026056; // per code: UZA handler / UJ handler
 
 constexpr unsigned SP = Machine::SP;
 
+// The arithmetic unit without normalization or rounding (NTR 3).
+constexpr unsigned RAW = Arith::NORM_DISABLE | Arith::ROUND_DISABLE;
+
 // Constants of the pass (at M7+…).
 constexpr Word BIT48      = 0'4000'0000'0000'0000;
 constexpr Word BIT45      = 0'0400'0000'0000'0000;
@@ -60,7 +63,6 @@ constexpr Word OUT_CURSOR = 0'0000'0302'6020'6000; // 06000, drum 26 zone 2
 
 constexpr unsigned EXT_COUNTER = M7 + 037; // externals numbered so far
 constexpr unsigned MAIN_NAME   = M7 + 066; // the name of the main program as TEXT
-constexpr unsigned NAMES_INFO  = M7 + 02517; // *70: drum 26 zone 0 to 06000
 
 Word pop(Machine &m)
 {
@@ -85,6 +87,18 @@ Word cyclic_add(Word a, Word b)
     if (s >> 48)
         s = (s + 1) & WORD_MASK;
     return s;
+}
+
+// The packed descriptor of a frame size (APX, then 5 right).
+Word packed_frame(Word size)
+{
+    return pack_bits(size, DESC_MASK) >> 5;
+}
+
+// The unpacked address of a packed descriptor (5 left, AUX).
+Word unpacked(Word d)
+{
+    return unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
 }
 
 // Write w to the output stream (27126), returning to link.
@@ -154,12 +168,6 @@ void emit(Machine &m, Word half, unsigned link)
         return;
     }
     write(m, half, link);
-}
-
-// Emit A, returning to link.
-void emit_half(Machine &m, unsigned link)
-{
-    emit(m, m.acc, link);
 }
 
 // 23712: the next half of the template at TEMPLATE_AT (bit 48: the right half).
@@ -369,7 +377,8 @@ unsigned start(Machine &m)
     m.store(m.M[2], 05760);
     m.vtm(1, 010000);
     m.vtm(3, 04133);
-    m.extracode(070, 0, NAMES_INFO);
+    for (unsigned i = 0; i < 1024; i++) // drum 26 zone 0
+        m.mem[NAMES + i] = m.drums->drum(026, 0, i);
     m.mem[02010] = cyclic_add(m.mem[02003] ^ WORD_MASK, CONST_BASE);
     m.vtm(4, 0);
     m.mem[02006]     = 0;
@@ -379,10 +388,7 @@ unsigned start(Machine &m)
         m.mem[02005] = m.mem[MAIN_NAME];
         m.mem[02014] = FRAME_MAIN;
         m.call(BLOCK_ENTRY, 13, 023603);
-        m.acc = m.mem[02014];
-        m.apx(0, 026210); // DESC_MASK
-        m.asn(0, 0105);
-        m.store(m.M[2], m.acc ^ m.mem[m.M[2]]);
+        m.store(m.M[2], packed_frame(m.mem[02014]) ^ m.mem[m.M[2]]);
         push(m, m.mem[02014] & ADDR);
         push(m, m.M[1]);
         m.vtm(11, 023612);
@@ -520,7 +526,6 @@ unsigned constant_item(Machine &m)
 unsigned variable_item(Machine &m)
 {
     Word d = m.mem[m.M[3]];
-    m.ntr(0, 013);
     if (d & BIT48)
         d = unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
     else
@@ -732,7 +737,6 @@ unsigned assign_pushed(Machine &m)
 unsigned assign_formal(Machine &m)
 {
     Word d = m.mem[m.M[3]] & FORMAL;
-    m.ntr(0, 013);
     if (d & BIT48)
         return assign(m, d);
     push(m, d);
@@ -743,7 +747,6 @@ unsigned assign_formal(Machine &m)
     if (!r)
         return assign_pushed(m);
     emit(m, r | REG_STORE, 024234);
-    m.ntr(0, 3);
     m.mem[02021] = r - 1;
     m.set_logical();
     return assign(m, (r << 20) & WORD_MASK);
@@ -1230,22 +1233,10 @@ constexpr Word FRAME_REG  = 0100000;   // (M7+1165)
 constexpr Word RETURN_1   = 0440017;   // (M7+752)
 constexpr Word RETURN_2   = 03004020;  // (M7+750)
 
-// The packed descriptor of a frame size (APX, then 5 right).
-Word packed_frame(Word size)
+// a < x on the arithmetic unit without normalization or rounding (NTR 3).
+bool unit_less(Word a, Word x)
 {
-    return pack_bits(size, DESC_MASK) >> 5;
-}
-
-// The unpacked address of a packed descriptor (5 left, AUX).
-Word unpacked(Word d)
-{
-    return unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
-}
-
-// x − a and a + x on the arithmetic unit in mode rau.
-bool unit_less(unsigned rau, Word a, Word x)
-{
-    Arith u(a, rau);
+    Arith u(a, RAW);
     u.sub(x);
     return u.acc & 0'0020'0000'0000'0000;
 }
@@ -1325,17 +1316,15 @@ void external_name(Machine &m, unsigned mod)
 bool array_dope(Machine &m)
 {
     Word d = m.mem[m.M[2]];
-    m.ntr(0, 013);
     if (!(d & BIT48))
         return true;
     m.set_m(8, (d >> 20) & 07777);
     m.store(m.M[2], (d & HEAD_KEEP) | packed_frame(m.mem[02014]));
     Word bounds = m.mem[m.M[8]];
-    Arith u(bounds >> 36, m.rau);
+    Arith u(bounds >> 36, RAW);
     u.rsub(m.mem[02014]);
     u.add(1);
     Word t = cyclic_add(u.acc, FRAME_STEP) & DOPE_MASK;
-    m.set_additive();
     m.store(m.M[2], (m.mem[m.M[2]] & OFFSET_CLR) | t);
     Word size    = cyclic_add((bounds >> 24) & 07777, cyclic_add(t, 1)) & DOPE_MASK;
     m.mem[02014] = size;
@@ -1376,7 +1365,6 @@ unsigned block_entry(Machine &m)
     m.mem[02012] = 0;
     unsigned kind = (head >> 44) & 3;
     m.set_m(14, kind);
-    m.ntr(0, 013);
     switch (kind) {
     case 0: // a procedure: its frame descriptor
         if (head & BIT48) {
@@ -1434,7 +1422,6 @@ unsigned block_entry(Machine &m)
         switch (k) {
         case 1:
             if (!(d & TYPE)) {
-                m.ntr(0, 013);
                 if (d & BIT48)
                     m.store(m.M[2], (d & HEAD_KEEP) ^ ((m.mem[02015] << 24) & WORD_MASK));
                 number(m);
@@ -1481,8 +1468,7 @@ unsigned block_entry(Machine &m)
         m.set_m(13, 025700);
         block_entry(m);
         Word old = pop(m);
-        m.ntr(0, 3);
-        if (!unit_less(m.rau, old, m.mem[02014]))
+        if (!unit_less(old, m.mem[02014]))
             m.mem[02014] = old;
         m.set_logical();
         m.mem[02013] = pop(m);
@@ -1501,7 +1487,6 @@ unsigned frame_reset(Machine &m)
 {
     Word d = m.mem[m.M[14]];
     push(m, unpacked(d));
-    m.ntr(0, 013);
     unsigned t = (d & BIT48) ? 024707 : 024705;
     m.vtm(11, t);
     m.vtm(12, DISPATCH_NEXT);
@@ -1738,7 +1723,6 @@ unsigned element_store(Machine &m)
     Word r = m.mem[02021];
     if (!r)
         return assign_pushed(m);
-    m.ntr(0, 3);
     m.mem[02021] = r - 1;
     m.set_logical();
     return assign(m, m.mem[02011] & ON_STACK);
@@ -1777,7 +1761,6 @@ unsigned array_segment(Machine &m)
         }
     }
     Word d = m.mem[m.M[3]];
-    m.ntr(0, 013);
     if (!r)
         r = (d & BIT48) ? 04022 : 04021;
     m.set_m(14, r);
@@ -1923,8 +1906,7 @@ unsigned preamble_end(Machine &m)
 {
     Word label = m.mem[LABELS];
     push(m, cyclic_add(label, 1));
-    m.ntr(0, 3);
-    Arith u(m.M[2], m.rau);
+    Arith u(m.M[2], RAW);
     u.rsub(1);
     m.set_logical();
     push(m, u.acc & 07777);
@@ -2029,49 +2011,44 @@ void register_arrays(Machine::Natives &n)
 }
 
 //
-// FOR loops. 055 reserves 10 stack words for the loop (S−10 … S−1 below):
-// S−10 L, S−9 L+1, S−8 L+2 its labels; S−7 the control variable's address,
-// S−6 the loop descriptor's word, S−5 the control variable (032/0141),
-// S−2 the jump to the body after the elements. 02031 = the loop
-// descriptor; with registers (bit 0400000 of it, from pass 3) the
-// elements go to 25475.
+// FOR loops. 055 reserves 10 stack words for the loop (S−10 … S−1 below,
+// top(m, k) while the stack is at S): S−10 L, S−9 L+1, S−8 L+2 its labels;
+// S−7 the control variable's address, S−6 the loop descriptor's word, S−5
+// the control variable (032/0141), S−4 the step, S−3 a constant step, S−2
+// the jump to the body after the elements, S−1 the kind of the element.
+// 02031 = the loop descriptor; with registers (bits 0300000 of it, from
+// pass 3) the elements go to 25475.
 //
 constexpr unsigned REGISTER_LOOP = 025475;
+constexpr Word BY_REGISTERS      = 0300000;  // (M7+2443)
+constexpr Word UJ_BACK           = 057700000; // (M7+1376)
 
 unsigned step_in_acc(Machine &m);
+
+// The loop descriptor of 02031.
+Word loop_descriptor(const Machine &m)
+{
+    return m.mem[m.mem[02031] & 077777];
+}
 
 // 25042: FOR (055).
 unsigned for_item(Machine &m)
 {
-    m.utm(Machine::SP, 012);
-    m.ita(0, 3);
-    m.atx(0, 02031);
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 077766);
-    m.arx(7, 02453);
-    m.atx(Machine::SP, 077767);
-    m.arx(7, 02453);
-    m.atx(Machine::SP, 077770);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
-    m.xta(0, 0);
-    m.atx(Machine::SP, 077776);
-    m.xta(3, 0);
-    m.asn(0, 0130);
-    m.aax(7, 02526);
-    m.atx(Machine::SP, 077772);
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.atx(Machine::SP, 077771);
-    m.arx(7, 02461);
-    m.atx(0, 02027);
-    m.xta(3, 0);
-    m.aax(7, 02442);
-    if (!m.uza()) {
-        m.xta(0, 02021);
-        m.atx(0, 02030);
-        m.xta(7, 02453);
-        m.atx(0, 02021);
+    m.set_m(SP, m.M[SP] + 012);
+    m.mem[02031] = m.M[3];
+    Word label   = m.mem[LABELS];
+    top(m, 10)   = label;
+    top(m, 9)    = cyclic_add(label, 1);
+    top(m, 8)    = cyclic_add(label, 2);
+    m.mem[LABELS] = cyclic_add(label, 3);
+    top(m, 2)     = 0;
+    Word d        = m.mem[m.M[3]];
+    top(m, 6)     = (d >> 24) & ADDR;
+    top(m, 7)     = d & DESC_MASK;
+    m.mem[02027]  = cyclic_add(top(m, 7), 2);
+    if (d & 0400000) {
+        m.mem[02030] = m.mem[02021];
+        m.mem[02021] = 1;
     }
     return DISPATCH_NEXT;
 }
@@ -2079,167 +2056,114 @@ unsigned for_item(Machine &m)
 // 25062, 25064: the control variable, simple (032) or by name (0141).
 unsigned control_variable(Machine &m, bool by_name)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    if (by_name)
-        m.aox(7, 02507);
-    m.atx(Machine::SP, 077773);
+    top(m, 5) = (m.mem[m.M[3]] & DESC_MASK) | (by_name ? BIT48 : 0);
     return DISPATCH_NEXT;
 }
 
 // 25067: a by-name element (0135).
 unsigned by_name_element(Machine &m)
 {
-    m.xta(3, 0);
-    m.arx(0, 0);
-    if (m.u1a())
+    if (!(m.mem[m.M[3]] & BIT48))
         return give_none(m);
     return DISPATCH_NEXT;
 }
 
-// 25075: the half in A with label L+1, then (unless the descriptor word
-// is 0) 0211 of L+2; on to the main loop.
-unsigned for_jump(Machine &m)
+// 25075: the half with label L+1, then (unless the descriptor word is 0)
+// 0211 of it; on to the main loop.
+unsigned for_jump(Machine &m, Word half)
 {
-    m.aox(Machine::SP, 077767);
-    emit_half(m, 025076);
-    m.xta(Machine::SP, 077772);
-    if (m.uza())
-        return MAIN_LOOP;
-    m.aox(7, 0746);
-    emit_half(m, MAIN_LOOP);
+    emit(m, half | top(m, 9), 025076);
+    if (Word w = top(m, 6))
+        emit(m, w | LABEL_DEF, MAIN_LOOP);
     return MAIN_LOOP;
 }
 
 // 25071: DO (033): the jump to the body (S−2, U1A or UJ).
 unsigned do_item(Machine &m)
 {
-    m.wtc(0, 02031);
-    m.xta(0, 0);
-    m.aax(7, 02443);
-    if (m.u1a())
+    if (loop_descriptor(m) & BY_REGISTERS)
         return MAIN_LOOP;
-    m.xta(Machine::SP, 077776);
-    if (!m.uza()) {
-        m.aex(7, 02437);
-        return for_jump(m);
-    }
-    m.xta(Machine::SP, 077772);
-    if (m.uza())
+    if (Word j = top(m, 2))
+        return for_jump(m, j ^ 0100000);
+    if (!top(m, 6))
         return MAIN_LOOP;
-    m.xta(7, 02317);
-    return for_jump(m);
+    return for_jump(m, LABEL_UJ);
 }
 
 // 25103: the end of a FOR (052): UJ back to L (or by the step), 0211 of
 // L+1; the frame dropped, 02004 = L.
 unsigned for_end(Machine &m)
 {
-    m.utm(Machine::SP, 077776);
-    m.xta(3, 0);
-    m.aax(7, 02443);
-    if (m.u1a()) {
-        m.xta(Machine::SP, 077766);
-        m.aox(7, 01376);
-        emit_half(m, 025110);
+    m.set_m(SP, m.M[SP] - 2);
+    if (m.mem[m.M[3]] & BY_REGISTERS) {
+        emit(m, top(m, 10) | UJ_BACK, 025110);
     } else {
-        m.xta(Machine::SP, 077772);
-        if (m.u1a()) {
-            m.xta(Machine::SP, 077771);
-            m.aox(7, 02241);
-            emit_half(m, 025124);
-            m.xta(0, 0);
-        } else {
-            m.xta(Machine::SP, 077766);
+        Word target = top(m, 10);
+        if (top(m, 6)) {
+            emit(m, top(m, 7) | ARRAY_HALF, 025124);
+            target = 0;
         }
-        m.aox(7, 02317);
-        emit_half(m, 025110);
+        emit(m, target | LABEL_UJ, 025110);
     }
-    m.xta(7, 0746);
-    m.aox(Machine::SP, 077767);
-    emit_half(m, 025112);
-    m.xta(Machine::SP, 077766);
-    m.atx(0, LABELS);
-    m.utm(Machine::SP, 077766);
-    m.xta(3, 0);
-    m.aax(7, 02442);
-    if (!m.uza()) {
-        m.xta(0, 02030);
-        m.atx(0, 02021);
-    }
+    emit(m, LABEL_DEF | top(m, 9), 025112);
+    m.mem[LABELS] = top(m, 10);
+    m.set_m(SP, m.M[SP] - 10);
+    if (m.mem[m.M[3]] & 0400000)
+        m.mem[02021] = m.mem[02030];
     return DISPATCH_NEXT;
 }
 
 //
-// 25132: an element of kind M14: 0 STEP-UNTIL integer (034), 1 real (0140),
+// 25132: an element of kind k: 0 STEP-UNTIL integer (034), 1 real (0140),
 // 2 integer constant step (0137), 3 WHILE (035), 4 plain (056). The jump
 // of the element before (S−2), the address (template 25174) and 0211 L
 // for the first; then the value, and its continuation from the table at
 // 25151.
 //
-unsigned element_item(Machine &m)
+unsigned element_item(Machine &m, unsigned k)
 {
-    m.ita(0, 016);
-    m.atx(Machine::SP, 077777);
-    m.wtc(0, 02031);
-    m.xta(0, 0);
-    m.aax(7, 02443);
-    if (m.u1a())
+    m.set_m(14, k);
+    top(m, 1) = k;
+    Word d    = loop_descriptor(m);
+    if (d & BY_REGISTERS) {
+        set_acc(m, d & BY_REGISTERS);
         return REGISTER_LOOP;
-    m.xta(Machine::SP, 077776);
-    if (!m.uza()) {
-        m.aox(Machine::SP, 077772);
-        emit_half(m, 025137);
     }
-    m.xta(Machine::SP, 077772);
-    if (!m.uza()) {
-        m.xta(Machine::SP, 077771);
-        m.xts(Machine::SP, 077765);
-        m.atx(Machine::SP, 0);
+    if (Word j = top(m, 2))
+        emit(m, j | top(m, 6), 025137);
+    if (top(m, 6)) {
+        Word a = top(m, 7), label = top(m, 10);
+        push(m, a);
+        push(m, label);
         m.vtm(11, 025174);
         m.set_m(12, 025143);
-        run_template(m);
+        emit_template(m, 025174);
     }
-    m.xta(Machine::SP, 077777);
-    m.aex(7, 02467);
-    if (!m.u1a()) {
-        m.xta(Machine::SP, 077766);
-        m.aox(7, 0746);
-        emit_half(m, 025146);
-    }
+    if (top(m, 1) == 3)
+        emit(m, top(m, 10) | LABEL_DEF, 025146);
     return operand(m, 025147);
-}
-
-unsigned element_kind(Machine &m, unsigned kind)
-{
-    m.vtm(14, kind);
-    return element_item(m);
 }
 
 unsigned element_value(Machine &m)
 {
-    m.wtc(Machine::SP, 077776);
-    m.wtc(0, 025151);
-    m.vtm(12, 0);
+    m.vtm(12, m.mem[(025151 + top(m, 2)) & 077777]);
     return OPERAND_DONE;
 }
 
 // The value stored into the control variable (template 25760).
 void store_control(Machine &m, unsigned link)
 {
-    m.xta(Machine::SP, 077773);
-    m.atx(Machine::SP, 0);
+    push(m, top(m, 5));
     m.vtm(11, 025760);
     m.set_m(12, link);
-    run_template(m);
+    emit_template(m, 025760);
 }
 
 // 25156: WHILE: stored; the condition, U1A next.
 unsigned while_value(Machine &m)
 {
     store_control(m, 025160);
-    m.xta(7, 02304);
-    m.atx(Machine::SP, 077776);
+    top(m, 2) = LABEL_U1A2;
     return operand(m, 025162);
 }
 
@@ -2253,28 +2177,24 @@ unsigned while_condition(Machine &m)
 unsigned plain_value(Machine &m)
 {
     store_control(m, 025165);
-    m.xta(Machine::SP, 077772);
-    if (m.uza()) {
-        m.xta(Machine::SP, 077766);
-        m.atx(Machine::SP, 077767);
+    Word w = top(m, 6);
+    if (!w) {
+        top(m, 9) = top(m, 10);
         return DISPATCH_NEXT;
     }
-    m.aox(7, 02317);
-    emit_half(m, 025167);
-    m.xta(0, 0);
-    m.atx(Machine::SP, 077776);
-    m.xta(Machine::SP, 077766);
-    m.aox(7, 0746);
-    emit_half(m, DISPATCH_NEXT);
+    emit(m, w | LABEL_UJ, 025167);
+    top(m, 2) = 0;
+    emit(m, top(m, 10) | LABEL_DEF, DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
-// 25206: template M11 with M5 = the kind, returning to 25210 + kind.
-unsigned by_kind(Machine &m)
+// 25206: template t with M5 = the kind, returning to 25210 + kind.
+unsigned by_kind(Machine &m, unsigned t, Word kind)
 {
-    m.ati(0, 5);
-    m.utc(5, 025210);
-    m.vtm(12, 0);
+    m.vtm(11, t);
+    m.set_m(5, kind);
+    m.vtm(12, 025210 + m.M[5]);
+    m.acc = kind;
     return TEMPLATE;
 }
 
@@ -2282,25 +2202,24 @@ unsigned by_kind(Machine &m)
 // step: a constant one (023, M2 = 0) is kept in S−3; in A: 25247.
 unsigned step_value(Machine &m)
 {
-    m.xta(0, 0);
-    m.atx(Machine::SP, 077775);
+    top(m, 3) = 0;
     return operand(m, 025200);
 }
 
 unsigned step_operand(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.uza())
+    Word d = pop(m);
+    if (!d)
         return step_in_acc(m);
-    m.atx(Machine::SP, 077774);
-    m.utm(1, 077755);
+    top(m, 4) = d;
+    m.set_m(1, m.M[1] - 023);
     if (!m.M[1] && !m.M[2])
-        m.atx(Machine::SP, 077775);
-    m.vtm(11, 025235);
-    m.xts(Machine::SP, 077765);
-    m.xts(Machine::SP, 077765);
-    m.xts(Machine::SP, 077774);
-    return by_kind(m);
+        top(m, 3) = d;
+    Word l0 = top(m, 10), l1 = top(m, 9), kind = top(m, 1);
+    push(m, d);
+    push(m, l0);
+    push(m, l1);
+    return by_kind(m, 025235, kind);
 }
 
 // 25210…25212 by kind: the increment (templates 25243, 25237, 25241),
@@ -2309,48 +2228,38 @@ unsigned step_operand(Machine &m)
 // body.
 unsigned increment(Machine &m, unsigned t)
 {
-    m.vtm(11, t);
-    m.xta(Machine::SP, 077773);
-    m.xts(Machine::SP, 077766);
-    m.xts(Machine::SP, 077771);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 025216);
-    run_template(m);
+    loop_template(m, { 5, 9, 5 }, t, 025216, 0);
     return operand(m, 025217);
 }
 
 unsigned until_test(Machine &m)
 {
-    m.xta(Machine::SP, 077775);
-    if (!m.u1a()) {
-        m.xta(Machine::SP, 077774);
-        m.atx(Machine::SP, 0);
+    if (!top(m, 3)) {
+        push(m, top(m, 4));
         m.vtm(11, 025227);
         m.set_m(12, 025225);
-        run_template(m);
+        emit_template(m, 025227);
     }
-    m.xta(7, 02302);
-    m.atx(Machine::SP, 077776);
+    top(m, 2) = LABEL_U1A;
     return DISPATCH_NEXT;
 }
 
 unsigned until_value(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.uza())
+    Word d = pop(m);
+    if (!d)
         return operand(m, 025231);
-    m.atx(Machine::SP, 0);
+    push(m, d);
     m.vtm(11, 026020);
     m.set_m(12, 025222);
-    run_template(m);
+    emit_template(m, 026020);
     return until_test(m);
 }
 
 unsigned until_in_acc(Machine &m)
 {
     load(m, 025232);
-    m.xta(Machine::SP, 077773);
-    m.atx(Machine::SP, 0);
+    push(m, top(m, 5));
     m.vtm(11, 026017);
     m.vtm(12, 025222);
     return TEMPLATE;
@@ -2360,36 +2269,25 @@ unsigned until_in_acc(Machine &m)
 // after it), then by kind with template 25270.
 unsigned step_in_acc(Machine &m)
 {
-    m.xta(Machine::SP, 077766);
-    m.xts(Machine::SP, 077770);
-    m.aax(7, 02465);
-    m.arx(7, 02453);
-    m.xts(Machine::SP, 077765);
-    m.xts(Machine::SP, 077770);
-    m.atx(Machine::SP, 0);
+    Word temp = cyclic_add(top(m, 7) & DESC_MASK, 1);
+    Word l0 = top(m, 10), l1 = top(m, 9), cv = top(m, 5);
+    for (Word w : { l0, temp, l1, cv })
+        push(m, w);
     m.vtm(11, 025265);
     m.set_m(12, 025254);
-    run_template(m);
+    emit_template(m, 025265);
     return operand(m, 025255);
 }
 
 unsigned step_in_acc_2(Machine &m)
 {
     load(m, 025256);
-    m.xta(Machine::SP, 077770);
-    m.xts(Machine::SP, 077766);
-    m.xts(Machine::SP, 077771);
-    m.xts(Machine::SP, 077766);
-    m.aax(7, 02465);
-    m.arx(7, 02453);
-    m.xts(Machine::SP, 077764);
-    m.xts(Machine::SP, 077762);
-    m.xts(Machine::SP, 077775);
-    m.xts(7, 02227);
-    m.atx(Machine::SP, 077765);
-    m.xta(Machine::SP, 077770);
-    m.vtm(11, 025270);
-    return by_kind(m);
+    Word temp = cyclic_add(top(m, 7) & DESC_MASK, 1);
+    Word l1 = top(m, 9), l2 = top(m, 8), cv = top(m, 5), kind = top(m, 1);
+    top(m, 4) = ON_STACK;
+    for (Word w : { l2, l1, cv, temp, l2, l1, temp })
+        push(m, w);
+    return by_kind(m, 025270, kind);
 }
 
 void register_loops(Machine::Natives &n)
@@ -2400,11 +2298,11 @@ void register_loops(Machine::Natives &n)
     n[025067] = by_name_element;
     n[025071] = do_item;
     n[025103] = for_end;
-    n[025125] = [](Machine &m) { return element_kind(m, 1); };
-    n[025126] = [](Machine &m) { return element_kind(m, 0); };
-    n[025127] = [](Machine &m) { return element_kind(m, 2); };
-    n[025130] = [](Machine &m) { return element_kind(m, 4); };
-    n[025131] = [](Machine &m) { return element_kind(m, 3); };
+    n[025125] = [](Machine &m) { return element_item(m, 1); };
+    n[025126] = [](Machine &m) { return element_item(m, 0); };
+    n[025127] = [](Machine &m) { return element_item(m, 2); };
+    n[025130] = [](Machine &m) { return element_item(m, 4); };
+    n[025131] = [](Machine &m) { return element_item(m, 3); };
     n[025147] = element_value;
     n[025156] = while_value;
     n[025162] = while_condition;
@@ -2425,46 +2323,46 @@ void register_loops(Machine::Natives &n)
 // code: after a thunk, the place its jump around goes.
 //
 
-// 24372: define the pending label, if any; through M12.
+constexpr Word VALUE_START = 056400000; // (M7+742)
+constexpr Word CODE_RESULT = 0420014;   // (M7+1023)
+constexpr Word RESULT_SIZE = 076410000; // (M7+1056)
+
+// 24372: define the pending label, if any.
 void pending_label(Machine &m, unsigned link)
 {
     m.set_m(12, link);
-    m.xta(0, 02017);
-    if (m.uza())
+    Word label = m.mem[02017];
+    set_acc(m, 0);
+    if (!label)
         return;
-    m.aox(7, 0746);
-    emit_half(m, 024374);
-    m.xta(0, 02017);
-    m.atx(0, LABELS);
-    m.xta(0, 0);
-    m.atx(0, 02017);
+    emit(m, label | LABEL_DEF, 024374);
+    m.mem[LABELS] = label;
+    m.mem[02017]  = 0;
+    set_acc(m, 0);
 }
 
 // 24361: a call with parameters starts (0110): the frame of the arguments
-// (template 24366, or 24370 with A pushed).
+// (template 24366, or 24370 with A saved).
 unsigned call_start(Machine &m)
 {
     m.vtm(11, 024366);
     if (m.M[4]) {
-        m.xta(7, 02227);
-        m.atx(4, 0);
+        m.mem[m.M[4]] = ON_STACK;
         m.vtm(4, 0);
         m.vtm(11, 024370);
     }
-    m.xta(0, 0);
-    m.atx(0, 02017);
+    m.mem[02017] = 0;
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
 }
 
-// 24407: the call of the procedure in A: template M11, or 24420 for one
-// on the stack; the result in A.
-unsigned call_tail(Machine &m)
+// 24407: the call of the procedure d: template M11, or 24420 for one on
+// the stack; the result in A.
+unsigned call_tail(Machine &m, Word d)
 {
-    m.atx(Machine::SP, 0);
-    m.aax(7, 02472);
+    push(m, d);
     m.vtm(12, 024015);
-    if (!m.uza())
+    if (d & ON_STACK)
         m.vtm(11, 024420);
     return TEMPLATE;
 }
@@ -2475,10 +2373,8 @@ unsigned std_expression(Machine &m)
 {
     m.vtm(11, 024402);
     pending_label(m, 024400);
-    m.utc(3, 0);
-    m.utm(3, 0);
-    m.ita(0, 3);
-    return call_tail(m);
+    m.set_m(3, 2 * m.M[3]);
+    return call_tail(m, m.M[3]);
 }
 
 // 24405: the call of a procedure with parameters (020), template 24416.
@@ -2486,9 +2382,7 @@ unsigned call_item_params(Machine &m)
 {
     m.vtm(11, 024416);
     pending_label(m, 024406);
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    return call_tail(m);
+    return call_tail(m, m.mem[m.M[3]] & DESC_MASK);
 }
 
 // 24412: the call of a procedure without parameters (021), template 24414.
@@ -2497,62 +2391,31 @@ unsigned call_item_plain(Machine &m)
     m.set_m(12, 024413);
     save_acc(m);
     m.vtm(11, 024414);
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    return call_tail(m);
+    return call_tail(m, m.mem[m.M[3]] & DESC_MASK);
 }
 
-// 24426: an argument (A), its template M11.
-unsigned argument(Machine &m)
+// 24426: an argument a, template t.
+unsigned argument(Machine &m, unsigned t, Word a)
 {
-    m.atx(Machine::SP, 0);
+    m.vtm(11, t);
+    push(m, a);
     pending_label(m, 024427);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
 }
 
-// 24423, 24424: a string (0156) or a constant (0111) argument: its address.
-unsigned constant_argument(Machine &m, unsigned t)
-{
-    m.vtm(11, t);
-    m.ita(0, 3);
-    m.arx(0, 02010);
-    return argument(m);
-}
-
-// 24430, 24432: a variable (0112), a label (0114) argument.
-unsigned variable_argument(Machine &m, unsigned t)
-{
-    m.vtm(11, t);
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    return argument(m);
-}
-
 // 24434: an array argument (0115), its address by its descriptor.
 unsigned array_argument(Machine &m)
 {
-    m.vtm(11, 024472);
-    m.xta(3, 0);
-    m.arx(0, 0);
-    if (!m.u1a()) {
-        m.asn(0, 073);
-        m.aux(7, 02465);
-    }
-    m.aax(7, 02465);
-    return argument(m);
+    Word d = m.mem[m.M[3]];
+    return argument(m, 024472, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK);
 }
 
 // 24440: a procedure argument (0113), with the register count 02021.
 unsigned procedure_argument(Machine &m)
 {
-    m.vtm(11, 024474);
-    m.xta(3, 0);
-    m.aax(7, 02526);
-    m.xts(0, 02021);
-    m.asn(0, 054);
-    m.aox(Machine::SP, 0);
-    return argument(m);
+    Word a = ((m.mem[02021] << 20) & WORD_MASK) | (m.mem[m.M[3]] & ADDR);
+    return argument(m, 024474, a);
 }
 
 // 24444: an expression argument (0120): its value (template 24476).
@@ -2567,8 +2430,7 @@ unsigned expression_argument_2(Machine &m)
 {
     load(m, 024447);
     m.vtm(11, 024476);
-    m.xta(0, 0);
-    m.atx(0, 02017);
+    m.mem[02017] = 0;
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
 }
@@ -2579,27 +2441,19 @@ unsigned thunk_start(Machine &m)
 {
     pending_label(m, 024453);
     m.vtm(11, 024464);
-    m.xta(0, 02021);
-    m.asn(0, 054);
-    m.aox(0, LABELS);
-    m.atx(Machine::SP, 0);
+    push(m, ((m.mem[02021] << 20) & WORD_MASK) | m.mem[LABELS]);
     m.set_m(12, 024456);
-    run_template(m);
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 0);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
+    emit_template(m, 024464);
+    push(m, new_label(m));
     return MAIN_LOOP;
 }
 
-// 24461: a thunk ends (0116): its return (M7+750); its label pending.
+// 24461: a thunk ends (0116): its return (RETURN_2); its label pending.
 unsigned thunk_end(Machine &m)
 {
-    m.utm(Machine::SP, 077776);
-    m.xta(Machine::SP, 0);
-    m.atx(0, 02017);
-    m.xta(7, 0750);
-    emit_half(m, DISPATCH_NEXT);
+    m.set_m(SP, m.M[SP] - 2);
+    m.mem[02017] = pop(m);
+    emit(m, RETURN_2, DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
@@ -2607,11 +2461,9 @@ unsigned thunk_end(Machine &m)
 // twice.
 unsigned bodies_start(Machine &m)
 {
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 0);
-    m.atx(Machine::SP, 0);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
+    Word label = new_label(m);
+    push(m, label);
+    push(m, label);
     m.vtm(11, 024671);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
@@ -2620,23 +2472,18 @@ unsigned bodies_start(Machine &m)
 // 24761: its target (0145): the label defined.
 unsigned bodies_end(Machine &m)
 {
-    m.xta(Machine::SP, 077777);
-    m.atx(0, LABELS);
+    m.mem[LABELS] = top(m);
     m.vtm(11, 026051);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
 }
 
 // 24764, 25005: VALUE ends (0155), starts (0127): for a procedure with
-// value parameters (02023 = 0) the half M7+742 or M7+746 with 02004.
-unsigned value_mark(Machine &m, unsigned half)
+// value parameters (02023 = 0) the half with 02004.
+unsigned value_mark(Machine &m, Word half)
 {
-    m.xta(0, 02023);
-    if (m.u1a())
-        return DISPATCH_NEXT;
-    m.xta(7, half);
-    m.aox(0, LABELS);
-    emit_half(m, DISPATCH_NEXT);
+    if (!m.mem[02023])
+        emit(m, half | m.mem[LABELS], DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
@@ -2645,17 +2492,14 @@ unsigned value_mark(Machine &m, unsigned half)
 unsigned value_parameter(Machine &m, unsigned t)
 {
     m.vtm(11, t);
-    m.xta(3, 0);
-    m.arx(7, 02453);
-    m.atx(3, 0);
-    m.aax(7, 02465);
-    m.atx(Machine::SP, 0);
-    m.arx(7, 02522);
-    m.xts(0, 02023);
+    Word d = cyclic_add(m.mem[m.M[3]], 1);
+    m.store(m.M[3], d);
+    push(m, d & DESC_MASK);
+    push(m, cyclic_add(d & DESC_MASK, MINUS_ONE));
     m.vtm(12, DISPATCH_NEXT);
-    if (m.uza())
+    if (!m.mem[02023])
         return TEMPLATE;
-    m.utm(Machine::SP, 077776);
+    m.set_m(SP, m.M[SP] - 2);
     return DISPATCH_NEXT;
 }
 
@@ -2665,10 +2509,10 @@ void register_procedures(Machine::Natives &n)
     n[024377] = std_expression;
     n[024405] = call_item_params;
     n[024412] = call_item_plain;
-    n[024423] = [](Machine &m) { return constant_argument(m, 024500); };
-    n[024424] = [](Machine &m) { return constant_argument(m, 024466); };
-    n[024430] = [](Machine &m) { return variable_argument(m, 024470); };
-    n[024432] = [](Machine &m) { return variable_argument(m, 024472); };
+    n[024423] = [](Machine &m) { return argument(m, 024500, constant_address(m)); };
+    n[024424] = [](Machine &m) { return argument(m, 024466, constant_address(m)); };
+    n[024430] = [](Machine &m) { return argument(m, 024470, m.mem[m.M[3]] & DESC_MASK); };
+    n[024432] = [](Machine &m) { return argument(m, 024472, m.mem[m.M[3]] & DESC_MASK); };
     n[024434] = array_argument;
     n[024440] = procedure_argument;
     n[024444] = expression_argument;
@@ -2677,10 +2521,10 @@ void register_procedures(Machine::Natives &n)
     n[024461] = thunk_end;
     n[024755] = bodies_start;
     n[024761] = bodies_end;
-    n[024764] = [](Machine &m) { return value_mark(m, 0742); };
+    n[024764] = [](Machine &m) { return value_mark(m, VALUE_START); };
     n[024767] = [](Machine &m) { return value_parameter(m, 025002); };
     n[024776] = [](Machine &m) { return value_parameter(m, 024777); };
-    n[025005] = [](Machine &m) { return value_mark(m, 0746); };
+    n[025005] = [](Machine &m) { return value_mark(m, LABEL_DEF); };
 }
 
 //
@@ -2690,11 +2534,12 @@ void register_procedures(Machine::Natives &n)
 // that are expressions.
 //
 
-// 24505: push A and M8, then the next item.
-unsigned push_argument(Machine &m)
+// 24505: push a and the passer, then the next item.
+unsigned push_argument(Machine &m, Word a, unsigned passer)
 {
-    m.its(0, 010);
-    m.atx(Machine::SP, 0);
+    m.vtm(8, passer);
+    push(m, a);
+    push(m, passer);
     return DISPATCH_NEXT;
 }
 
@@ -2705,101 +2550,56 @@ unsigned code_start(Machine &m)
     return DISPATCH_NEXT;
 }
 
-// 24503: a variable (0122), passed by 24565.
-unsigned code_variable(Machine &m)
+// 24513: an expression's value kept in a stack word (M5 counts, saved
+// under the operand), passed by passer.
+unsigned code_value(Machine &m, unsigned passer)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.vtm(8, 024565);
-    return push_argument(m);
-}
-
-// 24531: a constant (066).
-unsigned code_constant(Machine &m)
-{
-    m.ita(0, 3);
-    m.arx(0, 02010);
-    m.vtm(8, 024565);
-    return push_argument(m);
-}
-
-// 24516: an array (0123), passed by 24602.
-unsigned code_array(Machine &m)
-{
-    m.xta(3, 0);
-    m.arx(0, 0);
-    if (!m.u1a()) {
-        m.asn(0, 073);
-        m.aux(7, 02465);
-    }
-    m.aax(7, 02465);
-    m.vtm(8, 024602);
-    return push_argument(m);
-}
-
-// 24513: an expression's value kept in a stack word (M5 counts), passed by
-// M8.
-unsigned code_value(Machine &m)
-{
-    m.xta(Machine::SP, 0);
-    m.ati(0, 5);
-    m.utm(5, 077777);
+    m.set_m(5, pop(m) - 1);
     m.vtm(4, 02017);
-    m.xta(0, 0);
-    return push_argument(m);
+    return push_argument(m, 0, passer);
 }
 
 // 24507: an expression (0125), passed by 24603.
 unsigned code_expression(Machine &m)
 {
-    m.ita(0, 5);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[5]);
     return operand(m, 024511);
 }
 
 unsigned code_expression_2(Machine &m)
 {
     load(m, 024512);
-    m.vtm(8, 024603);
-    return code_value(m);
+    return code_value(m, 024603);
 }
 
 // 24523: an expression of a non-ALGOL type (0124): in A, as 074's
 // result; else its address, passed by 24612.
 unsigned code_typed(Machine &m)
 {
-    m.ita(0, 5);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[5]);
     return operand(m, 024525);
 }
 
 unsigned code_result(Machine &m)
 {
-    m.xta(7, 01023);
-    emit_half(m, 024542);
-    m.vtm(8, 024607);
-    return code_value(m);
+    emit(m, CODE_RESULT, 024542);
+    return code_value(m, 024607);
 }
 
 unsigned code_typed_2(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.uza())
+    Word d = pop(m);
+    if (!d)
         return code_result(m);
-    m.aax(7, 02465);
-    m.stx(Machine::SP, 1);
-    m.ati(0, 5);
-    m.xta(Machine::SP, 2);
-    m.vtm(8, 024612);
-    return push_argument(m);
+    m.set_m(5, pop(m));
+    return push_argument(m, d & DESC_MASK, 024612);
 }
 
 // 24533: a call of an ALGOL procedure as argument (074): routine 4111
 // (template 25751), the result passed by 24607.
 unsigned code_call_argument(Machine &m)
 {
-    m.ita(0, 5);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[5]);
     return operand(m, 024535);
 }
 
@@ -2807,188 +2607,115 @@ unsigned code_call_argument_2(Machine &m)
 {
     load(m, 024536);
     m.vtm(14, 04111);
-    m.ita(0, 016);
-    m.atx(Machine::SP, 0);
+    push(m, 04111);
     m.vtm(11, 025751);
     m.set_m(12, 024542);
-    run_template(m);
-    m.vtm(8, 024607);
-    return code_value(m);
+    emit_template(m, 025751);
+    return code_value(m, 024607);
 }
 
 //
-// 24553: the call, M1 = the routine, A = the count of stack words: the
-// arguments are passed in order (each by its M8 address, M6 at its pair,
-// M2 counting), then the call (template 25751); the stack is reset and a
-// result of M5 words in A.
+// 24553: the call of routine r, count words of results: the M2 arguments
+// are passed in order (each by its passer, M6 at its pair, 02023 counting
+// from the count), then the call (template 25751); the stack is reset and
+// a result of M5 words in A.
 //
-unsigned code_call(Machine &m)
+unsigned code_call(Machine &m, unsigned r, Word count)
 {
-    m.aax(7, 02451);
-    m.aox(7, 02227);
-    m.atx(0, 02023);
+    m.set_m(1, r);
+    m.mem[02023] = (count & 07777) | ON_STACK;
     m.set_m(12, 024555);
     save_acc(m);
-    m.ita(0, 2);
-    m.aex(7, 02526);
-    m.ati(0, 010);
-    m.utc(8, 1);
-    m.utc(8, 1);
-    m.utc(Machine::SP, 0);
-    m.vtm(6, 0);
-    m.mtj(6, 010);
-    m.wtc(6, 1);
-    return m.ea(0, m.field(0));
+    m.set_m(6, m.M[SP] - 2 * m.M[2]);
+    m.set_m(8, m.M[6]);
+    return m.mem[(m.M[6] + 1) & 077777] & 077777;
 }
 
-// 24547: a call of the procedure at M3 (0126).
-unsigned code_call_item(Machine &m)
+// 24567: pass the argument by template t, then the next one or the call.
+unsigned pass_argument(Machine &m, unsigned t)
 {
-    m.wtc(3, 0);
-    m.vtm(1, 0);
-    m.ita(0, 5);
-    return code_call(m);
-}
-
-// 24551: a standard routine 4030+n (073).
-unsigned code_std_item(Machine &m)
-{
-    m.utc(3, 04030);
-    m.vtm(1, 0);
-    m.ita(0, 5);
-    return code_call(m);
-}
-
-// 24562: (065) the procedure at M3, one fewer.
-unsigned code_call_item_2(Machine &m)
-{
-    m.wtc(3, 0);
-    m.vtm(1, 0);
-    m.ita(0, 5);
-    m.utm(5, 077777);
-    return code_call(m);
-}
-
-// 24567: pass the argument by template M11, then the next one or the call.
-unsigned pass_argument(Machine &m)
-{
+    m.vtm(11, t);
     m.set_m(12, 024570);
-    run_template(m);
-    m.xta(0, 02023);
-    m.arx(7, 02522);
-    m.atx(0, 02023);
-    m.utm(6, 2);
-    m.utm(2, 077777);
-    m.wtc(6, 1);
-    unsigned next = m.field(0);
+    emit_template(m, t);
+    m.mem[02023] = cyclic_add(m.mem[02023], MINUS_ONE);
+    m.set_m(6, m.M[6] + 2);
+    m.set_m(2, m.M[2] - 1);
+    unsigned next = m.mem[(m.M[6] + 1) & 077777] & 077777;
     if (m.M[2])
         return next;
-    m.ita(0, 1);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[1]);
     m.vtm(11, 025751);
     m.set_m(12, 024576);
-    run_template(m);
-    m.mtj(8, 017);
-    if (!m.M[5])
-        return 024015;
-    m.ita(0, 5);
-    m.arx(7, 01056);
-    emit_half(m, 024015);
+    emit_template(m, 025751);
+    m.set_m(SP, m.M[8]);
+    if (m.M[5])
+        emit(m, cyclic_add(m.M[5], RESULT_SIZE), 024015);
     return 024015;
 }
 
-// 24566: the argument word at M6 pushed, template M11.
+// 24566: the argument word at M6 pushed, template t.
 unsigned pass_word(Machine &m, unsigned t)
 {
-    m.vtm(11, t);
-    m.xta(6, 0);
-    m.atx(Machine::SP, 0);
-    return pass_argument(m);
+    push(m, m.mem[m.M[6]]);
+    return pass_argument(m, t);
 }
 
 // 24603, 24607: pass a value from its stack word (02023 counting).
 unsigned pass_value(Machine &m, bool result)
 {
-    if (result) {
-        m.vtm(11, 025771);
-        m.xta(0, 02023);
-        m.arx(7, 02522);
-        m.xts(0, 02023);
-    } else {
-        m.vtm(11, 024543);
-        m.xta(0, 02023);
-        m.atx(Machine::SP, 0);
-    }
-    m.arx(7, 02453);
-    m.atx(0, 02023);
-    return pass_argument(m);
+    Word c = m.mem[02023];
+    push(m, result ? cyclic_add(c, MINUS_ONE) : c);
+    m.mem[02023] = cyclic_add(c, 1);
+    return pass_argument(m, result ? 025771 : 024543);
 }
 
 //
-// G30034: the 6 ISO characters in A as TEXT: each Latin letter (a 1 in
-// the bit table at 30117/30116) its code − 040, left-justified in 8
+// G30034: the 6 ISO characters iso as TEXT: each character c its six-bit
+// code from the tables at 30076 (word c/8, field c%8), left-justified in 8
 // six-bit characters. Through M13; M1–M3 kept.
 //
+Word iso_text(const Machine &m, Word iso)
+{
+    Word text = 0;
+    for (unsigned k = 0; k < 6; k++) {
+        unsigned c = (iso >> (8 * k)) & 0377;
+        if (c) {
+            Word codes = m.mem[030076 + (c >> 3)];
+            text |= ((codes >> (6 * (c & 7))) & 077) << (12 + 6 * k);
+        }
+    }
+    return text;
+}
+
 unsigned iso_to_text(Machine &m)
 {
-    m.xts(0, 0);
-    m.its(0, 1);
-    m.its(0, 2);
-    m.its(0, 3);
-    m.atx(Machine::SP, 0);
-    m.vtm(14, 0);
-    m.vtm(2, 030034);
-    do {
-        m.xta(Machine::SP, 077773);
-        m.utc(0, 030060);
-        m.asx(14, 0);
-        m.aax(2, 063);
-        if (!m.uza()) {
-            m.ati(0, 1);
-            m.asn(0, 0103);
-            m.ati(0, 3);
-            m.utc(0, 030076);
-            m.xta(3, 0);
-            m.its(0, 1);
-            m.asn(0, 023);
-            m.asn(0, 0155);
-            m.sti(0, 3);
-            m.utc(0, 030066);
-            m.asx(3, 0);
-            m.aax(2, 062);
-            m.utc(0, 030076);
-            m.asx(14, 0);
-            m.aox(Machine::SP, 077774);
-            m.atx(Machine::SP, 077774);
-        }
-        m.utm(14, 077773);
-        if (!m.M[14])
-            break;
-        m.utm(14, 6);
-    } while (true);
-    m.xta(Machine::SP, 0);
-    m.sti(0, 3);
-    m.sti(0, 2);
-    m.sti(0, 1);
-    m.utm(Machine::SP, 077777);
+    set_acc(m, iso_text(m, m.acc));
+    m.set_m(14, 0);
     return m.M[13];
 }
 
 void register_code_calls(Machine::Natives &n)
 {
     n[024502]      = code_start;
-    n[024503]      = code_variable;
+    n[024503]      = [](Machine &m) { return push_argument(m, m.mem[m.M[3]] & DESC_MASK, 024565); };
     n[024507]      = code_expression;
     n[024511]      = code_expression_2;
-    n[024516]      = code_array;
+    n[024516]      = [](Machine &m) {
+        Word d = m.mem[m.M[3]];
+        return push_argument(m, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK, 024602);
+    };
     n[024523]      = code_typed;
     n[024525]      = code_typed_2;
-    n[024531]      = code_constant;
+    n[024531]      = [](Machine &m) { return push_argument(m, constant_address(m), 024565); };
     n[024533]      = code_call_argument;
     n[024535]      = code_call_argument_2;
-    n[024547]      = code_call_item;
-    n[024551]      = code_std_item;
-    n[024562]      = code_call_item_2;
+    n[024547]      = [](Machine &m) { return code_call(m, m.mem[m.M[3]] & ADDR, m.M[5]); };
+    n[024551]      = [](Machine &m) { return code_call(m, m.M[3] + 04030, m.M[5]); };
+    n[024562]      = [](Machine &m) {
+        Word count = m.M[5];
+        m.set_m(5, m.M[5] - 1);
+        return code_call(m, m.mem[m.M[3]] & ADDR, count);
+    };
     n[024565]      = [](Machine &m) { return pass_word(m, 024543); };
     n[024602]      = [](Machine &m) { return pass_word(m, 024545); };
     n[024603]      = [](Machine &m) { return pass_value(m, false); };
