@@ -90,7 +90,6 @@ const std::vector<std::string> programs = {
     "x1/pentomino5x12",
     "x1/pentomino6x10",
     "x1/perfect_numbers",
-    "x1/quine",
     "x1/quinio",
     "x1/sieve",
     "x1/sqrt_test",

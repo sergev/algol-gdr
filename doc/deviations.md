@@ -91,7 +91,8 @@ The procedures of the Electrologica X1 (`PRINTTEXT`, `PRSYM`, `SPACE`, `TAB`, `N
 `print`, `FIXT`, `ABSFIXT`, `FLOT`, `read`, `RESYM`, `XEEN`, `SUM`, `EVEN`, `RANDOM`,
 `SETRANDOM`, `TIMEOFDAY`) do what they do under `x1sim` of x1-algol-compiler, the reference
 of Milestone 4 (doc/codegen.md). Every example of x1-algol-compiler compiles unchanged and
-prints what `x1sim` prints; none is skipped. Where it differs:
+prints what `x1sim` prints; only `quine` is left out of the tests (its output is not its
+source). Where it differs:
 
 | Difference | Reason |
 |---|---|

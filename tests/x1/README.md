@@ -2,7 +2,8 @@
 
 Programs in the publication form for the library of the Electrologica X1:
 
-- the examples of x1-algol-compiler (`examples/`, revision 8e19077), copied unchanged;
+- the examples of x1-algol-compiler (`examples/`, revision 8e19077), copied unchanged, but
+  `quine` (its output is not its source);
 - `output`, `input`, `helpers`: the X1 library procedures and their corner cases.
 
 `NAME.out` is the output of `x1sim NAME.a60 < NAME.in` (frozen), made by
@@ -25,7 +26,6 @@ depends on the 27-bit integers of the X1.
 | helpers | `SUM` (nested, empty, its bound once, an element as counter), `EVEN`, `RANDOM` and `SETRANDOM` (repeatable, in [0, 1)), `TIMEOFDAY` (in a day) |
 | beer, disarium, hanoi, hello, magic_square, mersenne, palindromic_primes, perfect_numbers, steady_squares, sum | small programs |
 | encoding | the X1 symbol codes, by `PRSYM` |
-| quine | prints its own source (but the underlines) |
 | man_or_boy | Knuth's test, k = 10 |
 | sieve | primes below a million |
 | sqrt_test | `sqrt` exact on integers to a million |

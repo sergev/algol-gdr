@@ -4,6 +4,7 @@
 # x1sim: NAME.out, frozen. Inputs: NAME.in from the example's NAME.sh, or
 # written here (quinio, bulls_and_cows). pentominoWxH.in runs pentomino.a60.
 # time and bulls_and_cows have no NAME.out: the time of day, the random secret.
+# quine is left out: its output is not its source.
 #
 # Usage: goldens.sh [EXAMPLES [X1SIM]]
 #
@@ -19,6 +20,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
 cp "$examples"/*.a60 "$here"/
+rm -f "$here/quine.a60"
 for sh in "$examples"/*.sh; do
     name=$(basename "$sh" .sh)
     sed -n '/<< *END_OF_INPUT/,/^END_OF_INPUT/p' "$sh" | sed '1d;$d' > "$here/$name.in"
