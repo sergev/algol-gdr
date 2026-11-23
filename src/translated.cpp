@@ -474,21 +474,3 @@ Stream TranslatedPass::run(unsigned entry, unsigned ret)
         std::reverse(out.begin(), out.end());
     return out;
 }
-
-Stream stream_left(Context &ctx)
-{
-    TranslatedPass pass(ctx);
-    Machine &m          = pass.m;
-    Word back           = m.mem[02001] + 0'7777'7777'7757'7777; // a zone back, cyclic
-    m.mem[02000]        = (back >> 48) ? (back + 1) & WORD_MASK : back;
-    Stream out;
-    m.call(027154, 13, Machine::RETURN); // priming read
-    for (;;) {
-        m.call(027154, 13, Machine::RETURN);
-        out.push_back(Item{ uint32_t(m.acc & 077777777) });
-        if ((m.acc & 0177) == 075)
-            return out;
-        if (out.size() > 1000000)
-            throw std::runtime_error("no end of the stream on drum");
-    }
-}

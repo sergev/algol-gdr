@@ -575,8 +575,11 @@ what pass 4 reads with and without `*CHECK` (test3, proc, for, and scratch progr
    - Registers are taken in the order R5, R4, R3, R2, R8, R9, R10, R11 (table at 23154).
    - The loop's descriptor gets flags for pass 4 (040000, plus 010000 or 020000 for step 1
      or not).
-   - To rewrite a loop, pass 3 saves page 10000 to drum 26 zone 3, writes the new loop into
-     10000, copies it back over the loop, and restores the page.
+   - To rewrite a loop, pass 3 reads its copy back from the output (from after the FOR),
+     saves page 10000 to drum 26 zone 3, writes the new loop into 10000, copies it back over
+     the loop, and restores the page. C++ (`Pass3`, src/pass3.cpp): input, output and that
+     scratch are vectors; the rewrite parser is chained by the continuation addresses of the
+     original, kept on its own stack.
 
 Codes that only pass 3 creates: `X.0162` (load a register with an element address, followed
 by `0000.R000`), `163`, `164`, `165`, and `167 … 166` (preamble of an inner loop).

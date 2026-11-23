@@ -5,7 +5,7 @@
 
 //
 // Pass 3 (G22162): the optimizer; reads the stream of pass 2 forward and
-// writes its own forward. C++ on a Machine (doc/translation.md).
+// writes its own forward.
 //
 Stream pass3(Context &ctx, const Stream &input);
 

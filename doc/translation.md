@@ -1,9 +1,9 @@
-# Passes 2 and 3 on a machine
+# Pass 2 on a machine
 
-Passes 2 and 3 are C++ routines that work on a BESM-6 state (`Machine`), as the passes of
-the overlay did. They leave it one by one (todo1.md): a pass off the machine works on
-`Context` alone, as pass 4 does (`Pass4` in src/pass4.cpp: its handlers chained by the
-continuation addresses of the original, kept on its own stack).
+Pass 2 is C++ routines that work on a BESM-6 state (`Machine`), as the passes of the
+overlay did. Passes 3 and 4 have left it (todo1.md): they work on `Context` alone
+(`Pass3`, `Pass4`: handlers chained by the continuation addresses of the original, kept on
+their own stack; streams as vectors).
 
 ## Pieces
 
@@ -67,10 +67,6 @@ the original does:
 | 2 | 20445–20565 | I/O statements, string slices |
 | 2 | 20571–21342 | calls, arguments, thunks, VALUE, standard and non-ALGOL procedures |
 
-| 3 | 22162–22326 | `start`, `next_item`, `copy_item`, `fold`, `for_scan` (src/pass3.cpp): the main loop, 146, 026/064, FOR's first scan |
-| 3 | 22327–23426 | the rewrite of a FOR loop: a native per entry (`register_rewrite`) |
-| 3 | 22716 | `intern_constant` |
-| 3 | 23343 | `eop` |
 
 Natives write memory through `Machine::store`, which drops stores to address 0 as the
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep
@@ -92,6 +88,5 @@ those of the original.
 | Pass | Entry | Returns to | Reads | Writes |
 |---|---|---|---|---|
 | 2 | 17223 | 01627 | backward (27143) | backward (27114), from the cursor at 22113 |
-| 3 | 22162 | 01632 | forward (27154) | forward (27126), from the cursor at 23501 |
 
 Pass 4 also calls 30034–30117 (ISO name to TEXT).

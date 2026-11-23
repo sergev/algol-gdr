@@ -1,73 +1,111 @@
 #include "pass3.h"
 
+#include <algorithm>
+#include <array>
+#include <iterator>
+#include <functional>
+#include <map>
+#include <stdexcept>
+#include <string>
+
 #include "arith.h"
-#include "translated.h"
+#include "tables.h"
 
 namespace {
 
-constexpr unsigned READ        = 027154; // the next item of the input stream in A
-constexpr unsigned WRITE       = 027126; // A to the output stream
-constexpr unsigned CUR         = 02012;  // the current item
-constexpr unsigned M7          = 022162; // base of the constants: M7+1250… = 23432…
-constexpr unsigned FREE        = 02003;  // the free constant slot; it moves down
-constexpr unsigned POS         = 02001;  // position in the input stream
-constexpr unsigned START       = 02013;  // POS at the FOR
-constexpr unsigned CONTROL     = 02014;  // d of the control variable (032) of the loop scanned
-constexpr unsigned LVAR        = 02025;  // d of the control variable of the FOR
-constexpr unsigned SPAN        = 02042;  // nonzero: the loop is not on the page it ends on
-constexpr unsigned SET         = 02117;  // variables assigned in the loop: from SET-046, 0 ends
-constexpr unsigned FOR_CLASSES = 022264; // 3 bits per code: word code>>4, bits 3·(code&017)
-constexpr unsigned TABLE       = 02144;  // slot i at TABLE + i
-constexpr unsigned LAST        = 01634;  // the search ends here (04000)
-constexpr unsigned ITEM        = 02032;  // the result
-constexpr Word NEGATIVE        = 0'0020'0000'0000'0000;
-constexpr unsigned SIGN        = 0200; // in the item: a negative constant
-constexpr unsigned CONST       = 023;  // item code
+// Cells of the workspace.
+constexpr unsigned FREE    = 02003; // the free constant slot; it moves down
+constexpr unsigned CUR     = 02012; // the current item
+constexpr unsigned CONTROL = 02014; // d of the control variable (032) of the loop scanned
+constexpr unsigned LVAR    = 02025; // d of the control variable of the FOR
+constexpr unsigned ITEM    = 02032; // an item looked for; the result of intern
+constexpr unsigned SET     = 02117; // variables assigned in the loop: from SET−046, 0 ends
+constexpr unsigned TABLE   = 02144; // constant slot i at TABLE + i
+constexpr unsigned LAST    = 01634; // the constant search ends here (04000)
 
-//
-// G22716: intern the constant in A. The slot of an equal word among those
-// above the free slot, else the free slot. A and ITEM get the item
-// slot<<12 | 023, with 0200 for a negative value. Returns through M12.
-//
-unsigned intern_constant(Machine &m)
-{
-    Word value              = m.acc;
-    unsigned n              = m.mem[FREE] & 077777;
-    m.mem[TABLE + n]        = value;
-    m.mem[m.M[Machine::SP]] = value; // pushed and popped
-    unsigned slot           = n;
-    m.set_m(13, 0);
-    m.set_m(14, TABLE + LAST);
-    for (unsigned i = n + 1; i <= LAST; i++)
-        if (m.mem[(TABLE + i) & 077777] == value) {
-            slot = i;
-            m.set_m(13, i - LAST);
-            m.set_m(14, i);
-            break;
-        }
-    if (slot == n)
-        m.mem[FREE] = Word(n - 1);
-    Word item = Word(slot) << 12;
-    if (value & NEGATIVE)
-        item += SIGN;
-    m.mem[ITEM] = item;
-    m.acc       = item + CONST;
-    m.rmr       = 0;
-    m.rau       = 003;
-    m.set_multiplicative();
-    return m.M[12];
-}
+// The rewrite of a FOR loop: AD02000+n of the source.
+constexpr unsigned D14    = 02016; // end of the preamble list (from 02454)
+constexpr unsigned D15    = 02017; // end of the body list (from 02702)
+constexpr unsigned D16    = 02020; // end of the increments list (from 02120)
+constexpr unsigned D17    = 02021; // 0: no register for the step
+constexpr unsigned D18    = 02022; // the step's value when a constant
+constexpr unsigned D19    = 02023; // 0: the step is not a constant
+constexpr unsigned D20    = 02024; // nonzero: a subscript needs the step
+constexpr unsigned D23    = 02027; // the item checked by check_operand
+constexpr unsigned D24    = 02030; // the step item
+constexpr unsigned D25    = 02031; // the next 0160 item: register load, 010000 apart
+constexpr unsigned D27    = 02033; // registers taken in the body
+constexpr unsigned D28    = 02034; // registers taken in the preamble, from the top
+constexpr unsigned D29    = 02035; // c<<12 of a subscript for the increment
+constexpr unsigned D30    = 02036; // the initial value item
+constexpr unsigned OPND   = 02037; // the descriptor of the operand parsed last
+constexpr unsigned D32    = 02040; // the initial value as a 045 item, or 0
+constexpr unsigned D33    = 02041; // depth of IF; 077777 after a label of the loop
+constexpr unsigned D35    = 02043; // the until item
+constexpr unsigned VALUES = 02143; // the value stack, from VALUES+1
+constexpr unsigned PREAMBLE_LIST   = 02454;
+constexpr unsigned BODY_LIST       = 02702;
+constexpr unsigned INCREMENTS_LIST = 02120;
 
-constexpr unsigned SP = Machine::SP;
+// Tables of the overlay.
+constexpr unsigned FOR_CLASSES  = 022264; // 3 bits per code: word code>>4, bits 3·(code&017)
+constexpr unsigned PARSE_CLASSES = 022365; // 6 bits per code: word code>>3, bits 6·(code&7)
+constexpr unsigned REGS          = 023153; // index register codes, from 1
 
-constexpr Word BIT48         = 0'4000'0000'0000'0000;
-constexpr Word ASSIGNED      = 0'0000'0400'0000'0000; // a descriptor: assigned in the loop
-constexpr Word PAGE_MASK     = 0'0000'0077'7770'0000; // the page of a cursor (M7+1254)
-constexpr Word END_FLAG      = 0'4000'0000'0000'1777; // a cursor at the end of its page
-constexpr Word IN_BACK       = 0'7777'7777'7757'7777; // a zone back (cyclic add)
-constexpr Word OUT_CURSOR    = 0'0000'0302'6160'6000; // 06000, drum 26 zone 10
-constexpr Word OUT_LEFT      = 0'4000'0402'6201'1777; // the stream left for pass 4
-constexpr unsigned CODE_FOR  = 055;
+// Continuations, kept on the stack as return addresses.
+constexpr unsigned DRIVER      = 01632;
+constexpr unsigned MAIN_LOOP   = 022167;
+constexpr unsigned REWRITE     = 022327;
+constexpr unsigned STATEMENT   = 022422;
+constexpr unsigned AFTER_LABEL = 022516;
+constexpr unsigned BINARY_2    = 022523;
+constexpr unsigned NO_REG      = 022653;
+constexpr unsigned GIVE_UP     = 022662; // no register left: D17 = 0
+constexpr unsigned IF_2        = 023076;
+constexpr unsigned PRE_REG     = 023164;
+
+constexpr unsigned STACK      = 053401;
+constexpr unsigned STACK_SIZE = 010000;
+
+constexpr unsigned RAW  = Arith::NORM_DISABLE | Arith::ROUND_DISABLE; // NTR 3
+constexpr unsigned NORM = Arith::ROUND_DISABLE;                       // NTR 2
+
+constexpr Word BIT48     = 0'4000'0000'0000'0000;
+constexpr Word NEGATIVE  = 0'0020'0000'0000'0000; // bit 41: a negative number
+constexpr Word ADDR      = 077777;
+constexpr Word ITEM_MASK = 077777777;
+constexpr unsigned SIGN  = 0200; // in the item: a negative constant
+constexpr unsigned CONST = 023;  // item code
+
+// An operand's descriptor: bit 48 and VARIABLE flags, the coefficient C
+// of the control variable, the first and the last item on the value stack.
+constexpr Word NONLINEAR = 0'4000'0000'0000'0000;
+constexpr Word VARIABLE  = 0'2000'0000'0000'0000;
+constexpr Word FLAGS     = 0'6000'0000'0000'0000;
+constexpr Word COEF      = 0'0777'7700'0000'0000;
+constexpr Word COEF_ONE  = 0'0000'0100'0000'0000;
+constexpr Word FIRST     = 0'0000'0077'7770'0000;
+constexpr Word FIRST_ONE = 0'0000'0000'0010'0000;
+constexpr Word CONTROL_C = 0'4000'0100'0000'0000; // the control variable: c = 1
+constexpr Word INTEGER   = 0'6400'0000'0000'0000; // exponent of an integer
+
+constexpr Word ASSIGNED   = 0'0000'0400'0000'0000; // a descriptor: assigned in the loop
+constexpr Word UNMARK     = 0'7777'7377'7777'7777;
+constexpr Word STEP_ONE   = 01000000; // the control variable: a constant step
+constexpr Word BLOCK_MARK = 0'1000'0000'0000'0000;
+constexpr Word STEP_FLAGS = 0'7000'0077'7777'7777;
+constexpr Word REG_BITS   = 07600;
+constexpr Word C_FIELD12  = 077770000;
+constexpr Word HEAD_MASK  = 077777600;
+constexpr Word C_ONE      = 0'6400'0000'0000'0001; // the integer 1
+constexpr Word C_LOW      = 0'6400'0000'0000'3777;
+constexpr Word C_HIGH     = 0'6400'0000'0007'7677;
+constexpr Word TRUNCATE   = 0'7740'0000'0007'7777;
+constexpr Word REG_STEP   = 0100000; // loop flags: step 1, not 1, registers
+constexpr Word REG_STEP_N = 0200000;
+constexpr Word REG_LOOP   = 0400000;
+constexpr unsigned STD_FIRST = 6; // standard procedures allowed in a loop: 6–8
+constexpr unsigned STD_LAST  = 8;
 
 Word cyclic_add(Word a, Word b)
 {
@@ -77,52 +115,244 @@ Word cyclic_add(Word a, Word b)
     return s;
 }
 
-// The stream module: the next input item, an item written.
-Word get(Machine &m)
+// The arithmetic unit in mode: a + x, x − a, a − x, a · x.
+Word unit_add(unsigned mode, Word a, Word x)
 {
-    m.call(READ, 13, 022170);
-    return m.acc;
+    Arith u(a, mode);
+    u.add(x);
+    return u.acc;
 }
 
-void put(Machine &m, Word w)
+Word unit_rsub(unsigned mode, Word a, Word x)
 {
-    m.acc = w;
-    m.call(WRITE, 13, 022167);
+    Arith u(a, mode);
+    u.rsub(x);
+    return u.acc;
 }
 
-unsigned dispatch(Machine &m, Word item);
-unsigned for_scan(Machine &m);
+Word unit_sub(unsigned mode, Word a, Word x)
+{
+    Arith u(a, mode);
+    u.sub(x);
+    return u.acc;
+}
+
+Word unit_mul(unsigned mode, Word a, Word x)
+{
+    Arith u(a, mode);
+    u.mul(x);
+    return u.acc;
+}
+
+// An integer c × x with the multiplication normalized, then denormalized.
+Word integer_product(Word a, Word x)
+{
+    return unit_add(RAW, unit_mul(NORM, a, x), INTEGER);
+}
+
+Word image(unsigned addr)
+{
+    if (addr < tables::image_base || addr >= tables::image_base + tables::image_size)
+        throw std::runtime_error("pass 3: no overlay word at " + std::to_string(addr));
+    return tables::image[addr - tables::image_base];
+}
+
+//
+// Pass 3 (G22162): the optimizer. It copies the stream of pass 2, folding
+// negated and converted constants; a FOR loop it can rewrite is copied,
+// then parsed again from its start (the parser chained by continuation
+// addresses of the original, kept on its stack) and written over the copy:
+// the accesses to array elements linear in the control variable go through
+// index registers loaded before the loop and stepped at its end.
+//
+class Pass3 {
+public:
+    Pass3(Context &ctx, const Stream &input);
+
+    Stream run();
+
+private:
+    using Handler = std::function<unsigned()>;
+
+    Context &ctx_;
+    std::map<unsigned, Handler> handlers_;
+
+    // Streams: the input, the output, and the scratch of a rewrite. Items
+    // are read from one of them; written to the output or the scratch.
+    std::vector<Word> in_, out_, scratch_;
+    const std::vector<Word> *src_{ &in_ };
+    size_t rd_{};
+    std::vector<Word> *dst_{ &out_ };
+    size_t wr_{};
+    size_t start_{};   // the output after the FOR being scanned
+    size_t resume_{};  // the input after the loop rewritten
+
+    std::array<Word, STACK_SIZE> stack_{};
+    unsigned sp_{ STACK };
+    Word zero_{};
+
+    unsigned depth_{}; // 5 − the depth of procedure bodies
+    unsigned vs_{};    // the top of the value stack
+    unsigned list_{};  // M5: a list word; the 0160 head found
+    unsigned moved_{}; // M6: the last word moved
+    unsigned first_{}; // M8: the first item of the operand
+    unsigned last_{};  // M9: its last item; in element(), subscripts with c ≠ 0
+    unsigned subs_{};  // the element's first subscript on the stack, − 1
+    unsigned nsubs_{}; // the element's subscripts
+
+    Word &mem(unsigned addr);
+    void store(unsigned addr, Word w)
+    {
+        if (addr)
+            mem(addr) = w;
+    }
+    void push(Word w)
+    {
+        mem(sp_) = w;
+        sp_      = (sp_ + 1) & 077777;
+    }
+    Word pop()
+    {
+        sp_ = (sp_ - 1) & 077777;
+        return mem(sp_);
+    }
+    Word &top(unsigned k = 1) { return mem((sp_ - k) & 077777); }
+
+    Word get();
+    void put(Word w);
+
+    // Main loop.
+    Word intern(Word value);
+    unsigned dispatch(Word item);
+    unsigned copy_item();
+    unsigned procedure_end();
+    void fold();
+    unsigned eop();
+    unsigned for_scan();
+    unsigned start();
+
+    // The rewrite.
+    unsigned ret() { return pop() & 077777; }
+    unsigned read_parse(unsigned link);
+    unsigned parse(unsigned link);
+    unsigned classify();
+    void move_items(Word range);
+    void flush_stack();
+    void check_operand(Word d);
+    void find_items();
+    void through_register(Word code);
+    Word access_code();
+    unsigned access(unsigned link);
+    unsigned stepped_access(unsigned link);
+    Word load_register(unsigned list, unsigned k);
+    Word add_increment(Word w);
+    unsigned body_register(Word code, unsigned link);
+    unsigned preamble_access();
+    unsigned begin_rewrite();
+    unsigned initial_parsed();
+    unsigned parse_until();
+    unsigned step_parsed();
+    unsigned until_parsed();
+    unsigned label();
+    unsigned result(Word a);
+    unsigned variable_result();
+    unsigned nonlinear_result();
+    unsigned unary_2();
+    unsigned unary_3(Word a);
+    unsigned leaf(Word flags);
+    unsigned variable();
+    unsigned constant();
+    unsigned element_done(Word d);
+    unsigned element();
+    unsigned int_op_2();
+    Word constant_value(Word d);
+    unsigned int_op_3();
+    unsigned linear_result(Word flags);
+    unsigned int_neg_2();
+    unsigned if_branches();
+    unsigned if_else();
+    unsigned end_loop();
+    void register_rewrite();
+};
+
+Word &Pass3::mem(unsigned addr)
+{
+    if (Workspace::contains(addr))
+        return ctx_.ws[addr];
+    if (addr >= STACK && addr < STACK + STACK_SIZE)
+        return stack_[addr - STACK];
+    if (!addr) {
+        zero_ = 0;
+        return zero_;
+    }
+    throw std::runtime_error("pass 3: no data at " + std::to_string(addr));
+}
+
+Word Pass3::get()
+{
+    if (rd_ >= src_->size())
+        throw std::runtime_error("pass 3: the stream ends without EOP");
+    return (*src_)[rd_++];
+}
+
+void Pass3::put(Word w)
+{
+    w &= ITEM_MASK;
+    if (wr_ < dst_->size())
+        (*dst_)[wr_] = w;
+    else
+        dst_->push_back(w);
+    wr_++;
+}
+
+//
+// G22716: intern the constant value: the slot of an equal word among those
+// above the free slot, else the free slot. Returns the item slot<<12 | 023
+// (in ITEM without the code), with 0200 for a negative value.
+//
+Word Pass3::intern(Word value)
+{
+    unsigned n     = mem(FREE) & 077777;
+    mem(TABLE + n) = value;
+    unsigned slot  = n;
+    for (unsigned i = n + 1; i <= LAST; i++)
+        if (mem((TABLE + i) & 077777) == value) {
+            slot = i;
+            break;
+        }
+    if (slot == n)
+        mem(FREE) = Word(n - 1);
+    Word item = Word(slot) << 12;
+    if (value & NEGATIVE)
+        item += SIGN;
+    mem(ITEM) = item;
+    return item + CONST;
+}
 
 // 22201: copy the current item, then the next.
-unsigned copy_item(Machine &m)
+unsigned Pass3::copy_item()
 {
-    put(m, m.mem[CUR]);
-    return 022167;
-}
-
-// 22167: read an item and dispatch it.
-unsigned next_item(Machine &m)
-{
-    return dispatch(m, get(m));
+    put(mem(CUR));
+    return MAIN_LOOP;
 }
 
 //
 // 22203: after a 146 (end of the procedure declarations, a jump over the
-// bodies). Line markers (051) are dropped; a 145 (more declarations) drops the
-// 146 too, else 146 and the item are written.
+// bodies). Line markers (051) are dropped; a 145 (more declarations) drops
+// the 146 too, else 146 and the item are written.
 //
-unsigned procedure_end(Machine &m)
+unsigned Pass3::procedure_end()
 {
     for (;;) {
-        Word item  = get(m);
-        m.mem[CUR] = item;
+        Word item  = get();
+        mem(CUR)   = item;
         unsigned c = item & 0177;
         if (c == 051)
             continue;
         if (c == 0145)
-            return 022167;
-        put(m, 0146);
-        return dispatch(m, m.mem[CUR]);
+            return MAIN_LOOP;
+        put(0146);
+        return dispatch(mem(CUR));
     }
 }
 
@@ -130,70 +360,59 @@ unsigned procedure_end(Machine &m)
 // 22214: an integer minus (026) or int→real (064) before a constant becomes
 // a constant: negated, or converted. Else both items are written.
 //
-void fold(Machine &m)
+void Pass3::fold()
 {
-    Word op    = m.mem[CUR];
-    Word item  = get(m);
-    m.mem[CUR] = item;
+    Word op   = mem(CUR);
+    Word item = get();
+    mem(CUR)  = item;
     if ((item & 0177) != CONST) {
-        put(m, op);
+        put(op);
         return;
     }
-    Word v = m.mem[TABLE + ((item >> 12) & 07777)];
-    if (op == 064) { // + 0: normalized, real
-        Arith u(v, Arith::ROUND_DISABLE);
-        u.add(0);
-        v = u.acc;
-    } else { // the sign changed
-        Arith u(v, Arith::NORM_DISABLE | Arith::ROUND_DISABLE);
+    Word v = mem(TABLE + ((item >> 12) & 07777));
+    if (op == 064) {
+        v = unit_add(NORM, v, 0); // normalized, real
+    } else {
+        Arith u(v, RAW); // the sign changed
         u.change_sign(true);
         v = u.acc;
     }
-    m.acc = v;
-    m.set_m(12, 022227);
-    intern_constant(m);
-    m.mem[CUR] = m.acc;
+    mem(CUR) = intern(v);
 }
 
-//
-// 23343: EOP. Written, then a 0, with the stream marked ended in 02001;
-// return to the driver.
-//
-unsigned eop(Machine &m)
+// 23343: EOP: written, the stream ends; return to the driver.
+unsigned Pass3::eop()
 {
-    put(m, m.mem[CUR]);
-    m.mem[02001] |= END_FLAG;
-    put(m, 0);
-    m.mem[02001] = OUT_LEFT;
-    m.set_m(SP, m.M[SP] - 1);
-    return m.mem[m.M[SP]] & 077777;
+    put(mem(CUR));
+    out_.resize(wr_);
+    return pop() & 077777;
 }
 
 // 22170: by the code of the item: 146, 075 (EOP), 055 (FOR), 042, 062
-// (procedure body: depth M1), 026, 064 (minus, to real: fold a constant),
+// (procedure body: depth), 026, 064 (minus, to real: fold a constant),
 // else copy.
-unsigned dispatch(Machine &m, Word item)
+unsigned Pass3::dispatch(Word item)
 {
-    m.mem[CUR] = item;
+    mem(CUR) = item;
     switch (item & 0177) {
     case 0146:
-        return procedure_end(m);
+        return procedure_end();
     case 075:
-        return eop(m);
-    case CODE_FOR:
-        return for_scan(m);
+        return eop();
+    case 055:
+        return for_scan();
     case 042:
-        m.set_m(1, m.M[1] - 1);
+        depth_ = (depth_ - 1) & 077777;
         break;
     case 062:
-        m.set_m(1, m.M[1] + 1);
+        depth_ = (depth_ + 1) & 077777;
         break;
     case 026:
     case 064:
-        fold(m);
+        fold();
         break;
     }
-    return copy_item(m);
+    return copy_item();
 }
 
 //
@@ -201,1351 +420,706 @@ unsigned dispatch(Machine &m, Word item)
 // gives up (copies the rest through the main loop) on any item it cannot
 // rewrite. At the end of the body (052, 0160), the variables assigned in it
 // get ASSIGNED in their descriptors, and the rewrite (22327) starts over
-// from START. A nested FOR restarts the scan from it.
+// from the output after the FOR. A nested FOR restarts the scan from it.
 //
-unsigned for_scan(Machine &m)
+unsigned Pass3::for_scan()
 {
     unsigned set; // the next of SET, from SET−046
 restart:
-    m.mem[LVAR] = m.mem[CUR] >> 12;
-    if (m.mem[m.mem[LVAR] & 077777] & BIT48)
-        return copy_item(m);
-    put(m, m.mem[CUR]);
-    m.mem[START] = m.mem[POS];
-    set          = 077732;
+    mem(LVAR) = mem(CUR) >> 12;
+    if (mem(mem(LVAR) & 077777) & BIT48)
+        return copy_item();
+    put(mem(CUR));
+    start_ = wr_;
+    set    = 077732;
     goto read;
 copy:
-    put(m, m.mem[CUR]);
+    put(mem(CUR));
 read:
-    m.mem[CUR] = get(m);
+    mem(CUR) = get();
 classify: {
-    unsigned code = unsigned(m.mem[CUR]) & 0177;
-    switch ((m.mem[FOR_CLASSES + (code >> 4)] >> (3 * (code & 017))) & 7) {
+    unsigned code = unsigned(mem(CUR)) & 0177;
+    switch ((image(FOR_CLASSES + (code >> 4)) >> (3 * (code & 017))) & 7) {
     case 0: // copied
         goto copy;
     case 1: // its control variable (032, …)
-        m.mem[CONTROL] = m.mem[CUR] >> 12;
+        mem(CONTROL) = mem(CUR) >> 12;
         goto copy;
     case 2: // left part (0100, 046, …)
-        m.mem[(SET + set) & 077777] = m.mem[CUR] >> 12;
+        mem((SET + set) & 077777) = mem(CUR) >> 12;
         if (!set)
-            return copy_item(m); // too many
+            return copy_item(); // too many
         set = (set + 1) & 077777;
         goto copy;
     case 3: // cannot rewrite
-        return copy_item(m);
+        return copy_item();
     case 4: // end of the loop
         break;
     case 5: // a FOR inside
         goto restart;
-    case 6: { // standard procedure: only 6–8
-        unsigned n = (m.mem[CUR] >> 12) & 0177;
-        if (n < 6 || n > 8) // STD_6_8 >> n & 1, the shift as ASN by n
-            return copy_item(m);
+    case 6: { // standard procedure: only 6–8 (0700 >> n & 1, as ASN by n)
+        unsigned n = (mem(CUR) >> 12) & 0177;
+        if (n < STD_FIRST || n > STD_LAST)
+            return copy_item();
         goto copy;
     }
     default: // 026, 064
-        fold(m);
+        fold();
         goto classify;
     }
 }
     // Its control variable must not be assigned in it.
-    m.mem[(SET + set) & 077777] = 0;
-    for (unsigned i = 0; m.mem[SET - 046 + i]; i++)
-        if (m.mem[SET - 046 + i] == m.mem[CONTROL])
-            return copy_item(m);
-    put(m, m.mem[CUR]);
+    mem((SET + set) & 077777) = 0;
+    for (unsigned i = 0; mem(SET - 046 + i); i++)
+        if (mem(SET - 046 + i) == mem(CONTROL))
+            return copy_item();
+    put(mem(CUR));
     for (unsigned i = 0;; i++) {
-        unsigned d = m.mem[SET - 046 + i] & 077777;
+        unsigned d = mem(SET - 046 + i) & 077777;
         if (!d)
             break;
-        m.mem[d] |= ASSIGNED;
+        mem(d) |= ASSIGNED;
     }
-    m.mem[02015] = m.mem[02000];
-    m.mem[SPAN]  = (m.mem[START] ^ m.mem[POS]) & PAGE_MASK;
-    if (!m.mem[SPAN])
-        return 022327;
-    // Back to the page of the FOR.
-    m.mem[POS] |= END_FLAG;
-    put(m, 0);
-    m.mem[02000] = m.mem[START] | END_FLAG;
-    get(m);
-    return 022327;
+    resume_ = rd_;
+    return REWRITE;
 }
 
-//
-// 22162: init. The return address is pushed, 02000 set from 02001, the
-// first item (a 251, the head of the stream) skipped; M1 = 5 − depth.
-//
-unsigned start(Machine &m)
+// 22162: init: the return address pushed; depth 5.
+unsigned Pass3::start()
 {
-    m.vtm(7, M7);
-    m.push(m.M[13]);
-    m.mem[02000] = cyclic_add(m.mem[02001], IN_BACK);
-    get(m);
-    m.mem[02001] = OUT_CURSOR;
-    m.vtm(1, 5);
-    return next_item(m);
+    push(DRIVER);
+    depth_ = 5;
+    return MAIN_LOOP;
 }
 
 //
 // The rewrite of a FOR loop (22327…23426). The loop is parsed again from
-// the FOR, as a tree in prefix order: a handler per item class (table at
-// 22365) parses its operands and leaves a descriptor of the result in OPND:
-// bit 48 not linear, bit 47 not constant; bits 31–45 the coefficient c of the
-// control variable, bits 16–30 and 1–15 the first and last item of the
-// operand on the value stack (M4, from 02144). Return addresses and operands
-// are on the machine stack as in the original: parse() pushes M12, a handler
-// returns by popping it (ret()). Items are written when an operand is
-// finished (flush_stack); an array access linear in the control variable gets
-// an index register (163/164 items), its load goes to the preamble list, its
-// step to the increments list; both are written after the loop.
+// its copy in the output, as a tree in prefix order: a handler per item
+// class (table at 22365) parses its operands and leaves a descriptor of the
+// result in OPND: NONLINEAR, VARIABLE; COEF the coefficient c of the
+// control variable, FIRST and the low 15 bits the first and last item of
+// the operand on the value stack (vs_, from 02144). parse() pushes the
+// continuation, a handler returns by popping it (ret()). Items are written
+// to the scratch when an operand is finished (flush_stack); an array access
+// linear in the control variable gets an index register (163/164 items),
+// its load goes to the preamble list, its step to the increments list;
+// both are written after the loop.
 //
 
-// Cells, AD02000+n of the source.
-constexpr unsigned D13    = 02015;  // 02000 of the main loop, restored at the end
-constexpr unsigned D14    = 02016;  // end of the preamble list (from 02454)
-constexpr unsigned D15    = 02017;  // end of the body list (from 02702)
-constexpr unsigned D16    = 02020;  // end of the increments list (from 02120)
-constexpr unsigned D17    = 02021;  // 0: no register for the step
-constexpr unsigned D18    = 02022;  // the step's value when a constant
-constexpr unsigned D19    = 02023;  // 0: the step is not a constant
-constexpr unsigned D20    = 02024;  // nonzero: a subscript needs the step
-constexpr unsigned D23    = 02027;  // the item checked by check_operand
-constexpr unsigned D24    = 02030;  // the step item
-constexpr unsigned D25    = 02031;  // the next 0160 item: register load, 010000 apart
-constexpr unsigned D27    = 02033;  // registers taken in the body
-constexpr unsigned D28    = 02034;  // registers taken in the preamble, from the top
-constexpr unsigned D29    = 02035;  // c<<12 of a subscript for the increment
-constexpr unsigned D30    = 02036;  // the initial value item
-constexpr unsigned D32    = 02040;  // the initial value as a 045 item, or 0
-constexpr unsigned D33    = 02041;  // depth of IF; 077777 after a label of the loop
-constexpr unsigned D35    = 02043;  // the until item
-constexpr unsigned OPND   = 02037;  // the descriptor of the operand parsed last
-constexpr unsigned VALUES = 02143;  // M4: the value stack, from VALUES+1
-constexpr unsigned REGS   = 023153; // M7+0771: index registers, from 1
-
-constexpr Word NONLINEAR = 0'4000'0000'0000'0000;
-constexpr Word VARIABLE  = 0'2000'0000'0000'0000;
-
-// Entries, jumped to through M12 or the stack.
-constexpr unsigned MAIN_LOOP   = 022167;
-constexpr unsigned READ_PARSE  = 022347;
-constexpr unsigned PARSE       = 022351;
-constexpr unsigned DISPATCH    = 022352;
-constexpr unsigned STATEMENT   = 022422;
-constexpr unsigned GIVE_UP     = 022662; // no register left: D17 = 0
-constexpr unsigned NO_REG      = 022653;
-constexpr unsigned BINARY_2    = 022523;
-constexpr unsigned RESULT      = 022532;
-constexpr unsigned UNARY_2     = 022542;
-constexpr unsigned UNARY_3     = 022544;
-constexpr unsigned AFTER_LABEL = 022516;
-constexpr unsigned IF_2        = 023076;
-constexpr unsigned PRE_REG     = 023164;
-
-void write_item(Machine &m, unsigned ret)
+// 22347: read an item, then parse it.
+unsigned Pass3::read_parse(unsigned link)
 {
-    m.call(WRITE, 13, ret);
+    mem(CUR) = get();
+    return parse(link);
 }
 
-void read_item(Machine &m, unsigned ret)
+// 22351: parse the item in CUR, returning to link.
+unsigned Pass3::parse(unsigned link)
 {
-    m.call(READ, 13, ret);
-}
-
-// 15 WTC; UJ: return to the address on the stack.
-unsigned ret(Machine &m)
-{
-    m.wtc(Machine::SP, 0);
-    return m.ea(0, m.field(0));
-}
-
-//
-// 22757: move the nonzero words of [M8, M9] (A = M8<<15 | M9) to M5…,
-// zeroing them; M6 = the last one moved. Through M13.
-//
-void move_items(Machine &m, unsigned link)
-{
-    m.set_m(13, link);
-    m.ati(0, 011);
-    m.asn(0, 0117);
-    m.ati(0, 010);
-    m.mtj(5, 6);
-    m.mtj(8, 012);
-    m.utm(6, 077777);
-    for (;;) {
-        m.xta(10, 0);
-        if (!m.uza()) {
-            m.utm(6, 1);
-            m.atx(6, 0);
-            m.xta(0, 0);
-        }
-        m.atx(10, 0);
-        m.ita(0, 012);
-        m.its(0, 011);
-        m.aex(Machine::SP, 0);
-        if (m.uza())
-            return;
-        m.utm(10, 1);
-    }
-}
-
-//
-// 22747: write the value stack and empty it. Through M12.
-//
-void flush_stack(Machine &m, unsigned link)
-{
-    m.set_m(12, link);
-    m.vtm(5, TABLE);
-    for (;;) {
-        m.ntr(0, 3);
-        m.ita(0, 5);
-        m.its(0, 4);
-        m.arith(Machine::SP, 0, 005);
-        if (m.u1a())
-            break;
-        m.xta(5, 0);
-        if (!m.uza())
-            write_item(m, 022754);
-        m.utm(5, 1);
-    }
-    m.vtm(4, VALUES);
-}
-
-//
-// 22771: the operand in A is done. A single item (the last = the first) is
-// kept in D23 (0 if it is the control variable); a nonlinear operand or one
-// in an IF is left on the stack; else its items move to the body list after
-// a register load (0160 item), and D23 = the load. Through M12.
-//
-void check_operand(Machine &m, unsigned link)
-{
-    m.set_m(12, link);
-    m.atx(Machine::SP, 0);
-    m.aax(7, 01316);
-    m.aex(7, 01310);
-    if (!m.u1a())
-        m.atx(0, D17);
-    m.xta(Machine::SP, 077777);
-    m.asn(0, 0117);
-    m.aex(Machine::SP, 077777);
-    m.aax(7, 01332);
-    if (!m.u1a()) {
-        m.wtc(Machine::SP, 0);
-        m.xta(0, 0);
-        m.atx(0, D23);
-        m.asn(0, 0114);
-        m.aex(0, CONTROL);
-        if (m.u1a())
-            return;
-        m.utm(Machine::SP, 1);
-    }
-    m.xta(0, 0);
-    m.atx(0, D23);
-    m.xta(Machine::SP, 0);
-    m.arx(0, 0);
-    if (m.uza()) // nonlinear
-        return;
-    m.xta(0, D33);
-    if (m.u1a()) // in an IF
-        return;
-    m.wtc(0, D15);
-    m.vtm(5, 1);
-    m.utm(Machine::SP, 1);
-    m.xta(0, D25);
-    m.stx(5, 077777);
-    move_items(m, 023011);
-    m.ita(0, 6);
-    m.arx(7, 01260);
-    m.atx(0, D15);
-    m.xta(0, D25);
-    m.arx(7, 01260);
-    m.atx(8, 0);
-    m.atx(0, D23);
-    m.xta(0, D25);
-    m.arx(7, 01265);
-    m.atx(0, D25);
-}
-
-//
-// 23017: find the items of OPND (M8…M9) in the list from M5 (up to ITEM):
-// M5 = its 0160 or 0162 head, or 0 if not there. Through M13.
-//
-void find_items(Machine &m, unsigned link)
-{
-    m.set_m(13, link);
-    m.xta(0, OPND);
-    m.ati(0, 011);
-    m.asn(0, 0117);
-    m.ati(0, 010);
-    for (;;) {
-        m.ita(0, 5);
-        m.aex(0, ITEM);
-        if (m.uza()) {
-            m.vtm(5, 0);
-            return;
-        }
-        m.xta(5, 0);
-        m.utm(5, 1);
-        m.arx(0, 0);
-        if (m.u1a())
-            continue;
-        m.utm(5, 077777);
-        m.mtj(8, 016);
-        do {
-            m.xta(14, 1);
-            if (!m.uza()) {
-                m.aex(5, 1);
-                m.utm(5, 1);
-            }
-            m.utm(14, 1);
-        } while (m.uza());
-        m.aax(7, 01273);
-        if (m.u1a())
-            continue;
-        m.xta(7, 01267);
-        m.aex(5, 0);
-        m.aax(7, 01336);
-        if (m.u1a())
-            continue;
-        return;
-    }
-}
-
-// 23051…23072 with M5 = the head found: the element read (0163) or stored
-// (0164) through the register. M14 = the code; ends through M12.
-unsigned access(Machine &m);
-
-// 23130: a new register for the body.
-unsigned body_register(Machine &m);
-
-// 23062: the access through the register of the load at M5.
-unsigned through_register(Machine &m)
-{
-    m.xts(5, 1);
-    m.aax(7, 01263);
-    m.aox(Machine::SP, 0);
-    m.atx(8, 0);
-    m.ita(0, 010);
-    m.atx(Machine::SP, 0);
-    m.asn(0, 061);
-    m.aox(Machine::SP, 0);
-    m.atx(0, OPND);
-    do {
-        m.utm(8, 1);
-        m.xta(0, 0);
-        m.atx(8, 0);
-        m.ita(0, 010);
-        m.its(0, 011);
-        m.aex(Machine::SP, 0);
-    } while (m.u1a());
-    return m.M[12];
-}
-
-// The code of the access: 0163 for an element read (044), else 0164.
-void access_code(Machine &m)
-{
-    m.xta(9, 0);
-    m.aax(7, 01336);
-    m.aex(7, 01275);
-    m.vtm(14, 0163);
-    if (!m.uza())
-        m.vtm(14, 0164);
-    m.xta(8, 0);
-    m.aax(7, 01264);
-    m.its(0, 016);
-    m.aox(Machine::SP, 0);
-}
-
-unsigned access(Machine &m)
-{
-    m.vtm(5, 02702);
-    m.xta(0, D15);
-    m.atx(0, ITEM);
-    find_items(m, 023054);
-    access_code(m);
-    if (m.M[5] == 0)
-        return body_register(m);
-    return through_register(m);
-}
-
-// 23051: an element not stepped by the loop.
-unsigned fixed_access(Machine &m)
-{
-    m.xta(0, 0);
-    m.atx(0, D29);
-    return access(m);
-}
-
-//
-// 23036: an element c·I+d: the increment c·step·stride must fit 12 bits,
-// else 23164. Through M12.
-//
-unsigned stepped_access(Machine &m)
-{
-    m.xta(14, 1);
-    m.asn(0, 0136);
-    m.aax(7, 01332);
-    m.aox(7, 01321);
-    m.ntr(0, 2);
-    m.arith(0, D18, 017);
-    m.ntr(0, 3);
-    m.arith(7, 01321, 004);
-    m.aax(7, 01326);
-    m.atx(Machine::SP, 0);
-    m.arith(7, 01320, 005);
-    if (!m.u1a()) {
-        m.xta(Machine::SP, 077777);
-        m.arith(7, 01314, 005);
-        if (m.u1a())
-            return PRE_REG;
-    }
-    m.xta(Machine::SP, 0);
-    m.aax(7, 01257);
-    m.asn(0, 064);
-    m.atx(0, D29);
-    return access(m);
-}
-
-// The load of the operand OPND (items moved from the value stack to the
-// list ending at [list]): its 0160 head becomes 0162 and gets register
-// number k of the table at REGS.
-void load_register(Machine &m, unsigned list, unsigned k, unsigned link)
-{
-    m.xta(0, OPND);
-    m.wtc(0, list);
-    m.vtm(5, 0);
-    move_items(m, link);
-    m.xta(5, 0);
-    m.aax(7, 01257);
-    m.aox(7, 01316);
-    m.atx(5, 0);
-    m.mtj(6, 5);
-    m.utm(6, 2);
-    m.ita(0, 6);
-    m.atx(0, list);
-    m.xta(5, 0);
-    m.aax(7, 01273);
-    m.aex(7, 01267);
-    m.atx(5, 0);
-    m.wtc(0, k);
-    m.xta(7, 0771);
-    m.atx(5, 1);
-}
-
-// A to the increments list.
-void add_increment(Machine &m)
-{
-    m.wtc(0, D16);
-    m.atx(0, 0);
-    m.xta(0, D16);
-    m.arx(7, 01260);
-}
-
-// 23130: a register for the body (D27+1, unless it meets the preamble's),
-// stepped by c<<12 | 0165 at the end when D29 ≠ 0.
-unsigned body_register(Machine &m)
-{
-    m.xts(0, D27);
-    m.arx(7, 01260);
-    m.aex(0, D28);
-    m.utm(Machine::SP, 077777);
-    if (m.uza())
-        return GIVE_UP;
-    m.aex(0, D28);
-    m.atx(0, D27);
-    m.utm(Machine::SP, 1);
-    load_register(m, D15, D27, 023136);
-    m.xta(0, D29);
-    if (!m.uza()) {
-        m.aex(5, 1);
-        m.aex(7, 01301);
-        add_increment(m);
-        m.atx(0, D16);
-    }
-    m.xta(Machine::SP, 0);
-    return through_register(m);
-}
-
-//
-// 23164: an element whose register is loaded in the preamble: D20 set when
-// M9 ≠ 0. A new register (D28−1, not in an IF) is stepped at the end.
-//
-unsigned preamble_access(Machine &m)
-{
-    if (m.M[9]) {
-        m.xta(7, 01260);
-        m.atx(0, D20);
-    }
-    m.vtm(5, 02454);
-    m.xta(0, D14);
-    m.atx(0, ITEM);
-    find_items(m, 023170);
-    access_code(m);
-    if (m.M[5] == 0) {
-        m.xts(0, D33);
-        m.utm(Machine::SP, 077777);
-        if (m.u1a())
-            return GIVE_UP;
-        m.xta(0, D28);
-        m.arx(7, 01323);
-        m.aex(0, D27);
-        if (m.uza())
-            return GIVE_UP;
-        m.aex(0, D27);
-        m.atx(0, D28);
-        m.utm(Machine::SP, 1);
-        load_register(m, D14, D28, 023216);
-        m.aex(7, 01301);
-        add_increment(m);
-        m.stx(0, D16);
-    }
-    through_register(m);
-    return NO_REG;
-}
-
-// 22327: set up the rewrite; page 10000 to drum 26 zone 3.
-unsigned begin_rewrite(Machine &m)
-{
-    m.xta(0, START);
-    m.arx(7, 01246);
-    m.atx(0, 02000);
-    m.xta(7, 01265);
-    m.atx(0, POS);
-    m.vtm(14, 02454);
-    m.ita(0, 016);
-    m.atx(0, D14);
-    m.vtm(14, 02702);
-    m.ita(0, 016);
-    m.atx(0, D15);
-    m.vtm(14, 02120);
-    m.ita(0, 016);
-    m.atx(0, D16);
-    m.atx(0, D17);
-    m.xta(7, 01251);
-    m.atx(0, D25);
-    m.xta(0, 0);
-    for (unsigned a : { D18, D33, D32, D30, D20 })
-        m.atx(0, a);
-    m.ita(0, 1);
-    m.aex(7, 01331);
-    m.arx(7, 01277);
-    m.atx(0, D27);
-    m.xta(7, 01307);
-    m.atx(0, D28);
-    m.extracode(070, 7, 01337);
-    m.vtm(4, VALUES);
-    m.vtm(12, STATEMENT);
-    return READ_PARSE;
-}
-
-// 22347: read an item, then parse.
-unsigned read_parse(Machine &m)
-{
-    read_item(m, 022350);
-    m.atx(0, CUR);
-    return PARSE;
-}
-
-// 22351: parse the item in CUR, returning to M12.
-unsigned parse(Machine &m)
-{
-    m.ita(0, 014);
-    m.atx(Machine::SP, 0);
-    return DISPATCH;
+    push(link);
+    return classify();
 }
 
 //
 // 22352: by the class of the item (6 bits per code at 22365): 0 is
 // written and the statement goes on; else the item goes on the value stack
-// and to its handler, through the table at 22407: per word, the handler of
-// an even class and of the odd one after it.
+// and to its handler.
 //
-unsigned classify(Machine &m)
+unsigned Pass3::classify()
 {
-    static const unsigned handlers[][2] = {
-        { 0, 023231 },      { 022441, 022522 }, { 022541, 022551 }, { 022570, 022572 },
-        { 022600, 022604 }, { 022607, 022607 }, { 022664, 022666 }, { 022665, 023417 },
-        { 022425, 022436 }, { 022507, 023073 }, { 023115, 023123 },
+    static const unsigned handlers[] = {
+        0,      023231, 022441, 022522, 022541, 022551, 022570, 022572, 022600, 022604, 022607,
+        022607, 022664, 022666, 022665, 023417, 022425, 022436, 022507, 023073, 023115, 023123,
     };
-    m.xta(0, CUR);
-    m.asn(0, 0103);
-    m.aax(7, 01333);
-    m.ati(0, 015);
-    m.xta(0, CUR);
-    m.aax(7, 01304);
-    m.atx(Machine::SP, 0);
-    m.asn(0, 077);
-    m.arx(Machine::SP, 0);
-    m.asn(0, 077);
-    m.ati(0, 016);
-    m.utc(13, 022365);
-    m.xta(0, 0);
-    m.asn(14, 0100);
-    m.aax(7, 01335);
-    m.ati(0, 016);
-    if (m.M[14] == 0) {
-        m.sti(0, 0);
-        m.xta(0, CUR);
-        write_item(m, 022364);
-        m.vtm(12, STATEMENT);
-        return READ_PARSE;
+    unsigned code = mem(CUR) & 0177;
+    unsigned cls  = (image(PARSE_CLASSES + ((code >> 3) & 017)) >> (6 * (code & 7))) & 077;
+    if (!cls) {
+        pop();
+        put(mem(CUR));
+        return read_parse(STATEMENT);
     }
-    m.xta(0, CUR);
-    m.utm(4, 1);
-    m.atx(4, 0);
-    m.ita(0, 016);
-    m.asn(0, 0101);
-    m.ati(0, 016);
-    m.yta(0, 0);
-    if (m.M[14] > 10)
-        throw std::runtime_error("pass 3: item " + std::to_string(m.mem[CUR] & 0177));
-    return handlers[m.M[14]][m.uza() ? 0 : 1];
+    vs_      = (vs_ + 1) & 077777;
+    mem(vs_) = mem(CUR);
+    if (cls >= std::size(handlers))
+        throw std::runtime_error("pass 3: item " + std::to_string(code));
+    return handlers[cls];
 }
 
-// 22422: a statement is done.
-unsigned statement(Machine &m)
+// 22757: move the nonzero words of [first, last] (range = first<<15 |
+// last) to list_…, zeroing them; moved_ = the last one moved.
+void Pass3::move_items(Word range)
 {
-    m.xta(0, OPND);
-    check_operand(m, 022423);
-    flush_stack(m, 022424);
-    m.vtm(12, STATEMENT);
-    return PARSE;
-}
-
-// 22425: an expression element (0136, 0165, 0177): its operand.
-unsigned expression_element(Machine &m)
-{
-    m.set_m(12, 022426);
-    return READ_PARSE;
-}
-
-unsigned expression_element_2(Machine &m)
-{
-    m.xta(0, OPND);
-    check_operand(m, 022427);
-    m.xta(0, D23);
-    if (!m.uza()) {
-        m.xta(0, OPND);
-        m.asn(0, 0117);
-        m.ati(0, 010);
-        m.asn(0, 061);
-        m.its(0, 010);
-        m.aox(Machine::SP, 0);
-        m.atx(0, OPND);
-        m.xta(0, 0);
-        m.atx(8, 077777);
-    }
-    return ret(m);
-}
-
-// 22436: a constant step (0137): the control variable is marked, then as 034.
-unsigned constant_step(Machine &m)
-{
-    m.wtc(0, LVAR);
-    m.vtm(14, 0);
-    m.xta(14, 0);
-    m.aox(7, 01252);
-    m.atx(14, 0);
-    m.set_m(12, 022442);
-    return READ_PARSE;
-}
-
-// 22441: step-until (034): the initial value, the step, the until value.
-unsigned step_until(Machine &m)
-{
-    m.set_m(12, 022442);
-    return READ_PARSE;
-}
-
-// The initial value: as a 045 item in D32 when a constant of 12 bits ≠ 0;
-// its item in D30.
-unsigned initial_parsed(Machine &m)
-{
-    m.xta(0, OPND);
-    m.aax(7, 01316);
-    if (!m.u1a()) {
-        m.xta(0, OPND);
-        m.aax(7, 01262);
-        if (!m.uza()) {
-            m.asn(0, 0136);
-            m.ntr(0, 3);
-            m.arith(7, 01261, 005);
-            if (!m.uza()) {
-                m.arith(7, 01261, 004);
-                m.asn(0, 064);
-                m.aox(7, 01300);
-                m.atx(0, D32);
-            }
+    last_     = range & 077777;
+    first_    = (range >> 15) & 077777;
+    moved_    = (list_ - 1) & 077777;
+    unsigned p = first_;
+    for (;;) {
+        if (Word w = mem(p)) {
+            moved_      = (moved_ + 1) & 077777;
+            mem(moved_) = w;
         }
+        mem(p) = 0;
+        if (p == last_)
+            return;
+        p = (p + 1) & 077777;
     }
-    m.xta(0, OPND);
-    m.aax(7, 01270);
-    m.aox(7, 01274);
-    m.atx(0, OPND);
-    check_operand(m, 022454);
-    m.xta(0, D23);
-    m.atx(0, D30);
-    flush_stack(m, 022456);
-    m.set_m(12, 022457);
-    return PARSE;
+}
+
+// 22747: write the value stack and empty it.
+void Pass3::flush_stack()
+{
+    for (unsigned p = TABLE; p <= vs_; p++)
+        if (Word w = mem(p))
+            put(w);
+    vs_ = VALUES;
+}
+
+//
+// 22771: the operand d is done. A single item (the last = the first) is
+// kept in D23 (0 if it is the control variable); a nonlinear operand or one
+// in an IF is left on the stack; else its items move to the body list after
+// a register load (0160 item), and D23 = the load.
+//
+void Pass3::check_operand(Word d)
+{
+    if ((d & FLAGS) == NONLINEAR)
+        mem(D17) = 0;
+    if (!(((d >> 15) ^ d) & ADDR)) {
+        Word item = mem(d & ADDR);
+        mem(D23)  = item;
+        if ((item >> 12) != mem(CONTROL))
+            return;
+    }
+    mem(D23) = 0;
+    if (d & BIT48) // nonlinear
+        return;
+    if (mem(D33)) // in an IF
+        return;
+    list_ = (mem(D15) + 1) & 077777;
+    store((list_ - 1) & 077777, mem(D25));
+    move_items(d);
+    mem(D15)    = cyclic_add(moved_, 1);
+    Word load   = cyclic_add(mem(D25), 1);
+    mem(first_) = load;
+    mem(D23)    = load;
+    mem(D25)    = cyclic_add(mem(D25), 010000);
+}
+
+//
+// 23017: find the items of OPND (first_…last_) in the list from list_ (up
+// to ITEM): list_ = its 0160 or 0162 head, or 0 if not there.
+//
+void Pass3::find_items()
+{
+    last_  = mem(OPND) & 077777;
+    first_ = (mem(OPND) >> 15) & 077777;
+    for (;;) {
+        if (list_ == mem(ITEM)) {
+            list_ = 0;
+            return;
+        }
+        Word w = mem(list_);
+        list_  = (list_ + 1) & 077777;
+        if (!(w & BIT48))
+            continue;
+        list_      = (list_ - 1) & 077777;
+        unsigned p = first_;
+        Word diff;
+        do { // the items, the zeros of the stack skipped
+            diff = mem((p + 1) & 077777);
+            if (diff) {
+                diff ^= mem((list_ + 1) & 077777);
+                list_ = (list_ + 1) & 077777;
+            }
+            p = (p + 1) & 077777;
+        } while (!diff);
+        if (diff & HEAD_MASK)
+            continue;
+        if ((mem(list_) ^ 0162) & 0177)
+            continue;
+        return;
+    }
+}
+
+// 23062: the access through the register of the load at list_: the
+// operand's items become the one access item.
+void Pass3::through_register(Word code)
+{
+    mem(first_) = (mem((list_ + 1) & 077777) & REG_BITS) | code;
+    mem(OPND)   = (Word(first_) << 15) | first_;
+    do {
+        first_      = (first_ + 1) & 077777;
+        mem(first_) = 0;
+    } while (first_ != last_);
+}
+
+// The access item: 0163 for an element read (044), else 0164, with the
+// array of the operand's first item.
+Word Pass3::access_code()
+{
+    Word code = ((mem(last_) & 0177) == 044) ? 0163 : 0164;
+    return code | (mem(first_) & C_FIELD12);
+}
+
+// 23051…23072: the element read (0163) or stored (0164) through a register
+// of the body (D29: its step); then on to link.
+unsigned Pass3::access(unsigned link)
+{
+    list_     = BODY_LIST;
+    mem(ITEM) = mem(D15);
+    find_items();
+    Word code = access_code();
+    if (!list_)
+        return body_register(code, link);
+    through_register(code);
+    return link;
+}
+
+//
+// 23036: an element c·I+d: the increment c·step must fit 12 bits, else
+// 23164.
+//
+unsigned Pass3::stepped_access(unsigned link)
+{
+    Word c   = ((mem((subs_ + 1) & 077777) >> 30) & ADDR) | INTEGER;
+    Word inc = unit_add(RAW, unit_mul(NORM, c, mem(D18)), INTEGER) & TRUNCATE;
+    push(inc);
+    if (!(unit_sub(RAW, inc, C_LOW) & NEGATIVE) && (unit_sub(RAW, inc, C_HIGH) & NEGATIVE))
+        return PRE_REG;
+    mem(D29) = (pop() & 07777) << 12;
+    return access(link);
+}
+
+// The load of the operand OPND (items moved from the value stack to the
+// list ending at [list]): its first item gets FLAGS, its last becomes the
+// 0162 head, followed by register number [k] of the table REGS, which is
+// returned.
+Word Pass3::load_register(unsigned list, unsigned k)
+{
+    list_ = mem(list) & 077777;
+    move_items(mem(OPND));
+    mem(list_)      = (mem(list_) & 07777) | FLAGS;
+    list_           = moved_; // the last item moved: the head
+    moved_          = (moved_ + 2) & 077777;
+    mem(list)       = moved_;
+    mem(list_)      = (mem(list_) & HEAD_MASK) ^ 0162;
+    Word reg        = image(REGS + (mem(k) & 077777));
+    mem(list_ + 1) = reg;
+    return reg;
+}
+
+// A word to the increments list; returns the list's new end.
+Word Pass3::add_increment(Word w)
+{
+    mem(mem(D16) & 077777) = w;
+    return cyclic_add(mem(D16), 1);
+}
+
+// 23130: a register for the body (D27+1, unless it meets the preamble's),
+// stepped by c<<12 | 0165 at the end when D29 ≠ 0.
+unsigned Pass3::body_register(Word code, unsigned link)
+{
+    Word next = cyclic_add(mem(D27), 1);
+    if (next == mem(D28))
+        return GIVE_UP;
+    mem(D27) = next;
+    load_register(D15, D27);
+    if (Word c = mem(D29))
+        mem(D16) = add_increment(c ^ mem(list_ + 1) ^ 0165);
+    through_register(code);
+    return link;
+}
+
+//
+// 23164: an element whose register is loaded in the preamble: D20 set when
+// subscripts with c ≠ 0. A new register (D28−1, not in an IF) is stepped at
+// the end.
+//
+unsigned Pass3::preamble_access()
+{
+    if (last_)
+        mem(D20) = 1;
+    list_     = PREAMBLE_LIST;
+    mem(ITEM) = mem(D14);
+    find_items();
+    Word code = access_code();
+    if (!list_) {
+        if (mem(D33))
+            return GIVE_UP;
+        Word next = cyclic_add(mem(D28), 0'7777'7777'7777'7776);
+        if (next == mem(D27))
+            return GIVE_UP;
+        mem(D28) = next;
+        Word reg = load_register(D14, D28);
+        mem(D16) = add_increment(reg ^ 0165);
+    }
+    through_register(code);
+    return NO_REG;
+}
+
+// 22327: set up the rewrite: the copy read from the output after the FOR,
+// written to the scratch.
+unsigned Pass3::begin_rewrite()
+{
+    src_ = &out_;
+    rd_  = start_;
+    scratch_.clear();
+    dst_      = &scratch_;
+    wr_       = 0;
+    mem(D14)  = PREAMBLE_LIST;
+    mem(D15)  = BODY_LIST;
+    mem(D16)  = INCREMENTS_LIST;
+    mem(D17)  = INCREMENTS_LIST;
+    mem(D25)  = 0160;
+    for (unsigned a : { D18, D33, D32, D30, D20 })
+        mem(a) = 0;
+    mem(D27) = cyclic_add(Word(depth_) ^ WORD_MASK, 5);
+    mem(D28) = 010;
+    vs_      = VALUES;
+    return read_parse(STATEMENT);
+}
+
+// 22442: the initial value: as a 045 item in D32 when a constant of 12 bits
+// ≠ 0; its item in D30.
+unsigned Pass3::initial_parsed()
+{
+    Word d = mem(OPND);
+    if (!(d & FLAGS) && (d & COEF)) {
+        Word c = (d & COEF) >> 30;
+        if (c < 04000)
+            mem(D32) = (c << 12) | 045;
+    }
+    mem(OPND) = (d & ~BIT48 & WORD_MASK) | VARIABLE;
+    check_operand(mem(OPND));
+    mem(D30) = mem(D23);
+    flush_stack();
+    return parse(022457);
 }
 
 // Then the next operand.
-unsigned parse_until(Machine &m)
+unsigned Pass3::parse_until()
 {
-    flush_stack(m, 022470);
-    m.set_m(12, 022471);
-    return PARSE;
+    flush_stack();
+    return parse(022471);
 }
 
-// The step: its item in D24, its value in D18 when a constant; a step
-// not linear clears D17 and D19.
-unsigned step_parsed(Machine &m)
+// 22457: the step: its item in D24, its value in D18 when a constant; a
+// step not linear clears D17 and D19.
+unsigned Pass3::step_parsed()
 {
-    m.xta(0, OPND);
-    m.aax(7, 01316);
-    if (m.u1a()) {
-        m.xta(0, OPND);
-        m.arx(0, 0);
-        if (!m.u1a()) {
-            m.xta(0, 0);
-            m.atx(0, D19);
-            m.atx(0, D17);
-            return parse_until(m);
+    Word d = mem(OPND);
+    if (d & FLAGS) {
+        if (d & BIT48) {
+            mem(D19) = 0;
+            mem(D17) = 0;
+            return parse_until();
         }
     } else {
-        m.xta(0, OPND);
-        m.ati(0, 016);
-        m.xta(14, 0);
-        m.atx(0, D24);
-        m.asn(0, 0114);
-        m.ati(0, 016);
-        m.xta(14, TABLE);
-        m.asn(0, 071);
-        if (!m.uza()) {
-            m.xta(14, TABLE);
-            m.aox(7, 01321);
-            m.atx(0, D18);
-            return parse_until(m);
+        Word item = mem(d & 077777);
+        mem(D24)  = item;
+        Word v    = mem(TABLE + ((item >> 12) & 07777));
+        if ((v << 7) & WORD_MASK) {
+            mem(D18) = v | INTEGER;
+            return parse_until();
         }
     }
-    m.xta(0, OPND);
-    check_operand(m, 022505);
-    m.xta(0, D23);
-    m.atx(0, D24);
-    return parse_until(m);
+    check_operand(mem(OPND));
+    mem(D24) = mem(D23);
+    return parse_until();
 }
 
-// The until value: its item in D35; then the body (from DO). Not linear:
-// D17 = 0, D33 = 1.
-unsigned until_parsed(Machine &m)
+// 22471: the until value: its item in D35; then the body (from DO). Not
+// linear: D17 = 0, D33 = 1.
+unsigned Pass3::until_parsed()
 {
-    m.xta(0, OPND);
-    m.arx(0, 0);
-    if (!m.u1a()) {
-        m.xta(0, 0);
-        m.atx(0, D17);
-        m.xta(7, 01260);
-        m.atx(0, D33);
+    if (mem(OPND) & BIT48) {
+        mem(D17) = 0;
+        mem(D33) = 1;
     }
-    m.xta(0, OPND);
-    check_operand(m, 022476);
-    m.xta(0, D23);
-    m.atx(0, D35);
-    flush_stack(m, DISPATCH);
-    return DISPATCH;
+    check_operand(mem(OPND));
+    mem(D35) = mem(D23);
+    flush_stack();
+    return classify();
 }
 
 // 22507: a label (024, 0163). One of the loop (below the control variable's
 // block) stops register steps: D33 = 077777; else D17 = 0.
-unsigned label(Machine &m)
+unsigned Pass3::label()
 {
-    m.xta(0, CUR);
-    m.asn(0, 0114);
-    m.atx(0, ITEM);
-    m.ntr(0, 3);
-    m.arith(0, LVAR, 005);
-    bool inside = false;
-    if (!m.u1a()) {
-        m.wtc(0, LVAR);
-        m.xta(0, 0);
-        m.aax(7, 01257);
-        m.arith(0, ITEM, 006);
-        inside = !m.uza();
-    }
-    if (inside) {
-        m.xta(7, 01332);
-        m.atx(0, D33);
-    } else {
-        m.xta(0, 0);
-        m.atx(0, D17);
-    }
+    Word n    = mem(CUR) >> 12;
+    mem(ITEM) = n;
+    bool inside =
+        !(unit_sub(RAW, n, mem(LVAR)) & NEGATIVE) &&
+        (unit_rsub(RAW, mem(mem(LVAR) & 077777) & 07777, n) & NEGATIVE);
+    if (inside)
+        mem(D33) = 077777;
+    else
+        mem(D17) = 0;
     return AFTER_LABEL;
 }
 
-unsigned after_label(Machine &m)
+// 22532: OPND = a | the word on the stack; return.
+unsigned Pass3::result(Word a)
 {
-    m.sti(0, 0);
-    flush_stack(m, 022517);
-    m.vtm(12, STATEMENT);
-    return READ_PARSE;
-}
-
-// 22522: a binary operator: the left operand.
-unsigned binary(Machine &m)
-{
-    m.set_m(12, BINARY_2);
-    return READ_PARSE;
-}
-
-// The right operand.
-unsigned binary_2(Machine &m)
-{
-    m.xta(0, OPND);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 022525);
-    return PARSE;
-}
-
-// 22531 with A: OPND = A | the last item of OPND; 22532 with A and a word
-// on the stack: OPND = A | the word; return.
-unsigned result_last(Machine &m)
-{
-    m.xts(0, OPND);
-    m.aax(7, 01332);
-    return RESULT;
-}
-
-unsigned result(Machine &m)
-{
-    m.aox(Machine::SP, 0);
-    m.atx(0, OPND);
-    return ret(m);
+    mem(OPND) = a | pop();
+    return ret();
 }
 
 // 22527: a variable (not linear) result from the left operand's first item.
-unsigned variable_result(Machine &m)
+unsigned Pass3::variable_result()
 {
-    m.xta(Machine::SP, 0);
-    m.arx(7, 01330);
-    m.aax(7, 01254);
-    m.aox(7, 01274);
-    return result_last(m);
+    Word left = pop();
+    push((cyclic_add(left, 0'7777'7777'7767'7777) & FIRST) | VARIABLE);
+    return result(mem(OPND) & ADDR);
 }
 
 // 22534: a nonlinear result: both operands done.
-unsigned nonlinear_result(Machine &m)
+unsigned Pass3::nonlinear_result()
 {
-    m.xta(Machine::SP, 077777);
-    check_operand(m, 022535);
-    m.xta(0, OPND);
-    check_operand(m, 022536);
-    m.xta(Machine::SP, 0);
-    m.arx(7, 01330);
-    m.aax(7, 01254);
-    m.aox(7, 01316);
-    return result_last(m);
+    check_operand(top(1));
+    check_operand(mem(OPND));
+    Word left = pop();
+    push((cyclic_add(left, 0'7777'7777'7767'7777) & FIRST) | FLAGS);
+    return result(mem(OPND) & ADDR);
 }
 
-unsigned binary_3(Machine &m)
+// 22542: after a unary operator's operand.
+unsigned Pass3::unary_2()
 {
-    m.xta(Machine::SP, 077777);
-    m.aox(0, OPND);
-    m.arx(0, 0);
-    if (m.uza())
-        return nonlinear_result(m);
-    return variable_result(m);
-}
-
-// 22541: a unary operator (NOT, 047, 063, 064, 071, 0152, 0153).
-unsigned unary(Machine &m)
-{
-    m.set_m(12, UNARY_2);
-    return READ_PARSE;
-}
-
-unsigned unary_3(Machine &m)
-{
-    m.arx(7, 01330);
-    m.atx(0, OPND);
-    return ret(m);
-}
-
-unsigned unary_2(Machine &m)
-{
-    m.xta(0, OPND);
-    m.arx(0, 0);
-    if (m.uza()) {
-        m.xta(0, OPND);
-        check_operand(m, 022547);
-        m.xta(0, OPND);
-        m.aox(7, 01316);
-    } else {
-        m.aox(7, 01274);
+    Word d = mem(OPND);
+    if (d & BIT48) {
+        check_operand(d);
+        return unary_3(mem(OPND) | FLAGS);
     }
-    return unary_3(m);
+    return unary_3(d | VARIABLE);
 }
 
-// 22560 with the flags in A: OPND = flags | the item at M4; next item.
-unsigned leaf(Machine &m)
+// 22544: OPND = a with the operator's item first.
+unsigned Pass3::unary_3(Word a)
 {
-    m.its(0, 4);
-    m.atx(Machine::SP, 0);
-    m.asn(0, 061);
-    m.aox(Machine::SP, 0);
-    m.aox(Machine::SP, 0);
-    m.atx(0, OPND);
-    read_item(m, 022564);
-    m.atx(0, CUR);
-    return ret(m);
+    mem(OPND) = cyclic_add(a, 0'7777'7777'7767'7777);
+    return ret();
+}
+
+// 22560: OPND = flags | the item at vs_; the next item.
+unsigned Pass3::leaf(Word flags)
+{
+    mem(OPND) = flags | (Word(vs_) << 15) | vs_;
+    mem(CUR)  = get();
+    return ret();
 }
 
 // 22551: a variable (017). The control variable is linear (an initial
-// value item is marked 0200 at M4); one assigned in the loop is not.
-unsigned variable(Machine &m)
+// value item is marked 0200 at vs_); one assigned in the loop is not.
+unsigned Pass3::variable()
 {
-    m.xta(0, CUR);
-    m.asn(0, 0114);
-    m.ati(0, 2);
-    m.aex(0, CONTROL);
-    if (m.u1a()) {
-        m.xta(2, 0);
-        m.aax(7, 01256);
-        m.xta(7, m.u1a() ? 01316 : 01274);
-        return leaf(m);
-    }
-    m.xta(0, D30);
-    if (!m.u1a()) {
-        m.xta(4, 0);
-        m.aox(7, 01253);
-        m.atx(4, 0);
-    }
-    m.xta(0, D19);
-    if (m.uza())
-        m.xta(7, 01316);
-    else
-        m.xta(7, 01312);
-    return leaf(m);
-}
-
-// 22570: a string (070).
-unsigned string_item(Machine &m)
-{
-    m.xta(7, 01274);
-    return leaf(m);
+    Word n = mem(CUR) >> 12;
+    if (n != mem(CONTROL))
+        return leaf((mem(n & 077777) & ASSIGNED) ? FLAGS : VARIABLE);
+    if (!mem(D30))
+        mem(vs_) |= 0200;
+    return leaf(mem(D19) ? CONTROL_C : FLAGS);
 }
 
 // 22572: a constant (023): linear with c = the value if an integer.
-unsigned constant(Machine &m)
+unsigned Pass3::constant()
 {
-    m.xta(0, CUR);
-    m.asn(0, 0114);
-    m.ati(0, 016);
-    m.xta(14, TABLE);
-    m.aex(7, 01321);
-    m.asn(0, 0153);
-    if (!m.u1a()) {
-        m.xta(14, TABLE);
-        m.asn(0, 042);
-    }
-    m.aax(7, 01262);
-    return leaf(m);
+    Word v = mem(TABLE + ((mem(CUR) >> 12) & 07777));
+    Word a = (v ^ INTEGER) >> 43;
+    if (!a)
+        a = (v << 30) & WORD_MASK;
+    return leaf(a & COEF);
 }
 
-// 22600: a constant subscript (045, 0166): (M4+1)<<15 on the stack, then
-// the next item.
-unsigned constant_subscript(Machine &m)
+// 22654: OPND = d; the subscripts dropped, the next item, return.
+unsigned Pass3::element_done(Word d)
 {
-    read_item(m, 022601);
-    m.atx(0, CUR);
-    m.ita(0, 4);
-    m.arx(7, 01260);
-    m.asn(0, 061);
-    m.atx(Machine::SP, 0);
-    return DISPATCH;
-}
-
-// 22604: subscript + c (030): the subscript, then its OPND on the stack.
-unsigned subscript_plus(Machine &m)
-{
-    m.set_m(12, 022605);
-    return READ_PARSE;
-}
-
-unsigned subscript_plus_2(Machine &m)
-{
-    m.xta(0, OPND);
-    m.atx(Machine::SP, 0);
-    return DISPATCH;
+    mem(OPND) = d;
+    mem(CUR)  = get();
+    sp_       = (sp_ - nsubs_) & 077777;
+    return ret();
 }
 
 //
-// 22654 with A: OPND = A; the subscripts dropped, next item, return.
-unsigned element_done(Machine &m)
-{
-    m.atx(0, OPND);
-    read_item(m, 022655);
-    m.atx(0, CUR);
-    m.ita(0, 017);
-    m.its(0, 3);
-    m.ntr(0, 3);
-    m.arith(Machine::SP, 0, 006);
-    m.ati(0, 017);
-    return ret(m);
-}
-
-// 22653: the element as it is (not constant).
-unsigned no_register(Machine &m)
-{
-    m.xta(0, OPND);
-    m.aox(7, 01316);
-    return element_done(m);
-}
-
-// 22662: no register for the step.
-unsigned give_up(Machine &m)
-{
-    m.xta(0, 0);
-    m.atx(0, D17);
-    return NO_REG;
-}
-
-// 22652: after a stepped access: the step is needed.
-unsigned after_stepped(Machine &m)
-{
-    m.xta(7, 01260);
-    m.atx(0, D20);
-    return NO_REG;
-}
-
-//
-// 22607: an array element (044 read, 0164, 046 store), its n subscripts on
+// 22607: an array element (044 read, 0164, 046 store), its subscripts on
 // the stack. Not in a loop's preamble (D30 = 0) or with a nonlinear
-// subscript: as it is. Else one stepped subscript (M10), the rest constant
-// (M9 of them with c ≠ 0): through a register.
+// subscript: as it is. Else one stepped subscript, the rest constant
+// (last_ of them with c ≠ 0): through a register.
 //
-unsigned element(Machine &m)
+unsigned Pass3::element()
 {
-    m.xta(0, CUR);
-    m.asn(0, 0114);
-    m.ati(0, 2);
-    m.xta(0, CUR);
-    m.asn(0, 0107);
-    m.aax(7, 01334);
-    m.ati(0, 3);
-    m.aex(7, 01332);
-    m.ati(0, 016);
-    m.utc(Machine::SP, 1);
-    m.xta(14, 0);
-    m.arx(7, 01330);
-    m.aax(7, 01254);
-    m.its(0, 4);
-    m.aox(Machine::SP, 0);
-    m.atx(0, OPND);
-    m.xta(0, D30);
-    if (m.uza())
+    Word item     = mem(CUR);
+    unsigned arr  = (item >> 12) & 077777;
+    nsubs_        = (item >> 7) & 037;
+    Word first    = mem((sp_ - nsubs_) & 077777);
+    mem(OPND)     = (cyclic_add(first, 0'7777'7777'7767'7777) & FIRST) | vs_;
+    if (!mem(D30))
         return NO_REG;
-    m.utc(Machine::SP, 077777);
-    m.vtm(14, 0);
-    m.mtj(3, 015);
-    m.vtm(10, 0);
-    m.vtm(11, 0);
-    m.vtm(9, 0);
-    do {
-        m.xta(14, 0);
-        m.arx(0, 0);
-        if (!m.u1a()) {
-            m.aax(7, 01274);
-            if (!m.uza()) {
-                m.utm(11, 1);
+    unsigned p = (sp_ - 1) & 077777, stepped = 0, varying = 0;
+    last_      = 0;
+    for (unsigned n = nsubs_; n; n--) {
+        Word d = mem(p);
+        if (d & BIT48) {
+            if (d & VARIABLE) {
+                varying++;
             } else {
-                m.utm(10, 1);
-                m.xta(14, 0);
-                m.aax(7, 01262);
-                if (!m.uza())
-                    m.utm(9, 1);
+                stepped++;
+                if (d & COEF)
+                    last_++;
             }
         }
-        m.utm(13, 077777);
-        m.utm(14, 077777);
-    } while (m.M[13]);
-    if (m.M[11])
-        return m.M[10] ? GIVE_UP : NO_REG;
-    if (m.M[10]) {
-        m.xta(0, D19);
-        if (m.uza())
+        p = (p - 1) & 077777;
+    }
+    subs_ = p;
+    if (varying)
+        return stepped ? GIVE_UP : NO_REG;
+    if (stepped) {
+        if (!mem(D19))
             return GIVE_UP;
-        m.utm(10, 077777);
-        if (m.M[10])
+        if (stepped != 1)
             return PRE_REG;
-        m.xta(14, 1);
-        m.arx(0, 0);
-        if (m.u1a())
+        Word d = mem((subs_ + 1) & 077777);
+        if (!(d & BIT48) || !(d & COEF) || !mem(D18))
             return PRE_REG;
-        m.aax(7, 01262);
-        if (m.uza())
-            return PRE_REG;
-        m.xta(0, D18);
-        if (m.uza())
-            return PRE_REG;
-        m.set_m(12, 022652);
-        return stepped_access(m);
+        return stepped_access(022652);
     }
-    m.xta(0, CUR);
-    m.aax(7, 01336);
-    m.aex(7, 01275);
-    if (!m.u1a()) {
-        m.xta(2, 0);
-        m.aax(7, 01256);
-        if (!m.u1a()) {
-            m.xta(2, 0);
-            m.aax(7, 01266);
-            if (!m.u1a()) {
-                m.xta(0, OPND);
-                m.aox(7, 01274);
-                return element_done(m);
-            }
-        }
-    }
-    m.vtm(12, NO_REG);
-    return fixed_access(m);
+    if ((item & 0177) == 044 && !(mem(arr) & ASSIGNED) && !(mem(arr) & BLOCK_MARK))
+        return element_done(mem(OPND) | VARIABLE);
+    mem(D29) = 0;
+    return access(NO_REG);
 }
 
-// 22664…22666: integer + (067), − (076, 0170), × (077): M3 = 0, 1, 2 on
-// the stack; the left operand.
-unsigned int_op(Machine &m, unsigned op)
+// 22671: integer + − ×, the left operand parsed: not a constant on the
+// left, as any binary operator.
+unsigned Pass3::int_op_2()
 {
-    m.vtm(3, op);
-    m.ita(0, 3);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 022671);
-    return READ_PARSE;
-}
-
-// Not a constant on the left: as any binary operator.
-unsigned int_op_2(Machine &m)
-{
-    m.xta(0, OPND);
-    m.aax(7, 01316);
-    m.aex(7, 01316);
-    if (!m.u1a()) {
-        m.sti(0, 0);
+    if ((mem(OPND) & FLAGS) == FLAGS) {
+        pop();
         return BINARY_2;
     }
-    m.xta(0, OPND);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 022676);
-    return PARSE;
+    push(mem(OPND));
+    return parse(022676);
 }
 
-// A linear operand: c, the first item and the last item of the result.
-unsigned linear_result(Machine &m);
-
-// The constant of an operand (descriptor in A): its value.
-void constant_value(Machine &m)
+// The value of a constant operand d.
+Word Pass3::constant_value(Word d)
 {
-    m.asn(0, 0117);
-    m.ati(0, 016);
-    m.xta(14, 0);
-    m.asn(0, 0114);
-    m.ati(0, 016);
-    m.xta(14, TABLE);
+    Word item = mem((d >> 15) & 077777);
+    return mem(TABLE + ((item >> 12) & 077777));
 }
 
-// Both operands: two constants are folded into one, interned.
-unsigned int_op_3(Machine &m)
+// 22676: both operands: two constants are folded into one, interned.
+unsigned Pass3::int_op_3()
 {
-    m.xta(Machine::SP, 077776);
-    m.ati(0, 3);
-    m.xta(Machine::SP, 077777);
-    m.aox(0, OPND);
-    m.aax(7, 01316);
-    if (m.u1a())
-        return linear_result(m);
-    m.xta(Machine::SP, 077777);
-    constant_value(m);
-    m.xts(0, OPND);
-    constant_value(m);
-    m.ntr(0, 3);
-    switch (m.M[3]) {
+    unsigned op = top(2) & 077777;
+    if (Word flags = (top(1) | mem(OPND)) & FLAGS)
+        return linear_result(flags);
+    Word l = constant_value(top(1)), r = constant_value(mem(OPND));
+    Word v;
+    switch (op) {
     case 0:
-        m.arith(Machine::SP, 0, 004);
+        v = unit_add(RAW, r, l);
         break;
     case 1:
-        m.arith(Machine::SP, 0, 006);
+        v = unit_rsub(RAW, r, l);
         break;
     default:
-        m.ntr(0, 2);
-        m.arith(Machine::SP, 0, 017);
-        m.ntr(0, 3);
-        m.arith(7, 01321, 004);
+        v = integer_product(r, l);
         break;
     }
-    m.set_m(12, 022734);
-    intern_constant(m);
+    Word item = intern(v);
     // The left operand's items replaced by the new constant.
-    m.xts(Machine::SP, 077776);
-    m.asn(0, 0117);
-    m.sti(0, 016);
-    m.atx(14, 077777);
-    do {
-        m.xta(0, 0);
-        m.atx(14, 0);
-        m.ita(0, 016);
-        m.aex(0, OPND);
-        m.aax(7, 01332);
-        m.utm(14, 1);
-    } while (m.u1a());
-    m.xta(Machine::SP, 0);
-    m.arx(7, 01330);
-    m.aax(7, 01254);
-    m.atx(Machine::SP, 077777);
-    m.asn(0, 0117);
-    return RESULT;
+    unsigned p                = (top(1) >> 15) & 077777;
+    mem((p - 1) & 077777) = item;
+    unsigned end              = mem(OPND) & 077777;
+    for (;;) {
+        mem(p)    = 0;
+        bool done = p == end;
+        p         = (p + 1) & 077777;
+        if (done)
+            break;
+    }
+    Word field = cyclic_add(pop(), 0'7777'7777'7767'7777) & FIRST;
+    top(1)     = field;
+    return result(field >> 15);
 }
 
 //
-// 23351: + − × with an operand not constant (A = the flags of both): linear
-// when both are (c of the result: c1 ± c2, or c1·d2 or d1·c2 for × with a
+// 23351: + − × with an operand not constant (flags of both): linear when
+// both are (c of the result: c1 ± c2, or c1·d2 or d1·c2 for × with a
 // constant), else as any binary operator.
 //
-unsigned linear_result(Machine &m)
+unsigned Pass3::linear_result(Word flags)
 {
-    m.arx(0, 0);
-    if (!m.uza()) {
-        m.xta(Machine::SP, 0);
-        m.atx(Machine::SP, 077777);
-        return variable_result(m);
+    if (!(flags & BIT48)) {
+        Word l = pop();
+        top(1) = l;
+        return variable_result();
     }
-    m.xta(0, OPND);
-    m.aax(7, 01316);
-    m.aex(7, 01316);
+    if ((mem(OPND) & FLAGS) == FLAGS) {
+        Word l = pop();
+        top(1) = l;
+        return nonlinear_result();
+    }
+    unsigned op = top(2) & 077777;
+    Word left   = top(1);
+    Word right  = mem(OPND);
+    Word a      = 0;
     bool fold_c = false;
-    if (!m.u1a()) {
-        m.xta(Machine::SP, 0);
-        m.atx(Machine::SP, 077777);
-        return nonlinear_result(m);
-    }
-    m.utm(3, 077776);
-    m.xta(Machine::SP, 077777);
-    if (m.M[3] == 0) { // ×
-        m.arx(0, 0);
-        if (m.u1a()) {
-            fold_c = true;
-        } else {
-            m.xta(0, OPND);
-            m.arx(0, 0);
-            if (!m.u1a()) {
-                m.xta(Machine::SP, 0);
-                m.atx(Machine::SP, 077777);
-                return nonlinear_result(m);
+    if (op == 2) { // ×
+        if ((left & BIT48) && (right & BIT48)) {
+            pop();
+            top(1) = left;
+            return nonlinear_result();
+        }
+        fold_c = true;
+    } else if (left & BIT48) {
+        a = left & COEF;
+        if (a) {
+            if (right & BIT48) {
+                a      = right & COEF;
+                fold_c = a != 0;
+            } else {
+                a = left;
             }
-            fold_c = true;
         }
     } else {
-        m.arx(0, 0);
-        if (m.uza()) {
-            m.aax(7, 01262);
-            if (!m.uza()) {
-                m.xta(0, OPND);
-                m.arx(0, 0);
-                if (m.uza()) {
-                    m.aax(7, 01262);
-                    fold_c = !m.uza();
-                } else {
-                    m.xta(Machine::SP, 077777);
-                }
-            }
-        } else {
-            m.xta(0, OPND);
-            m.utm(3, 2);
-            if (m.M[3]) {
-                m.aex(7, 01262);
-                m.arx(7, 01255);
-            }
-        }
+        a = right;
+        if (op)
+            a = cyclic_add(a ^ COEF, COEF_ONE);
     }
     if (fold_c) {
-        m.xta(Machine::SP, 077777);
-        m.aax(7, 01262);
-        m.asn(0, 0136);
-        m.aox(7, 01321);
-        m.xts(0, OPND);
-        m.aax(7, 01262);
-        m.asn(0, 0136);
-        m.aox(7, 01321);
-        m.ntr(0, 3);
-        switch (m.M[3]) {
-        case 077776:
-            m.arith(Machine::SP, 0, 004);
+        Word l = ((top(1) & COEF) >> 30) | INTEGER;
+        Word r = ((right & COEF) >> 30) | INTEGER;
+        switch (op) {
+        case 0:
+            a = unit_add(RAW, r, l);
             break;
-        case 077777:
-            m.arith(Machine::SP, 0, 006);
+        case 1:
+            a = unit_rsub(RAW, r, l);
             break;
         default:
-            m.ntr(0, 2);
-            m.arith(Machine::SP, 0, 017);
-            m.ntr(0, 3);
-            m.arith(7, 01321, 004);
+            a = integer_product(r, l);
             break;
         }
-        m.asn(0, 042);
+        a = (a << 30) & WORD_MASK;
     }
-    m.aax(7, 01262);
-    m.xts(Machine::SP, 077776);
-    m.arx(7, 01330);
-    m.aax(7, 01254);
-    m.xts(0, OPND);
-    m.aax(7, 01332);
-    m.aox(Machine::SP, 0);
-    m.aox(Machine::SP, 0);
-    m.aox(7, 01310);
-    m.stx(0, OPND);
-    m.sti(0, 0);
-    return ret(m);
+    a          = a & COEF;
+    Word field = cyclic_add(top(1), 0'7777'7777'7767'7777) & FIRST;
+    mem(OPND)  = (right & ADDR) | field | a | NONLINEAR;
+    pop();
+    pop();
+    return ret();
 }
 
-// 23417: integer negation (026): c negated.
-unsigned int_neg(Machine &m)
+// 23420: integer negation (026): c negated.
+unsigned Pass3::int_neg_2()
 {
-    m.set_m(12, 023420);
-    return READ_PARSE;
-}
-
-unsigned int_neg_2(Machine &m)
-{
-    m.xta(0, OPND);
-    m.aax(7, 01316);
-    m.aex(7, 01310);
-    if (m.u1a())
-        return UNARY_2;
-    m.xta(0, OPND);
-    m.aax(7, 01262);
-    m.aex(7, 01262);
-    m.arx(7, 01255);
-    m.aax(7, 01262);
-    m.xts(0, OPND);
-    m.aax(7, 01322);
-    m.aox(Machine::SP, 0);
-    return UNARY_3;
-}
-
-// 23073: IF (027): M4 on the stack; the condition.
-unsigned if_item(Machine &m)
-{
-    m.ita(0, 4);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 023075);
-    return READ_PARSE;
-}
-
-unsigned if_2(Machine &m)
-{
-    m.xta(0, OPND);
-    check_operand(m, IF_2);
-    return IF_2;
+    Word d = mem(OPND);
+    if ((d & FLAGS) != NONLINEAR)
+        return unary_2();
+    Word c = cyclic_add((d & COEF) ^ COEF, COEF_ONE) & COEF;
+    return unary_3((d & STEP_FLAGS) | c);
 }
 
 //
@@ -1553,327 +1127,240 @@ unsigned if_2(Machine &m)
 // returns to STATEMENT) ends here; a conditional expression parses both
 // branches, then gives a nonlinear operand.
 //
-unsigned if_branches(Machine &m)
+unsigned Pass3::if_branches()
 {
-    m.xta(0, D33);
-    m.arx(7, 01260);
-    m.atx(0, D33);
-    m.wtc(Machine::SP, 077776);
-    m.vtm(14, 055356);
-    if (m.M[14] == 0) {
-        m.sti(0, 0);
-        flush_stack(m, 023127);
-        m.vtm(12, STATEMENT);
-        return DISPATCH;
+    mem(D33) = cyclic_add(mem(D33), 1);
+    if ((top(2) & 077777) == STATEMENT) {
+        pop();
+        flush_stack();
+        return classify();
     }
-    m.set_m(12, 023102);
-    return PARSE;
+    return parse(023102);
 }
 
-unsigned if_then(Machine &m)
+unsigned Pass3::if_else()
 {
-    m.xta(0, OPND);
-    check_operand(m, 023103);
-    m.xta(0, CUR);
-    m.utm(4, 1);
-    m.atx(4, 0);
-    m.set_m(12, 023105);
-    return READ_PARSE;
-}
-
-unsigned if_else(Machine &m)
-{
-    m.xta(0, OPND);
-    check_operand(m, 023106);
-    m.xta(0, CUR);
-    m.utm(4, 1);
-    m.atx(4, 0);
-    read_item(m, 023110);
-    m.atx(0, CUR);
-    m.xta(0, D33);
-    m.ntr(0, 3);
-    m.arith(7, 01260, 005);
-    m.stx(0, D33);
-    m.asn(0, 061);
-    m.aox(7, 01316);
-    m.its(0, 4);
-    return RESULT;
-}
-
-// 23115: compare-and-jump (0130–0134): both sides, then as IF.
-unsigned compare(Machine &m)
-{
-    m.ita(0, 4);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 023117);
-    return READ_PARSE;
-}
-
-unsigned compare_2(Machine &m)
-{
-    m.xta(0, OPND);
-    check_operand(m, 023120);
-    m.set_m(12, 023121);
-    return PARSE;
-}
-
-unsigned compare_3(Machine &m)
-{
-    m.xta(0, OPND);
-    check_operand(m, IF_2);
-    return IF_2;
-}
-
-// 23123: the end of an IF (053, 054).
-unsigned if_end(Machine &m)
-{
-    m.xta(0, D33);
-    m.ntr(0, 3);
-    m.arith(7, 01260, 005);
-    m.atx(0, D33);
-    return AFTER_LABEL;
+    check_operand(mem(OPND));
+    vs_      = (vs_ + 1) & 077777;
+    mem(vs_) = mem(CUR);
+    mem(CUR) = get();
+    mem(D33) = unit_sub(RAW, mem(D33), 1);
+    push(((pop() << 15) & WORD_MASK) | FLAGS);
+    return result(vs_);
 }
 
 //
 // 23231: the end of the loop (052, 0160). The marks of the assigned
-// variables are cleared; the loop is read again from START and written: the
-// 0160 heads of the body list without the item of the control variable
-// (replaced by D30, or both by D32 for a 030 item), the preamble (0167 head,
-// the initial value, the until and end items, the loads, then
-// (0167−D28)<<7 | 0166), then the items up to the 052, the increments and
-// the 052. The control variable's descriptor gets flags 0100000 or 0200000
-// (step 1 or not) when all is in registers, and 0400000 with the count of
-// registers. Page 10000 is restored from drum 26.
+// variables are cleared; the output goes back to after the FOR: the 0160
+// heads of the body list without the item of the control variable
+// (replaced by D30, or both by D32 for a 030 item), the preamble (0167
+// head, the initial value, the until and end items, the loads, then
+// (0167−D28)<<7 | 0166), then the scratch up to its 052, the increments
+// and the 052. The control variable's descriptor gets flags REG_STEP or
+// REG_STEP_N (step 1 or not) when all is in registers, and REG_LOOP with the
+// count of registers.
 //
-unsigned end_loop(Machine &m)
+unsigned Pass3::end_loop()
 {
-    m.utm(Machine::SP, 077777);
-    flush_stack(m, 023232);
-    m.vtm(3, SET - 046);
-    for (;;) {
-        m.xta(3, 0);
-        m.ati(0, 2);
-        if (m.M[2] == 0)
+    pop();
+    flush_stack();
+    for (unsigned p = SET - 046;; p++) {
+        unsigned d = mem(p) & 077777;
+        if (!d)
             break;
-        m.xta(2, 0);
-        m.aax(7, 01325);
-        m.atx(2, 0);
-        m.utm(3, 1);
+        mem(d) &= UNMARK;
     }
-    m.xta(0, START);
-    m.atx(0, POS);
-    m.xta(0, SPAN);
-    if (!m.uza()) {
-        m.xta(0, START);
-        m.aox(7, 01306);
-        m.atx(0, 02000);
-        read_item(m, 023243);
-    }
-    m.xta(0, CONTROL);
-    m.asn(0, 064);
-    m.aex(7, 01333);
-    m.atx(0, ITEM);
-    m.vtm(5, 02702);
-    m.xta(0, POS);
-    m.arx(0, 0);
-    if (!m.u1a()) {
-        m.ati(0, 016);
-        m.xta(14, 0);
-        m.aax(7, 01315);
-        m.atx(14, 0);
-    }
+    dst_      = &out_;
+    wr_       = start_;
+    mem(ITEM) = (mem(CONTROL) << 12) ^ 017;
     // The body list.
-    for (;;) {
-        m.ita(0, 5);
-        m.aex(0, D15);
-        if (m.uza())
-            break;
-        m.xta(5, 0);
-        m.aax(7, 01271);
-        m.atx(5, 0);
-        m.aex(0, ITEM);
-        if (m.uza()) {
-            m.xta(0, D30);
-        } else {
-            m.xta(5, 0);
-            m.aex(7, 01311);
-            bool both = false;
-            if (m.uza()) {
-                m.xta(5, 1);
-                m.aex(0, ITEM);
-                if (!m.u1a()) {
-                    m.xta(0, D32);
-                    both = !m.uza();
-                }
-            }
-            if (both) {
-                m.utm(5, 1);
-            } else {
-                m.xta(5, 0);
-                m.xta(5, 0);
-            }
+    for (unsigned p = BODY_LIST; p != mem(D15);) {
+        Word w = mem(p) & ITEM_MASK;
+        mem(p) = w;
+        Word a = w;
+        if (w == mem(ITEM)) {
+            a = mem(D30);
+        } else if (w == 030 && mem(p + 1) == mem(ITEM) && mem(D32)) {
+            a = mem(D32);
+            p++;
         }
-        m.utm(5, 1);
-        write_item(m, 023251);
+        p++;
+        put(a);
     }
     // The preamble.
-    m.vtm(5, 02454);
-    m.ita(0, 5);
-    m.aex(0, D14);
-    if (!m.uza()) {
-        m.xta(0, CONTROL);
-        m.asn(0, 064);
-        m.xts(7, 01305);
-        m.aex(Machine::SP, 0);
-        write_item(m, 023274);
-        m.xta(0, D30);
-        write_item(m, 023275);
-        m.xta(0, D24);
-        write_item(m, 023276);
-        m.xta(0, D35);
-        write_item(m, 023277);
-        for (;;) {
-            m.ita(0, 5);
-            m.aex(0, D14);
-            if (m.uza())
-                break;
-            m.xta(5, 0);
-            m.aax(7, 01271);
-            m.utm(5, 1);
-            write_item(m, 023277);
-        }
-        m.xta(7, 01307);
-        m.ntr(0, 3);
-        m.arith(0, D28, 005);
-        m.asn(0, 071);
-        m.xts(7, 01303);
-        m.aex(Machine::SP, 0);
-        write_item(m, 023307);
+    if (PREAMBLE_LIST != mem(D14)) {
+        put((mem(CONTROL) << 12) ^ 0167);
+        put(mem(D30));
+        put(mem(D24));
+        put(mem(D35));
+        for (unsigned p = PREAMBLE_LIST; p != mem(D14); p++)
+            put(mem(p) & ITEM_MASK);
+        put(((unit_sub(RAW, 010, mem(D28)) << 7) & WORD_MASK) ^ 0166);
     }
-    m.xta(0, D18);
-    if (!m.uza()) {
-        m.xta(0, D20);
-        if (!m.uza()) {
-            m.xta(0, D17);
-            if (!m.uza()) {
-                m.wtc(0, LVAR);
-                m.vtm(14, 0);
-                m.xta(0, D18);
-                m.aex(7, 01324);
-                m.xta(7, m.u1a() ? 01246 : 01245);
-                m.aox(14, 0);
-                m.atx(14, 0);
-            }
-        }
-    }
-    m.xta(0, D25);
-    m.aax(7, 01264);
-    m.asn(0, 064);
-    m.wtc(0, LVAR);
-    m.aex(0, 0);
-    m.aox(7, 01247);
-    m.wtc(0, LVAR);
-    m.atx(0, 0);
-    m.xta(7, 01265);
-    m.atx(0, 02000);
+    unsigned cv = mem(LVAR) & 077777;
+    if (mem(D18) && mem(D20) && mem(D17))
+        mem(cv) |= (mem(D18) ^ C_ONE) ? REG_STEP_N : REG_STEP;
+    mem(cv) = (((mem(D25) & C_FIELD12) << 12) ^ mem(cv)) | REG_LOOP;
     // The loop again, up to its 052.
+    src_ = &scratch_;
+    rd_  = 0;
     for (;;) {
-        read_item(m, 023326);
-        m.atx(Machine::SP, 0);
-        m.aax(7, 01336);
-        m.aex(7, 01313);
-        if (m.uza())
+        Word w = get();
+        push(w);
+        if ((w & 0177) == 052)
             break;
-        m.xta(Machine::SP, 0);
-        write_item(m, 023325);
+        put(pop());
     }
-    m.vtm(5, 02120);
-    for (;;) {
-        m.ita(0, 5);
-        m.aex(0, D16);
-        if (m.uza())
-            break;
-        m.xta(5, 0);
-        m.utm(5, 1);
-        write_item(m, 023333);
-    }
-    m.xta(Machine::SP, 0);
-    write_item(m, 023340);
-    m.extracode(070, 7, 01340);
-    m.xta(0, D13);
-    m.atx(0, 02000);
+    for (unsigned p = INCREMENTS_LIST; p != mem(D16); p++)
+        put(mem(p));
+    put(pop());
+    src_ = &in_;
+    rd_  = resume_;
     return MAIN_LOOP;
 }
 
-void register_rewrite(Machine &m)
+void Pass3::register_rewrite()
 {
-    m.natives[022327]      = begin_rewrite;
-    m.natives[READ_PARSE]  = read_parse;
-    m.natives[PARSE]       = parse;
-    m.natives[DISPATCH]    = classify;
-    m.natives[STATEMENT]   = statement;
-    m.natives[022425]      = expression_element;
-    m.natives[022426]      = expression_element_2;
-    m.natives[022436]      = constant_step;
-    m.natives[022441]      = step_until;
-    m.natives[022442]      = initial_parsed;
-    m.natives[022457]      = step_parsed;
-    m.natives[022471]      = until_parsed;
-    m.natives[022507]      = label;
-    m.natives[AFTER_LABEL] = after_label;
-    m.natives[022522]      = binary;
-    m.natives[BINARY_2]    = binary_2;
-    m.natives[022525]      = binary_3;
-    m.natives[RESULT]      = result;
-    m.natives[022541]      = unary;
-    m.natives[UNARY_2]     = unary_2;
-    m.natives[UNARY_3]     = unary_3;
-    m.natives[022551]      = variable;
-    m.natives[022570]      = string_item;
-    m.natives[022572]      = constant;
-    m.natives[022600]      = constant_subscript;
-    m.natives[022604]      = subscript_plus;
-    m.natives[022605]      = subscript_plus_2;
-    m.natives[022607]      = element;
-    m.natives[022652]      = after_stepped;
-    m.natives[NO_REG]      = no_register;
-    m.natives[GIVE_UP]     = give_up;
-    m.natives[022664]      = [](Machine &mm) { return int_op(mm, 0); };
-    m.natives[022665]      = [](Machine &mm) { return int_op(mm, 1); };
-    m.natives[022666]      = [](Machine &mm) { return int_op(mm, 2); };
-    m.natives[022671]      = int_op_2;
-    m.natives[022676]      = int_op_3;
-    m.natives[PRE_REG]     = preamble_access;
-    m.natives[023073]      = if_item;
-    m.natives[023075]      = if_2;
-    m.natives[IF_2]        = if_branches;
-    m.natives[023102]      = if_then;
-    m.natives[023105]      = if_else;
-    m.natives[023115]      = compare;
-    m.natives[023117]      = compare_2;
-    m.natives[023121]      = compare_3;
-    m.natives[023123]      = if_end;
-    m.natives[023231]      = end_loop;
-    m.natives[023417]      = int_neg;
-    m.natives[023420]      = int_neg_2;
+    auto &n        = handlers_;
+    n[MAIN_LOOP]   = [this] { return dispatch(get()); };
+    n[REWRITE]     = [this] { return begin_rewrite(); };
+    n[STATEMENT]   = [this] { // a statement is done
+        check_operand(mem(OPND));
+        flush_stack();
+        return parse(STATEMENT);
+    };
+    n[022425] = [this] { return read_parse(022426); }; // an expression element
+    n[022426] = [this] {
+        check_operand(mem(OPND));
+        if (mem(D23)) {
+            Word d             = mem(OPND);
+            first_             = (d >> 15) & 077777;
+            mem(OPND)          = (((d >> 15) << 15) & WORD_MASK) | first_;
+            mem((first_ - 1) & 077777) = 0;
+        }
+        return ret();
+    };
+    n[022436] = [this] { // a constant step (0137): the control variable marked
+        mem(mem(LVAR) & 077777) |= STEP_ONE;
+        return read_parse(022442);
+    };
+    n[022441] = [this] { return read_parse(022442); }; // step-until (034)
+    n[022442] = [this] { return initial_parsed(); };
+    n[022457] = [this] { return step_parsed(); };
+    n[022471] = [this] { return until_parsed(); };
+    n[022507] = [this] { return label(); };
+    n[AFTER_LABEL] = [this] {
+        pop();
+        flush_stack();
+        return read_parse(STATEMENT);
+    };
+    n[022522] = [this] { return read_parse(BINARY_2); }; // a binary operator
+    n[BINARY_2] = [this] {
+        push(mem(OPND));
+        return parse(022525);
+    };
+    n[022525] = [this] {
+        if ((top(1) | mem(OPND)) & BIT48)
+            return nonlinear_result();
+        return variable_result();
+    };
+    n[022541] = [this] { return read_parse(022542); }; // a unary operator
+    n[022542] = [this] { return unary_2(); };
+    n[022551] = [this] { return variable(); };
+    n[022570] = [this] { return leaf(VARIABLE); }; // a string (070)
+    n[022572] = [this] { return constant(); };
+    n[022600] = [this] { // a constant subscript (045, 0166)
+        mem(CUR) = get();
+        push(Word((vs_ + 1) & 077777) << 15);
+        return classify();
+    };
+    n[022604] = [this] { return read_parse(022605); }; // subscript + c (030)
+    n[022605] = [this] {
+        push(mem(OPND));
+        return classify();
+    };
+    n[022607] = [this] { return element(); };
+    n[022652] = [this] { // after a stepped access: the step is needed
+        mem(D20) = 1;
+        return NO_REG;
+    };
+    n[NO_REG] = [this] { return element_done(mem(OPND) | FLAGS); };
+    n[GIVE_UP] = [this] {
+        mem(D17) = 0;
+        return NO_REG;
+    };
+    // Integer + − × (067, 076 and 0170, 077).
+    for (unsigned op = 0; op < 3; op++)
+        n[022664 + op] = [this, op] {
+            push(op);
+            return read_parse(022671);
+        };
+    n[022671] = [this] { return int_op_2(); };
+    n[022676] = [this] { return int_op_3(); };
+    n[PRE_REG] = [this] { return preamble_access(); };
+    n[023073] = [this] { // IF (027): vs_ kept; the condition
+        push(vs_);
+        return read_parse(023075);
+    };
+    n[023075] = [this] {
+        check_operand(mem(OPND));
+        return if_branches();
+    };
+    n[IF_2]   = [this] { return if_branches(); };
+    n[023102] = [this] {
+        check_operand(mem(OPND));
+        vs_      = (vs_ + 1) & 077777;
+        mem(vs_) = mem(CUR);
+        return read_parse(023105);
+    };
+    n[023105] = [this] { return if_else(); };
+    n[023115] = [this] { // compare-and-jump (0130–0134): both sides, then as IF
+        push(vs_);
+        return read_parse(023117);
+    };
+    n[023117] = [this] {
+        check_operand(mem(OPND));
+        return parse(023121);
+    };
+    n[023121] = [this] {
+        check_operand(mem(OPND));
+        return if_branches();
+    };
+    n[023123] = [this] { // the end of an IF (053, 054)
+        mem(D33) = unit_sub(RAW, mem(D33), 1);
+        return AFTER_LABEL;
+    };
+    n[023231] = [this] { return end_loop(); };
+    n[023417] = [this] { return read_parse(023420); }; // integer negation (026)
+    n[023420] = [this] { return int_neg_2(); };
+}
+
+Pass3::Pass3(Context &ctx, const Stream &input) : ctx_(ctx)
+{
+    in_.reserve(input.size());
+    std::transform(input.begin(), input.end(), std::back_inserter(in_),
+                   [](const Item &item) { return Word(item.bits); });
+    register_rewrite();
+}
+
+Stream Pass3::run()
+{
+    unsigned pc = start();
+    while (pc != DRIVER) {
+        auto it = handlers_.find(pc);
+        if (it == handlers_.end())
+            throw std::runtime_error("pass 3: no handler at " + std::to_string(pc));
+        pc = it->second();
+    }
+    Stream out(out_.size());
+    std::transform(out_.begin(), out_.end(), out.begin(),
+                   [](Word w) { return Item{ uint32_t(w) }; });
+    return out;
 }
 
 } // namespace
 
 Stream pass3(Context &ctx, const Stream &input)
 {
-    // The stream of the previous pass is in the workspace and on the drums,
-    // where it left it.
-    (void)input;
-    TranslatedPass pass(ctx);
-    register_rewrite(pass.m);
-    pass.m.natives[022162] = start;
-    pass.m.natives[022167] = next_item;
-    pass.m.natives[022201] = copy_item;
-    pass.m.natives[022232] = for_scan;
-    pass.m.natives[022716] = intern_constant;
-    pass.run(022162, 01632);
-    // The FOR rewrite moves back over what was written: the stream is read
-    // from where the pass left it.
-    return stream_left(ctx);
+    return Pass3(ctx, input).run();
 }
