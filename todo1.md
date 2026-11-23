@@ -4,10 +4,10 @@ Goal (from [Roadmap.md](Roadmap.md)): from each program in `tests/algol/`, our c
 produces the same object (`.std`) and listing as the original, in readable C++.
 
 **Where we are.** The whole compiler runs and `compile_test`/`run_test` pass for every
-program. Passes 1, 5, 6 are C++; passes 2 and 3 are C++ on a `Machine` (their data still in
-its memory, streams through the original stream module); pass 4 runs as the original's code
-translated by `scripts/gen-pass.py` ([doc/translation.md](doc/translation.md)). What we know about the
-original is in `doc/` ([passes.md](doc/passes.md), [tables.md](doc/tables.md),
+program. Passes 1, 5, 6 are C++; passes 2–4 are C++ on a `Machine` (their data still in its
+memory, streams through the original stream module, which with the driver's print and the
+formatter is still translated by `scripts/gen-pass.py`,
+[doc/translation.md](doc/translation.md)). What we know about the original is in `doc/` ([passes.md](doc/passes.md), [tables.md](doc/tables.md),
 [runtime-abi.md](doc/runtime-abi.md), [stdarray.md](doc/stdarray.md),
 [encoding.md](doc/encoding.md)).
 
@@ -21,16 +21,11 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ## Tasks
 
-### Pass 4 (G23523)
-
-- **C24** I/O, strings, external names (the table at 27245, G30034), 'CODE'/'ALGOL'
-  procedures, 'COMMON'; then pass 4 fully native, drop `pass4_gen.cpp`.
-
 ### Cleanup
 
-- **C25** The translator: the stream module and 01644 as C++ for every pass; pass 2's data
-  from `Machine` memory to `Context`, streams as vectors (pass 3 then lays its input out as
-  pass 2 does for pass 1's); remove `machine.*`, `translated.*` and `shared_gen.cpp` if
+- **C25** The translator: the stream module and 01644 as C++ for every pass; the data of passes
+  2–4 from `Machine` memory to `Context`, streams as vectors (each pass then lays its input
+  out as pass 2 does for pass 1's); remove `machine.*`, `translated.*` and `shared_gen.cpp` if
   nothing uses them, or keep `gen-pass.py` and `trace-diff.py` documented as tools. Remove
   the stream-page parts of the `.mem` checks that no longer apply.
 - **C26** Pass 1 parser as readable functions instead of the labels and the explicit stack of

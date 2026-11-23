@@ -16,10 +16,9 @@ C++ under the tests.
   `Machine::run` calls the C++ routine registered at ADDR, which returns the address to go
   on at. The words of a `--replaced FIRST-LAST` range are not translated: reaching any of
   them leaves the code, so it must be a native, or the pass stops with an error.
-- `scripts/gen-passes` regenerates `src/passN_gen.cpp` (passes 3, 4) and
-  `src/shared_gen.cpp` (the shared code alone, for pass 2). Each pass gets its own copy of the
-  shared code it calls: the driver's print routine 01644–01735, the streams 27114–27244,
-  the formatter 27733–30000, number to text 30001–30033.
+- `scripts/gen-passes` regenerates `src/shared_gen.cpp`: the shared code the passes still
+  run as the original: the driver's print routine 01644–01735, the streams 27114–27244, the
+  formatter 27733–30000, number to text 30001–30033.
 - `src/machine.*`: memory (32K words), M1–M15, A, Y, the mode register and the modifier C,
   with the semantics of dubna's `processor.cpp` (arithmetic through `Arith`). `run()` loops:
   a jump to a native routine runs it and continues at the address it returns (the return
@@ -51,8 +50,8 @@ Native routines:
   texts and its state cells 01736–01740 match the original).
 - **`*70`**: drum pages and sectors into `Workspace::drum`.
 
-**Passes 2 and 3 are C++** (src/pass2.cpp, src/pass3.cpp): it runs on a `Machine` with `shared_code` only, so every
-address of 17223–23522 they reach is a native; the parser's framework (read, write helpers,
+**Passes 2–4 are C++** (src/pass2.cpp, src/pass3.cpp, src/pass4.cpp): it runs on a `Machine` with `shared_code` only, so every
+address of 17223–26257 and 30034 they reach is a native; the parser's framework (read, write helpers,
 subtree parse, dispatch through the high halves of 21720, return) is native too. Their data is
 still the machine's memory (copied from and back to the `Context`), and they read and write
 their streams through the original stream module (27114–27244), so pages, drums and registers
@@ -93,6 +92,7 @@ the translated passes), each working on the machine's memory and leaving its reg
 | 4 | 24244–24360, 24616–24660, 25363–25524 | subscripts, arrays, pass 3's register items (`register_arrays`) |
 | 4 | 25042–25275 | FOR loops (`register_loops`) |
 | 4 | 24361–24501, 24755–25007 | calls, arguments, thunks, VALUE (`register_procedures`) |
+| 4 | 24502–24615, 30034 | non-ALGOL calls, G30034 (`register_code_calls`) |
 
 Natives write memory through `Machine::store`, which drops stores to address 0 as the
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep

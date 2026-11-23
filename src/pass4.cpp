@@ -2,7 +2,7 @@
 
 #include "translated.h"
 
-unsigned pass4_code(Machine &m, unsigned pc);
+unsigned shared_code(Machine &m, unsigned pc);
 
 namespace {
 
@@ -3019,6 +3019,320 @@ void register_procedures(Machine::Natives &n)
     n[025005] = [](Machine &m) { return value_mark(m, 0746); };
 }
 
+//
+// Non-ALGOL ('CODE') calls. Each argument pushes its descriptor and the
+// address (M8) that passes it later, then the next item; the call
+// (0126, 073, 065) passes them in order, then calls. M5 counts arguments
+// that are expressions.
+//
+
+// 24505: push A and M8, then the next item.
+unsigned push_argument(Machine &m)
+{
+    m.its(0, 010);
+    m.atx(Machine::SP, 0);
+    return DISPATCH_NEXT;
+}
+
+// 24502: no argument count (0121).
+unsigned code_start(Machine &m)
+{
+    m.vtm(5, 0);
+    return DISPATCH_NEXT;
+}
+
+// 24503: a variable (0122), passed by 24565.
+unsigned code_variable(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.vtm(8, 024565);
+    return push_argument(m);
+}
+
+// 24531: a constant (066).
+unsigned code_constant(Machine &m)
+{
+    m.ita(0, 3);
+    m.arx(0, 02010);
+    m.vtm(8, 024565);
+    return push_argument(m);
+}
+
+// 24516: an array (0123), passed by 24602.
+unsigned code_array(Machine &m)
+{
+    m.xta(3, 0);
+    m.arx(0, 0);
+    if (!m.u1a()) {
+        m.asn(0, 073);
+        m.aux(7, 02465);
+    }
+    m.aax(7, 02465);
+    m.vtm(8, 024602);
+    return push_argument(m);
+}
+
+// 24513: an expression's value kept in a stack word (M5 counts), passed by
+// M8.
+unsigned code_value(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    m.ati(0, 5);
+    m.utm(5, 077777);
+    m.vtm(4, 02017);
+    m.xta(0, 0);
+    return push_argument(m);
+}
+
+// 24507: an expression (0125), passed by 24603.
+unsigned code_expression(Machine &m)
+{
+    m.ita(0, 5);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024511);
+}
+
+unsigned code_expression_2(Machine &m)
+{
+    load(m, 024512);
+    m.vtm(8, 024603);
+    return code_value(m);
+}
+
+// 24523: an expression of a non-ALGOL type (0124): in A, as 074's
+// result; else its address, passed by 24612.
+unsigned code_typed(Machine &m)
+{
+    m.ita(0, 5);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024525);
+}
+
+unsigned code_result(Machine &m)
+{
+    m.xta(7, 01023);
+    emit_half(m, 024542);
+    m.vtm(8, 024607);
+    return code_value(m);
+}
+
+unsigned code_typed_2(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.uza())
+        return code_result(m);
+    m.aax(7, 02465);
+    m.stx(Machine::SP, 1);
+    m.ati(0, 5);
+    m.xta(Machine::SP, 2);
+    m.vtm(8, 024612);
+    return push_argument(m);
+}
+
+// 24533: a call of an ALGOL procedure as argument (074): routine 4111
+// (template 25751), the result passed by 24607.
+unsigned code_call_argument(Machine &m)
+{
+    m.ita(0, 5);
+    m.atx(Machine::SP, 0);
+    return operand(m, 024535);
+}
+
+unsigned code_call_argument_2(Machine &m)
+{
+    load(m, 024536);
+    m.vtm(14, 04111);
+    m.ita(0, 016);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025751);
+    m.set_m(12, 024542);
+    run_template(m);
+    m.vtm(8, 024607);
+    return code_value(m);
+}
+
+//
+// 24553: the call, M1 = the routine, A = the count of stack words: the
+// arguments are passed in order (each by its M8 address, M6 at its pair,
+// M2 counting), then the call (template 25751); the stack is reset and a
+// result of M5 words in A.
+//
+unsigned code_call(Machine &m)
+{
+    m.aax(7, 02451);
+    m.aox(7, 02227);
+    m.atx(0, 02023);
+    m.set_m(12, 024555);
+    save_acc(m);
+    m.ita(0, 2);
+    m.aex(7, 02526);
+    m.ati(0, 010);
+    m.utc(8, 1);
+    m.utc(8, 1);
+    m.utc(Machine::SP, 0);
+    m.vtm(6, 0);
+    m.mtj(6, 010);
+    m.wtc(6, 1);
+    return m.ea(0, m.field(0));
+}
+
+// 24547: a call of the procedure at M3 (0126).
+unsigned code_call_item(Machine &m)
+{
+    m.wtc(3, 0);
+    m.vtm(1, 0);
+    m.ita(0, 5);
+    return code_call(m);
+}
+
+// 24551: a standard routine 4030+n (073).
+unsigned code_std_item(Machine &m)
+{
+    m.utc(3, 04030);
+    m.vtm(1, 0);
+    m.ita(0, 5);
+    return code_call(m);
+}
+
+// 24562: (065) the procedure at M3, one fewer.
+unsigned code_call_item_2(Machine &m)
+{
+    m.wtc(3, 0);
+    m.vtm(1, 0);
+    m.ita(0, 5);
+    m.utm(5, 077777);
+    return code_call(m);
+}
+
+// 24567: pass the argument by template M11, then the next one or the call.
+unsigned pass_argument(Machine &m)
+{
+    m.set_m(12, 024570);
+    run_template(m);
+    m.xta(0, 02023);
+    m.arx(7, 02522);
+    m.atx(0, 02023);
+    m.utm(6, 2);
+    m.utm(2, 077777);
+    m.wtc(6, 1);
+    unsigned next = m.field(0);
+    if (m.M[2])
+        return next;
+    m.ita(0, 1);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025751);
+    m.set_m(12, 024576);
+    run_template(m);
+    m.mtj(8, 017);
+    if (!m.M[5])
+        return 024015;
+    m.ita(0, 5);
+    m.arx(7, 01056);
+    emit_half(m, 024015);
+    return 024015;
+}
+
+// 24566: the argument word at M6 pushed, template M11.
+unsigned pass_word(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    m.xta(6, 0);
+    m.atx(Machine::SP, 0);
+    return pass_argument(m);
+}
+
+// 24603, 24607: pass a value from its stack word (02023 counting).
+unsigned pass_value(Machine &m, bool result)
+{
+    if (result) {
+        m.vtm(11, 025771);
+        m.xta(0, 02023);
+        m.arx(7, 02522);
+        m.xts(0, 02023);
+    } else {
+        m.vtm(11, 024543);
+        m.xta(0, 02023);
+        m.atx(Machine::SP, 0);
+    }
+    m.arx(7, 02453);
+    m.atx(0, 02023);
+    return pass_argument(m);
+}
+
+//
+// G30034: the 6 ISO characters in A as TEXT: each Latin letter (a 1 in
+// the bit table at 30117/30116) its code − 040, left-justified in 8
+// six-bit characters. Through M13; M1–M3 kept.
+//
+unsigned iso_to_text(Machine &m)
+{
+    m.xts(0, 0);
+    m.its(0, 1);
+    m.its(0, 2);
+    m.its(0, 3);
+    m.atx(Machine::SP, 0);
+    m.vtm(14, 0);
+    m.vtm(2, 030034);
+    do {
+        m.xta(Machine::SP, 077773);
+        m.utc(0, 030060);
+        m.asx(14, 0);
+        m.aax(2, 063);
+        if (!m.uza()) {
+            m.ati(0, 1);
+            m.asn(0, 0103);
+            m.ati(0, 3);
+            m.utc(0, 030076);
+            m.xta(3, 0);
+            m.its(0, 1);
+            m.asn(0, 023);
+            m.asn(0, 0155);
+            m.sti(0, 3);
+            m.utc(0, 030066);
+            m.asx(3, 0);
+            m.aax(2, 062);
+            m.utc(0, 030076);
+            m.asx(14, 0);
+            m.aox(Machine::SP, 077774);
+            m.atx(Machine::SP, 077774);
+        }
+        m.utm(14, 077773);
+        if (!m.M[14])
+            break;
+        m.utm(14, 6);
+    } while (true);
+    m.xta(Machine::SP, 0);
+    m.sti(0, 3);
+    m.sti(0, 2);
+    m.sti(0, 1);
+    m.utm(Machine::SP, 077777);
+    return m.M[13];
+}
+
+void register_code_calls(Machine::Natives &n)
+{
+    n[024502]      = code_start;
+    n[024503]      = code_variable;
+    n[024507]      = code_expression;
+    n[024511]      = code_expression_2;
+    n[024516]      = code_array;
+    n[024523]      = code_typed;
+    n[024525]      = code_typed_2;
+    n[024531]      = code_constant;
+    n[024533]      = code_call_argument;
+    n[024535]      = code_call_argument_2;
+    n[024547]      = code_call_item;
+    n[024551]      = code_std_item;
+    n[024562]      = code_call_item_2;
+    n[024565]      = [](Machine &m) { return pass_word(m, 024543); };
+    n[024602]      = [](Machine &m) { return pass_word(m, 024545); };
+    n[024603]      = [](Machine &m) { return pass_value(m, false); };
+    n[024607]      = [](Machine &m) { return pass_value(m, true); };
+    n[024612]      = [](Machine &m) { return pass_word(m, 024613); };
+    n[ISO_TO_TEXT] = iso_to_text;
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -3026,7 +3340,7 @@ Stream pass4(Context &ctx, const Stream &input)
     // The stream of the previous pass is in the workspace and on the drums,
     // where it left it.
     (void)input;
-    TranslatedPass pass(ctx, pass4_code);
+    TranslatedPass pass(ctx, shared_code);
     auto &n          = pass.m.natives;
     n[023523]        = start;
     n[023623]        = prologue_done;
@@ -3048,5 +3362,6 @@ Stream pass4(Context &ctx, const Stream &input)
     register_arrays(n);
     register_loops(n);
     register_procedures(n);
+    register_code_calls(n);
     return pass.run(023523, 01633);
 }

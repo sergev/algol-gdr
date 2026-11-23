@@ -23,7 +23,6 @@ here = os.path.dirname(os.path.realpath(__file__))
 root = os.path.dirname(here)
 
 PASSES = [
-    ('pass 4', [(0o23523, 0o26257), (0o30034, 0o30117)]),
     ('shared', [(0o01644, 0o01735), (0o27114, 0o27244), (0o27733, 0o30000),
                 (0o30001, 0o30033)]),
 ]
