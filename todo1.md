@@ -34,7 +34,6 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 
 ### Pass 4 off the machine
 
-- **D6** Subscripts and arrays, array segments, pass 3's register items.
 - **D7** FOR loops, procedure calls, arguments and thunks, VALUE, non-ALGOL calls, G30034.
 - **D8** Main loop and dispatch (table 26056) as a C++ loop; `Pass4` a class on `Context`,
   no `Machine`. Streams as vectors: pass 3 still on the machine, its final stream is read

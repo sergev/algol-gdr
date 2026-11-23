@@ -1592,132 +1592,126 @@ void register_blocks(Machine::Natives &n)
 // 0 above it.
 //
 
+constexpr Word INDEX_A     = 062400000; // the half that indexes by A (M7+2300)
+constexpr Word INDEX_REG   = 02400000;  // … by register r<<20 (M7+2266)
+constexpr Word ARRAY_HALF  = 02300000;  // (M7+2241)
+constexpr Word ELEMENT_A   = 02200000;  // (M7+634)
+constexpr Word ELEMENT_REG = 02500000;  // (M7+2243)
+constexpr Word CHECK_REG   = 0440014;   // A/SUBCH's register (M7+562)
+constexpr Word ADDRESS_OP  = 060000000; // (M7+1131)
+constexpr Word DOPE_HALF   = 0420017;   // (M7+674)
+constexpr Word STEP_ONE    = 01000000;  // a loop descriptor: the step is 1 (M7+2445)
+
+// The k-th word from the top of the stack.
+Word &top(Machine &m, unsigned k = 1)
+{
+    return m.mem[(m.M[SP] - k) & 077777];
+}
+
 // 24244: a constant subscript (045).
 unsigned constant_subscript(Machine &m)
 {
-    m.ita(0, 3);
-    m.xts(0, 0);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[3]);
+    push(m, 0);
     return DISPATCH_NEXT;
 }
 
-// 24246: subscript + c (030): c, then the expression (A pushed if in it).
+// 24246: subscript + c (030): c, then the expression (A saved if in it).
 unsigned subscript_plus(Machine &m)
 {
-    m.ita(0, 3);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[3]);
     return operand(m, 024250);
 }
 
 unsigned subscript_plus_2(Machine &m)
 {
-    m.xta(Machine::SP, 077777);
-    if (m.u1a())
+    set_acc(m, top(m));
+    if (m.acc)
         return DISPATCH_NEXT;
     m.vtm(12, DISPATCH_NEXT);
     return save_acc(m);
 }
 
+// *0620B: the next subscript: on the stack (1) or loaded through 02011 (3).
+unsigned next_subscript(Machine &m)
+{
+    Word x = pop(m);
+    if (!x)
+        return 1;
+    push(m, x);
+    emit(m, m.mem[02011], 024350);
+    m.vtm(11, 024360);
+    m.set_m(12, 024351);
+    emit_template(m, 024360);
+    top(m) |= m.mem[02011] & ON_STACK;
+    return 3;
+}
+
 //
 // 24324 (24327 without a register for a formal: from 02021): the address
 // of an element of the array at M3, M2 subscripts on the stack: 02011 =
-// the half that indexes it. Returns M10 + k: 0 all constant (the address
-// on the stack), 1 in a register, 2 in A, 3 in a register and on the stack.
+// the half that indexes it. Returns k: 0 all constant (the address on the
+// stack), 1 in a register, 2 in A, 3 in a register and on the stack; M10 =
+// base, M11 = base + k as the original.
 //
 unsigned subscript(Machine &m, unsigned base, bool counted)
 {
     m.set_m(10, base);
-    if (counted) {
-        m.xta(0, 02021);
-        if (m.uza()) {
-            m.xta(7, 02300);
-        } else {
-            m.asn(0, 054);
-            m.aox(7, 02266);
-        }
-    } else {
-        m.xta(7, 02300);
-    }
-    m.atx(0, 02011);
-    m.xta(3, 0);
-    m.arx(0, 0);
-    if (m.u1a()) {
-        m.aax(7, 02465);
-        m.aox(7, 02241);
-        emit_half(m, 024343);
-    } else {
-        m.aax(7, 02476);
-        m.arx(Machine::SP, 077776);
-        m.aax(7, 02476);
-        m.stx(Machine::SP, 077776);
-        m.mtj(10, 013);
-        if (!m.uza()) {
-            m.atx(Machine::SP, 0);
+    Word r       = m.mem[02021];
+    m.mem[02011] = counted && r ? ((r << 20) & WORD_MASK) | INDEX_REG : INDEX_A;
+    Word d       = m.mem[m.M[3]];
+    unsigned k;
+    if (d & BIT48) { // its dope: a constant subscript added to it
+        Word a = cyclic_add(d & DOPE_MASK, top(m, 2)) & DOPE_MASK;
+        top(m, 2) = a;
+        Word x    = pop(m);
+        k         = 0;
+        if (x) {
+            push(m, x);
             m.vtm(11, 024360);
             m.set_m(12, 024337);
-            run_template(m);
-            m.utc(10, 2);
-            m.vtm(11, 0);
+            emit_template(m, 024360);
+            k = 2;
         }
-        goto next;
+    } else {
+        emit(m, (d & DESC_MASK) | ARRAY_HALF, 024343);
+        k = next_subscript(m);
     }
     for (;;) {
-        // *0620B: the subscript in A or not
-        m.xta(Machine::SP, 0);
-        if (m.u1a()) {
-            m.utm(Machine::SP, 1);
-            m.xta(0, 02011);
-            emit_half(m, 024350);
-            m.vtm(11, 024360);
-            m.set_m(12, 024351);
-            run_template(m);
-            m.xta(0, 02011);
-            m.aax(7, 02472);
-            m.aox(Machine::SP, 077777);
-            m.atx(Machine::SP, 077777);
-            m.utc(10, 3);
-            m.vtm(11, 0);
-        } else {
-            m.utc(10, 1);
-            m.vtm(11, 0);
-        }
-    next: // *0615B: the next subscript, if any (template 24360)
-        m.utm(2, 077777);
-        m.utc(11, 0);
-        unsigned done = m.field(0);
+        m.set_m(2, m.M[2] - 1);
         if (!m.M[2])
-            return done;
+            break;
         m.vtm(11, 024360);
         m.set_m(12, 024343);
-        run_template(m);
+        emit_template(m, 024360);
+        k = next_subscript(m);
     }
+    m.set_m(11, base + k);
+    return k;
 }
 
-// The half for k = 0…3 (24262…24264): 02011, or M7+634 or M7+2243 with it.
-unsigned element_half(Machine &m, unsigned k)
+// The element's half (24262…24264) with the address on the stack: by k,
+// 02011 or ELEMENT_REG, or ELEMENT_A (link_a) and then 02011.
+void emit_element(Machine &m, unsigned k, unsigned link_a, unsigned link_b)
 {
-    switch (k) {
-    case 1:
-        m.xta(0, 02011);
-        return 1;
-    case 3:
-        m.xta(7, 02243);
-        return 1;
-    default:
-        m.xta(7, 0634);
-        return 2;
+    if (k == 1 || k == 3) {
+        emit(m, (k == 1 ? m.mem[02011] : ELEMENT_REG) | pop(m), link_b);
+        return;
     }
+    emit(m, ELEMENT_A | pop(m), link_a);
+    emit(m, m.mem[02011], link_b);
 }
 
 // 24252: an element read (044): the address, loaded unless constant.
 unsigned element_read(Machine &m)
 {
-    unsigned k = subscript(m, 024253, true) - 024253;
-    m.xta(Machine::SP, 0);
+    unsigned k = subscript(m, 024253, true);
+    Word a     = pop(m);
     if (k == 0)
-        return give(m, m.acc);
+        return give(m, a);
     m.vtm(12, 024015);
-    return load_operand(m);
+    load_value(m, a);
+    return 024015;
 }
 
 //
@@ -1727,64 +1721,35 @@ unsigned element_read(Machine &m)
 //
 unsigned element_store(Machine &m)
 {
-    unsigned k = subscript(m, 024261, true) - 024261;
-    if (k == 0) {
-        m.xta(Machine::SP, 0);
-        return assign(m, m.acc);
-    }
-    if (element_half(m, k) == 2) {
-        m.aox(Machine::SP, 0);
-        emit_half(m, 024307);
-        m.xta(0, 02011);
-    } else {
-        m.aox(Machine::SP, 0);
-    }
-    emit_half(m, 024266);
-    m.xta(0, TranslatedPass::CHECKFL);
-    if (!m.uza()) {
-        m.xta(0, 02021);
-        if (!m.uza()) {
-            m.asn(0, 054);
-            m.aox(7, 0562);
-            emit_half(m, 024272);
-        }
-        m.xta(3, 0);
-        m.arx(0, 0);
-        if (!m.u1a()) {
-            m.asn(0, 073);
-            m.aux(7, 02465);
-        }
-        m.aax(7, 02465);
-        m.atx(Machine::SP, 0);
+    unsigned k = subscript(m, 024261, true);
+    if (k == 0)
+        return assign(m, pop(m));
+    emit_element(m, k, 024307, 024266);
+    if (m.mem[TranslatedPass::CHECKFL]) {
+        Word r = m.mem[02021];
+        if (r)
+            emit(m, ((r << 20) & WORD_MASK) | CHECK_REG, 024272);
+        Word d = m.mem[m.M[3]];
+        push(m, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK);
         m.vtm(11, 024303);
         m.set_m(12, 024277);
-        run_template(m);
+        emit_template(m, 024303);
     }
-    m.xta(0, 02021);
-    if (m.uza())
+    Word r = m.mem[02021];
+    if (!r)
         return assign_pushed(m);
     m.ntr(0, 3);
-    m.arith(7, 02453, 005);
-    m.atx(0, 02021);
-    m.xta(0, 02011);
-    m.aax(7, 02472);
-    return assign(m, m.acc);
+    m.mem[02021] = r - 1;
+    m.set_logical();
+    return assign(m, m.mem[02011] & ON_STACK);
 }
 
-// 24311: the address of an element (0103), loaded (M7+1131).
+// 24311: the address of an element (0103), loaded (ADDRESS_OP).
 unsigned element_address(Machine &m)
 {
-    unsigned k = subscript(m, 024312, false) - 024312;
-    if (element_half(m, k) == 2) {
-        m.aox(Machine::SP, 0);
-        emit_half(m, 024322);
-        m.xta(0, 02011);
-    } else {
-        m.aox(Machine::SP, 0);
-    }
-    emit_half(m, 024317);
-    m.xta(7, 01131);
-    m.atx(Machine::SP, 0);
+    unsigned k = subscript(m, 024312, false);
+    emit_element(m, k, 024322, 024317);
+    push(m, ADDRESS_OP);
     m.vtm(12, 024015);
     return OPERAND_DONE;
 }
@@ -1796,51 +1761,30 @@ unsigned element_address(Machine &m)
 //
 unsigned array_segment(Machine &m)
 {
-    m.xta(3, 0);
-    m.ita(0, 3);
-    m.atx(0, HALF);
-    m.vtm(14, 0);
-    bool found = false;
-    for (;;) {
-        m.utc(14, EXT_NAMES + 1);
-        m.xta(0, 0);
-        m.utm(14, 3);
-        if (m.uza())
-            break;
-        m.asn(0, 0144);
-        if (m.uza()) {
-            m.utc(14, EXT_NAMES - 2);
-            m.xta(0, 0);
-            m.asn(0, 0130);
-            m.atx(0, EMIT_LINK);
+    m.mem[HALF] = m.M[3];
+    unsigned e  = 0;
+    unsigned r  = 0;
+    while (Word w = m.mem[EXT_NAMES + 1 + e]) {
+        e += 3;
+        if (!(w >> 36)) {
+            m.mem[EMIT_LINK] = w >> 24;
             continue;
         }
-        m.aex(0, HALF);
-        if (m.u1a())
-            continue;
-        m.vtm(14, 04131);
-        m.xta(0, EMIT_LINK);
-        m.atx(0, LINE);
-        found = true;
-        break;
+        if ((w >> 36) == m.mem[HALF]) {
+            r           = 04131;
+            m.mem[LINE] = m.mem[EMIT_LINK];
+            break;
+        }
     }
-    if (!found) {
-        m.xta(3, 0);
-        m.vtm(14, 04021);
-        m.ntr(0, 013);
-        if (!m.u1a())
-            m.vtm(14, 04022);
-    }
-    m.ita(0, 016);
-    m.xts(3, 0);
+    Word d = m.mem[m.M[3]];
     m.ntr(0, 013);
-    if (!m.u1a()) {
-        m.asn(0, 073);
-        m.aux(7, 02465);
-    }
-    m.aax(7, 02465);
-    m.its(0, 2);
-    m.atx(Machine::SP, 0);
+    if (!r)
+        r = (d & BIT48) ? 04022 : 04021;
+    m.set_m(14, r);
+    push(m, r);
+    push(m, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK);
+    push(m, m.M[2]);
+    m.set_logical();
     return operand(m, 024644);
 }
 
@@ -1854,24 +1798,19 @@ unsigned bound(Machine &m)
 // 24646: the bounds end (0104): the routine call (template 24651).
 unsigned bounds_end(Machine &m)
 {
-    m.ita(0, 2);
-    m.atx(Machine::SP, 077777);
+    top(m) = m.M[2];
     m.vtm(11, 024651);
     m.vtm(4, 0);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
 }
 
-// 24655: a block with arrays (0102): M7+674, then the frame of its
+// 24655: a block with arrays (0102): DOPE_HALF, then the frame of its
 // descriptor.
 unsigned array_block(Machine &m)
 {
-    m.xta(7, 0674);
-    emit_half(m, 024656);
-    m.xta(3, 0);
-    m.asn(0, 073);
-    m.aux(7, 02465);
-    emit_half(m, DISPATCH_NEXT);
+    emit(m, DOPE_HALF, 024656);
+    emit(m, unpacked(m.mem[m.M[3]]), DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
@@ -1880,51 +1819,47 @@ unsigned array_block(Machine &m)
 // 8-12) at offset d (M3).
 //
 
-// 25363: 0161: d + 02027.
-unsigned register_item(Machine &m)
+// d + 02027.
+Word register_offset(const Machine &m)
 {
-    m.ita(0, 3);
-    m.arx(0, 02027);
-    return give(m, m.acc);
+    return cyclic_add(m.M[3], m.mem[02027]);
 }
 
 // R<<20 + d.
-void by_register(Machine &m)
+Word by_register(const Machine &m)
 {
-    m.ita(0, 2);
-    m.asn(0, 054);
-    m.its(0, 3);
-    m.arx(Machine::SP, 0);
+    return cyclic_add(Word(m.M[2]) << 20, m.M[3]);
+}
+
+// 25363: 0161: d + 02027.
+unsigned register_item(Machine &m)
+{
+    return give(m, register_offset(m));
 }
 
 // 25365: an element read through R (0163).
 unsigned register_read(Machine &m)
 {
-    by_register(m);
-    return give(m, m.acc);
+    return give(m, by_register(m));
 }
 
 // 25375: an element stored through R (0164).
 unsigned register_store(Machine &m)
 {
-    by_register(m);
-    return assign(m, m.acc);
+    return assign(m, by_register(m));
 }
 
 // 25370: 0160: d + 02027 loaded, the half kept.
 unsigned register_value(Machine &m)
 {
-    m.ita(0, 3);
-    m.arx(0, 02027);
-    m.atx(Machine::SP, 0);
+    push(m, register_offset(m));
     return operand(m, 025372);
 }
 
 unsigned register_value_2(Machine &m)
 {
     load(m, 025373);
-    m.xta(Machine::SP, 0);
-    emit_half(m, DISPATCH_NEXT);
+    emit(m, pop(m), DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
@@ -1932,16 +1867,11 @@ unsigned register_value_2(Machine &m)
 unsigned register_step(Machine &m)
 {
     if (m.M[3]) {
-        by_register(m);
-        m.aox(7, 02243);
-        emit_half(m, DISPATCH_NEXT);
+        emit(m, by_register(m) | ELEMENT_REG, DISPATCH_NEXT);
         return DISPATCH_NEXT;
     }
-    m.ita(0, 2);
-    m.asn(0, 054);
-    m.its(0, 2);
-    m.arx(7, 02444);
-    m.atx(Machine::SP, 0);
+    push(m, Word(m.M[2]) << 20);
+    push(m, m.M[2] + 020);
     m.vtm(11, 025410);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
@@ -1952,9 +1882,7 @@ unsigned register_step(Machine &m)
 // when the step is not 1).
 unsigned preamble(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.atx(Machine::SP, 0);
+    push(m, m.mem[m.M[3]] & DESC_MASK);
     return operand(m, 025414);
 }
 
@@ -1970,32 +1898,22 @@ unsigned preamble_3(Machine &m)
 
 unsigned preamble_4(Machine &m)
 {
-    m.utc(Machine::SP, 077774);
-    m.vtm(14, 0);
-    m.vtm(11, 025441);
-    m.xta(0, LABELS);
-    m.arx(7, 02461);
-    m.wtc(0, 02031);
-    m.xts(0, 0);
-    m.aax(7, 02445);
-    if (!m.u1a()) {
-        m.vtm(11, 025447);
-        m.xta(14, 2);
-        m.atx(Machine::SP, 0);
+    unsigned at = (m.M[SP] - 4) & 077777;
+    m.set_m(14, at);
+    Word cv = m.mem[at], init = m.mem[at + 1], step = m.mem[at + 2], until = m.mem[at + 3];
+    Word label = m.mem[LABELS];
+    unsigned t = 025441;
+    push(m, cyclic_add(label, 2));
+    if (!(m.mem[m.mem[02031] & 077777] & STEP_ONE)) {
+        t = 025447;
+        push(m, step);
     }
-    m.xta(14, 3);
-    m.xts(14, 0);
-    m.xts(0, LABELS);
-    m.xts(14, 2);
-    m.xts(14, 0);
-    m.xts(0, LABELS);
-    m.arx(7, 02453);
-    m.xts(0, LABELS);
-    m.xts(14, 1);
-    m.atx(Machine::SP, 0);
+    for (Word w : { until, cv, label, step, cv, cyclic_add(label, 1), label, init })
+        push(m, w);
+    m.vtm(11, t);
     m.set_m(12, 025432);
-    run_template(m);
-    m.utm(Machine::SP, 077774);
+    emit_template(m, t);
+    m.set_m(SP, m.M[SP] - 4);
     return DISPATCH_NEXT;
 }
 
@@ -2003,15 +1921,14 @@ unsigned preamble_4(Machine &m)
 // registers in M2.
 unsigned preamble_end(Machine &m)
 {
-    m.xta(0, LABELS);
-    m.arx(7, 02453);
-    m.its(0, 2);
+    Word label = m.mem[LABELS];
+    push(m, cyclic_add(label, 1));
     m.ntr(0, 3);
-    m.arith(7, 02453, 006);
-    m.aax(7, 02451);
-    m.xts(0, LABELS);
-    m.arx(7, 02461);
-    m.atx(Machine::SP, 0);
+    Arith u(m.M[2], m.rau);
+    u.rsub(1);
+    m.set_logical();
+    push(m, u.acc & 07777);
+    push(m, cyclic_add(label, 2));
     m.vtm(11, 025455);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
@@ -2022,32 +1939,21 @@ unsigned preamble_end(Machine &m)
 unsigned register_load(Machine &m)
 {
     m.call(READ, 13, 025461);
-    m.asn(0, 0107);
-    m.aax(7, 02530);
-    m.atx(0, 02021);
-    unsigned k = subscript(m, 025463, true) - 025463;
-    if (element_half(m, k) == 2) {
-        m.aox(Machine::SP, 0);
-        emit_half(m, 025473);
-        m.xta(0, 02011);
-    } else {
-        m.aox(Machine::SP, 0);
-    }
-    emit_half(m, 025470);
-    m.xta(7, 02453);
-    m.atx(0, 02021);
+    m.mem[02021] = (m.acc >> 7) & 037;
+    unsigned k   = subscript(m, 025463, true);
+    emit_element(m, k, 025473, 025470);
+    m.mem[02021] = 1;
     return DISPATCH_NEXT;
 }
 
-// 25475: a FOR loop with registers (from 25134): its control variable,
-// the next item, the elements; template 25522 (or 25516 with A bit
-// 0400000000).
+// 25475: a FOR loop with registers (from 25134, the loop descriptor in A):
+// its control variable, the next item, the elements; template 25522 (or
+// 25516 with bit 0100000).
 unsigned register_loop(Machine &m)
 {
-    m.aax(7, 02437);
-    if (m.uza())
-        return operand(m, 025507);
-    return operand(m, 025477);
+    if (m.acc & 0100000)
+        return operand(m, 025477);
+    return operand(m, 025507);
 }
 
 unsigned register_loop_2(Machine &m)
@@ -2056,18 +1962,23 @@ unsigned register_loop_2(Machine &m)
     return operand(m, 025501);
 }
 
+// Push the words at offsets (from the top on entry), run template t, drop n.
+unsigned loop_template(Machine &m, std::initializer_list<unsigned> offsets, unsigned t,
+                       unsigned link, unsigned n)
+{
+    unsigned s = m.M[SP];
+    for (unsigned k : offsets)
+        push(m, m.mem[(s - k) & 077777]);
+    m.vtm(11, t);
+    m.set_m(12, link);
+    emit_template(m, t);
+    m.set_m(SP, m.M[SP] - n);
+    return DISPATCH_NEXT;
+}
+
 unsigned register_loop_3(Machine &m)
 {
-    m.xta(Machine::SP, 077764);
-    m.xts(Machine::SP, 077764);
-    m.xts(Machine::SP, 077775);
-    m.xts(Machine::SP, 077773);
-    m.vtm(11, 025522);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 025505);
-    run_template(m);
-    m.utm(Machine::SP, 077776);
-    return DISPATCH_NEXT;
+    return loop_template(m, { 12, 11, 1, 2 }, 025522, 025505, 2);
 }
 
 unsigned register_loop_4(Machine &m)
@@ -2082,17 +1993,7 @@ unsigned register_loop_5(Machine &m)
 
 unsigned register_loop_6(Machine &m)
 {
-    m.xta(Machine::SP, 077763);
-    m.xts(Machine::SP, 077763);
-    m.xts(Machine::SP, 077774);
-    m.xts(Machine::SP, 077774);
-    m.xts(Machine::SP, 077771);
-    m.vtm(11, 025516);
-    m.atx(Machine::SP, 0);
-    m.set_m(12, 025515);
-    run_template(m);
-    m.utm(Machine::SP, 077775);
-    return DISPATCH_NEXT;
+    return loop_template(m, { 13, 12, 2, 1, 3 }, 025516, 025515, 3);
 }
 
 void register_arrays(Machine::Natives &n)
