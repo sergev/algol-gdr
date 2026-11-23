@@ -67,3 +67,20 @@ Pass 4 also calls 30034–30117 (ISO name to TEXT).
 instruction. `scripts/trace-diff.py` compares it with a `dubna -d ir` trace of the same job
 and prints where the control flow first differs. Reads of cells the C++ passes do not set
 exactly (pass 1's scratch cells, the result cell of 30001) show up as differences of A.
+
+## Coverage
+
+`ALGOL_COVERAGE=FILE` appends the halves each translated pass ran. `scripts/coverage.py`
+compiles every test program with it and lists per pass the code words never run, each with
+the label before it in the Madlen source (code: the C ranges of `algol.sym`/`.tsym`, plus
+whatever ran). With the 36 programs of tests/algol:
+
+| Pass | Halves of code run | Unrun |
+|---|---|---|
+| 2 | 1741 of 2186 (79%) | ~45 small pieces, mostly error branches (messages, checks of 'COMMON', I/O and actual parameters) |
+| 3 | 977 of 1166 (83%) | 23073–23125 (27 words), 22507–22517, 22734–22744, 23417–23426 and some single words |
+| 4 | 1906 of 2112 (90%) | 10 pieces, the largest 24523–24530 and 25330–25334 |
+| shared | 279 of 350 (79%) | 27137 (backward write of a word), 27165, 27220, 01653 (no listing) |
+
+The rewrite of an unrun piece is not checked by the tests: each pass's first task adds
+programs that run it, or the piece is kept as found and marked unverified.

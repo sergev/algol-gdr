@@ -20,10 +20,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ## Tasks
 
-- **C1** Coverage of the translated passes: count the halves run by the test programs
-  (`Machine::trace` or a counter per address), and print per pass the routines, and the
-  addresses inside them, never run. Script or test target; result summarized in
-  doc/translation.md.
 - **C2** Natives inside a translated pass: `gen-pass.py --native ADDR` makes every jump and
   call to ADDR go through the dispatch, so that a native registered there runs instead;
   natives return through the register the callers use. Prove it by replacing one small

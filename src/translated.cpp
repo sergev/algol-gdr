@@ -66,19 +66,34 @@ Stream TranslatedPass::run(unsigned entry, unsigned ret)
     m.on_entry = [&](Machine &mm, unsigned addr) { writes.emplace_back(addr, mm.acc); };
     m.set_m(13, ret);
     // ALGOL_TRACE=file: address, half and A before each instruction.
+    // ALGOL_COVERAGE=file: the halves run, appended.
     std::FILE *tf = nullptr;
-    if (const char *name = std::getenv("ALGOL_TRACE")) {
+    if (const char *name = std::getenv("ALGOL_TRACE"))
         tf = std::fopen(name, "w");
-        if (tf)
-            m.trace = [tf](const Machine &mm, unsigned addr, bool right) {
+    std::vector<bool> run_halves;
+    const char *cov_name = std::getenv("ALGOL_COVERAGE");
+    if (cov_name)
+        run_halves.resize(2 * Machine::MEMSIZE);
+    if (tf || cov_name)
+        m.trace = [tf, &run_halves](const Machine &mm, unsigned addr, bool right) {
+            if (tf)
                 std::fprintf(tf, "%05o %c %016llo\n", addr, right ? 'R' : 'L',
                              (unsigned long long)mm.acc);
-            };
-    }
+            if (!run_halves.empty())
+                run_halves[2 * addr + right] = true;
+        };
     unsigned pc = m.run(code_, entry);
     m.trace     = nullptr;
     if (tf)
         std::fclose(tf);
+    if (cov_name) {
+        if (std::FILE *cf = std::fopen(cov_name, "a")) {
+            for (unsigned i = 0; i < run_halves.size(); i++)
+                if (run_halves[i])
+                    std::fprintf(cf, "%05o %c\n", i / 2, i % 2 ? 'R' : 'L');
+            std::fclose(cf);
+        }
+    }
     m.on_entry = nullptr;
     if (pc != ret)
         throw std::runtime_error("translated pass left at " + std::to_string(pc));
