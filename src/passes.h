@@ -22,6 +22,9 @@ struct Context {
     // Index registers as the previous pass left them; some passes take data
     // in them (pass 6: M5 = number of symbol rows).
     std::array<unsigned, 16> regs{};
+
+    unsigned flgex{}; // FLGEX*: errors found
+    bool finished{};  // the compilation ended early (AG01716)
 };
 
 struct NotImplemented : std::runtime_error {

@@ -56,9 +56,8 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 - **B2.2a** 'COMMON' declarations, read by the lexer itself (*1155B in ag14504.asm, not run
   by any test program): add test programs, then translate.
-- **B2.3** Parser: blocks, statements, declarations, expressions, FOR, procedure heads;
-  statement markers; the D-list.
-- **B2.4** Errors `AG17015`: numbers, classes, recovery; `↑EOP↑ …`, `HET ′EOP′ !`.
+- **B2.4** Error messages in the listing: check `ERROR nn CLASS`, `↑EOP↑ …`, `HET ′EOP′ !`,
+  `30 ERRORS …` against the `.lst` files (the recovery already matches the streams).
 - **B2.5** Listing: numbered lines, two-line split for the narrow printer, the banner.
 - Done when stream 1, the tables and the listing match for all programs, the `err_*`
   programs included.

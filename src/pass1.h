@@ -2,6 +2,7 @@
 #define ALGOL_PASS1_H
 
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "arith.h"
@@ -37,6 +38,9 @@ public:
     // No more cards before 'EOP' (HET 'EOP' !).
     struct NoEop {};
 
+    // The compilation ends here (AG01716).
+    struct Finish {};
+
     // Workspace cells (AD02000+n).
     static constexpr unsigned D_SYM      = 02000; // symbol word
     static constexpr unsigned D_CONST    = 02003; // next free constant slot
@@ -67,6 +71,11 @@ public:
     static constexpr unsigned D_LIST     = 02121; // listing on
     static constexpr unsigned D_POOL     = 02002; // string pool cursor (G27220)
     static constexpr unsigned NAMES      = 02144; // name/constant table
+    static constexpr unsigned D_RESPC    = 02106; // resume after an error: address
+    static constexpr unsigned D_RESSP    = 02107; // … and stack depth
+    static constexpr unsigned D_MARKLINE = 02122; // line of the last statement marker
+    static constexpr unsigned D_MARKN    = 02123; // its count << 7
+    static constexpr unsigned D_RENAME   = 02137; // name of the first label, TEXT
     static constexpr unsigned CARDS      = 01741; // card count, integer
 
 private:
@@ -81,6 +90,22 @@ private:
     unsigned m5_{};     // card word, -11…0
     unsigned m6_{};     // character in the word, -6…-1; 0: past the end
     unsigned rau_{ 2 }; // mode of the arithmetic unit
+    unsigned m3_{};     // D-list pointer
+
+    std::vector<Word> stk_; // the stack of M17
+    Word emit_item_{};      // 15144
+    Stream out_;
+
+    static constexpr unsigned RET_DRIVER = 0;
+
+    void parse();
+    void emit(Word a);
+    void stmark();
+    void setres(unsigned addr);
+    void dpush(Word a);
+    unsigned find_formal();
+    void print_line(const std::string &line);
+    void print_error(unsigned n);
 
     unsigned nextch(bool advance = true);
     void read_card();

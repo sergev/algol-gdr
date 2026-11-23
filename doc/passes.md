@@ -260,6 +260,13 @@ sector to drum 27 zone 34. (V)
 | 95 | PROGRAM HEAD |
 | 99 | PROGRAM END |
 
+### The parser in C++
+
+`src/pass1_parser.cpp` keeps the control flow of the original: one function, labels named
+after the addresses, an explicit stack for M17 and a dispatch for the return addresses kept
+on it. After a syntax error, SYNERR resumes at the address in 02106 with the stack cut to
+the depth in 02107; AG15102 sets both and every block saves them.
+
 ### Main routines
 
 | Address | Role |

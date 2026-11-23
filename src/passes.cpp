@@ -3,6 +3,7 @@
 #include <ostream>
 #include <string>
 
+#include "pass1.h"
 #include "pass5.h"
 
 void blank_line(const Context &ctx)
@@ -14,9 +15,10 @@ void blank_line(const Context &ctx)
 Stream run_pass(int n, Context &ctx, const Stream &input)
 {
     switch (n) {
+    case 1:
+        return Pass1(ctx).run();
     case 5:
         return pass5(ctx, input);
-    case 1:
     case 2:
     case 3:
     case 4:

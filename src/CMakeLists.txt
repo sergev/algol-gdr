@@ -5,6 +5,7 @@ add_library(algol STATIC
     dump.cpp
     item.cpp
     pass1_lexer.cpp
+    pass1_parser.cpp
     pass5.cpp
     pass6.cpp
     passes.cpp
