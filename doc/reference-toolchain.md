@@ -78,7 +78,7 @@ Run:
 - `NAME.mem`: per pass, the words it changed: in the workspace (01736–11777 with the stream
   pages, 27245–27644) as `ADDR VALUE`, and on the scratch drums 26 and 27 (data and streams
   between passes) as `drum UNIT ZONE OFFSET VALUE`; all numbers octal. The workspace at the
-  start of pass N is the driver's data (`src/tables_data.cpp`) plus the changes of the passes
+  start of pass N is the driver's data (from `build/tests/dump-workspace`) plus the changes of the passes
   before N. A pass ends when the driver goes on after it (01626 after pass 1, 01627, 01632,
   01633, 01634, 01635 after pass 6) or at its end 01716; then `reg N VALUE` gives the index
   registers it left (N octal; M17 is not listed).

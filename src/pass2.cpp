@@ -3,14 +3,14 @@
 #include <array>
 #include <functional>
 #include <map>
-#include <string_view>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "arith.h"
+#include "card.h"
 #include "listing.h"
-#include "tables.h"
 
 namespace {
 
@@ -211,7 +211,7 @@ using Format = std::vector<Word>;
 
 Format iso_format(std::string_view text)
 {
-    return tables::iso_words(text);
+    return iso_words(text);
 }
 
 const Format UNDECLARED        = iso_format("IDENTIFIER ′\200′ IS NOT DECLARED\202");
@@ -250,20 +250,20 @@ const Format NOT_DECLARED = blank_padded("**HECOOTBETCTBИE B OПИCAHИЯX COMM
 const Format WRONG_ORDER  = blank_padded("*****ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA");
 
 // Arguments of TYPE ERROR IN CONNECTION WITH (one word; two for some).
-const Word GOTO_TEXT      = tables::iso_word("GOTO\0 "sv);
-const Word INDEX_TEXT     = tables::iso_word("INDEX\0"sv);
-const Word POWER_TEXT     = tables::iso_word("′**′\0 "sv);
-const Word IF_TEXT        = tables::iso_word("′IF′\0 "sv);
-const Word FOR_TEXT       = tables::iso_word("′FOR′\0"sv);
-const Word SWITCH_TEXT    = tables::iso_word("SWITCH");
-const Word ASSIGN_TEXT    = tables::iso_word("′:=′\0 "sv);
+const Word GOTO_TEXT      = iso_word("GOTO\0 "sv);
+const Word INDEX_TEXT     = iso_word("INDEX\0"sv);
+const Word POWER_TEXT     = iso_word("′**′\0 "sv);
+const Word IF_TEXT        = iso_word("′IF′\0 "sv);
+const Word FOR_TEXT       = iso_word("′FOR′\0"sv);
+const Word SWITCH_TEXT    = iso_word("SWITCH");
+const Word ASSIGN_TEXT    = iso_word("′:=′\0 "sv);
 const Format BOOL_TEXT    = iso_format("BOOLEAN OP\0 "sv);
 const Format REL_TEXT     = iso_format("RELATION\0   "sv);
 const Word OP_TEXT[]      = {
-    tables::iso_word("′+′\0  "sv),
-    tables::iso_word("′-′\0  "sv),
-    tables::iso_word("′*′\0  "sv),
-    tables::iso_word("′/′\0  "sv),
+    iso_word("′+′\0  "sv),
+    iso_word("′-′\0  "sv),
+    iso_word("′*′\0  "sv),
+    iso_word("′/′\0  "sv),
 };
 
 // The actual of NO ACTUAL-FORMAL CORRESPONDENCE that is not a name, by kind

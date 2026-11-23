@@ -15,7 +15,6 @@
 #include <string>
 
 #include "pass1.h"
-#include "tables.h"
 
 namespace {
 

@@ -16,8 +16,6 @@ add_library(algol STATIC
     printm.cpp
     source.cpp
     stdarray.cpp
-    tables.cpp
-    tables_data.cpp
     version.cpp
     workspace.cpp
 )
@@ -26,7 +24,6 @@ set_source_files_properties(version.cpp PROPERTIES COMPILE_DEFINITIONS
     VERSION_STRING="${CMAKE_PROJECT_VERSION}.${GIT_REVCOUNT}-${GIT_HASH}"
 )
 
-set_source_files_properties(tables_data.cpp PROPERTIES SKIP_LINTING ON)
 
 add_executable(algol-gdr main.cpp)
 target_link_libraries(algol-gdr algol)

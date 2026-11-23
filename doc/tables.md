@@ -60,32 +60,37 @@ marker.
 
 ## Tables inside the modules
 
-`scripts/gen-tables.py` copies these tables, and the nonzero words of 01736–05777, from the
-overlay image on the tape into `src/tables_data.cpp` (`src/tables.h`), with the original
-addresses in comments.
+The C++ passes hold these as typed tables, with the original addresses only in their
+comments: the column C++ says where.
 
-| Address | Module | Contents |
-|---|---|---|
-| 15146–15413 | G14504 | symbol attribute table: for each symbol code, the dispatch indexes per syntactic context (masks 017000000, 03600, 0740000, 030000); then the M7 constants of pass 1 |
-| 16045–16071 | G14504 | the seven `'COMMON'` error messages, 3 words each (`HET KOCOЙ ЧEPTЫ`, `ИMЯ COMMON > 6 CИM`, …) |
-| 16514–16713 | G14504 | character class table, 128 words indexed by the 8-bit character: dispatch offset in the low 4 bits; for single-character symbols the code in bits 24–18 |
-| 17106–17165 | G14504 | pieces of the syntax-error texts: `STATEMENT`, `DECLARATION`, ` OVERFLOW`, `EXPRESSION`, … |
-| 17166–17202 | G14504 | error class table: class of error n = `(word[17166 + (n>>3)] >> 6·(n&7)) & 077` |
-| 16506–16513 | G14504 | `WARNING SYMBOL AFTER END`, `HET ′EOP′ !` |
-| 21670–21717 | G17223 | `NEXT STATEMENT IS`, `PROGRAM END`, semantic error messages (`IDENTIFIER '…' IS NOT DECLARED`, …), ISO bytes with argument escapes 0200+k |
-| 21720–22025 | G17223 | dispatch table of pass 2, one word per item code 000–0105 (left half: handler, right half: type rules) |
-| 22265–22272, 22301 | G22162 | classes of item codes for the first scan of a FOR loop (indexed from 22264); a mask of the allowed codes |
-| 22365–22402, 22407–22421 | G22162 | rewrite handlers by item code, and their jump table |
-| 23154–23163 | G22162 | index registers for loop subscripts: R5, R4, R3, R2, R8, R9, R10, R11 |
-| 25747–26055 | G23523 | instruction templates of the code generator; 4444 marks the operand |
-| 26056–26151 | G23523 | dispatch table of pass 4, two item codes per word, codes 000–0167 |
-| 26601–26616 | G26260 | the line-table format; `PROGRAM TOO LONG` at 26605; the heading `CTPOKИ OTHOCИTEЛЬHЫE AДPECA` at 26612 |
-| 30060–30117 | G30034 | ranges for converting ISO to TEXT code |
-| 30124–30255 | G30120 | run-time names, 0132 words in TEXT code (`A/MINUS`, …, `A/START`, `A/SPRI`, `SIN*`, …), copied to 02400–02531; code addresses `04000+k` refer to entry k |
-| 30333–30354 | G30257 | the format of `PROGRAM ДЛИHA: …` |
+| Address | Module | Contents | C++ |
+|---|---|---|---|
+| 15146–15413 | G14504 | symbol attribute table: for each symbol code, the dispatch indexes per syntactic context (masks 017000000, 03600, 0740000, 030000); then the M7 constants of pass 1 | `SYMBOL_ATTRS` (pass1_parser.cpp); the constants as named words |
+| 16045–16071 | G14504 | the seven `'COMMON'` error messages, 3 words each (`HET KOCOЙ ЧEPTЫ`, `ИMЯ COMMON > 6 CИM`, …) | `COMMON_ERRORS` (pass1_lexer.cpp) |
+| 16514–16713 | G14504 | character class table, 128 words indexed by the 8-bit character: dispatch offset in the low 4 bits; for single-character symbols the code in bits 24–18 | `CHAR_CLASSES` (pass1_lexer.cpp) |
+| 17106–17165 | G14504 | pieces of the syntax-error texts: `STATEMENT`, `DECLARATION`, ` OVERFLOW`, `EXPRESSION`, … | `error::TEXT` (pass1_parser.cpp) |
+| 17166–17202 | G14504 | error class table: class of error n = `(word[17166 + (n>>3)] >> 6·(n&7)) & 077` | `error::TEXT` |
+| 16506–16513 | G14504 | `WARNING SYMBOL AFTER END`, `HET ′EOP′ !` | literals in pass 1 |
+| 21670–21717 | G17223 | `NEXT STATEMENT IS`, `PROGRAM END`, semantic error messages (`IDENTIFIER '…' IS NOT DECLARED`, …), ISO bytes with argument escapes 0200+k | `Format` strings (pass2.cpp) |
+| 21720–22025 | G17223 | dispatch table of pass 2, one word per item code 000–0105 (left half: handler, right half: type rules) | `CODES`, `TYPE_OF`, `KIND_OF`, `FORMAL_TYPE_OF`, `FORMAL_CLASS` (pass2.cpp) |
+| 22265–22272, 22301 | G22162 | classes of item codes for the first scan of a FOR loop (indexed from 22264); a mask of the allowed codes | `FOR_CLASS` (pass3.cpp) |
+| 22365–22402, 22407–22421 | G22162 | rewrite handlers by item code, and their jump table | `PARSE_CLASS`, the handlers in `classify` (pass3.cpp) |
+| 23154–23163 | G22162 | index registers for loop subscripts: R5, R4, R3, R2, R8, R9, R10, R11 | `REGS` (pass3.cpp) |
+| 25747–26055 | G23523 | instruction templates of the code generator; 4444 marks the operand | `Template`, `TEMPLATE_TEXT`, `PAIRS` (pass4.cpp), also the templates in the code |
+| 26056–26151 | G23523 | dispatch table of pass 4, two item codes per word, codes 000–0167 | `HANDLERS` (pass4.cpp) |
+| 26601–26616 | G26260 | the line-table format; `PROGRAM TOO LONG` at 26605; the heading `CTPOKИ OTHOCИTEЛЬHЫE AДPECA` at 26612 | literals in pass 5 |
+| 30060–30117 | G30034 | ranges for converting ISO to TEXT code | `TEXT_CODES` (pass4.cpp) |
+| 30124–30255 | G30120 | run-time names, 0132 words in TEXT code (`A/MINUS`, …, `A/START`, `A/SPRI`, `SIN*`, …), copied to 02400–02531; code addresses `04000+k` refer to entry k | `RUNTIME_NAMES` (pass5.cpp) |
+| 30333–30354 | G30257 | the format of `PROGRAM ДЛИHA: …` | `summary_line` (pass6.cpp) |
 
 Message formats used by G27733: ISO bytes, 6 per word; 0200+n inserts data word n (an ISO
-string ending with a zero byte); a zero byte ends the format.
+string ending with a zero byte); a zero byte ends the format. In C++ they are UTF-8 strings
+with the escapes as octal bytes (`"IDENTIFIER ′\200′ IS NOT DECLARED\202"`), made into
+words by `iso_words` (`src/card.h`).
+
+The data set before the passes run (01736–05777: the cells of 02000, the name table, the
+preset constants, the standard identifiers) is built by `Workspace::reset`
+(`src/workspace.cpp`) from the keywords in the order of their words in the original.
 
 ## Character codes
 

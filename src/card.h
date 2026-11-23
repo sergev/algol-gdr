@@ -3,6 +3,7 @@
 
 #include <array>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "stdarray.h"
@@ -30,5 +31,11 @@ Card make_card(const std::string &line);
 
 // Cards of a whole source text, one per line.
 std::vector<Card> read_cards(const std::string &text);
+
+// UTF-8 text in ISO (KOI-7) words, 6 characters per word, the last padded
+// with zero bytes. A byte 0200-0277 alone (not UTF-8) is copied as is: an
+// argument escape of the formats (G27733).
+std::vector<Word> iso_words(std::string_view text);
+Word iso_word(std::string_view text); // at most 6 characters
 
 #endif

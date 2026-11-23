@@ -44,3 +44,14 @@ TEST(card, last_card)
             EXPECT_EQ(cards.back()[i], ctx.ws[02010 + i]) << name << " word " << i;
     }
 }
+
+// UTF-8 text to ISO words; 0200-0277 alone are format escapes.
+TEST(card, iso_words)
+{
+    EXPECT_EQ(iso_word("HELLO,"), 02204251423047454u);
+    EXPECT_EQ(iso_word("′**′"), 01162505211600000u);
+    auto words = iso_words("TWICE \200′\202");
+    ASSERT_EQ(words.size(), 2u);
+    EXPECT_EQ(words[0], 02505351120642440u);
+    EXPECT_EQ(words[1], 04002360200000000u);
+}

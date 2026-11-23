@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "tables.h"
+#include "card.h"
 
 namespace {
 
@@ -74,7 +74,7 @@ constexpr unsigned NAMES_BASE = 02144;
 // A name's word: its first 6 characters in ISO.
 Word name_word(const char *name)
 {
-    return tables::iso_word(std::string(name).substr(0, 6));
+    return iso_word(std::string(name).substr(0, 6));
 }
 
 // The home slot of a name (AG15414): from its first two characters.
@@ -95,9 +95,9 @@ void Workspace::reset()
     w[02003]     = 01623;       // the next free constant slot
     w[02004]     = 01634 << 12; // the string pool
     w[02030]     = 040;         // the character to skip
-    w[02031]     = tables::iso_word("      ");
+    w[02031]     = iso_word("      ");
     w[02050]     = 01634 << 12; // the end of the string pool
-    w[02063]     = tables::iso_word("ERROR ");
+    w[02063]     = iso_word("ERROR ");
 
     for (const auto &n : NAMES) {
         Word name     = name_word(n.name);
