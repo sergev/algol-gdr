@@ -111,20 +111,32 @@ std::string expected(const std::string &name)
     return file_contents(TEST_DIR "/algol/" + name + ".out");
 }
 
+// qemu-ARCH for a target triple.
+std::string qemu(const std::string &target)
+{
+    return "qemu-" + target.substr(0, target.find('-'));
+}
+
 // Compile and run a program, with the object of stub (C) if given; its
 // output.
 std::string run(const std::string &src, const std::string &exe, bool check,
-                const std::string &input = "/dev/null", const std::string &stub = "")
+                const std::string &input = "/dev/null", const std::string &stub = "",
+                const std::string &target = "")
 {
+    std::string tflag = target.empty() ? "" : " --target=" + target;
     std::string objects;
     if (!stub.empty()) {
-        auto c = run_command("clang -c -o " + exe + "_stub.o " + stub);
+        auto c = run_command("clang" + tflag + " -c -o " + exe + "_stub.o " + stub);
         EXPECT_EQ(c.exit_code, 0) << c.output;
         objects = " " + exe + "_stub.o";
     }
-    auto r = run_command(compiler + (check ? " --check" : "") + " -o " + exe + " " + src + objects);
+    auto r = run_command(compiler + tflag + (check ? " --check" : "") + " -o " + exe + " " + src +
+                         objects);
     EXPECT_EQ(r.exit_code, 0) << r.output;
-    return run_command("(" + exe + " < " + input + " 2>/dev/null)").output;
+    std::string runner;
+    if (!target.empty())
+        runner = qemu(target) + " -L /usr/" + target + " ";
+    return run_command("(" + runner + exe + " < " + input + " 2>/dev/null)").output;
 }
 
 // The output of a program given as text.
@@ -151,6 +163,39 @@ TEST_P(RunTest, output)
 }
 
 INSTANTIATE_TEST_SUITE_P(algol, RunTest, ::testing::ValuesIn(programs));
+
+// The same for other targets, run under qemu; skipped without the runtime for
+// the target (built when /usr/TRIPLE exists) or without qemu.
+class CrossTest : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
+
+TEST_P(CrossTest, output)
+{
+    const auto &[target, name] = GetParam();
+    if (!std::filesystem::exists(BUILD_DIR "/runtime/" + target + "/libalgol.a"))
+        GTEST_SKIP() << "no runtime for " << target;
+    if (run_command("command -v " + qemu(target)).exit_code != 0)
+        GTEST_SKIP() << "no " << qemu(target);
+    const std::string base = TEST_DIR "/algol/" + name;
+    bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
+    std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
+    std::string stub       = std::filesystem::exists(base + ".c") ? base + ".c" : "";
+    std::string out =
+        run(base + ".alg", BUILD_DIR "/run_" + target + "_" + name, check, input, stub, target);
+    EXPECT_EQ(compare(out, expected(name)), "") << out;
+}
+
+// aarch64_hello and the like.
+std::string cross_name(const ::testing::TestParamInfo<std::tuple<std::string, std::string>> &p)
+{
+    const std::string &triple = std::get<0>(p.param);
+    return triple.substr(0, triple.find('-')) + "_" + std::get<1>(p.param);
+}
+
+INSTANTIATE_TEST_SUITE_P(algol, CrossTest,
+                         ::testing::Combine(::testing::Values(std::string("aarch64-linux-gnu"),
+                                                              std::string("riscv64-linux-gnu")),
+                                            ::testing::ValuesIn(programs)),
+                         cross_name);
 
 // The exact layout of PRINT.
 TEST(Run, print_layout)

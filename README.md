@@ -23,6 +23,12 @@ make test       # unit tests and the test programs in tests/algol
 
 Needs CMake, a C++20 compiler and clang (to compile the generated LLVM IR).
 
+**Cross targets.** For each `TRIPLE` with a sysroot in `/usr/TRIPLE` (as installed by
+`gcc-aarch64-linux-gnu` or `gcc-riscv64-linux-gnu`), the build also makes the runtime for that
+target, `runtime/TRIPLE/libalgol.a`; set `-DALGC_TARGETS="…"` to choose them. Then
+`algc --target=aarch64-linux-gnu x.alg` makes an executable for that machine, and the tests
+run the test programs under `qemu-aarch64` / `qemu-riscv64` when they are installed.
+
 ## Usage
 
 ```

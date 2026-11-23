@@ -37,7 +37,9 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   (the printout).
 - `runtime/` — the run-time library `libalgol.a` (C, uses libc and libm): `main` calls the
   program's `algol_main`; printing, errors. algc finds it in `../runtime` or `../lib` from
-  itself (or `$ALGC_RUNTIME`).
+  itself (or `$ALGC_RUNTIME`); for `--target=T` in `../runtime/T` or `../lib/T`, built by
+  CMake for each `/usr/T` sysroot (aarch64, riscv64). `run_test` runs the programs under
+  qemu for those targets too.
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.out` run output under `dubna` (frozen); and ours, which
   `ALGC_UPDATE_GOLDENS=1` rewrites: `.lst` listings (`algc --list`), `.ast` the AST, `.err` the messages; side files

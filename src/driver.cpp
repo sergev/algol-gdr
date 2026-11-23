@@ -167,12 +167,14 @@ std::string runtime_dir(const std::string &exe_dir, const std::string &target)
     fs::path dir(exe_dir);
     std::vector<fs::path> candidates;
     if (!target.empty()) {
+        // A runtime of the target only, never the host's.
         candidates.push_back(dir / ".." / "runtime" / target);
         candidates.push_back(dir / ".." / "lib" / target);
+    } else {
+        candidates.push_back(dir / ".." / "runtime");
+        candidates.push_back(dir / ".." / "lib");
+        candidates.push_back(dir);
     }
-    candidates.push_back(dir / ".." / "runtime");
-    candidates.push_back(dir / ".." / "lib");
-    candidates.push_back(dir);
     auto it = std::find_if(candidates.begin(), candidates.end(),
                            [](const fs::path &c) { return fs::exists(c / "libalgol.a"); });
     return it == candidates.end() ? "" : fs::weakly_canonical(*it).string();

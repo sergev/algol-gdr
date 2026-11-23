@@ -21,10 +21,6 @@ runs.
 
 ### Targets and finish
 
-- **E23** Cross targets: `--target=aarch64-linux-gnu`, `riscv64-linux-gnu`, with the
-  runtime built per target (CMake option or a `runtime/` Makefile like `blang`). `run_test`
-  runs the cross executables under `qemu-aarch64` / `qemu-riscv64` when installed, skipped
-  otherwise.
 - **E24** Every program of `tests/algol` with a `.out` (32 of them) passes natively on x86_64. Where
   the output differs only because of 64-bit arithmetic, keep a separate expected file
   `X.native.out` and say why in doc/codegen.md. `make install` installs `algc` and
