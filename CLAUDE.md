@@ -99,7 +99,7 @@ Detailed plan: [Roadmap.md](Roadmap.md).
 
 ## Source language
 
-UTF-8 text. Keywords are `_` and a word, in any case (`_begin`, `_eop` ends the program); a
+UTF-8 text. Keywords are `_` and a word, in any case (`_begin`, `_eop` may end the program); a
 blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in `''…''`
 or `'('…')'` (`'ddd'` inside: a character by its octal code point; `′` is a quote too), octal
 constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give

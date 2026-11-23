@@ -9,9 +9,9 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <deque>
 #include <iterator>
 #include <map>
-#include <optional>
 #include <set>
 
 #include "diag.h"
@@ -140,11 +140,14 @@ private:
     Diagnostics &diag_;
     Lexer lexer_;
     Token tok_;
-    std::optional<Token> peeked_;
+    std::deque<Token> ahead_;       // symbols after tok_, read by peek()
     std::map<int, int> statements_; // per line: statements started
 
     void advance();
-    const Token &peek();
+    const Token &peek(size_t n = 1);
+    bool label_ahead();
+    bool delimiter();
+    ExprList arguments();
     bool accept(Sym s);
     std::string found() const;
     void report(int line, const std::string &message);
@@ -192,19 +195,42 @@ Parser::Parser(const std::string &source, Diagnostics &diag, Listing *listing)
 
 void Parser::advance()
 {
-    if (peeked_) {
-        tok_ = std::move(*peeked_);
-        peeked_.reset();
+    if (!ahead_.empty()) {
+        tok_ = std::move(ahead_.front());
+        ahead_.pop_front();
     } else {
         tok_ = lexer_.next();
     }
 }
 
-const Token &Parser::peek()
+// The n-th symbol after tok_.
+const Token &Parser::peek(size_t n)
 {
-    if (!peeked_)
-        peeked_ = lexer_.next();
-    return *peeked_;
+    while (ahead_.size() < n)
+        ahead_.push_back(lexer_.next());
+    return ahead_[n - 1];
+}
+
+// A label: an identifier or an unsigned integer, then ':'.
+bool Parser::label_ahead()
+{
+    return (tok_.sym == Sym::IDENT || tok_.sym == Sym::INTEGER_CONST) && peek().sym == Sym::COLON;
+}
+
+// A parameter delimiter: ',' or ") letter string: (".
+bool Parser::delimiter()
+{
+    if (accept(Sym::COMMA))
+        return true;
+    if (tok_.sym != Sym::RPAREN || peek().sym != Sym::IDENT || peek(2).sym != Sym::COLON ||
+        peek(3).sym != Sym::LPAREN)
+        return false;
+    const std::string &s = peek().text;
+    if (std::any_of(s.begin(), s.end(), [](char c) { return c >= '0' && c <= '9'; }))
+        return false;
+    for (int k = 0; k < 4; k++)
+        advance();
+    return true;
 }
 
 bool Parser::accept(Sym s)
@@ -246,7 +272,7 @@ void Parser::report(int line, const std::string &message)
 void Parser::fail(const std::string &message)
 {
     if (tok_.sym == Sym::END_OF_FILE) {
-        report(tok_.line, "Unexpected end of the file, _eop is missing");
+        report(tok_.line, "Unexpected end of the file");
         throw Stop{};
     }
     if (tok_.sym != Sym::ERROR)
@@ -312,7 +338,8 @@ void Parser::skip_declaration()
 
 //
 // The program: _code: and _algol: lists of procedures before it, then a
-// block or compound statement, or a procedure; then _eop.
+// block or compound statement, or a procedure; then _eop or the end of the
+// file.
 //
 Program Parser::program()
 {
@@ -320,9 +347,7 @@ Program Parser::program()
     try {
         advance();
         head(p);
-        if (tok_.sym == Sym::END_OF_FILE)
-            report(tok_.line, "Unexpected end of the file, _eop is missing");
-        else if (tok_.sym != Sym::EOP)
+        if (tok_.sym != Sym::EOP && tok_.sym != Sym::END_OF_FILE)
             report(tok_.line, "Expected _eop after the program, found " + found());
     } catch (const Stop &) {
     }
@@ -344,7 +369,7 @@ void Parser::head(Program &p)
                 p.decls.push_back(declaration());
                 continue;
             }
-            if (tok_.sym == Sym::BEGIN || (tok_.sym == Sym::IDENT && peek().sym == Sym::COLON)) {
+            if (tok_.sym == Sym::BEGIN || label_ahead()) {
                 p.body = statement();
                 return;
             }
@@ -382,8 +407,9 @@ void Parser::head(Program &p)
 StmtPtr Parser::statement()
 {
     ast::SrcLoc loc = start();
-    if (tok_.sym == Sym::IDENT && peek().sym == Sym::COLON) {
-        Ident label = ident();
+    if (label_ahead()) {
+        Ident label{ tok_.sym == Sym::IDENT ? tok_.text : std::to_string(tok_.ival), tok_.line };
+        advance();
         advance();
         return new_stmt(loc, stmt::Labeled{ label, statement() });
     }
@@ -597,7 +623,7 @@ DeclPtr Parser::procedure(ast::Type type)
     if (accept(Sym::LPAREN)) {
         for (;;) {
             p.formals.push_back(ident());
-            if (!accept(Sym::COMMA))
+            if (!delimiter())
                 break;
         }
         expect(Sym::RPAREN);
@@ -869,7 +895,7 @@ ExprPtr Parser::designator()
     int line         = tok_.line;
     std::string name = ident().name;
     if (accept(Sym::LPAREN))
-        return new_expr(line, expr::Call{ name, expressions(Sym::RPAREN) });
+        return new_expr(line, expr::Call{ name, arguments() });
     if (!accept(Sym::LBRACKET))
         return new_expr(line, expr::Name{ name });
     ExprPtr first = expression(0);
@@ -884,6 +910,17 @@ ExprPtr Parser::designator()
         subs.push_back(expression(0));
     expect(Sym::RBRACKET);
     return new_expr(line, expr::Index{ name, std::move(subs) });
+}
+
+// Actual parameters up to ')'.
+ExprList Parser::arguments()
+{
+    ExprList list;
+    do
+        list.push_back(expression(0));
+    while (delimiter());
+    expect(Sym::RPAREN);
+    return list;
 }
 
 // Expressions separated by ',', then close.

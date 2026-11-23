@@ -16,9 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F3** Program form of the Revised Report: `_eop` optional (the end of the file ends the
-  program); unsigned integers as labels (`10: …`, `_goto 10`); the parameter delimiter
-  `) letter string: (` as a comma. doc/algol60.asdl updated.
 - **F4** Parameters as the Revised Report has them: specifications optional for name
   parameters; arrays called by value (copied, the runtime has it); an actual of another
   numeric type for a name parameter, converted on every access and assignment; calls through

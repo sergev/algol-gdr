@@ -1,0 +1,12 @@
+externals: []
+block:
+  kind: block
+  loc: 1/1
+  decls:
+    - {kind: var, line: 3, name: "I", id: 1, type: integer}
+  body:
+    - kind: assign
+      loc: 4/1
+      targets:
+        - {kind: var, decl: 1, name: "I"}
+      value: {kind: int_const, type: integer, value: 1}

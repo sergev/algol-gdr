@@ -38,13 +38,14 @@
 --  * A conditional expression as an operand must be in parentheses. After
 --    _then there is no conditional statement, and a _for statement there
 --    has no _else after it: both must be in _begin _end.
---  * The parameter delimiter ") letter string: (" of the Revised Report is
---    a comma here (todo).
+--  * Between parameters, in a call or a procedure heading, the delimiter
+--    ") letter string: (" is a comma: p(a) size: (n).
 --
 module Algol60 {
     -- A program: _code: and _algol: lists of external procedures (GDR),
     -- _common declarations (GDR), then a block or compound statement, maybe
-    -- labeled; or one procedure compiled alone (GDR). Then _eop (GDR).
+    -- labeled; or one procedure compiled alone (GDR). Then _eop (GDR) or the
+    -- end of the file.
     Program = Program(External* externals, Decl* commons, Stmt body)
             | Module(External* externals, Decl* commons, Decl procedure)
 
@@ -90,7 +91,7 @@ module Algol60 {
 
     Stmt = Block(Decl* decls, Stmt* body)        -- _begin decls; stmts _end
          | Compound(Stmt* body)                  -- _begin stmts _end
-         -- labels are identifiers; unsigned integers as labels: todo
+         -- an identifier or an unsigned integer (10:, the same as 010:)
          | Labeled(identifier label, Stmt stmt)
          | Dummy
          -- v := a[i] := e: targets are Var or Index; in a function body

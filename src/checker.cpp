@@ -906,7 +906,9 @@ ExprPtr Checker::designational(const syn::Expr &e, const std::string &what)
         ExprPtr b    = designational(*c->else_expr, what);
         return make_expr(Type::NONE, expr::Cond{ std::move(cond), std::move(a), std::move(b) });
     }
-    ExprPtr x = expr(e);
+    // An unsigned integer is a label.
+    auto n    = std::get_if<syn::expr::Int>(&e.node);
+    ExprPtr x = n ? named(std::to_string(n->value), e.line, false) : expr(e);
     if (!std::holds_alternative<expr::LabelRef>(x->node) &&
         !std::holds_alternative<expr::SwitchElement>(x->node)) {
         if (!(x->type == Type::NONE && std::holds_alternative<expr::IntConst>(x->node)))
@@ -1250,6 +1252,8 @@ ExprPtr Checker::actual(const syn::Expr &e, const Symbol *formal, int n, const s
                           " does not match formal parameter " + quoted(formal->name));
         return bad();
     };
+    if (formal && formal->kind == Kind::LABEL && std::holds_alternative<syn::expr::Int>(e.node))
+        return designational(e, "argument " + std::to_string(n) + " of " + quoted(proc));
     ExprPtr x;
     if (auto nm = std::get_if<syn::expr::Name>(&e.node))
         x = named(nm->name, e.line, true);

@@ -13,7 +13,7 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 - Keywords are `_word` in any case; strings are `''…''` or `'('…')'` and do not nest; the
   ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ↑` have ASCII and word forms. Publication-style input
   (underlined keywords, `‘…’` strings, nesting) is **F9**.
-- The program ends with `_eop`: **F3**.
+- The program may end with `_eop`, as on the original.
 - Standard identifiers (`sqrt`, `print`, …) are recognized in any case; a declaration of the
   same name hides them, as in the Report.
 
@@ -21,8 +21,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 | Deviation | Where | Task |
 |---|---|---|
-| Unsigned integers are not labels | parser | F3 |
-| The parameter delimiter `) letter string: (` is not read; only `,` | parser | F3 |
 | Every formal parameter must be specified | parser | F4 |
 | Arrays cannot be called by value | checker | F4 |
 | Labels cannot be called by value | checker | F4 |
@@ -64,6 +62,8 @@ not deviations.
 - Operands are evaluated left to right; the subscripts of the left parts of an assignment
   before the right part.
 - After `for` ends by exhaustion the controlled variable keeps its last value.
+- An unsigned integer as an actual parameter is a label when the formal is specified
+  `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.
 - Extensions of Algol-GDR (`_string` and `_bits` variables and arrays, substrings `s[i:j]`,
   `_code`, `_algol` and `_common`, `PRINT`, `READ`, `_print` …) are not part of the
   Report; programs that do not use them are not affected.
