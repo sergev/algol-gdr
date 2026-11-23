@@ -32,7 +32,7 @@ constexpr unsigned SP = Machine::SP;
 
 // Constants of the pass (at M7+…).
 constexpr Word BIT48      = 0'4000'0000'0000'0000;
-constexpr Word BIT47      = 0'0400'0000'0000'0000;
+constexpr Word BIT45      = 0'0400'0000'0000'0000;
 constexpr Word ADDR       = 077777;
 constexpr Word ON_STACK   = 074000000; // 15 ATX: the value saved on the stack (M7+2227)
 constexpr Word DROPPED    = 074030000; // never emitted
@@ -347,7 +347,7 @@ unsigned start(Machine &m)
             more = false;
             break;
         }
-    } while (m.mem[p] & BIT47);
+    } while (m.mem[p] & BIT45);
     if (more) {
         for (unsigned e = 3; m.mem[EXT_NAMES + e]; e += 3) {
             Word name   = (m.mem[EXT_NAMES + 1 + e] >> 24) & 07777;
@@ -375,7 +375,7 @@ unsigned start(Machine &m)
     m.mem[02006]     = 0;
     m.mem[EMIT_MODE] = 0;
     m.mem[02021]     = 5;
-    if ((m.mem[m.M[2] + 2] & KIND) != BIT47) {
+    if ((m.mem[m.M[2] + 2] & KIND) != BIT45) {
         m.mem[02005] = m.mem[MAIN_NAME];
         m.mem[02014] = FRAME_MAIN;
         m.call(BLOCK_ENTRY, 13, 023603);
@@ -1208,350 +1208,290 @@ void register_jumps(Machine::Natives &n)
 }
 
 //
+// Blocks. The frame size is counted in 02014 (02013 counts down from it);
+// 02015 is the head of the innermost block's D-list.
+//
+
+constexpr Word BIT47      = 0'2000'0000'0000'0000; // a descriptor; without it, a link
+constexpr Word BIT46      = 0'1000'0000'0000'0000; // its offset counted down from 02013
+constexpr Word TYPE       = 0'0360'0000'0000'0000;
+constexpr Word OFFSET_CLR = 0'7777'7777'0370'0000; // a descriptor without its offset
+constexpr Word HEAD_KEEP  = 0'7400'0000'7777'7777;
+constexpr Word HEAD_KIND  = 0'1400'0000'0000'0000;
+constexpr Word TEXT_HEAD  = 0'1200'0000'0000'0000;
+constexpr Word DOPE_INIT  = 0'2021'0000'0000'0000; // a dope word not yet set
+constexpr Word DOPE_MASK  = 074007777;
+constexpr Word FRAME_STEP = 010000;
+constexpr Word FRAME_BASE = 0'7777'7777'7377'7777; // added to the frame of a procedure
+constexpr Word MINUS_TWO  = 0'7777'7777'7777'7775;
+constexpr Word LINE_HEAD  = 03300000;  // 0330.n: line n (M7+1226)
+constexpr Word PROC_LABEL = 036400000; // (M7+1231)
+constexpr Word FRAME_REG  = 0100000;   // (M7+1165)
+constexpr Word RETURN_1   = 0440017;   // (M7+752)
+constexpr Word RETURN_2   = 03004020;  // (M7+750)
+
+// The packed descriptor of a frame size (APX, then 5 right).
+Word packed_frame(Word size)
+{
+    return pack_bits(size, DESC_MASK) >> 5;
+}
+
+// The unpacked address of a packed descriptor (5 left, AUX).
+Word unpacked(Word d)
+{
+    return unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
+}
+
+// x − a and a + x on the arithmetic unit in mode rau.
+bool unit_less(unsigned rau, Word a, Word x)
+{
+    Arith u(a, rau);
+    u.sub(x);
+    return u.acc & 0'0020'0000'0000'0000;
+}
+
+// The descriptor at M2 gets offset v.
+void set_offset(Machine &m, Word v)
+{
+    m.store(m.M[2], (m.mem[m.M[2]] & OFFSET_CLR) ^ v);
+}
+
+// The next offset of the frame.
+void offset_up(Machine &m)
+{
+    set_offset(m, m.mem[02014]);
+    m.mem[02014] = cyclic_add(m.mem[02014], 1);
+}
+
+// An offset counted down from 02013.
+void offset_down(Machine &m)
+{
+    m.mem[02013] = cyclic_add(m.mem[02013], MINUS_TWO);
+    set_offset(m, m.mem[02013]);
+}
+
+// A number counted in M1.
+void number(Machine &m)
+{
+    set_offset(m, m.M[1]);
+    m.set_m(1, m.M[1] + 1);
+}
+
+//
+// An external or 'CODE' name, its ISO text at 06144+mod: the number of its
+// entry in the external table (M3 then in the entry's bits 36–25, the name
+// as TEXT at M3−1400), M3 counting.
+//
+void external_name(Machine &m, unsigned mod)
+{
+    Word name   = m.mem[(06144 + mod) & 077777];
+    m.mem[HALF] = name;
+    Word text   = 0;
+    unsigned e  = 0;
+    for (;; e += 3) {
+        Word w = m.mem[EXT_NAMES + 1 + e];
+        if (!w) {
+            m.acc = name;
+            m.call(ISO_TO_TEXT, 13, 025654);
+            text = m.acc;
+            break;
+        }
+        if ((w & EXT_COUNT) || m.mem[EXT_NAMES + e] != name)
+            continue;
+        m.store(EXT_NAMES + 1 + e, (Word(m.M[3]) << 24) | w);
+        m.acc = name;
+        m.call(ISO_TO_TEXT, 13, 025644);
+        Word t      = (m.acc >> 6) | TEXT_HEAD;
+        m.mem[HALF] = t;
+        unsigned k  = 0;
+        while (!((Word(077) << k) & t))
+            k += 6;
+        m.set_m(13, -k);
+        text = (k >= 6 ? Word(012) << (k - 6) : 0) | t;
+        break;
+    }
+    m.set_m(14, e);
+    m.store((m.M[3] + 076400) & 077777, text);
+    set_offset(m, m.M[3]);
+    m.set_m(3, m.M[3] + 1);
+}
+
+//
+// An array (kind 2) with its dope in the frame: the frame grows by the
+// dope of the bounds descriptor at M8 (bits 24–13: its words, bits 12–8: their
+// number, set to DOPE_INIT). Then the walk goes on from those words (M2).
+// False when the descriptor needs no offset.
+//
+bool array_dope(Machine &m)
+{
+    Word d = m.mem[m.M[2]];
+    m.ntr(0, 013);
+    if (!(d & BIT48))
+        return true;
+    m.set_m(8, (d >> 20) & 07777);
+    m.store(m.M[2], (d & HEAD_KEEP) | packed_frame(m.mem[02014]));
+    Word bounds = m.mem[m.M[8]];
+    Arith u(bounds >> 36, m.rau);
+    u.rsub(m.mem[02014]);
+    u.add(1);
+    Word t = cyclic_add(u.acc, FRAME_STEP) & DOPE_MASK;
+    m.set_additive();
+    m.store(m.M[2], (m.mem[m.M[2]] & OFFSET_CLR) | t);
+    Word size    = cyclic_add((bounds >> 24) & 07777, cyclic_add(t, 1)) & DOPE_MASK;
+    m.mem[02014] = size;
+    m.set_logical();
+    if (!(size & 076000))
+        return false;
+    unsigned at = (bounds >> 12) & 07777;
+    m.set_m(2, at);
+    m.set_m(12, (bounds >> 7) & 037);
+    m.mem[02014] = unpacked(m.mem[at]);
+    do {
+        m.store(at++, DOPE_INIT);
+        m.set_m(12, m.M[12] - 1);
+    } while (m.M[12]);
+    m.set_m(14, at);
+    return true;
+}
+
+//
 // 25525: block entry, the D-list at M2 (up to the word at its head): each
 // descriptor gets its storage offset from 02014 (the frame size), counted
 // up (or down from 02013 for some), or a number counted in M1, or for an
-// external or 'CODE' name the number of its entry in the external table
-// (its name as TEXT then in 05777-01400+M3, M3 counting). A word without
-// bit 47 links to a nested list: it is followed and the place pushed; the inner blocks are
-// entered after the list, each from the current size, the frame growing
-// to the largest. Returns through M13 (saved on the stack meanwhile).
-// The labels are those of the source.
+// external or 'CODE' name the number of its entry in the external table.
+// A word without bit 47 links to a nested list: it is followed and the
+// place pushed; the inner blocks are entered after the list, each from the
+// current size, the frame growing to the largest. Returns through M13.
 //
 unsigned block_entry(Machine &m)
 {
-    m.vtm(14, 04067);
-    m.ita(0, 016);
-    m.atx(0, 05777);
-    m.vtm(14, 04047);
-    m.ita(0, 016);
-    m.atx(0, 05773);
-    m.ita(0, 015);
-    m.xts(0, 02015);
-    m.its(0, 2);
-    m.xts(0, 0);
-    m.xts(2, 0);
-    m.aax(7, 02526);
-    m.atx(0, 02011);
-    m.xta(0, 0);
-    m.atx(0, 02012);
-    m.xta(2, 0);
-    m.asn(0, 0154);
-    m.aax(7, 02467);
-    m.ati(0, 016);
-    m.xta(2, 0);
+    m.mem[05777] = 04067;
+    m.mem[05773] = 04047;
+    push(m, m.M[13]);
+    push(m, m.mem[02015]);
+    push(m, m.M[2]);
+    push(m, 0); // the end of the inner blocks
+    Word head    = m.mem[m.M[2]];
+    m.mem[02011] = head & ADDR;
+    m.mem[02012] = 0;
+    unsigned kind = (head >> 44) & 3;
+    m.set_m(14, kind);
     m.ntr(0, 013);
-    switch (m.M[14]) { // the head's kind
-    case 0:
-        if (m.u1a())
-            goto L2060;
-        goto L2035;
-    case 1:
-        m.atx(0, 02012);
-        goto L2041;
-    case 2:
-        m.xta(2, 0);
-        m.asn(0, 0130);
-        [[fallthrough]];
-    default:
-        m.aax(7, 02451);
-        m.xts(2, 0);
-        m.aax(7, 02457);
-        m.atx(2, 0);
-        m.arx(0, 0);
-        if (m.uza())
-            goto L2031;
-        m.xta(0, 02014);
-        m.ati(0, 016);
-        if (m.M[14])
-            m.arx(7, 02522);
-        goto L2025;
-    }
-L2025:
-    m.xts(2, 0);
-    m.aax(7, 02516);
-    m.aex(Machine::SP, 077777);
-    m.stx(2, 0);
-    m.arx(7, 02461);
-    m.arx(Machine::SP, 0);
-    m.atx(0, 02014);
-    goto L2060;
-L2031:
-    m.ita(0, 1);
-    m.asn(0, 050);
-    m.aex(2, 0);
-    m.atx(2, 0);
-    m.utm(1, 1);
-    m.xta(0, 02014);
-    goto L2025;
-L2035:
-    m.ita(0, 2);
-    m.atx(0, 02015);
-    m.xta(0, 02014);
-    m.apx(7, 02465);
-    m.asn(0, 0105);
-    m.aex(2, 0);
-    goto L2056;
-L2041:
-    m.xta(2, 077777);
-    m.aax(7, 02447);
-    m.asn(0, 0116);
-    m.xts(0, 02014);
-    m.aax(7, 02472);
-    m.arx(7, 02523);
-    m.atx(0, 02007);
-    m.aex(Machine::SP, 0);
-    m.atx(0, 02013);
-    m.atx(0, 02014);
-    m.ita(0, 2);
-    m.atx(0, 02015);
-    m.xta(2, 0);
-    m.aax(7, 02516);
-    m.aex(0, 02007);
-    m.atx(2, 0);
-    m.xta(2, 077777);
-    m.aax(7, 02457);
-    m.atx(2, 077777);
-    m.xta(2, 0);
-    m.aax(7, 02440);
-    if (m.uza())
-        goto L2060;
-L2054: // offset: the next of the frame
-    m.xta(2, 0);
-    m.aax(7, 02516);
-    m.aex(0, 02014);
-L2056:
-    m.atx(2, 0);
-    m.xta(0, 02014);
-    m.arx(7, 02453);
-    m.atx(0, 02014);
-L2060: // the next descriptor
-    m.utm(2, 1);
-L2061:
-    m.ita(0, 2);
-    m.aex(0, 02011);
-    if (m.uza())
-        goto L2150;
-    m.xta(2, 0);
-    m.aax(7, 02474);
-    if (!m.u1a()) { // a link: follow it
-        m.ita(0, 2);
-        m.xts(2, 0);
-        m.ati(0, 2);
-        goto L2061;
-    }
-    m.xta(2, 0);
-    m.aax(7, 02462);
-    if (m.uza())
-        goto L2074;
-    m.xta(0, 02013);
-L2070: // offset counted down from 02013
-    m.arx(7, 02521);
-    m.atx(0, 02013);
-    m.xta(2, 0);
-    m.aax(7, 02516);
-    m.aex(0, 02013);
-    m.atx(2, 0);
-    goto L2060;
-L2074: // by its kind (bits 36-38)
-    m.xta(2, 0);
-    m.asn(0, 0143);
-    m.aax(7, 02504);
-    m.ati(0, 016);
-    m.xta(2, 0);
-    m.aax(7, 02102);
-    switch (m.M[14]) {
-    case 1:
-        if (m.uza())
-            goto L2137;
-        m.xta(0, 02012);
-        if (m.uza())
-            goto L2054;
-        m.xta(0, 02013);
-        goto L2070;
-    case 2:
-        if (m.uza())
-            goto L2144;
-        goto L2172;
-    case 4:
-    case 5:
-        m.xta(2, 0);
-        m.aax(7, 02452);
-        [[fallthrough]];
-    case 6:
-        if (m.uza())
-            goto L2144;
-        m.wtc(2, 0);
-        [[fallthrough]];
-    case 7:
-        break;
-    default:
-        throw std::runtime_error("pass 4: descriptor kind " + std::to_string(m.M[14]));
-    }
-    // An external name: its entry in the table, numbered from M3.
-    m.utc(0, 02000);
-    m.xta(0, 04144);
-    m.atx(7, 036);
-    m.vtm(14, 077775);
-    for (;;) {
-        m.utm(14, 3);
-        m.utc(14, EXT_NAMES + 1);
-        m.xta(0, 0);
-        if (m.uza()) {
-            m.xta(7, 036);
-            m.call(ISO_TO_TEXT, 13, 025654);
-            break;
+    switch (kind) {
+    case 0: // a procedure: its frame descriptor
+        if (head & BIT48) {
+            m.mem[02015] = m.M[2];
+            m.store(m.M[2], packed_frame(m.mem[02014]) ^ head);
+            m.mem[02014] = cyclic_add(m.mem[02014], 1);
         }
-        m.aax(7, 02473);
-        if (m.u1a())
-            continue;
-        m.utc(14, EXT_NAMES);
-        m.xta(0, 0);
-        m.aex(7, 036);
-        if (m.u1a())
-            continue;
-        m.ita(0, 3);
-        m.asn(0, 050);
-        m.utc(14, EXT_NAMES + 1);
-        m.aox(0, 0);
-        m.utc(14, EXT_NAMES + 1);
-        m.atx(0, 0);
-        m.xta(7, 036);
-        m.call(ISO_TO_TEXT, 13, 025644);
-        m.asn(0, 0106);
-        m.aox(7, 02464);
-        m.atx(7, 036);
-        m.vtm(13, 6);
-        do {
-            m.utm(13, 077772);
-            m.xta(7, 02531);
-            m.asn(13, 0100);
-            m.aax(7, 036);
-        } while (m.uza());
-        m.xta(7, 02511);
-        m.asn(13, 0106);
-        m.aox(7, 036);
+        break;
+    case 1: { // the body of a procedure: its frame
+        m.mem[02012] = head;
+        Word size    = (m.mem[m.M[2] - 1] & 03700000) >> 14;
+        Word frame   = cyclic_add(m.mem[02014] & ON_STACK, FRAME_BASE);
+        m.mem[02007] = frame;
+        m.mem[02013] = m.mem[02014] = frame ^ size;
+        m.mem[02015]                = m.M[2];
+        set_offset(m, frame);
+        m.store(m.M[2] - 1, m.mem[m.M[2] - 1] & HEAD_KEEP);
+        if (m.mem[m.M[2]] & 0200000)
+            offset_up(m);
         break;
     }
-    m.atx(3, 076400);
-    m.xta(2, 0);
-    m.aax(7, 02516);
-    m.its(0, 3);
-    m.aex(Machine::SP, 0);
-    m.atx(2, 0);
-    m.utm(3, 1);
-    goto L2060;
-L2137:
-    m.xta(2, 0);
-    m.ntr(0, 013);
-    if (!m.u1a()) {
-        m.xta(2, 0);
-        m.aax(7, 02457);
-        m.xts(0, 02015);
-        m.asn(0, 050);
-        m.aex(Machine::SP, 0);
-        m.atx(2, 0);
+    default: { // a block, its size in bits 12–1 (kind 3) or 36–25 (kind 2)
+        Word x = (kind == 2 ? head >> 24 : head) & 07777;
+        m.store(m.M[2], head & HEAD_KEEP);
+        Word v = m.mem[02014];
+        if (m.mem[m.M[2]] & BIT48) {
+            m.store(m.M[2], m.mem[m.M[2]] ^ (Word(m.M[1]) << 24));
+            m.set_m(1, m.M[1] + 1);
+        } else {
+            m.set_m(14, v);
+            if (v & ADDR)
+                v = cyclic_add(v, MINUS_ONE);
+        }
+        set_offset(m, v);
+        m.mem[02014] = cyclic_add(cyclic_add(v, 2), x);
+        break;
     }
-L2144: // numbered from M1
-    m.xta(2, 0);
-    m.aax(7, 02516);
-    m.its(0, 1);
-    m.aex(Machine::SP, 0);
-    m.atx(2, 0);
-    m.utm(1, 1);
-    goto L2060;
-L2172: // an array: its dope (bounds) in the frame
-    m.xta(2, 0);
-    m.ntr(0, 013);
-    if (m.u1a())
-        goto L2054;
-    m.asn(0, 0124);
-    m.aax(7, 02451);
-    m.ati(0, 010);
-    m.xta(0, 02014);
-    m.apx(7, 02465);
-    m.asn(0, 0105);
-    m.xts(2, 0);
-    m.aax(7, 02457);
-    m.aox(Machine::SP, 0);
-    m.atx(2, 0);
-    m.xta(8, 0);
-    m.asn(0, 0144);
-    m.arith(0, 02014, 006);
-    m.arith(7, 02453, 004);
-    m.arx(7, 02463);
-    m.aax(7, 02476);
-    m.xts(2, 0);
-    m.aax(7, 02516);
-    m.aox(Machine::SP, 077777);
-    m.stx(2, 0);
-    m.arx(7, 02453);
-    m.xts(8, 0);
-    m.asn(0, 0130);
-    m.aax(7, 02451);
-    m.arx(Machine::SP, 0);
-    m.aax(7, 02476);
-    m.atx(0, 02014);
-    m.aax(7, 02534);
-    if (m.uza())
-        goto L2060;
-    m.xta(8, 0);
-    m.asn(0, 0114);
-    m.aax(7, 02451);
-    m.ati(0, 2);
-    m.ati(0, 016);
-    m.xta(8, 0);
-    m.asn(0, 0107);
-    m.aax(7, 02530);
-    m.ati(0, 014);
-    m.xta(2, 0);
-    m.asn(0, 073);
-    m.aux(7, 02465);
-    m.atx(0, 02014);
-    do {
-        m.xta(7, 02515);
-        m.atx(14, 0);
-        m.utm(14, 1);
-        m.utm(12, 077777);
-    } while (m.M[12]);
-    goto L2054;
-L2150: // the list done: the inner blocks
-    m.xta(0, 02014);
-    m.stx(0, 02013);
+    }
+    m.set_logical();
     for (;;) {
-        m.ati(0, 2);
-        if (!m.M[2])
+        m.set_m(2, m.M[2] + 1);
+        while (m.M[2] != m.mem[02011] && !(m.mem[m.M[2]] & BIT47)) {
+            push(m, m.M[2]); // a link: followed
+            m.set_m(2, m.mem[m.M[2]]);
+        }
+        if (m.M[2] == m.mem[02011])
             break;
-        m.xta(0, 02013);
-        m.xts(0, 02014);
-        m.xts(0, 02013);
-        m.atx(0, 02014);
+        Word d = m.mem[m.M[2]];
+        if (d & BIT46) {
+            offset_down(m);
+            continue;
+        }
+        unsigned k = (d >> 35) & 7; // by its kind (bits 38–36)
+        m.set_m(14, k);
+        switch (k) {
+        case 1:
+            if (!(d & TYPE)) {
+                m.ntr(0, 013);
+                if (d & BIT48)
+                    m.store(m.M[2], (d & HEAD_KEEP) ^ ((m.mem[02015] << 24) & WORD_MASK));
+                number(m);
+            } else if (!m.mem[02012]) {
+                offset_up(m);
+            } else {
+                offset_down(m);
+            }
+            break;
+        case 2:
+            if (!(d & TYPE))
+                number(m);
+            else if (array_dope(m))
+                offset_up(m);
+            break;
+        case 4:
+        case 5:
+            if (!(d & BIT45))
+                number(m);
+            else
+                external_name(m, d & ADDR);
+            break;
+        case 6:
+            if (!(d & TYPE))
+                number(m);
+            else
+                external_name(m, d & ADDR);
+            break;
+        case 7:
+            external_name(m, 0);
+            break;
+        default:
+            throw std::runtime_error("pass 4: descriptor kind " + std::to_string(k));
+        }
+        m.set_logical();
+    }
+    // The list done: the inner blocks.
+    m.mem[02013] = m.mem[02014];
+    for (Word link = pop(m); (link & ADDR) != 0; link = pop(m)) {
+        m.set_m(2, link);
+        push(m, m.mem[02013]);
+        push(m, m.mem[02014]);
+        m.mem[02014] = m.mem[02013];
         m.set_m(13, 025700);
         block_entry(m);
-        m.xta(Machine::SP, 0);
+        Word old = pop(m);
         m.ntr(0, 3);
-        m.arith(0, 02014, 005);
-        if (!m.u1a()) {
-            m.arith(0, 02014, 004);
-            m.atx(0, 02014);
-        }
-        m.xta(Machine::SP, 0);
-        m.stx(0, 02013);
+        if (!unit_less(m.rau, old, m.mem[02014]))
+            m.mem[02014] = old;
+        m.set_logical();
+        m.mem[02013] = pop(m);
     }
-    m.xta(Machine::SP, 0);
-    m.sti(0, 2);
-    m.stx(0, 02015);
-    m.ati(0, 015);
-    m.xta(2, 0);
-    m.aax(7, 02470);
-    m.aex(7, 02452);
-    if (m.u1a())
-        return m.M[13];
-    m.xta(0, 02014);
-    m.apx(7, 02465);
-    m.asn(0, 0105);
-    m.aex(2, 0);
-    m.atx(2, 0);
+    m.set_m(2, pop(m));
+    m.mem[02015] = pop(m);
+    m.set_m(13, pop(m));
+    if ((m.mem[m.M[2]] & HEAD_KIND) == BIT45)
+        m.store(m.M[2], m.mem[m.M[2]] ^ packed_frame(m.mem[02014]));
     return m.M[13];
 }
 
@@ -1559,14 +1499,11 @@ L2150: // the list done: the inner blocks
 // 24705, or 24707 for one by a register); then the next item.
 unsigned frame_reset(Machine &m)
 {
-    m.xta(14, 0);
-    m.asn(0, 073);
-    m.aux(7, 02465);
-    m.xts(14, 0);
+    Word d = m.mem[m.M[14]];
+    push(m, unpacked(d));
     m.ntr(0, 013);
-    m.vtm(11, 024705);
-    if (!m.u1a())
-        m.vtm(11, 024707);
+    unsigned t = (d & BIT48) ? 024707 : 024705;
+    m.vtm(11, t);
     m.vtm(12, DISPATCH_NEXT);
     return TEMPLATE;
 }
@@ -1575,104 +1512,68 @@ unsigned frame_reset(Machine &m)
 // jumped to from an inner block resets the frame.
 unsigned label_item(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.aox(7, 0746);
-    emit_half(m, 024675);
-    m.xta(3, 0);
-    m.arx(0, 0);
-    if (m.u1a())
+    emit(m, (m.mem[m.M[3]] & DESC_MASK) | LABEL_DEF, 024675);
+    Word d = m.mem[m.M[3]];
+    if (!(d & BIT48))
         return DISPATCH_NEXT;
-    m.asn(0, 0130);
-    m.ati(0, 016);
+    m.set_m(14, d >> 24);
     return frame_reset(m);
 }
 
 // 24752: the end of a block (037): the frame of the block outside.
 unsigned block_end(Machine &m)
 {
-    m.mtj(3, 016);
+    m.set_m(14, m.M[3]);
     return frame_reset(m);
 }
 
 // 24746: a line marker (051) or block begin (036): 0330.n when M2 = 1.
 unsigned line_item(Machine &m)
 {
-    m.utm(2, 077777);
-    if (m.M[2])
-        return DISPATCH_NEXT;
-    m.ita(0, 3);
-    m.aex(7, 01226);
-    emit_half(m, DISPATCH_NEXT);
+    m.set_m(2, m.M[2] - 1);
+    if (!m.M[2])
+        emit(m, m.M[3] ^ LINE_HEAD, DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
 //
 // 24711: a procedure (042): its entry (template 24726 with the frame size
 // and the number of parameters); 02021 = parameters − 1, 02023 its kind;
-// a procedure with a label inside gets M7+1231 with it.
+// a procedure with a label inside gets PROC_LABEL with it.
 //
 unsigned procedure_item(Machine &m)
 {
+    Word d      = m.mem[m.M[3]];
+    Word before = m.mem[(m.M[3] - 1) & 077777];
+    Word params = (d >> 20) & 017;
+    push(m, (d >> 24) & ADDR);
+    push(m, params);
+    m.mem[02021] = cyclic_add(params, MINUS_ONE);
+    push(m, before & ADDR);
     m.vtm(11, 024726);
-    m.xta(3, 0);
-    m.asn(0, 0130);
-    m.aax(7, 02526);
-    m.xts(3, 0);
-    m.asn(0, 0124);
-    m.aax(7, 02527);
-    m.atx(Machine::SP, 0);
-    m.arx(7, 02522);
-    m.atx(0, 02021);
-    m.xta(3, 077777);
-    m.aax(7, 02526);
-    m.atx(Machine::SP, 0);
     m.set_m(12, 024720);
-    run_template(m);
-    m.xta(3, 0);
-    m.aax(7, 02437);
-    m.aex(7, 02437);
-    m.atx(0, 02023);
-    m.xta(3, 077777);
-    m.asn(0, 0130);
-    m.aax(7, 02526);
-    if (m.uza())
-        return MAIN_LOOP;
-    m.aox(7, 01231);
-    emit_half(m, MAIN_LOOP);
+    emit_template(m, 024726);
+    m.mem[02023] = (m.mem[m.M[3]] & 0100000) ^ 0100000;
+    Word label   = (m.mem[(m.M[3] - 1) & 077777] >> 24) & ADDR;
+    if (label)
+        emit(m, label | PROC_LABEL, MAIN_LOOP);
     return MAIN_LOOP;
 }
 
-// 24730: the end of a procedure body (062): the return (M7+752, M7+750),
-// then 0211 of the label after it (M7+746) or M7+744.
+// 24730: the end of a procedure body (062): the return (RETURN_1,
+// RETURN_2), then 0211 of the label after it or NEW_WORD.
 unsigned procedure_end(Machine &m)
 {
-    m.utm(Machine::SP, 077776);
-    m.xta(3, 0);
-    m.aax(7, 02440);
-    if (!m.uza()) {
-        m.xta(3, 0);
-        m.aax(7, 02465);
-        m.aox(7, 01165);
-        emit_half(m, 024734);
-    }
-    m.xta(3, 0);
-    m.aax(7, 02472);
-    m.atx(Machine::SP, 0);
-    m.asn(0, 0124);
-    m.stx(0, 02021);
-    m.aox(7, 0752);
-    emit_half(m, 024740);
-    m.xta(7, 0750);
-    emit_half(m, 024741);
-    m.xta(3, 077777);
-    m.asn(0, 0130);
-    m.aax(7, 02526);
-    if (m.uza())
-        m.xta(7, 0744);
-    else
-        m.aox(7, 0746);
-    emit_half(m, DISPATCH_NEXT);
+    m.set_m(SP, m.M[SP] - 2);
+    Word d = m.mem[m.M[3]];
+    if (d & 0200000)
+        emit(m, (d & DESC_MASK) | FRAME_REG, 024734);
+    Word r       = m.mem[m.M[3]] & ON_STACK;
+    m.mem[02021] = r >> 20;
+    emit(m, r | RETURN_1, 024740);
+    emit(m, RETURN_2, 024741);
+    Word label = (m.mem[(m.M[3] - 1) & 077777] >> 24) & ADDR;
+    emit(m, label ? label | LABEL_DEF : NEW_WORD, DISPATCH_NEXT);
     return DISPATCH_NEXT;
 }
 
