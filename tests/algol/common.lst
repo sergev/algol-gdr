@@ -1,18 +1,18 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ ′COMMON′ BLOCKS: SCALARS AND ARRAYS OF ONE TO THREE
+     1.     'BEGIN'
+     2.         'COMMENT' 'COMMON' BLOCKS: SCALARS AND ARRAYS OF ONE TO THREE
      3.             DIMENSIONS, EXPORTED AS *ABC*, *DATA* AND *S*;
-     4.         ′COMMON′ /ABC/ X, Y(10), Z(2,3);
-     5.         ′REAL′ X; ′ARRAY′ Y[1:10]; ′INTEGER′ ′ARRAY′ Z[1:2,1:3];
-     6.         ′COMMON′ /DATA/ N, T(2, 2, 2).,
-     7.         ′INTEGER′ N; ′ARRAY′ T[1:2, 1:2, 1:2];
-     8.         ′COMMON′ /S/ W;
-     9.         ′BOOLEAN′ W;
+     4.         'COMMON' /ABC/ X, Y(10), Z(2,3);
+     5.         'REAL' X; 'ARRAY' Y[1:10]; 'INTEGER' 'ARRAY' Z[1:2,1:3];
+     6.         'COMMON' /DATA/ N, T(2, 2, 2).,
+     7.         'INTEGER' N; 'ARRAY' T[1:2, 1:2, 1:2];
+     8.         'COMMON' /S/ W;
+     9.         'BOOLEAN' W;
     10.         X := 1; Y[1] := 2; Z[2,3] := 3;
-    11.         N := 4; T[2, 2, 2] := 5; W := ′TRUE′;
+    11.         N := 4; T[2, 2, 2] := 5; W := 'TRUE';
     12.         PRINT(X, Y[1], Z[2,3], N, T[2, 2, 2], W);
-    13.     ′END′
-    14.     ′EOP′
+    13.     'END'
+    14.     'EOP'
 

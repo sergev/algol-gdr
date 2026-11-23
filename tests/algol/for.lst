@@ -1,21 +1,21 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ FOR STATEMENTS: STEP-UNTIL, WHILE, LISTS;
-     3.         ′INTEGER′ I, S;
-     4.         ′REAL′ X;
+     1.     'BEGIN'
+     2.         'COMMENT' FOR STATEMENTS: STEP-UNTIL, WHILE, LISTS;
+     3.         'INTEGER' I, S;
+     4.         'REAL' X;
      5.         S := 0;
-     6.         ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 10 ′DO′ S := S + I;
+     6.         'FOR' I := 1 'STEP' 1 'UNTIL' 10 'DO' S := S + I;
      7.         PRINT(S);
-     8.         ′FOR′ I := 10 ′STEP′ -3 ′UNTIL′ 0 ′DO′ PRINT(I);
-     9.         ′FOR′ I := 5 ′STEP′ 1 ′UNTIL′ 4 ′DO′ PRINT(-1);
+     8.         'FOR' I := 10 'STEP' -3 'UNTIL' 0 'DO' PRINT(I);
+     9.         'FOR' I := 5 'STEP' 1 'UNTIL' 4 'DO' PRINT(-1);
     10.         S := 1;
-    11.         ′FOR′ I := S * 2 ′WHILE′ S < 100 ′DO′ S := I;
+    11.         'FOR' I := S * 2 'WHILE' S < 100 'DO' S := I;
     12.         PRINT(S);
-    13.         ′FOR′ I := 1, 3, 7, 10 ′STEP′ 5 ′UNTIL′ 20, S ′DO′ PRINT(I);
-    14.         ′FOR′ X := 0.5 ′STEP′ 0.25 ′UNTIL′ 1.0 ′DO′ PRINT(X);
+    13.         'FOR' I := 1, 3, 7, 10 'STEP' 5 'UNTIL' 20, S 'DO' PRINT(I);
+    14.         'FOR' X := 0.5 'STEP' 0.25 'UNTIL' 1.0 'DO' PRINT(X);
     15.         PRINT(I)
-    16.     ′END′
-    17.     ′EOP′
+    16.     'END'
+    17.     'EOP'
 

@@ -1,9 +1,9 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ A LISTING OF THREE PAGES IN TWO COLUMNS;
-     3.         ′INTEGER′ S;
+     1.     'BEGIN'
+     2.         'COMMENT' A LISTING OF THREE PAGES IN TWO COLUMNS;
+     3.         'INTEGER' S;
      4.         S := 0;
      5.         S := S + 1;
      6.         S := S + 2;
@@ -286,6 +286,6 @@ A L G O L - Г Д P
    283.         S := S + 279;
    284.         S := S + 280;
    285.         PRINT(S)
-   286.     ′END′
-   287.     ′EOP′
+   286.     'END'
+   287.     'EOP'
 

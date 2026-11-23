@@ -28,14 +28,13 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 ## Layout
 
 - `src/` — compiler: `main.cpp` (CLI), `frontend.*` (parse, check, listing), `source.*`
-  (UTF-8 input), `card.*` (lines → KOI-7 cards), `lexer.*` (symbols), `parser.*` and
+  (UTF-8 input), `lexer.*` (symbols), `parser.*` and
   `syntax.h` (the syntax tree), `checker.*` (scopes and types: the AST), `ast.*` (the AST
-  after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages), `listing.*` (printer
-  characters, one-column printout).
+  after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages), `listing.*`
+  (the printout).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.out` run output under `dubna` (frozen); and ours, which
-  `ALGC_UPDATE_GOLDENS=1` rewrites: `.lst` listings (`algc --list`; for correct programs as
-  the original printed them), `.ast` the AST, `.err` the messages; side files
+  `ALGC_UPDATE_GOLDENS=1` rewrites: `.lst` listings (`algc --list`), `.ast` the AST, `.err` the messages; side files
   `.pre` (`*check`), `.in` (input of the run), `.run` (the extra `dubna` cards of the run:
   libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`). The goldens
   from `dubna` are frozen: the tools that made them are on the `besm6` branch.
@@ -84,9 +83,11 @@ Detailed plan: [Roadmap.md](Roadmap.md).
 
 ## Source language
 
-Original input is upper/lower case with keywords in quotes (`'BEGIN'`, `'EOP'` ends the program,
-strings in `''…''` or `'('…')'`), word operators like `'LE'`, `'AND'`, `'POWER'`. Lines are
-cards: only columns 1–72 count. The exponent sign is `⏨` (`@` is a letter, printed `°`).
-Cards are encoded as `dubna` does; UTF-8 operator symbols our compiler also accepts (where the
-original gives ERROR 01): `×`, `↑`, `≥`, `≤`, `≠`, `¬`, `∧`, `∨`, `⊃`, `≡` (`÷` reads as `≥`,
-as in the original).
+UTF-8 text. Keywords in quotes, in any case (`'begin'`, `'EOP'` ends the program; `′` is a
+quote too), strings in `''…''` or `'('…')'` (`'ddd'` inside: a character by its octal code
+point), word operators like `'le'`, `'and'`, `'power'`. Messages and the AST give keywords in
+lower case. Identifiers: Latin, Greek or Cyrillic letters and digits, any length, case-sensitive,
+kept as written; standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column
+limit. The exponent sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧`
+(or `&`), `∨`, `⊃`, `≡`. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case
+only, names by their first 6 characters.

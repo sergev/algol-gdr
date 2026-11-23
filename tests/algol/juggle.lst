@@ -1,280 +1,280 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′CODE′:′REAL′RNDM;
-     2.     ′CODE′:TERIN;
-     3.     ′BEGIN′
-     4.         ′COMMENT′ FROM: GITHUB.COM/CWI-SOFTWARE-ARCHIVE/ALGOL60
-     5.         JUNGLE GENERATOR PRINTS RANDOM SENTENCES IN ENGLISH AS A DEMO.
-     6.         AUTHOR: C.H.A. KOSTER, MATHEMATICAL CENTRE.
-     7.         DATE: 1964 OR EARLIER.
-     8.         LISTING AND PAPERTAPE ARE FROM X1 AT THE HTS"A".
-     9.         COPIED IN 1977/1978 AND PRESERVED SINCE THAT MOMENT.
-    10.         PAPERTAPE IS IN 7 BIT CODE FOR FRIDEN FLEXOWRITER.
-    11.         THE PROGRAM REFERS TO "THE WORLD FAMOUS X8 COMPUTER".
-    12.         THE X8 MAY BE OF LATER DATE THAN THE ORIGINAL PROGRAM.;
+     1.     'code':'real'rndm;
+     2.     'code':terin;
+     3.     'begin'
+     4.         'comment' From: github.com/cwi-software-archive/Algol60
+     5.         Jungle Generator prints random sentences in English as a demo.
+     6.         Author: C.H.A. Koster, Mathematical Centre.
+     7.         Date: 1964 or earlier.
+     8.         Listing and papertape are from X1 at the HTS"A".
+     9.         Copied in 1977/1978 and preserved since that moment.
+    10.         Papertape is in 7 bit code for Friden Flexowriter.
+    11.         The program refers to "the world famous X8 computer".
+    12.         The X8 may be of later date than the original program.;
     13.
-    14.         ′REAL′ RR;
-    15.         ′INTEGER′ INPUT;
+    14.         'real' rr;
+    15.         'integer' input;
     16.
-    17.         ′REAL′ ′PROCEDURE′ R;
-    18.         ′BEGIN′
-    19.             R := RR := RNDM(-1)
-    20.         ′END′;
+    17.         'real' 'procedure' R;
+    18.         'begin'
+    19.             R := rr := rndm(-1)
+    20.         'end';
     21.
-    22.         ′PROCEDURE′ P(U);
-    23.             ′STRING′ U;
-    24.         PRINT(U);
+    22.         'procedure' P(u);
+    23.             'string' u;
+    24.         print(u);
     25.
-    26.         ′PROCEDURE′ SENTENCE;
-    27.         ′BEGIN′
-    28.             SUBJECT;
-    29.             PREDICATE;
-    30.             ′IF′ R < .2 ′THEN′
-    31.                 NEXTSENTENCE
-    32.         ′END′;
+    26.         'procedure' sentence;
+    27.         'begin'
+    28.             subject;
+    29.             predicate;
+    30.             'if' R < .2 'then'
+    31.                 nextsentence
+    32.         'end';
     33.
-    34.         ′PROCEDURE′ NEXTSENTENCE;
-    35.         ′BEGIN′
-    36.             CONNECTIVE;
-    37.             SENTENCE
-    38.         ′END′;
+    34.         'procedure' nextsentence;
+    35.         'begin'
+    36.             connective;
+    37.             sentence
+    38.         'end';
     39.
-    40.         ′PROCEDURE′ CONNECTIVE;
-    41.             ′IF′ R <.3 ′THEN′
-    42.                 P(′′ AND′′)
-    43.             ′ELSE′ ′IF′ RR < .55 ′THEN′
-    44.                 P(′′ BUT′′)
-    45.             ′ELSE′ ′IF′ RR <.8 ′THEN′
-    46.                 P(′′ BECAUSE′′)
-    47.             ′ELSE′
-    48.                 P(′′ THOUGH′′);
+    40.         'procedure' connective;
+    41.             'if' R <.3 'then'
+    42.                 P('' and'')
+    43.             'else' 'if' rr < .55 'then'
+    44.                 P('' but'')
+    45.             'else' 'if' rr <.8 'then'
+    46.                 P('' because'')
+    47.             'else'
+    48.                 P('' though'');
     49.
-    50.         ′PROCEDURE′ SUBJECT;
-    51.             ′IF′ R < .8 ′THEN′
-    52.                 SUBST
-    53.             ′ELSE′
-    54.                 SUBNAME;
+    50.         'procedure' subject;
+    51.             'if' R < .8 'then'
+    52.                 subst
+    53.             'else'
+    54.                 subname;
     55.
-    56.         ′PROCEDURE′ SUBST;
-    57.         ′BEGIN′
-    58.             ARTICLE;
-    59.             NOUN PHRASE;
-    60.             ′IF′ R < .2 ′THEN′
-    61.                 PROPERTY
-    62.         ′END′;
+    56.         'procedure' subst;
+    57.         'begin'
+    58.             article;
+    59.             noun phrase;
+    60.             'if' R < .2 'then'
+    61.                 property
+    62.         'end';
     63.
-    64.         ′PROCEDURE′ PROPERTY;
-    65.             ′IF′ R <.25 ′THEN′
-    66.                 P(′′ WITH BLUE EYES′′)
-    67.             ′ELSE′ ′IF′ RR < .5 ′THEN′
-    68.                 P(′′ IN A MINK COAT′′)
-    69.             ′ELSE′
-    70.                 ′BEGIN′
-    71.                     P(′′ FROM′′);
-    72.                     ′IF′ R < .25 ′THEN′
-    73.                         P(′′ AUSTRALIA′′)
-    74.                     ′ELSE′ ′IF′ RR < .5 ′THEN′
-    75.                         P(′′ SWITSERLAND′′)
-    76.                     ′ELSE′ ′IF′ RR <.75 ′THEN′
-    77.                         P(′′ SIBERIA′′)
-    78.                     ′ELSE′
-    79.                         P(′′ CLEVELAND (OHIO)′′)
-    80.                 ′END′;
+    64.         'procedure' property;
+    65.             'if' R <.25 'then'
+    66.                 P('' with blue eyes'')
+    67.             'else' 'if' rr < .5 'then'
+    68.                 P('' in a mink coat'')
+    69.             'else'
+    70.                 'begin'
+    71.                     P('' from'');
+    72.                     'if' R < .25 'then'
+    73.                         P('' Australia'')
+    74.                     'else' 'if' rr < .5 'then'
+    75.                         P('' Switserland'')
+    76.                     'else' 'if' rr <.75 'then'
+    77.                         P('' Siberia'')
+    78.                     'else'
+    79.                         P('' Cleveland (Ohio)'')
+    80.                 'end';
     81.
-    82.         ′PROCEDURE′ NOUN PHRASE;
-    83.             ′IF′ R < .25 ′THEN′
-    84.                 ′BEGIN′
-    85.                     ADJE;
-    86.                     NOUN PHRASE
-    87.                 ′END′
-    88.             ′ELSE′
-    89.                 NOUNPART;
+    82.         'procedure' noun phrase;
+    83.             'if' R < .25 'then'
+    84.                 'begin'
+    85.                     adje;
+    86.                     noun phrase
+    87.                 'end'
+    88.             'else'
+    89.                 nounpart;
     90.
-    91.         ′PROCEDURE′ NOUNPART;
-    92.             ′IF′ R < .25 ′THEN′
-    93.                 ′BEGIN′
-    94.                     NOUN;
-    95.                     RELSENTENCE
-    96.                 ′END′
-    97.             ′ELSE′
-    98.                 NOUN;
+    91.         'procedure' nounpart;
+    92.             'if' R < .25 'then'
+    93.                 'begin'
+    94.                     noun;
+    95.                     relsentence
+    96.                 'end'
+    97.             'else'
+    98.                 noun;
     99.
-   100.         ′PROCEDURE′ PREDICATE;
-   101.             ′IF′ R < .2 ′THEN′
-   102.                 ′BEGIN′
-   103.                     MODIFIER;
-   104.                     MODPREDICATE
-   105.                 ′END′
-   106.             ′ELSE′ ′IF′ RR < .5 ′THEN′
-   107.                 QUALITY
-   108.             ′ELSE′
-   109.                 MODPREDICATE;
+   100.         'procedure' predicate;
+   101.             'if' R < .2 'then'
+   102.                 'begin'
+   103.                     modifier;
+   104.                     modpredicate
+   105.                 'end'
+   106.             'else' 'if' rr < .5 'then'
+   107.                 quality
+   108.             'else'
+   109.                 modpredicate;
    110.
-   111.         ′PROCEDURE′ MODPREDICATE;
-   112.         ′BEGIN′
-   113.             VERB;
-   114.             OBJECT
-   115.         ′END′;
+   111.         'procedure' modpredicate;
+   112.         'begin'
+   113.             verb;
+   114.             object
+   115.         'end';
    116.
-   117.         ′PROCEDURE′ RELSENTENCE;
-   118.         ′BEGIN′
-   119.             P(′′, THAT′′);
-   120.             ′IF′ R < .4 ′THEN′
-   121.                 ′BEGIN′
-   122.                     SUBJECT;
-   123.                     VERB
-   124.                 ′END′
-   125.             ′ELSE′ ′IF′ RR < .6 ′THEN′
-   126.                 QUALITY
-   127.             ′ELSE′
-   128.                 PREDICATE
-   129.         ′END′;
+   117.         'procedure' relsentence;
+   118.         'begin'
+   119.             P('', that'');
+   120.             'if' R < .4 'then'
+   121.                 'begin'
+   122.                     subject;
+   123.                     verb
+   124.                 'end'
+   125.             'else' 'if' rr < .6 'then'
+   126.                 quality
+   127.             'else'
+   128.                 predicate
+   129.         'end';
    130.
-   131.         ′PROCEDURE′ OBJECT;
-   132.             ′IF′ R < .8 ′THEN′
-   133.                 SUBST
-   134.             ′ELSE′
-   135.                 OBJNAME;
+   131.         'procedure' object;
+   132.             'if' R < .8 'then'
+   133.                 subst
+   134.             'else'
+   135.                 objname;
    136.
-   137.         ′PROCEDURE′ QUALITY;
-   138.         ′BEGIN′
-   139.                 ′IF′ R < .45 ′THEN′
-   140.                     P(′′ WAS′′)
-   141.                 ′ELSE′
-   142.                     P(′′ IS′′);
-   143.                 ′IF′ R < .4 ′THEN′
-   144.                     ADJE
-   145.                 ′ELSE′
-   146.                     OBJECT
-   147.         ′END′;
+   137.         'procedure' quality;
+   138.         'begin'
+   139.                 'if' R < .45 'then'
+   140.                     P('' was'')
+   141.                 'else'
+   142.                     P('' is'');
+   143.                 'if' R < .4 'then'
+   144.                     adje
+   145.                 'else'
+   146.                     object
+   147.         'end';
    148.
-   149.         ′PROCEDURE′ ADJE;
-   150.             ′IF′ R < .2 ′THEN′
-   151.                 ′BEGIN′
-   152.                     ADVERB;
-   153.                     ADJECTIVE
-   154.                 ′END′
-   155.             ′ELSE′
-   156.                 ADJECTIVE;
+   149.         'procedure' adje;
+   150.             'if' R < .2 'then'
+   151.                 'begin'
+   152.                     adverb;
+   153.                     adjective
+   154.                 'end'
+   155.             'else'
+   156.                 adjective;
    157.
-   158.         ′PROCEDURE′ SUBNAME;
-   159.             ′IF′ R < .2 ′THEN′
-   160.                 P(′′ HE′′)
-   161.             ′ELSE′ ′IF′ RR < .4 ′THEN′
-   162.                 P(′′ JIM′′)
-   163.             ′ELSE′ ′IF′ RR < .6 ′THEN′
-   164.                 P(′′ MARY′′)
-   165.             ′ELSE′ ′IF′ RR < .8 ′THEN′
-   166.                 P(′′ SHE′′)
-   167.             ′ELSE′ ′IF′ RR < .9 ′THEN′
-   168.                 P(′′ DAVID LIVINGSTONE′′)
-   169.             ′ELSE′
-   170.                 P(′′ THE WORLD FAMOUS X8 COMPUTER′′);
+   158.         'procedure' subname;
+   159.             'if' R < .2 'then'
+   160.                 P('' he'')
+   161.             'else' 'if' rr < .4 'then'
+   162.                 P('' Jim'')
+   163.             'else' 'if' rr < .6 'then'
+   164.                 P('' Mary'')
+   165.             'else' 'if' rr < .8 'then'
+   166.                 P('' she'')
+   167.             'else' 'if' rr < .9 'then'
+   168.                 P('' David Livingstone'')
+   169.             'else'
+   170.                 P('' the world Famous X8 Computer'');
    171.
-   172.         ′PROCEDURE′ OBJNAME;
-   173.             ′IF′ R < .2 ′THEN′
-   174.                 P(′′ HIM′′)
-   175.             ′ELSE′ ′IF′ RR < .4 ′THEN′
-   176.                 P(′′ JIM′′)
-   177.             ′ELSE′ ′IF′ RR < .6 ′THEN′
-   178.                 P(′′ MARY′′)
-   179.             ′ELSE′ ′IF′ RR < .8 ′THEN′
-   180.                 P(′′ HER′′)
-   181.             ′ELSE′ ′IF′ RR < .95 ′THEN′
-   182.                 P(′′ DAVID LIVINGSTONE′′)
-   183.             ′ELSE′
-   184.                 P(′′ A COMPUTER′′);
+   172.         'procedure' objname;
+   173.             'if' R < .2 'then'
+   174.                 P('' him'')
+   175.             'else' 'if' rr < .4 'then'
+   176.                 P('' Jim'')
+   177.             'else' 'if' rr < .6 'then'
+   178.                 P('' Mary'')
+   179.             'else' 'if' rr < .8 'then'
+   180.                 P('' her'')
+   181.             'else' 'if' rr < .95 'then'
+   182.                 P('' David Livingstone'')
+   183.             'else'
+   184.                 P('' a computer'');
    185.
-   186.         ′PROCEDURE′ MODIFIER;
-   187.             ′IF′ R < .33 ′THEN′
-   188.                 P(′′ ALWAYS′′)
-   189.             ′ELSE′ ′IF′ RR < .67 ′THEN′
-   190.                 P(′′ OFTEN′′)
-   191.             ′ELSE′
-   192.                 P(′′ NEVER′′);
+   186.         'procedure' modifier;
+   187.             'if' R < .33 'then'
+   188.                 P('' always'')
+   189.             'else' 'if' rr < .67 'then'
+   190.                 P('' often'')
+   191.             'else'
+   192.                 P('' never'');
    193.
-   194.         ′PROCEDURE′ ARTICLE;
-   195.             ′IF′ R < .35 ′THEN′
-   196.                 P(′′ A′′)
-   197.             ′ELSE′ ′IF′ RR < .75 ′THEN′
-   198.                 P(′′ THE′′)
-   199.             ′ELSE′ ′IF′ RR < .87 ′THEN′
-   200.                 P(′′ THIS′′)
-   201.             ′ELSE′
-   202.                 P(′′ THAT′′);
+   194.         'procedure' article;
+   195.             'if' R < .35 'then'
+   196.                 P('' a'')
+   197.             'else' 'if' rr < .75 'then'
+   198.                 P('' the'')
+   199.             'else' 'if' rr < .87 'then'
+   200.                 P('' this'')
+   201.             'else'
+   202.                 P('' that'');
    203.
-   204.         ′PROCEDURE′ NOUN;
-   205.             ′IF′ R < .17 ′THEN′
-   206.                 P(′′ BOY′′)
-   207.             ′ELSE′ ′IF′ RR < .33 ′THEN′
-   208.                 P(′′ TREE′′)
-   209.             ′ELSE′ ′IF′ RR < .5 ′THEN′
-   210.                 P(′′ GIRL′′)
-   211.             ′ELSE′ ′IF′ RR < .67 ′THEN′
-   212.                 P(′′ BEAR′′)
-   213.             ′ELSE′ ′IF′ RR < .83 ′THEN′
-   214.                 P(′′ HUNTER′′)
-   215.             ′ELSE′
-   216.                 P(′′ LAMB′′);
+   204.         'procedure' noun;
+   205.             'if' R < .17 'then'
+   206.                 P('' boy'')
+   207.             'else' 'if' rr < .33 'then'
+   208.                 P('' tree'')
+   209.             'else' 'if' rr < .5 'then'
+   210.                 P('' girl'')
+   211.             'else' 'if' rr < .67 'then'
+   212.                 P('' bear'')
+   213.             'else' 'if' rr < .83 'then'
+   214.                 P('' hunter'')
+   215.             'else'
+   216.                 P('' lamb'');
    217.
-   218.         ′PROCEDURE′ ADJECTIVE;
-   219.             ′IF′ R < .2 ′THEN′
-   220.                 P(′′ LITTLE′′)
-   221.             ′ELSE′ ′IF′ RR < .4 ′THEN′
-   222.                 P(′′ NICE′′)
-   223.             ′ELSE′ ′IF′ RR < .6 ′THEN′
-   224.                 P(′′ BIG′′)
-   225.             ′ELSE′ ′IF′ RR < .8 ′THEN′
-   226.                 P(′′ GREEN′′)
-   227.             ′ELSE′
-   228.                 P(′′ BAD′′);
+   218.         'procedure' adjective;
+   219.             'if' R < .2 'then'
+   220.                 P('' little'')
+   221.             'else' 'if' rr < .4 'then'
+   222.                 P('' nice'')
+   223.             'else' 'if' rr < .6 'then'
+   224.                 P('' big'')
+   225.             'else' 'if' rr < .8 'then'
+   226.                 P('' green'')
+   227.             'else'
+   228.                 P('' bad'');
    229.
-   230.         ′PROCEDURE′ ADVERB;
-   231.             ′IF′ R < .4 ′THEN′
-   232.                 P(′′ VERY′′)
-   233.             ′ELSE′ ′IF′ RR < .6 ′THEN′
-   234.                 P(′′ EXTRAORDINARILY′′)
-   235.             ′ELSE′
-   236.                 P(′′ RATHER′′);
+   230.         'procedure' adverb;
+   231.             'if' R < .4 'then'
+   232.                 P('' very'')
+   233.             'else' 'if' rr < .6 'then'
+   234.                 P('' extraordinarily'')
+   235.             'else'
+   236.                 P('' rather'');
    237.
-   238.         ′PROCEDURE′ VERB;
-   239.             ′IF′ R < .45 ′THEN′
-   240.                 ′BEGIN′
-   241.                     ′IF′ R < .2 ′THEN′
-   242.                         P(′′ SAW′′)
-   243.                     ′ELSE′ ′IF′ RR < .4 ′THEN′
-   244.                         P(′′ LIKED′′)
-   245.                     ′ELSE′ ′IF′ RR < .6 ′THEN′
-   246.                         P(′′ DREAMT ABOUT′′)
-   247.                     ′ELSE′ ′IF′ RR < .7 ′THEN′
-   248.                         P(′′ SMELLED′′)
-   249.                     ′ELSE′ ′IF′ RR < .8 ′THEN′
-   250.                         P(′′ ATE′′)
-   251.                     ′ELSE′
-   252.                         P(′′ HAD′′)
-   253.                 ′END′
-   254.             ′ELSE′
-   255.                 ′BEGIN′
-   256.                     ′IF′ R < .2 ′THEN′
-   257.                         P(′′ SEES′′)
-   258.                     ′ELSE′ ′IF′ RR < .4 ′THEN′
-   259.                         P(′′ LIKES′′)
-   260.                     ′ELSE′ ′IF′ RR < .6 ′THEN′
-   261.                         P(′′ DREAMS ABOUT′′)
-   262.                     ′ELSE′ ′IF′ RR < .7 ′THEN′
-   263.                         P(′′ EATS′′)
-   264.                     ′ELSE′ ′IF′ RR < .8 ′THEN′
-   265.                         P(′′ SMELLS′′)
-   266.                     ′ELSE′
-   267.                         P(′′ HAS′′)
-   268.                 ′END′;
+   238.         'procedure' verb;
+   239.             'if' R < .45 'then'
+   240.                 'begin'
+   241.                     'if' R < .2 'then'
+   242.                         P('' saw'')
+   243.                     'else' 'if' rr < .4 'then'
+   244.                         P('' liked'')
+   245.                     'else' 'if' rr < .6 'then'
+   246.                         P('' dreamt about'')
+   247.                     'else' 'if' rr < .7 'then'
+   248.                         P('' smelled'')
+   249.                     'else' 'if' rr < .8 'then'
+   250.                         P('' ate'')
+   251.                     'else'
+   252.                         P('' had'')
+   253.                 'end'
+   254.             'else'
+   255.                 'begin'
+   256.                     'if' R < .2 'then'
+   257.                         P('' sees'')
+   258.                     'else' 'if' rr < .4 'then'
+   259.                         P('' likes'')
+   260.                     'else' 'if' rr < .6 'then'
+   261.                         P('' dreams about'')
+   262.                     'else' 'if' rr < .7 'then'
+   263.                         P('' eats'')
+   264.                     'else' 'if' rr < .8 'then'
+   265.                         P('' smells'')
+   266.                     'else'
+   267.                         P('' has'')
+   268.                 'end';
    269.     NZ:
-   270.         SENTENCE;
-   271.         PRINT(NEWLINE);
+   270.         sentence;
+   271.         print(newline);
    272.
-   273.         TERIN(INPUT, 1);
-   274.         ′GOTO′ NZ
-   275.     ′END′
-   276.     ′EOP′
+   273.         terin(input, 1);
+   274.         'goto' NZ
+   275.     'end'
+   276.     'eop'
 

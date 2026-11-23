@@ -14,7 +14,7 @@ class Diagnostics;
 class Listing;
 
 //
-// Parse and check a program. With a listing: the banner, each card as it is
+// Parse and check a program. With a listing: the banner, each line as it is
 // read, an empty line at the end. Nothing when there are errors.
 //
 std::optional<ast::Program> front_end(const std::string &source, Diagnostics &diag,

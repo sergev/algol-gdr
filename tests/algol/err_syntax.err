@@ -1,5 +1,5 @@
 err_syntax.alg:4: error: Expected ')', found ';'
 err_syntax.alg:5: error: Expected an expression, found '*'
-err_syntax.alg:6: error: Expected 'THEN', found 'DO'
-err_syntax.alg:7: error: Expected 'DO', found 'UNTIL'
-err_syntax.alg:8: error: Expected ';' or 'END', found '='
+err_syntax.alg:6: error: Expected 'then', found 'do'
+err_syntax.alg:7: error: Expected 'do', found 'until'
+err_syntax.alg:8: error: Expected ';' or 'end', found '='

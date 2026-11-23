@@ -1,14 +1,14 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ ERRORS FOR THE DIAGNOSTICS;
-     3.         ′INTEGER′ I, I; ′REAL′ X;
+     1.     'BEGIN'
+     2.         'COMMENT' ERRORS FOR THE DIAGNOSTICS;
+     3.         'INTEGER' I, I; 'REAL' X;
      4.         X := Y + ;
-     5.         ′IF′ I ′THEN′ ′GOTO′ NOWHERE;
-     6.         ′FOR′ I := 1 ′STEP′ ′UNTIL′ 10 ′DO′ ;
+     5.         'IF' I 'THEN' 'GOTO' NOWHERE;
+     6.         'FOR' I := 1 'STEP' 'UNTIL' 10 'DO' ;
      7.         A[1] := 2;
-     8.         I := ′TRUE′ + 1.5;
-     9.         ′BEGIN′ ′END′ ′END′
-    10.     ′END′
+     8.         I := 'TRUE' + 1.5;
+     9.         'BEGIN' 'END' 'END'
+    10.     'END'
 

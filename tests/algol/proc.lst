@@ -1,28 +1,28 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ PROCEDURES: VALUE AND NAME PARAMETERS, RECURSION,
-     3.             FUNCTIONS, PROCEDURES AS PARAMETERS, JENSEN′S DEVICE;
-     4.         ′INTEGER′ I, K;
-     5.         ′REAL′ ′ARRAY′ V[1:3];
-     6.         ′INTEGER′ ′PROCEDURE′ FACT(N); ′VALUE′ N; ′INTEGER′ N;
-     7.             FACT := ′IF′ N ′LE′ 1 ′THEN′ 1 ′ELSE′ N * FACT(N - 1);
-     8.         ′PROCEDURE′ INC(X); ′INTEGER′ X;
+     1.     'BEGIN'
+     2.         'COMMENT' PROCEDURES: VALUE AND NAME PARAMETERS, RECURSION,
+     3.             FUNCTIONS, PROCEDURES AS PARAMETERS, JENSEN'S DEVICE;
+     4.         'INTEGER' I, K;
+     5.         'REAL' 'ARRAY' V[1:3];
+     6.         'INTEGER' 'PROCEDURE' FACT(N); 'VALUE' N; 'INTEGER' N;
+     7.             FACT := 'IF' N 'LE' 1 'THEN' 1 'ELSE' N * FACT(N - 1);
+     8.         'PROCEDURE' INC(X); 'INTEGER' X;
      9.             X := X + 1;
-    10.         ′PROCEDURE′ INCV(X); ′VALUE′ X; ′INTEGER′ X;
+    10.         'PROCEDURE' INCV(X); 'VALUE' X; 'INTEGER' X;
     11.             X := X + 1;
-    12.         ′REAL′ ′PROCEDURE′ SUM(J, L, U, T); ′VALUE′ L, U;
-    13.             ′INTEGER′ J, L, U; ′REAL′ T;
-    14.         ′BEGIN′ ′REAL′ S; S := 0;
-    15.             ′FOR′ J := L ′STEP′ 1 ′UNTIL′ U ′DO′ S := S + T;
+    12.         'REAL' 'PROCEDURE' SUM(J, L, U, T); 'VALUE' L, U;
+    13.             'INTEGER' J, L, U; 'REAL' T;
+    14.         'BEGIN' 'REAL' S; S := 0;
+    15.             'FOR' J := L 'STEP' 1 'UNTIL' U 'DO' S := S + T;
     16.             SUM := S
-    17.         ′END′;
-    18.         ′REAL′ ′PROCEDURE′ SQ(X); ′VALUE′ X; ′REAL′ X;
+    17.         'END';
+    18.         'REAL' 'PROCEDURE' SQ(X); 'VALUE' X; 'REAL' X;
     19.             SQ := X * X;
-    20.         ′REAL′ ′PROCEDURE′ APPLY(F, X); ′REAL′ ′PROCEDURE′ F; ′REAL′ X;
+    20.         'REAL' 'PROCEDURE' APPLY(F, X); 'REAL' 'PROCEDURE' F; 'REAL' X;
     21.             APPLY := F(X);
-    22.         ′PROCEDURE′ NOARGS;
+    22.         'PROCEDURE' NOARGS;
     23.             PRINT(77);
     24.         K := 1;
     25.         INC(K); INCV(K);
@@ -31,6 +31,6 @@ A L G O L - Г Д P
     28.         PRINT(SUM(I, 1, 3, V[I] * V[I]));
     29.         PRINT(APPLY(SQ, 3.0));
     30.         NOARGS
-    31.     ′END′
-    32.     ′EOP′
+    31.     'END'
+    32.     'EOP'
 

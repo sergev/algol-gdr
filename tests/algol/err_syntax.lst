@@ -1,14 +1,14 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ SYNTAX ERRORS;
-     3.         ′INTEGER′ I;
+     1.     'BEGIN'
+     2.         'COMMENT' SYNTAX ERRORS;
+     3.         'INTEGER' I;
      4.         I := (1 + 2;
      5.         I := 1 + * 2;
-     6.         ′IF′ I ′DO′ I := 0;
-     7.         ′FOR′ I := 1 ′UNTIL′ 2 ′DO′ ;
+     6.         'IF' I 'DO' I := 0;
+     7.         'FOR' I := 1 'UNTIL' 2 'DO' ;
      8.         I = 1;
-     9.     ′END′
-    10.     ′EOP′
+     9.     'END'
+    10.     'EOP'
 

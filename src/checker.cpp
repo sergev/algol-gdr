@@ -60,18 +60,23 @@ enum class Std {
     STOA,
 };
 
-Std standard(const std::string &key)
+// A standard identifier by its name in any case.
+Std standard(const std::string &name)
 {
     static const std::map<std::string, Std> table = {
-        { "ABS", Std::ABS },        { "ARCTAN", Std::ARCTAN },  { "COS", Std::COS },
-        { "ENTIER", Std::ENTIER },  { "EXP", Std::EXP },        { "LENGTH", Std::LENGTH },
-        { "LN", Std::LN },          { "SIGN", Std::SIGN },      { "SIN", Std::SIN },
-        { "SQRT", Std::SQRT },      { "PRINT", Std::PRINT },    { "READ", Std::READ },
-        { "NEWLIN", Std::NEWLINE }, { "NEWPAG", Std::NEWPAGE }, { "STOP", Std::STOP },
-        { "LOAD", Std::LOAD },      { "LOADGO", Std::LOADGO },  { "ASSIGN", Std::ASSIGN },
-        { "ATOS", Std::ATOS },      { "STOA", Std::STOA },
+        { "ABS", Std::ABS },         { "ARCTAN", Std::ARCTAN },   { "COS", Std::COS },
+        { "ENTIER", Std::ENTIER },   { "EXP", Std::EXP },         { "LENGTH", Std::LENGTH },
+        { "LN", Std::LN },           { "SIGN", Std::SIGN },       { "SIN", Std::SIN },
+        { "SQRT", Std::SQRT },       { "PRINT", Std::PRINT },     { "READ", Std::READ },
+        { "NEWLIN", Std::NEWLINE },  { "NEWPAG", Std::NEWPAGE },  { "STOP", Std::STOP },
+        { "NEWLINE", Std::NEWLINE }, { "NEWPAGE", Std::NEWPAGE }, { "LOAD", Std::LOAD },
+        { "LOADGO", Std::LOADGO },   { "ASSIGN", Std::ASSIGN },   { "ATOS", Std::ATOS },
+        { "STOA", Std::STOA },
     };
-    auto it = table.find(key);
+    std::string upper = name;
+    std::transform(upper.begin(), upper.end(), upper.begin(),
+                   [](char c) { return c >= 'a' && c <= 'z' ? char(c - 'a' + 'A') : c; });
+    auto it = table.find(upper);
     return it == table.end() ? Std::NONE : it->second;
 }
 
@@ -136,7 +141,7 @@ public:
 
 private:
     struct Scope {
-        std::map<std::string, int> names; // key → symbol
+        std::map<std::string, int> names; // name → symbol
     };
 
     Diagnostics &diag_;
@@ -194,24 +199,22 @@ private:
 
 int Checker::declare(int line, const std::string &name, Symbol s)
 {
-    std::string key = name_key(name);
-    auto &names     = scopes_.back().names;
-    if (names.count(key))
+    auto &names = scopes_.back().names;
+    if (names.count(name))
         error(line, quoted(name) + " is declared twice");
     s.id   = int(symbols_.size()) + 1;
     s.name = name;
     symbols_.push_back(std::move(s));
-    int index  = int(symbols_.size()) - 1;
-    names[key] = index;
+    int index   = int(symbols_.size()) - 1;
+    names[name] = index;
     return index;
 }
 
 // A symbol by name, innermost scope first; -1 when not declared.
 int Checker::lookup(const std::string &name) const
 {
-    std::string key = name_key(name);
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-        auto f = it->names.find(key);
+        auto f = it->names.find(name);
         if (f != it->names.end())
             return f->second;
     }
@@ -254,7 +257,7 @@ Program Checker::program(const syn::Program &p)
 
 //
 // A block: the bounds of its arrays in the enclosing scope, then its names,
-// then the switches, the procedures, the 'COMMON' blocks and the statements.
+// then the switches, the procedures, the 'common' blocks and the statements.
 //
 Checker::Decls Checker::ptrs(const syn::DeclList &list)
 {
@@ -338,11 +341,11 @@ StmtPtr Checker::make_block(SrcLoc loc, const Decls &decls, const Stmts &body)
                         Symbol fs;
                         fs.mode = Mode::NAME;
                         for (const auto &v : x.values)
-                            if (name_key(v.name) == name_key(f.name))
+                            if (v.name == f.name)
                                 fs.mode = Mode::VALUE;
                         for (const auto &spec : x.specs) {
                             for (const auto &n : spec.names) {
-                                if (name_key(n.name) != name_key(f.name))
+                                if (n.name != f.name)
                                     continue;
                                 fs.type = spec.type;
                                 switch (spec.kind) {
@@ -447,7 +450,7 @@ void Checker::procedure_body(const syn::decl::Procedure &p, int index, decl::Pro
             (s.kind == Kind::LABEL || s.kind == Kind::SWITCH || s.kind == Kind::PROCEDURE ||
              s.kind == Kind::ARRAY || s.type == Type::STRING))
             error(p.name.line, "Formal parameter " + quoted(s.name) + " cannot be called by value");
-        scopes_.back().names[name_key(s.name)] = f;
+        scopes_.back().names[s.name] = f;
         Formal formal;
         formal.name      = s.name;
         formal.id        = s.id;
@@ -501,20 +504,20 @@ void Checker::procedure_body(const syn::decl::Procedure &p, int index, decl::Pro
     scopes_.pop_back();
 }
 
-// 'COMMON' /block/: its elements are variables or arrays of this block.
+// 'common' /block/: its elements are variables or arrays of this block.
 DeclPtr Checker::common(int line, const CommonBlock &block)
 {
     decl::Common c;
     c.name = block.name;
     for (const auto &e : block.elements) {
-        auto it = scopes_.back().names.find(name_key(e.name));
+        auto it = scopes_.back().names.find(e.name);
         if (it == scopes_.back().names.end()) {
-            error(line, "'COMMON' element " + quoted(e.name) + " is not declared in its block");
+            error(line, "'common' element " + quoted(e.name) + " is not declared in its block");
             continue;
         }
         const Symbol &s = sym(it->second);
         if (s.kind != Kind::SIMPLE && s.kind != Kind::ARRAY) {
-            error(line, "'COMMON' element " + quoted(e.name) + " is not a variable or an array");
+            error(line, "'common' element " + quoted(e.name) + " is not a variable or an array");
             continue;
         }
         c.elements.push_back(CommonElement{ e.name, s.id, e.size });
@@ -563,10 +566,10 @@ StmtPtr Checker::statement(const syn::Stmt &s)
             } else if constexpr (std::is_same_v<T, syn::stmt::Assign>) {
                 return assignment(loc, x);
             } else if constexpr (std::is_same_v<T, syn::stmt::Goto>) {
-                return make_stmt(loc, stmt::Goto{ designational(*x.target, "'GOTO'") });
+                return make_stmt(loc, stmt::Goto{ designational(*x.target, "'goto'") });
             } else if constexpr (std::is_same_v<T, syn::stmt::If>) {
                 stmt::If i;
-                i.condition = boolean(*x.condition, "the condition of 'IF'");
+                i.condition = boolean(*x.condition, "the condition of 'if'");
                 i.then_stmt = statement(*x.then_stmt);
                 if (x.else_stmt)
                     i.else_stmt = statement(*x.else_stmt);
@@ -662,7 +665,7 @@ StmtPtr Checker::for_stmt(SrcLoc loc, const syn::stmt::For &f)
     if (i < 0) {
         named(f.var.name, f.var.line, false);
     } else if (sym(i).kind != Kind::SIMPLE || !numeric(sym(i).type)) {
-        error(f.var.line, "The variable of 'FOR' must be a simple integer or real variable");
+        error(f.var.line, "The variable of 'for' must be a simple integer or real variable");
     } else {
         t = sym(i).type;
     }
@@ -676,7 +679,7 @@ std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement>
                                               int line)
 {
     std::vector<ForElement> out;
-    const std::string what = "an element of 'FOR'";
+    const std::string what = "an element of 'for'";
     for (const auto &e : list) {
         switch (e.kind) {
         case syn::ForElement::VALUE:
@@ -689,7 +692,7 @@ std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement>
             break;
         case syn::ForElement::WHILE:
             out.push_back(for_elem::While{ convert(expr(*e.value), t, line, what),
-                                           boolean(*e.step, "the condition of 'WHILE'") });
+                                           boolean(*e.step, "the condition of 'while'") });
             break;
         }
     }
@@ -707,7 +710,7 @@ StmtPtr Checker::call_stmt(SrcLoc loc, const syn::Expr &e)
         args = &c->args;
     int i = lookup(nm);
     if (i < 0) {
-        if (Std s = standard(name_key(nm)); s != Std::NONE)
+        if (Std s = standard(nm); s != Std::NONE)
             return std_stmt(loc, s, nm, args, e.line);
         named(nm, e.line, false);
         return make_stmt(loc, stmt::Dummy{});
@@ -731,7 +734,7 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
         for (size_t k = 0; k < n; k++) {
             const syn::Expr &a = *(*args)[k];
             if (auto nn = std::get_if<syn::expr::Name>(&a.node); nn && lookup(nn->name) < 0) {
-                Std ss = standard(name_key(nn->name));
+                Std ss = standard(nn->name);
                 if (ss == Std::NEWLINE) {
                     io.items.push_back(IoElement{ io::NewLine{} });
                     continue;
@@ -749,7 +752,7 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
             else
                 e = expr(a);
             if (e->type == Type::NONE && !std::holds_alternative<expr::IntConst>(e->node))
-                error(a.line, "Illegal argument of 'PRINT'");
+                error(a.line, "Illegal argument of " + quoted(nm));
             io.items.push_back(IoElement{ io::Item{ std::move(e) } });
         }
         return make_stmt(loc, std::move(io));
@@ -795,11 +798,11 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
     }
     case Std::STOP:
         if (n)
-            error(line, "'STOP' has no arguments");
+            error(line, quoted(nm) + " has no arguments");
         return make_stmt(loc, stmt::StdProc{ StdProc::STOP, {} });
     case Std::ASSIGN:
         if (n != 2)
-            error(line, "'ASSIGN' needs two arguments");
+            error(line, quoted(nm) + " needs two arguments");
         [[fallthrough]];
     case Std::LOAD:
     case Std::LOADGO:
@@ -822,7 +825,7 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
     }
 }
 
-// 'PRINT', 'WRITE' and the other I/O statements.
+// 'print', 'write' and the other I/O statements.
 StmtPtr Checker::io_stmt(SrcLoc loc, const syn::stmt::Io &io)
 {
     static const std::map<Sym, IoOp> ops = {
@@ -898,7 +901,7 @@ ExprPtr Checker::boolean(const syn::Expr &e, const std::string &what)
 ExprPtr Checker::designational(const syn::Expr &e, const std::string &what)
 {
     if (auto c = std::get_if<syn::expr::If>(&e.node)) {
-        ExprPtr cond = boolean(*c->condition, "the condition of 'IF'");
+        ExprPtr cond = boolean(*c->condition, "the condition of 'if'");
         ExprPtr a    = designational(*c->then_expr, what);
         ExprPtr b    = designational(*c->else_expr, what);
         return make_expr(Type::NONE, expr::Cond{ std::move(cond), std::move(a), std::move(b) });
@@ -952,7 +955,7 @@ ExprPtr Checker::expr(const syn::Expr &e)
                     return a;
                 if (x.op == Sym::NOT) {
                     if (a->type != Type::BOOLEAN && a->type != Type::BITS) {
-                        error(line, "Type error in 'NOT': " + std::string(to_string(a->type)));
+                        error(line, "Type error in 'not': " + std::string(to_string(a->type)));
                         return bad();
                     }
                     Type t = a->type;
@@ -970,7 +973,7 @@ ExprPtr Checker::expr(const syn::Expr &e)
             } else if constexpr (std::is_same_v<T, syn::expr::Binary>) {
                 return binary(x, line);
             } else {
-                ExprPtr c = boolean(*x.condition, "the condition of 'IF'");
+                ExprPtr c = boolean(*x.condition, "the condition of 'if'");
                 ExprPtr a = expr(*x.then_expr);
                 ExprPtr b = expr(*x.else_expr);
                 if (a->type == Type::NONE || b->type == Type::NONE) {
@@ -1099,9 +1102,9 @@ ExprPtr Checker::named(const std::string &nm, int line, bool argument)
 {
     int i = lookup(nm);
     if (i < 0) {
-        Std s = standard(name_key(nm));
+        Std s = standard(nm);
         if (s == Std::NONE) {
-            if (undeclared_.insert(name_key(nm)).second)
+            if (undeclared_.insert(nm).second)
                 error(line, "Undeclared identifier " + quoted(nm));
         } else {
             error(line, "Illegal use of " + quoted(nm));
@@ -1175,7 +1178,7 @@ ExprPtr Checker::call(const std::string &nm, const syn::ExprList &args, int line
 {
     int i = lookup(nm);
     if (i < 0) {
-        Std s = standard(name_key(nm));
+        Std s     = standard(nm);
         StdFunc f = StdFunc::ABS;
         Type t    = Type::NONE;
         if (std_function(s, f, t) || s == Std::LENGTH) {
@@ -1188,7 +1191,7 @@ ExprPtr Checker::call(const std::string &nm, const syn::ExprList &args, int line
                 return a;
             if (s == Std::LENGTH) {
                 if (a->type != Type::STRING) {
-                    error(line, "The argument of 'LENGTH' must be a string");
+                    error(line, "The argument of " + quoted(nm) + " must be a string");
                     return bad();
                 }
                 f = StdFunc::LENGTH;

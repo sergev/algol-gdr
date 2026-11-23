@@ -1,5 +1,5 @@
 externals:
-  - {kind: code, name: "RNDM", id: 1}
+  - {kind: code, name: "rndm", id: 1}
   - {kind: algol, name: "BOZP", id: 2}
   - {kind: algol, name: "YBYB", id: 3}
 block:
@@ -10,15 +10,15 @@ block:
       line: 5
       type: real
       arrays:
-        - {name: "A", id: 4}
+        - {name: "a", id: 4}
       bounds:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 10}
-    - {kind: var, line: 6, name: "I", id: 5, type: integer}
+    - {kind: var, line: 6, name: "i", id: 5, type: integer}
   body:
     - kind: for
       loc: 8/1
-      control: {kind: var, decl: 5, name: "I"}
+      control: {kind: var, decl: 5, name: "i"}
       elements:
         - kind: step_until
           init: {kind: int_const, type: integer, value: 1}
@@ -30,14 +30,14 @@ block:
         targets:
           - kind: element
             array: 4
-            name: "A"
+            name: "a"
             subscripts:
-              - {kind: var, type: integer, decl: 5, name: "I"}
+              - {kind: var, type: integer, decl: 5, name: "i"}
         value:
           kind: call
           type: real
           proc: 1
-          name: "RNDM"
+          name: "rndm"
           args:
             - kind: unary
               type: integer
@@ -47,37 +47,37 @@ block:
       loc: 11/1
       op: write
       params:
-        - {kind: string_const, type: string, value: "(10F7.3)"}
+        - {kind: string_const, type: string, value: "(10f7.3)"}
       items:
         - kind: item
-          expr: {kind: var, type: real, decl: 4, name: "A"}
+          expr: {kind: var, type: real, decl: 4, name: "a"}
     - kind: call
       loc: 14/1
       proc: 2
       name: "BOZP"
       args:
-        - {kind: var, type: real, decl: 4, name: "A"}
+        - {kind: var, type: real, decl: 4, name: "a"}
         - {kind: int_const, type: integer, value: 10}
     - kind: io
       loc: 15/1
       op: write
       params:
-        - {kind: string_const, type: string, value: "(10F7.3)"}
+        - {kind: string_const, type: string, value: "(10f7.3)"}
       items:
         - kind: item
-          expr: {kind: var, type: real, decl: 4, name: "A"}
+          expr: {kind: var, type: real, decl: 4, name: "a"}
     - kind: call
       loc: 18/1
       proc: 3
       name: "YBYB"
       args:
-        - {kind: var, type: real, decl: 4, name: "A"}
+        - {kind: var, type: real, decl: 4, name: "a"}
         - {kind: int_const, type: integer, value: 10}
     - kind: io
       loc: 19/1
       op: write
       params:
-        - {kind: string_const, type: string, value: "(10F7.3)"}
+        - {kind: string_const, type: string, value: "(10f7.3)"}
       items:
         - kind: item
-          expr: {kind: var, type: real, decl: 4, name: "A"}
+          expr: {kind: var, type: real, decl: 4, name: "a"}

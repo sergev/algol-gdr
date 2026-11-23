@@ -1,8 +1,8 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         PRINT(′′HELLO, ALGOL!′′);
-     3.     ′END′
-     4.     ′EOP′
+     1.     'begin'
+     2.         print(''Hello, Algol!'');
+     3.     'end'
+     4.     'eop'
 

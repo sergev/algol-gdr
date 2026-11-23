@@ -1,31 +1,31 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ LABELS, GOTO, JUMP OUT OF A BLOCK AND A PROCEDURE;
-     3.         ′INTEGER′ I;
-     4.         ′PROCEDURE′ P(N); ′VALUE′ N; ′INTEGER′ N;
-     5.         ′BEGIN′
-     6.             ′IF′ N > 2 ′THEN′ ′GOTO′ OUT;
+     1.     'BEGIN'
+     2.         'COMMENT' LABELS, GOTO, JUMP OUT OF A BLOCK AND A PROCEDURE;
+     3.         'INTEGER' I;
+     4.         'PROCEDURE' P(N); 'VALUE' N; 'INTEGER' N;
+     5.         'BEGIN'
+     6.             'IF' N > 2 'THEN' 'GOTO' OUT;
      7.             PRINT(N)
-     8.         ′END′;
+     8.         'END';
      9.         I := 0;
     10.     AGAIN:
     11.         I := I + 1;
-    12.         ′IF′ I < 3 ′THEN′ ′GOTO′ AGAIN;
+    12.         'IF' I < 3 'THEN' 'GOTO' AGAIN;
     13.         PRINT(I);
-    14.         ′BEGIN′ ′INTEGER′ K;
+    14.         'BEGIN' 'INTEGER' K;
     15.             K := 5;
-    16.             ′GOTO′ L1;
+    16.             'GOTO' L1;
     17.             PRINT(-1);
     18.         L1: PRINT(K);
-    19.             ′GOTO′ L2
-    20.         ′END′;
+    19.             'GOTO' L2
+    20.         'END';
     21.         PRINT(-2);
     22.     L2: P(1); P(2); P(3);
     23.         PRINT(-3);
     24.     OUT:
     25.         PRINT(999)
-    26.     ′END′
-    27.     ′EOP′
+    26.     'END'
+    27.     'EOP'
 

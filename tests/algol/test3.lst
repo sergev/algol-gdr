@@ -1,28 +1,28 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ SWITCHES, GOTO, BOOLEANS, WHILE, BLOCKS, ARRAYS, STRINGS;
-     3.         ′SWITCH′ S := L1, L2, L3;
-     4.         ′INTEGER′ I, K; ′BOOLEAN′ B, C;
-     5.         ′ARRAY′ A[0:4, -1:1];
-     6.         ′PROCEDURE′ P(N, M); ′VALUE′ N; ′INTEGER′ N; ′ARRAY′ M;
+     1.     'BEGIN'
+     2.         'COMMENT' SWITCHES, GOTO, BOOLEANS, WHILE, BLOCKS, ARRAYS, STRINGS;
+     3.         'SWITCH' S := L1, L2, L3;
+     4.         'INTEGER' I, K; 'BOOLEAN' B, C;
+     5.         'ARRAY' A[0:4, -1:1];
+     6.         'PROCEDURE' P(N, M); 'VALUE' N; 'INTEGER' N; 'ARRAY' M;
      7.             M[N, 0] := N + 0.5;
      8.         I := 1;
-     9.     L0: ′GOTO′ S[I];
-    10.     L1: I := I + 1; ′GOTO′ L0;
-    11.     L2: I := I + 1; ′GOTO′ L0;
-    12.     L3: B := I = 3 ′AND′ ′NOT′ (I > 5) ′OR′ ′FALSE′;
-    13.         C := B ′IMPL′ ′TRUE′ ′EQUIV′ ′NOT′ B;
+     9.     L0: 'GOTO' S[I];
+    10.     L1: I := I + 1; 'GOTO' L0;
+    11.     L2: I := I + 1; 'GOTO' L0;
+    12.     L3: B := I = 3 'AND' 'NOT' (I > 5) 'OR' 'FALSE';
+    13.         C := B 'IMPL' 'TRUE' 'EQUIV' 'NOT' B;
     14.         K := 0;
-    15.         ′FOR′ I := 1, 2, 5 ′STEP′ 2 ′UNTIL′ 9 ′DO′ K := K + 1;
-    16.         ′BEGIN′ ′INTEGER′ ′ARRAY′ X[1:K];
-    17.             ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ K ′DO′ X[I] := I * I;
+    15.         'FOR' I := 1, 2, 5 'STEP' 2 'UNTIL' 9 'DO' K := K + 1;
+    16.         'BEGIN' 'INTEGER' 'ARRAY' X[1:K];
+    17.             'FOR' I := 1 'STEP' 1 'UNTIL' K 'DO' X[I] := I * I;
     18.             PRINT(X[K])
-    19.         ′END′;
-    20.         ′FOR′ I := 0 ′STEP′ 1 ′UNTIL′ 4 ′DO′ P(I, A);
+    19.         'END';
+    20.         'FOR' I := 0 'STEP' 1 'UNTIL' 4 'DO' P(I, A);
     21.         PRINT(A[4, 0], B, C, K);
-    22.         PRINT(′(′HELLO FROM ALGOL′)′)
-    23.     ′END′
-    24.     ′EOP′
+    22.         PRINT('('HELLO FROM ALGOL')')
+    23.     'END'
+    24.     'EOP'
 

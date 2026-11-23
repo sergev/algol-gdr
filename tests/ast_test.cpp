@@ -150,12 +150,21 @@ TEST(Checker, messages)
                              "I := B; J := 1; 'GOTO' I\n'END' 'EOP'"),
               "x.alg:2: error: Type error in the value of ':=': boolean instead of integer\n"
               "x.alg:2: error: Undeclared identifier 'J'\n"
-              "x.alg:2: error: A label is expected in 'GOTO'\n");
+              "x.alg:2: error: A label is expected in 'goto'\n");
     EXPECT_EQ(check_messages("'BEGIN' 'REAL' 'PROCEDURE' F; ; F 'END' 'EOP'"),
               "x.alg:1: error: Function 'F' does not assign its result\n");
     EXPECT_EQ(check_messages("'BEGIN' 'PROCEDURE' P(X); 'INTEGER' X; X := 1;\n"
                              "'REAL' Y; P(Y); P(Y + 1) 'END' 'EOP'"),
               "x.alg:2: error: Argument 1 of 'P' does not match formal parameter 'X'\n");
+}
+
+TEST(Checker, names)
+{
+    // Names count in full and by case; standard ones in any case.
+    EXPECT_EQ(check_messages("'begin' 'integer' counter1, counter2, Counter1;\n"
+                             "counter1 := counter2 := Counter1 := 1; COUNTER1 := sqrt(4);\n"
+                             "Print(counter1) 'end' 'eop'"),
+              "x.alg:2: error: Undeclared identifier 'COUNTER1'\n");
 }
 
 TEST(Checker, scopes_and_conversions)

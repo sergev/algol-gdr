@@ -155,7 +155,7 @@ block:
       loc: 12/1
       targets:
         - {kind: var, decl: 4, name: "Q"}
-      value: {kind: string_const, type: string, value: "′"}
+      value: {kind: string_const, type: string, value: "'"}
     - kind: for
       loc: 12/2
       control: {kind: var, decl: 2, name: "I"}

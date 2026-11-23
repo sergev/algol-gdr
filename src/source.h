@@ -18,4 +18,10 @@ std::string read_source(const std::string &filename);
 //
 std::size_t find_invalid_utf8(const std::string &text);
 
+// UTF-8 to code points; a bad byte gives U+FFFD.
+std::u32string decode_utf8(const std::string &text);
+
+// Append a code point in UTF-8.
+void append_utf8(std::string &out, char32_t c);
+
 #endif

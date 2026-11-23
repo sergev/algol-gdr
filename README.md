@@ -35,10 +35,11 @@ algc [options...] file.alg
 | `--check` | Run-time checks (like `*CHECK`) |
 | `--dump-ast` | Print the AST in YAML |
 
-The source is the original notation in UTF-8: keywords in quotes (`'BEGIN'`), strings in
-`''…''`, `'EOP'` at the end; only columns 1-72 of a line count. The operators `× ↑ ≥ ≤ ≠ ¬
-∧ ∨ ⊃ ≡` may be used for their word forms, and `⏨` is the exponent sign. The listing is
-printed in one column with long lines, as the original does with `*call setftn:one,long`.
+The source is the original notation in UTF-8: keywords in quotes, in any case (`'begin'`,
+`'BEGIN'`), strings in `''…''`, `'eop'` at the end. Identifiers may have any length and
+are case-sensitive; letters may be Latin, Greek or Cyrillic. The operators `× ↑ ≥ ≤ ≠ ¬ ∧
+∨ ⊃ ≡` may be used for their word forms, and `⏨` is the exponent sign. The listing shows
+the source lines as written, numbered.
 
 For now the compiler only checks the program: code generation is being moved to LLVM.
 

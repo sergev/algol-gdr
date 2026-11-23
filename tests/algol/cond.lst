@@ -1,18 +1,18 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ CONDITIONAL STATEMENTS AND EXPRESSIONS;
-     3.         ′INTEGER′ I, J;
-     4.         ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 4 ′DO′
-     5.         ′BEGIN′
-     6.             ′IF′ I = 1 ′THEN′ PRINT(100)
-     7.             ′ELSE′ ′IF′ I = 2 ′THEN′ PRINT(200)
-     8.             ′ELSE′ PRINT(300);
-     9.             ′IF′ I > 2 ′THEN′ PRINT(I);
-    10.             J := ′IF′ I < 3 ′THEN′ I * 10 ′ELSE′ -I;
-    11.             PRINT(J, ′IF′ I = 4 ′THEN′ 1.5 ′ELSE′ 2.5)
-    12.         ′END′
-    13.     ′END′
-    14.     ′EOP′
+     1.     'BEGIN'
+     2.         'COMMENT' CONDITIONAL STATEMENTS AND EXPRESSIONS;
+     3.         'INTEGER' I, J;
+     4.         'FOR' I := 1 'STEP' 1 'UNTIL' 4 'DO'
+     5.         'BEGIN'
+     6.             'IF' I = 1 'THEN' PRINT(100)
+     7.             'ELSE' 'IF' I = 2 'THEN' PRINT(200)
+     8.             'ELSE' PRINT(300);
+     9.             'IF' I > 2 'THEN' PRINT(I);
+    10.             J := 'IF' I < 3 'THEN' I * 10 'ELSE' -I;
+    11.             PRINT(J, 'IF' I = 4 'THEN' 1.5 'ELSE' 2.5)
+    12.         'END'
+    13.     'END'
+    14.     'EOP'
 

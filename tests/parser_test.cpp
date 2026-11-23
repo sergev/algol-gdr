@@ -40,10 +40,10 @@ TEST(Parser, recovery)
               "x.alg:1: error: Expected ')', found ';'\n"
               "x.alg:1: error: Expected an expression, found ';'\n");
     EXPECT_EQ(messages("'BEGIN' 'INTEGER' X 'END' 'EOP'"),
-              "x.alg:1: error: Expected ';', found 'END'\n");
+              "x.alg:1: error: Expected ';', found 'end'\n");
     EXPECT_EQ(messages("'BEGIN' X := 1;"),
-              "x.alg:1: error: Missing 'END'\n"
-              "x.alg:1: error: Unexpected end of the file, 'EOP' "
+              "x.alg:1: error: Missing 'end'\n"
+              "x.alg:1: error: Unexpected end of the file, 'eop' "
               "is missing\n");
 }
 

@@ -19,13 +19,6 @@ runs.
 
 ## Tasks
 
-### Tree
-
-- **E7.2** UTF-8 throughout: no more ISO (KOI-7) or TEXT encoding inside the compiler, and
-  no forced uppercase. Source, names, strings and messages stay UTF-8; keywords are
-  recognized and printed in lowercase; user identifiers keep their spelling as written.
-  Listings and goldens are updated to match.
-
 ### Driver and runtime
 
 - **E8** Command line as `blang`: default output is an executable (`file` for `file.alg`);

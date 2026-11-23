@@ -1,25 +1,25 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′CODE′:′REAL′RNDM;
-     2.     ′ALGOL′:BOZP;
-     3.     ′ALGOL′:YBYB;
-     4.     ′BEGIN′
-     5.         ′REAL′ ′ARRAY′ A[1 : 10];
-     6.         ′INTEGER′ I;
+     1.     'code':'real'rndm;
+     2.     'algol':BOZP;
+     3.     'algol':YBYB;
+     4.     'begin'
+     5.         'real' 'array' a[1 : 10];
+     6.         'integer' i;
      7.
-     8.         ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 10 ′DO′
-     9.             A[I] := RNDM(-1);
+     8.         'for' i := 1 'step' 1 'until' 10 'do'
+     9.             a[i] := rndm(-1);
     10.
-    11.         ′PRINT′(′′(10F7.3)′′) A;
+    11.         'print'(''(10f7.3)'') a;
     12.
-    13.         ′COMMENT′ PACПOЛOЖEHИE ЭЛEMEHTOB BEKTOPA ПO BOЗPACTAHИЮ;
-    14.         BOZP(A, 10);
-    15.         ′PRINT′(′′(10F7.3)′′) A;
+    13.         'comment' Расположение элементов вектора по возрастанию;
+    14.         BOZP(a, 10);
+    15.         'print'(''(10f7.3)'') a;
     16.
-    17.         ′COMMENT′ PACПOЛOЖEHИE ЭЛEMEHTOB BEKTOPA ПO YБЫBAHИЮ;
-    18.         YBYB(A, 10);
-    19.         ′PRINT′(′′(10F7.3)′′) A;
-    20.     ′END′
-    21.     ′EOP′
+    17.         'comment' Расположение элементов вектора по убыванию;
+    18.         YBYB(a, 10);
+    19.         'print'(''(10f7.3)'') a;
+    20.     'end'
+    21.     'eop'
 

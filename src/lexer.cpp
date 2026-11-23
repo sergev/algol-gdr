@@ -1,75 +1,75 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The lexer. It reads the cards in KOI-7 as the original does (see
-// doc/encoding.md) and gives names and strings in UTF-8.
+// The lexer. It reads the source as Unicode characters; names and strings
+// come out in UTF-8.
 //
 #include "lexer.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
 #include <map>
 
-#include "card.h"
 #include "diag.h"
-#include "listing.h"
+#include "source.h"
 
 namespace {
 
-constexpr unsigned TEXT_COLUMNS = 72;
-constexpr unsigned QUOTE        = '\'';
-constexpr unsigned TEN          = 027; // ⏨
-constexpr unsigned TEN2         = 044; // ◇, also an exponent sign
+constexpr char32_t QUOTE = '\'';
+constexpr char32_t TEN   = U'⏨';
 
-bool is_letter(unsigned c)
+bool is_letter(char32_t c)
 {
-    return (c >= 0100 && c <= 0132) || (c >= 0140 && c <= 0176);
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+           (c >= 0xc0 && c <= 0x24f && c != 0xd7 && c != 0xf7) || // Latin
+           (c >= 0x370 && c <= 0x4ff);                            // Greek, Cyrillic
 }
 
-bool is_digit(unsigned c)
+bool is_digit(char32_t c)
 {
     return c >= '0' && c <= '9';
 }
 
-bool is_octal(unsigned c)
+bool is_octal(char32_t c)
 {
     return c >= '0' && c <= '7';
 }
 
+bool is_blank(char32_t c)
+{
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
+}
+
 // The symbol of a one-character delimiter; ERROR for others.
-Sym single(unsigned c)
+Sym single(char32_t c)
 {
     switch (c) {
-    case 020: // ∨
-    case 036: // ∨ (from Unicode)
+    case U'∨':
         return Sym::OR;
-    case 021: // ∧
+    case U'∧':
     case '&':
         return Sym::AND;
-    case 022: // ⊃
-    case 034:
+    case U'⊃':
         return Sym::IMPL;
-    case 023: // ¬
-    case 037:
+    case U'¬':
         return Sym::NOT;
-    case 024: // ≡
-    case 035:
+    case U'≡':
         return Sym::EQUIV;
-    case 030: // ≠
+    case U'≠':
         return Sym::NE;
-    case 031: // ≤
-    case 016:
+    case U'≤':
+    case U'⩽':
         return Sym::LE;
-    case 032: // ≥
-    case 017:
+    case U'≥':
+    case U'⩾':
         return Sym::GE;
-    case 006: // ×
-    case 0134:
+    case U'×':
         return Sym::TIMES;
-    case 026: // ↑
-    case 0136:
+    case U'↑':
+    case '^':
         return Sym::POWER;
     case ')':
         return Sym::RPAREN;
@@ -94,54 +94,84 @@ Sym single(unsigned c)
     }
 }
 
-// Keywords by their first 6 characters.
+// Keywords, in lower case; 'comment' is ERROR, the lexer skips it.
 const std::map<std::string, Sym> &keywords()
 {
-    static const std::map<std::string, Sym> table = [] {
-        static const std::pair<const char *, Sym> list[] = {
-            { "ALGOL", Sym::ALGOL },     { "AND", Sym::AND },
-            { "ARRAY", Sym::ARRAY },     { "BACKSPACE", Sym::BACKSPACE },
-            { "BEGIN", Sym::BEGIN },     { "BITS", Sym::BITS },
-            { "BOOLEAN", Sym::BOOLEAN }, { "CODE", Sym::CODE },
-            { "COMMON", Sym::COMMON },   { "DECODE", Sym::DECODE },
-            { "DO", Sym::DO },           { "ELSE", Sym::ELSE },
-            { "ENCODE", Sym::ENCODE },   { "END", Sym::END },
-            { "ENDFILE", Sym::ENDFILE }, { "EOP", Sym::EOP },
-            { "EQ", Sym::EQ },           { "EQUAL", Sym::EQ },
-            { "EQUIV", Sym::EQUIV },     { "FALSE", Sym::FALSE },
-            { "FOR", Sym::FOR },         { "GE", Sym::GE },
-            { "GOTO", Sym::GOTO },       { "GREATER", Sym::GT },
-            { "GT", Sym::GT },           { "IF", Sym::IF },
-            { "IMPL", Sym::IMPL },       { "INTEGER", Sym::INTEGER },
-            { "LABEL", Sym::LABEL },     { "LE", Sym::LE },
-            { "LESS", Sym::LT },         { "LT", Sym::LT },
-            { "NE", Sym::NE },           { "NOT", Sym::NOT },
-            { "NOTEQUAL", Sym::NE },     { "NOTGREATER", Sym::LE },
-            { "NOTLESS", Sym::GE },      { "OR", Sym::OR },
-            { "OWN", Sym::OWN },         { "POWER", Sym::POWER },
-            { "PRINT", Sym::PRINT },     { "PROCEDURE", Sym::PROCEDURE },
-            { "PUNCH", Sym::PUNCH },     { "READ", Sym::READ },
-            { "REAL", Sym::REAL },       { "REWIND", Sym::REWIND },
-            { "STEP", Sym::STEP },       { "STRING", Sym::STRING },
-            { "SWITCH", Sym::SWITCH },   { "THEN", Sym::THEN },
-            { "TRUE", Sym::TRUE },       { "UNTIL", Sym::UNTIL },
-            { "VALUE", Sym::VALUE },     { "WHILE", Sym::WHILE },
-            { "WRITE", Sym::WRITE },
-        };
-        std::map<std::string, Sym> t;
-        for (const auto &[name, sym] : list)
-            t.emplace(std::string(name).substr(0, 6), sym);
-        t.emplace("COMMEN", Sym::ERROR); // 'COMMENT', handled by the lexer
-        return t;
-    }();
+    static const std::map<std::string, Sym> table = {
+        { "algol", Sym::ALGOL },
+        { "and", Sym::AND },
+        { "array", Sym::ARRAY },
+        { "backspace", Sym::BACKSPACE },
+        { "begin", Sym::BEGIN },
+        { "bits", Sym::BITS },
+        { "boolean", Sym::BOOLEAN },
+        { "code", Sym::CODE },
+        { "comment", Sym::ERROR },
+        { "common", Sym::COMMON },
+        { "decode", Sym::DECODE },
+        { "do", Sym::DO },
+        { "else", Sym::ELSE },
+        { "encode", Sym::ENCODE },
+        { "end", Sym::END },
+        { "endfile", Sym::ENDFILE },
+        { "eop", Sym::EOP },
+        { "eq", Sym::EQ },
+        { "equal", Sym::EQ },
+        { "equiv", Sym::EQUIV },
+        { "false", Sym::FALSE },
+        { "for", Sym::FOR },
+        { "ge", Sym::GE },
+        { "goto", Sym::GOTO },
+        { "greater", Sym::GT },
+        { "gt", Sym::GT },
+        { "if", Sym::IF },
+        { "impl", Sym::IMPL },
+        { "integer", Sym::INTEGER },
+        { "label", Sym::LABEL },
+        { "le", Sym::LE },
+        { "less", Sym::LT },
+        { "lt", Sym::LT },
+        { "ne", Sym::NE },
+        { "not", Sym::NOT },
+        { "notequal", Sym::NE },
+        { "notgreater", Sym::LE },
+        { "notless", Sym::GE },
+        { "or", Sym::OR },
+        { "own", Sym::OWN },
+        { "power", Sym::POWER },
+        { "print", Sym::PRINT },
+        { "procedure", Sym::PROCEDURE },
+        { "punch", Sym::PUNCH },
+        { "read", Sym::READ },
+        { "real", Sym::REAL },
+        { "rewind", Sym::REWIND },
+        { "step", Sym::STEP },
+        { "string", Sym::STRING },
+        { "switch", Sym::SWITCH },
+        { "then", Sym::THEN },
+        { "true", Sym::TRUE },
+        { "until", Sym::UNTIL },
+        { "value", Sym::VALUE },
+        { "while", Sym::WHILE },
+        { "write", Sym::WRITE },
+    };
     return table;
 }
 
-std::string to_utf8(const std::string &koi)
+// A keyword by its name in any case; nullptr when unknown.
+const Sym *keyword(const std::string &name)
+{
+    std::string lower = name;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](char c) { return c >= 'A' && c <= 'Z' ? char(c + 'a' - 'A') : c; });
+    auto it = keywords().find(lower);
+    return it == keywords().end() ? nullptr : &it->second;
+}
+
+std::string utf8(char32_t c)
 {
     std::string s;
-    for (unsigned char c : koi)
-        s += listing_char(c);
+    append_utf8(s, c);
     return s;
 }
 
@@ -152,94 +182,78 @@ const char *to_string(Sym s)
     static const char *const names[] = {
         "identifier",    "integer constant",
         "real constant", "octal constant",
-        "string",        "'COMMON'",
+        "string",        "'common'",
         "'+'",           "'-'",
         "'*'",           "'/'",
         "'**'",          "'<'",
         "'<='",          "'='",
         "'!='",          "'>='",
-        "'>'",           "'NOT'",
-        "'AND'",         "'OR'",
-        "'IMPL'",        "'EQUIV'",
+        "'>'",           "'not'",
+        "'and'",         "'or'",
+        "'impl'",        "'equiv'",
         "'('",           "')'",
         "'['",           "']'",
         "','",           "':'",
         "';'",           "':='",
-        "'GOTO'",        "'IF'",
-        "'THEN'",        "'ELSE'",
-        "'FOR'",         "'DO'",
-        "'STEP'",        "'UNTIL'",
-        "'WHILE'",       "'BEGIN'",
-        "'END'",         "'OWN'",
-        "'BOOLEAN'",     "'INTEGER'",
-        "'REAL'",        "'STRING'",
-        "'BITS'",        "'ARRAY'",
-        "'SWITCH'",      "'PROCEDURE'",
-        "'LABEL'",       "'VALUE'",
-        "'TRUE'",        "'FALSE'",
-        "'ALGOL'",       "'CODE'",
-        "'READ'",        "'PRINT'",
-        "'PUNCH'",       "'WRITE'",
-        "'DECODE'",      "'ENCODE'",
-        "'REWIND'",      "'BACKSPACE'",
-        "'ENDFILE'",     "'EOP'",
+        "'goto'",        "'if'",
+        "'then'",        "'else'",
+        "'for'",         "'do'",
+        "'step'",        "'until'",
+        "'while'",       "'begin'",
+        "'end'",         "'own'",
+        "'boolean'",     "'integer'",
+        "'real'",        "'string'",
+        "'bits'",        "'array'",
+        "'switch'",      "'procedure'",
+        "'label'",       "'value'",
+        "'true'",        "'false'",
+        "'algol'",       "'code'",
+        "'read'",        "'print'",
+        "'punch'",       "'write'",
+        "'decode'",      "'encode'",
+        "'rewind'",      "'backspace'",
+        "'endfile'",     "'eop'",
         "error",         "end of file",
     };
     static_assert(sizeof(names) / sizeof(names[0]) == size_t(Sym::END_OF_FILE) + 1);
     return names[int(s)];
 }
 
-std::string name_key(const std::string &name)
-{
-    // The first 6 characters, UTF-8.
-    size_t i = 0;
-    for (int n = 0; n < 6 && i < name.size(); n++) {
-        i++;
-        while (i < name.size() && (name[i] & 0xc0) == 0x80)
-            i++;
-    }
-    return name.substr(0, i);
-}
-
 Lexer::Lexer(const std::string &source, Diagnostics &diag,
-             std::function<void(int, const std::string &)> on_card)
-    : diag_(diag), on_card_(std::move(on_card))
+             std::function<void(int, const std::string &)> on_line)
+    : diag_(diag), on_line_(std::move(on_line))
 {
     size_t pos = 0;
     while (pos < source.size()) {
         size_t end = source.find('\n', pos);
         if (end == std::string::npos)
             end = source.size();
-        std::string card = line_to_koi7(source.substr(pos, end - pos));
-        card.resize(CARD_COLUMNS, ' ');
-        cards_.push_back(card);
+        std::string text = source.substr(pos, end - pos);
+        if (!text.empty() && text.back() == '\r')
+            text.pop_back();
+        lines_.push_back(text);
         pos = end + 1;
     }
 }
 
-// The current character, from the next card when this one is done; blanks
+// The current character, from the next line when this one is done; blanks
 // skipped unless in a string.
-unsigned Lexer::fetch()
+char32_t Lexer::fetch()
 {
     for (;;) {
-        if (col_ >= TEXT_COLUMNS) {
-            if (next_card_ >= cards_.size() || cards_[next_card_].compare(0, 6, "*END F") == 0)
+        if (col_ >= text_.size()) {
+            if (next_line_ >= lines_.size())
                 throw EndOfInput{};
-            card_ = cards_[next_card_++];
+            const std::string &text = lines_[next_line_++];
+            text_                   = decode_utf8(text) + U'\n';
+            std::replace(text_.begin(), text_.end(), U'′', QUOTE);
             line_++;
             col_ = 0;
-            if (on_card_) {
-                std::string text;
-                for (unsigned char c : card_) {
-                    if (c == 3)
-                        break;
-                    text += listing_char(c);
-                }
-                on_card_(line_, text);
-            }
+            if (on_line_)
+                on_line_(line_, text);
         }
-        unsigned c = (unsigned char)card_[col_];
-        if (skip_blanks_ && c == ' ') {
+        char32_t c = text_[col_];
+        if (skip_blanks_ && is_blank(c)) {
             col_++;
             continue;
         }
@@ -247,7 +261,7 @@ unsigned Lexer::fetch()
     }
 }
 
-unsigned Lexer::advance()
+char32_t Lexer::advance()
 {
     step();
     return fetch();
@@ -276,6 +290,8 @@ Token Lexer::next()
         last_   = t.sym;
         return t;
     } catch (const EndOfInput &) {
+        if (!skip_blanks_)
+            diag_.error(string_line_, "Unterminated string");
         eof_ = true;
         return make(Sym::END_OF_FILE);
     }
@@ -283,12 +299,12 @@ Token Lexer::next()
 
 Token Lexer::scan()
 {
-    unsigned c = fetch();
+    char32_t c = fetch();
     if (after_end_)
         return after_end();
     if (is_letter(c))
         return name_or_keyword(false);
-    if (is_digit(c) || c == TEN || c == TEN2)
+    if (is_digit(c) || c == TEN)
         return number(false);
     switch (c) {
     case QUOTE:
@@ -341,24 +357,25 @@ Token Lexer::scan()
         step();
         Sym s = single(c);
         if (s == Sym::ERROR)
-            return error("Illegal character '" + std::string(listing_char(c)) + "'");
+            return error("Illegal character '" + utf8(c) + "'");
         return make(s);
     }
     }
 }
 
+std::string Lexer::word()
+{
+    std::string w;
+    for (char32_t c = ch_; is_letter(c) || is_digit(c); c = advance())
+        append_utf8(w, c);
+    return w;
+}
+
 // A name of letters and digits; in quotes, a keyword.
 Token Lexer::name_or_keyword(bool quoted)
 {
-    int start = line_;
-    std::string koi(1, char(ch_));
-    for (;;) {
-        unsigned c = advance();
-        if (!is_letter(c) && !is_digit(c))
-            break;
-        koi += char(c);
-    }
-    std::string name = to_utf8(koi);
+    int start        = line_;
+    std::string name = word();
     if (!quoted) {
         Token t = make(Sym::IDENT);
         t.line  = start;
@@ -368,14 +385,13 @@ Token Lexer::name_or_keyword(bool quoted)
     if (ch_ != QUOTE)
         return error("Missing closing quote of '" + name + "'");
     step();
-    auto it = keywords().find(koi.substr(0, 6));
-    if (it == keywords().end())
+    const Sym *sym = keyword(name);
+    if (!sym)
         return error("Unknown keyword '" + name + "'");
-    if (koi.substr(0, 6) == "COMMEN") {
+    switch (*sym) {
+    case Sym::ERROR:
         comment();
         return scan();
-    }
-    switch (it->second) {
     case Sym::END:
         after_end_ = true;
         break;
@@ -384,17 +400,17 @@ Token Lexer::name_or_keyword(bool quoted)
     default:
         break;
     }
-    Token t = make(it->second);
+    Token t = make(*sym);
     t.line  = start;
     return t;
 }
 
-// 'COMMENT' … ';' (or '.,').
+// 'comment' … ';' (or '.,').
 void Lexer::comment()
 {
     if (last_ != Sym::SEMICOLON && last_ != Sym::BEGIN)
-        diag_.error(line_, "'COMMENT' must follow ';' or 'BEGIN'");
-    unsigned c = fetch();
+        diag_.error(line_, "'comment' must follow ';' or 'begin'");
+    char32_t c = fetch();
     for (;;) {
         if (c == ';')
             break;
@@ -409,11 +425,11 @@ void Lexer::comment()
     step();
 }
 
-// The text after END, up to ';', 'END', 'ELSE' or 'EOP'. Letters and digits
+// The text after 'end', up to ';', 'end', 'else' or 'eop'. Letters and digits
 // are a comment; anything else gets a warning.
 Token Lexer::after_end()
 {
-    unsigned c = ch_;
+    char32_t c = ch_;
     for (;;) {
         if (c == ';')
             break;
@@ -427,20 +443,17 @@ Token Lexer::after_end()
         } else if (c == QUOTE) {
             c = advance();
             if (is_letter(c)) {
-                int start = line_;
-                std::string koi(1, char(c));
-                while (is_letter(c = advance()) || is_digit(c))
-                    koi += char(c);
+                int start      = line_;
+                std::string kw = word();
+                c              = ch_;
                 if (c == QUOTE) {
-                    auto it = keywords().find(koi.substr(0, 6));
-                    if (it != keywords().end() &&
-                        (it->second == Sym::END || it->second == Sym::ELSE ||
-                         it->second == Sym::EOP)) {
+                    const Sym *sym = keyword(kw);
+                    if (sym && (*sym == Sym::END || *sym == Sym::ELSE || *sym == Sym::EOP)) {
                         step();
                         warned_ = false;
-                        if (it->second != Sym::END)
+                        if (*sym != Sym::END)
                             after_end_ = false;
-                        Token t = make(it->second);
+                        Token t = make(*sym);
                         t.line  = start;
                         return t;
                     }
@@ -448,7 +461,7 @@ Token Lexer::after_end()
             }
         }
         if (!warned_) {
-            diag_.warning(line_, "Text after 'END' is skipped up to ';', 'END', 'ELSE' or 'EOP'");
+            diag_.warning(line_, "Text after 'end' is skipped up to ';', 'end', 'else' or 'eop'");
             warned_ = true;
         }
         if (c == ';')
@@ -467,12 +480,13 @@ Token Lexer::after_end()
 Token Lexer::string()
 {
     int start    = line_;
+    string_line_ = start;
     skip_blanks_ = false;
-    std::string koi;
+    std::string text;
     for (;;) {
-        unsigned c = advance();
+        char32_t c = advance();
         if (c != QUOTE) {
-            koi += char(c);
+            append_utf8(text, c);
             continue;
         }
         skip_blanks_ = true;
@@ -482,30 +496,30 @@ Token Lexer::string()
         if (c == ')') {
             if (advance() == QUOTE)
                 break;
-            col_ = TEXT_COLUMNS;
+            skip_line();
             return error("Bad end of a string");
         }
-        unsigned v = 0;
+        char32_t v = 0;
         for (int n = 0;; n++) {
-            if (n == 3 || !is_octal(ch_)) {
-                col_ = TEXT_COLUMNS;
+            if (n == 7 || !is_octal(ch_)) {
+                skip_line();
                 return error("Bad character code in a string");
             }
             v = v << 3 | (ch_ & 7);
             if (advance() == QUOTE)
                 break;
         }
-        if (v > 0377) {
-            col_ = TEXT_COLUMNS;
+        if (v > 0x10ffff || (v >= 0xd800 && v <= 0xdfff)) {
+            skip_line();
             return error("Bad character code in a string");
         }
-        koi += char(v);
+        append_utf8(text, v);
         skip_blanks_ = false;
     }
     step();
     Token t = make(Sym::STRING_CONST);
     t.line  = start;
-    t.text  = to_utf8(koi);
+    t.text  = text;
     return t;
 }
 
@@ -516,7 +530,7 @@ Token Lexer::octal()
     for (int n = 1;; n++) {
         if (!is_octal(ch_) || n > 16) {
             const char *message = n > 16 ? "Octal constant is too long" : "Bad octal digit";
-            while (ch_ != QUOTE && col_ < TEXT_COLUMNS)
+            while (ch_ != QUOTE && col_ + 1 < text_.size())
                 advance();
             step();
             return error(message);
@@ -540,14 +554,14 @@ Token Lexer::number(bool point)
     int start = line_;
     std::string whole, fraction, exponent;
     bool exp = false, negative = false, digit = false, bad = point && !is_digit(ch_);
-    for (unsigned c = ch_; !bad;) {
+    for (char32_t c = ch_; !bad;) {
         if (is_digit(c)) {
             (exp ? exponent : point ? fraction : whole) += char(c);
             digit = true;
             c     = advance();
             continue;
         }
-        if (c == TEN || c == TEN2) {
+        if (c == TEN) {
             if (exp || (!digit && point)) {
                 bad = true;
                 break;
@@ -611,7 +625,7 @@ Token Lexer::number(bool point)
 }
 
 //
-// 'COMMON' /block/ name, name(d1, d2, d3), … ; read here as one symbol.
+// 'common' /block/ name, name(d1, d2, d3), … ; read here as one symbol.
 //
 Token Lexer::common()
 {
@@ -620,32 +634,30 @@ Token Lexer::common()
         while (ch_ != ';')
             advance();
         step();
-        Token t = error("'COMMON': " + message);
+        Token t = error("'common': " + message);
         t.line  = start;
         return t;
     };
     auto block = std::make_shared<CommonBlock>();
-    unsigned c = fetch();
+    char32_t c = fetch();
     if (c != '/')
         return bad("'/' expected");
-    std::string koi;
+    std::string name;
     while ((c = advance()) != '/') {
         if (c == ';')
             return bad("'/' expected after the block name");
-        koi += char(c);
+        append_utf8(name, c);
     }
-    block->name = to_utf8(koi);
+    block->name = name;
     for (;;) {
         CommonBlock::Element e;
-        koi.clear();
         c = advance();
         while (c != ',' && c != ';' && c != '(' && c != '.') {
-            koi += char(c);
+            append_utf8(e.name, c);
             c = advance();
         }
-        if (koi.empty())
+        if (e.name.empty())
             return bad("element name expected");
-        e.name = to_utf8(koi);
         if (c == '(') {
             for (;;) {
                 std::string n;

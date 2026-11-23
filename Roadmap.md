@@ -110,5 +110,6 @@ under `x1sim`. Any example skipped on purpose is listed with the reason.
 - **Arithmetic differences.** BESM-6 float rounding, range and integer width differ from IEEE
   `double` and `int64_t`. Numeric output may not match `dubna` exactly in Milestone 2; the
   comparison tests must allow for that.
-- **Character set.** The original works in GOST/KOI-7 codes with upper case only. Decide how
-  lower case and non-Cyrillic letters are handled in identifiers and strings.
+- **Character set.** The original works in GOST/KOI-7 codes with upper case only; `algc`
+  reads UTF-8, keeps identifiers as written (case-sensitive, any length) and takes keywords
+  in any case.

@@ -1,11 +1,11 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ OWN IS NOT SUPPORTED: ERROR 34;
-     3.         ′OWN′ ′INTEGER′ N;
+     1.     'BEGIN'
+     2.         'COMMENT' OWN IS NOT SUPPORTED: ERROR 34;
+     3.         'OWN' 'INTEGER' N;
      4.         N := 1;
      5.         PRINT(N)
-     6.     ′END′
-     7.     ′EOP′
+     6.     'END'
+     7.     'EOP'
 

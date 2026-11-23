@@ -5,23 +5,23 @@ block:
   decls:
     - kind: procedure
       line: 2
-      name: "A"
+      name: "a"
       id: 1
       type: real
       formals:
-        - {name: "K", id: 2, spec: simple, type: integer, by_value: true}
-        - {name: "X1", id: 3, spec: simple, type: real, by_value: false}
-        - {name: "X2", id: 4, spec: simple, type: real, by_value: false}
-        - {name: "X3", id: 5, spec: simple, type: real, by_value: false}
-        - {name: "X4", id: 6, spec: simple, type: real, by_value: false}
-        - {name: "X5", id: 7, spec: simple, type: real, by_value: false}
+        - {name: "k", id: 2, spec: simple, type: integer, by_value: true}
+        - {name: "x1", id: 3, spec: simple, type: real, by_value: false}
+        - {name: "x2", id: 4, spec: simple, type: real, by_value: false}
+        - {name: "x3", id: 5, spec: simple, type: real, by_value: false}
+        - {name: "x4", id: 6, spec: simple, type: real, by_value: false}
+        - {name: "x5", id: 7, spec: simple, type: real, by_value: false}
       body:
         kind: block
         loc: 5/1
         decls:
           - kind: procedure
             line: 6
-            name: "B"
+            name: "b"
             id: 8
             type: real
             formals: []
@@ -32,39 +32,39 @@ block:
                 - kind: assign
                   loc: 8/1
                   targets:
-                    - {kind: var, decl: 2, name: "K"}
+                    - {kind: var, decl: 2, name: "k"}
                   value:
                     kind: binary
                     type: integer
                     op: sub
-                    left: {kind: var, type: integer, decl: 2, name: "K"}
+                    left: {kind: var, type: integer, decl: 2, name: "k"}
                     right: {kind: int_const, type: integer, value: 1}
                 - kind: assign
                   loc: 9/1
                   targets:
-                    - {kind: var, decl: 8, name: "B"}
-                    - {kind: var, decl: 1, name: "A"}
+                    - {kind: var, decl: 8, name: "b"}
+                    - {kind: var, decl: 1, name: "a"}
                   value:
                     kind: call
                     type: real
                     proc: 1
-                    name: "A"
+                    name: "a"
                     args:
-                      - {kind: var, type: integer, decl: 2, name: "K"}
+                      - {kind: var, type: integer, decl: 2, name: "k"}
                       - kind: call
                         type: real
                         proc: 8
-                        name: "B"
+                        name: "b"
                         args: []
-                      - {kind: var, type: real, decl: 3, name: "X1"}
-                      - {kind: var, type: real, decl: 4, name: "X2"}
-                      - {kind: var, type: real, decl: 5, name: "X3"}
-                      - {kind: var, type: real, decl: 6, name: "X4"}
+                      - {kind: var, type: real, decl: 3, name: "x1"}
+                      - {kind: var, type: real, decl: 4, name: "x2"}
+                      - {kind: var, type: real, decl: 5, name: "x3"}
+                      - {kind: var, type: real, decl: 6, name: "x4"}
         body:
           - kind: assign
             loc: 11/1
             targets:
-              - {kind: var, decl: 1, name: "A"}
+              - {kind: var, decl: 1, name: "a"}
             value:
               kind: cond
               type: real
@@ -72,19 +72,19 @@ block:
                 kind: binary
                 type: boolean
                 op: le
-                left: {kind: var, type: integer, decl: 2, name: "K"}
+                left: {kind: var, type: integer, decl: 2, name: "k"}
                 right: {kind: int_const, type: integer, value: 0}
               then:
                 kind: binary
                 type: real
                 op: add
-                left: {kind: var, type: real, decl: 6, name: "X4"}
-                right: {kind: var, type: real, decl: 7, name: "X5"}
+                left: {kind: var, type: real, decl: 6, name: "x4"}
+                right: {kind: var, type: real, decl: 7, name: "x5"}
               else:
                 kind: call
                 type: real
                 proc: 8
-                name: "B"
+                name: "b"
                 args: []
   body:
     - kind: io
@@ -97,7 +97,7 @@ block:
             kind: call
             type: real
             proc: 1
-            name: "A"
+            name: "a"
             args:
               - {kind: int_const, type: integer, value: 10}
               - {kind: real_const, type: real, value: 1.0}

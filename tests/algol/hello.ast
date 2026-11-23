@@ -10,4 +10,4 @@ block:
       params: []
       items:
         - kind: item
-          expr: {kind: string_const, type: string, value: "HELLO, WORLD!"}
+          expr: {kind: string_const, type: string, value: "Hello, World!"}

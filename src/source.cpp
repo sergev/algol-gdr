@@ -50,6 +50,61 @@ std::size_t find_invalid_utf8(const std::string &text)
     return std::string::npos;
 }
 
+std::u32string decode_utf8(const std::string &text)
+{
+    std::u32string out;
+    const auto *s       = reinterpret_cast<const unsigned char *>(text.data());
+    const std::size_t n = text.size();
+    for (std::size_t i = 0; i < n;) {
+        unsigned c = s[i];
+        unsigned len;
+        if (c < 0x80) {
+            out += char32_t(c);
+            i++;
+            continue;
+        }
+        if ((c & 0xe0) == 0xc0) {
+            len = 2;
+            c &= 0x1f;
+        } else if ((c & 0xf0) == 0xe0) {
+            len = 3;
+            c &= 0x0f;
+        } else if ((c & 0xf8) == 0xf0) {
+            len = 4;
+            c &= 0x07;
+        } else {
+            out += U'\ufffd';
+            i++;
+            continue;
+        }
+        unsigned k = 1;
+        for (; k < len && i + k < n && (s[i + k] & 0xc0) == 0x80; k++)
+            c = (c << 6) | (s[i + k] & 0x3f);
+        out += k == len ? char32_t(c) : U'\ufffd';
+        i += k;
+    }
+    return out;
+}
+
+void append_utf8(std::string &out, char32_t c)
+{
+    if (c < 0x80) {
+        out += char(c);
+    } else if (c < 0x800) {
+        out += char(0xc0 | c >> 6);
+        out += char(0x80 | (c & 0x3f));
+    } else if (c < 0x10000) {
+        out += char(0xe0 | c >> 12);
+        out += char(0x80 | (c >> 6 & 0x3f));
+        out += char(0x80 | (c & 0x3f));
+    } else {
+        out += char(0xf0 | c >> 18);
+        out += char(0x80 | (c >> 12 & 0x3f));
+        out += char(0x80 | (c >> 6 & 0x3f));
+        out += char(0x80 | (c & 0x3f));
+    }
+}
+
 std::string read_source(const std::string &filename)
 {
     std::ifstream input(filename, std::ios::binary);

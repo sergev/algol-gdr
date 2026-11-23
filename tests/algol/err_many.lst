@@ -1,9 +1,9 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ MORE THAN 30 ERRORS;
-     3.         ′INTEGER′ I;
+     1.     'BEGIN'
+     2.         'COMMENT' MORE THAN 30 ERRORS;
+     3.         'INTEGER' I;
      4.         I := (1;
      5.         I := (1;
      6.         I := (1;

@@ -9,7 +9,7 @@
 -- Built by the checker (src/checker.cpp) from the syntax tree. A statement's
 -- position is its line and the number of the statement on the line; a
 -- declaration's, its line (stmt 0). Empty statements without a label are
--- dropped from statement lists.
+-- dropped from statement lists. Names are UTF-8, as written in the source.
 -- The text form (algc --dump-ast, tests/algol/*.ast) is YAML: a node is a
 -- mapping with its constructor as `kind` (snake_case), then its fields;
 -- a reference to a declaration also gives its `name`.

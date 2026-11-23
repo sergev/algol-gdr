@@ -1,18 +1,18 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ BOOLEAN EXPRESSIONS AND RELATIONS;
-     3.         ′BOOLEAN′ A, B;
-     4.         ′INTEGER′ I;
-     5.         A := ′TRUE′; B := ′FALSE′;
-     6.         PRINT(A ′AND′ B, A ′OR′ B, ′NOT′ A, A ′IMPL′ B, A ′EQUIV′ B);
-     7.         PRINT(′NOT′ A ′OR′ B ′AND′ A, ′NOT′ (A ′OR′ B));
+     1.     'BEGIN'
+     2.         'COMMENT' BOOLEAN EXPRESSIONS AND RELATIONS;
+     3.         'BOOLEAN' A, B;
+     4.         'INTEGER' I;
+     5.         A := 'TRUE'; B := 'FALSE';
+     6.         PRINT(A 'AND' B, A 'OR' B, 'NOT' A, A 'IMPL' B, A 'EQUIV' B);
+     7.         PRINT('NOT' A 'OR' B 'AND' A, 'NOT' (A 'OR' B));
      8.         I := 5;
-     9.         PRINT(I < 6, I ′LE′ 5, I = 5, I ′NE′ 5, I ′GE′ 6, I > 4);
-    10.         PRINT(I ′LESS′ 6, I ′GREATER′ 6, I ′EQUAL′ 5, I ′NOTEQUAL′ 5);
-    11.         PRINT(I ′LT′ 6, I ′GT′ 6, I ′EQ′ 5,
-    12.             I ′NOTLESS′ 5, I ′NOTGREATER′ 4);
-    13.     ′END′
-    14.     ′EOP′
+     9.         PRINT(I < 6, I 'LE' 5, I = 5, I 'NE' 5, I 'GE' 6, I > 4);
+    10.         PRINT(I 'LESS' 6, I 'GREATER' 6, I 'EQUAL' 5, I 'NOTEQUAL' 5);
+    11.         PRINT(I 'LT' 6, I 'GT' 6, I 'EQ' 5,
+    12.             I 'NOTLESS' 5, I 'NOTGREATER' 4);
+    13.     'END'
+    14.     'EOP'
 

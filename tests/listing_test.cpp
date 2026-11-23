@@ -1,9 +1,8 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The listing of each program must be NAME.lst: the cards as the original
-// printed them (its messages are not in it any more). With
-// ALGC_UPDATE_GOLDENS set, NAME.lst is written instead.
+// The listing of each program must be NAME.lst: the banner and the lines of
+// the source. With ALGC_UPDATE_GOLDENS set, NAME.lst is written instead.
 //
 #include "listing.h"
 

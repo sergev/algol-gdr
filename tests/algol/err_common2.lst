@@ -1,17 +1,17 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′COMMENT′ ′COMMON′ ELEMENTS DECLARED OUT OF ORDER, NOT DECLARED,
+     1.     'COMMENT' 'COMMON' ELEMENTS DECLARED OUT OF ORDER, NOT DECLARED,
      2.         OR DECLARED AS A PROCEDURE;
-     3.     ′BEGIN′
-     4.         ′COMMON′ /A/ X, Y;
-     5.         ′REAL′ Y, X;
-     6.         ′COMMON′ /B/ U, V;
-     7.         ′REAL′ U;
-     8.         ′COMMON′ /C/ F;
-     9.         ′INTEGER′ ′PROCEDURE′ F; F := 1;
+     3.     'BEGIN'
+     4.         'COMMON' /A/ X, Y;
+     5.         'REAL' Y, X;
+     6.         'COMMON' /B/ U, V;
+     7.         'REAL' U;
+     8.         'COMMON' /C/ F;
+     9.         'INTEGER' 'PROCEDURE' F; F := 1;
     10.         X := 1;
     11.         PRINT(X)
-    12.     ′END′
-    13.     ′EOP′
+    12.     'END'
+    13.     'EOP'
 

@@ -11,7 +11,7 @@ block:
       params: []
       items:
         - kind: item
-          expr: {kind: string_const, type: string, value: "A∧B∨C⊃D¬E≡F⩽G⩾H×I↑J°K‘L≠M⏨N"}
+          expr: {kind: string_const, type: string, value: "A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N"}
     - kind: assign
       loc: 4/1
       targets:
@@ -713,6 +713,6 @@ block:
       params: []
       items:
         - kind: item
-          expr: {kind: string_const, type: string, value: "°"}
+          expr: {kind: string_const, type: string, value: "@"}
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}

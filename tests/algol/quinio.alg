@@ -217,7 +217,7 @@ UIT:    'end';
             'value' x, y;
             'integer' x, y;
         'begin'
-            draw(bord, nt, znr, kleur, x, y);
+            draw(BORD, nt, znr, kleur, x, y);
         'end';
 
         'integer' 'procedure' SEL;
@@ -259,7 +259,7 @@ UIT:    'end';
                 BORD[x, y] := 2;
                 AVNL[x, y] := 0
             'end';
-        kleur := sign(XEEN(33554432));
+        kleur := sign(xeen(33554432));
         NLCR;
         sw := znr := 1;
         'if' kleur = 0 'then'
@@ -268,14 +268,14 @@ UIT:    'end';
             ZET(tn, tn)
         'end';
 MENS:
-        x := div(XEEN(992), 32);
-        y := XEEN(31);
+        x := div(xeen(992), 32);
+        y := xeen(31);
         'if' x = 0 'or' x > nt 'or' y = 0 'or' y > nt 'then'
             'goto' MENS;
         'if' BORD[x, y] 'ne' 2 'then'
             'goto' MENS;
         PRINTZET(x, y);
-        'if' XEEN(-1) < 0 'then'
+        'if' xeen(-1) < 0 'then'
             'goto' MENS;
         ZET(x, y);
         'if' klaar 'then'

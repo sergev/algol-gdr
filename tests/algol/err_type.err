@@ -1,5 +1,5 @@
 err_type.alg:6: error: Type error in the value of ':=': boolean instead of integer
 err_type.alg:7: error: Type error in the value of ':=': integer instead of boolean
 err_type.alg:8: error: Type error in '+': boolean and integer
-err_type.alg:9: error: Type error in the condition of 'IF': real instead of boolean
-err_type.alg:10: error: Type error in 'AND': integer and boolean
+err_type.alg:9: error: Type error in the condition of 'if': real instead of boolean
+err_type.alg:10: error: Type error in 'and': integer and boolean

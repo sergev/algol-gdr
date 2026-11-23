@@ -1,19 +1,19 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′REAL′ ′PROCEDURE′ A(K, X1, X2, X3, X4, X5);
-     3.         ′VALUE′ K; ′INTEGER′ K;
-     4.         ′REAL′ X1, X2, X3, X4, X5;
-     5.         ′BEGIN′
-     6.             ′REAL′ ′PROCEDURE′ B;
-     7.             ′BEGIN′
-     8.                 K := K - 1;
-     9.                 B := A := A(K, B, X1, X2, X3, X4);
-    10.             ′END′;
-    11.             A := ′IF′ K ′LE′ 0 ′THEN′ X4 + X5
-    12.                                ′ELSE′ B;
-    13.         ′END′;
-    14.         PRINT(A(10, 1.0, -1.0, -1.0, 1.0, 0.0));
-    15.     ′END′ ′EOP′
+     1.     'begin'
+     2.         'real' 'procedure' a(k, x1, x2, x3, x4, x5);
+     3.         'value' k; 'integer' k;
+     4.         'real' x1, x2, x3, x4, x5;
+     5.         'begin'
+     6.             'real' 'procedure' b;
+     7.             'begin'
+     8.                 k := k - 1;
+     9.                 b := a := a(k, b, x1, x2, x3, x4);
+    10.             'end';
+    11.             a := 'if' k 'le' 0 'then' x4 + x5
+    12.                                'else' b;
+    13.         'end';
+    14.         print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0));
+    15.     'end' 'eop'
 

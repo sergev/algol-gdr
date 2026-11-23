@@ -1,25 +1,25 @@
 externals:
-  - {kind: code, name: "XEEN", id: 1}
-  - {kind: code, name: "AVAILABLE", id: 2}
-  - {kind: code, name: "DRAW", id: 3}
+  - {kind: code, name: "xeen", id: 1}
+  - {kind: code, name: "available", id: 2}
+  - {kind: code, name: "draw", id: 3}
 block:
   kind: block
   loc: 3/1
   decls:
-    - {kind: var, line: 24, name: "K", id: 4, type: integer}
-    - {kind: var, line: 24, name: "J", id: 5, type: integer}
-    - {kind: var, line: 24, name: "AV", id: 6, type: integer}
-    - {kind: var, line: 24, name: "TN", id: 7, type: integer}
-    - {kind: var, line: 24, name: "NT", id: 8, type: integer}
-    - {kind: var, line: 24, name: "VNL", id: 9, type: integer}
-    - {kind: var, line: 24, name: "X", id: 10, type: integer}
-    - {kind: var, line: 24, name: "Y", id: 11, type: integer}
-    - {kind: var, line: 24, name: "SW", id: 12, type: integer}
-    - {kind: var, line: 24, name: "WM", id: 13, type: integer}
-    - {kind: var, line: 24, name: "KLEUR", id: 14, type: integer}
-    - {kind: var, line: 24, name: "ZNR", id: 15, type: integer}
-    - {kind: var, line: 24, name: "KM", id: 16, type: integer}
-    - {kind: var, line: 25, name: "KLAAR", id: 17, type: boolean}
+    - {kind: var, line: 24, name: "k", id: 4, type: integer}
+    - {kind: var, line: 24, name: "j", id: 5, type: integer}
+    - {kind: var, line: 24, name: "av", id: 6, type: integer}
+    - {kind: var, line: 24, name: "tn", id: 7, type: integer}
+    - {kind: var, line: 24, name: "nt", id: 8, type: integer}
+    - {kind: var, line: 24, name: "vnl", id: 9, type: integer}
+    - {kind: var, line: 24, name: "x", id: 10, type: integer}
+    - {kind: var, line: 24, name: "y", id: 11, type: integer}
+    - {kind: var, line: 24, name: "sw", id: 12, type: integer}
+    - {kind: var, line: 24, name: "wm", id: 13, type: integer}
+    - {kind: var, line: 24, name: "kleur", id: 14, type: integer}
+    - {kind: var, line: 24, name: "znr", id: 15, type: integer}
+    - {kind: var, line: 24, name: "km", id: 16, type: integer}
+    - {kind: var, line: 25, name: "klaar", id: 17, type: boolean}
     - kind: arrays
       line: 26
       type: integer
@@ -44,17 +44,17 @@ block:
           upper: {kind: int_const, type: integer, value: 6}
     - kind: procedure
       line: 28
-      name: "DIV"
+      name: "div"
       id: 20
       type: integer
       formals:
-        - {name: "A", id: 21, spec: simple, type: integer, by_value: true}
-        - {name: "B", id: 22, spec: simple, type: integer, by_value: true}
+        - {name: "a", id: 21, spec: simple, type: integer, by_value: true}
+        - {name: "b", id: 22, spec: simple, type: integer, by_value: true}
       body:
         kind: assign
         loc: 31/1
         targets:
-          - {kind: var, decl: 20, name: "DIV"}
+          - {kind: var, decl: 20, name: "div"}
         value:
           kind: std_func
           type: integer
@@ -67,12 +67,12 @@ block:
                 kind: convert
                 type: real
                 conv: int_to_real
-                expr: {kind: var, type: integer, decl: 21, name: "A"}
+                expr: {kind: var, type: integer, decl: 21, name: "a"}
               right:
                 kind: convert
                 type: real
                 conv: int_to_real
-                expr: {kind: var, type: integer, decl: 22, name: "B"}
+                expr: {kind: var, type: integer, decl: 22, name: "b"}
     - kind: procedure
       line: 33
       name: "NLCR"
@@ -93,20 +93,20 @@ block:
       id: 24
       type: integer
       formals:
-        - {name: "A", id: 25, spec: simple, type: integer, by_value: false}
-        - {name: "B", id: 26, spec: simple, type: integer, by_value: true}
-        - {name: "C", id: 27, spec: simple, type: integer, by_value: true}
-        - {name: "D", id: 28, spec: simple, type: real, by_value: false}
+        - {name: "a", id: 25, spec: simple, type: integer, by_value: false}
+        - {name: "b", id: 26, spec: simple, type: integer, by_value: true}
+        - {name: "c", id: 27, spec: simple, type: integer, by_value: true}
+        - {name: "d", id: 28, spec: simple, type: real, by_value: false}
       body:
         kind: block
         loc: 40/1
         decls:
-          - {kind: var, line: 41, name: "T", id: 35, type: real}
+          - {kind: var, line: 41, name: "t", id: 35, type: real}
         body:
           - kind: assign
             loc: 42/1
             targets:
-              - {kind: var, decl: 35, name: "T"}
+              - {kind: var, decl: 35, name: "t"}
             value:
               kind: convert
               type: real
@@ -114,23 +114,23 @@ block:
               expr: {kind: int_const, type: integer, value: 0}
           - kind: for
             loc: 43/1
-            control: {kind: var, decl: 25, name: "A"}
+            control: {kind: var, decl: 25, name: "a"}
             elements:
               - kind: step_until
-                init: {kind: var, type: integer, decl: 26, name: "B"}
+                init: {kind: var, type: integer, decl: 26, name: "b"}
                 step: {kind: int_const, type: integer, value: 1}
-                until: {kind: var, type: integer, decl: 27, name: "C"}
+                until: {kind: var, type: integer, decl: 27, name: "c"}
             body:
               kind: assign
               loc: 44/1
               targets:
-                - {kind: var, decl: 35, name: "T"}
+                - {kind: var, decl: 35, name: "t"}
               value:
                 kind: binary
                 type: real
                 op: add
-                left: {kind: var, type: real, decl: 35, name: "T"}
-                right: {kind: var, type: real, decl: 28, name: "D"}
+                left: {kind: var, type: real, decl: 35, name: "t"}
+                right: {kind: var, type: real, decl: 28, name: "d"}
           - kind: assign
             loc: 45/1
             targets:
@@ -140,15 +140,15 @@ block:
               type: integer
               func: entier
               args:
-                - {kind: var, type: real, decl: 35, name: "T"}
+                - {kind: var, type: real, decl: 35, name: "t"}
     - kind: procedure
       line: 48
-      name: "MINIM"
+      name: "minim"
       id: 29
       type: boolean
       formals:
-        - {name: "X", id: 30, spec: simple, type: integer, by_value: false}
-        - {name: "P", id: 31, spec: simple, type: integer, by_value: true}
+        - {name: "x", id: 30, spec: simple, type: integer, by_value: false}
+        - {name: "p", id: 31, spec: simple, type: integer, by_value: true}
       body:
         kind: if
         loc: 51/1
@@ -156,8 +156,8 @@ block:
           kind: binary
           type: boolean
           op: lt
-          left: {kind: var, type: integer, decl: 31, name: "P"}
-          right: {kind: var, type: integer, decl: 30, name: "X"}
+          left: {kind: var, type: integer, decl: 31, name: "p"}
+          right: {kind: var, type: integer, decl: 30, name: "x"}
         then:
           kind: compound
           loc: 52/1
@@ -165,27 +165,27 @@ block:
             - kind: assign
               loc: 53/1
               targets:
-                - {kind: var, decl: 30, name: "X"}
-              value: {kind: var, type: integer, decl: 31, name: "P"}
+                - {kind: var, decl: 30, name: "x"}
+              value: {kind: var, type: integer, decl: 31, name: "p"}
             - kind: assign
               loc: 54/1
               targets:
-                - {kind: var, decl: 29, name: "MINIM"}
+                - {kind: var, decl: 29, name: "minim"}
               value: {kind: bool_const, type: boolean, value: true}
         else:
           kind: assign
           loc: 57/1
           targets:
-            - {kind: var, decl: 29, name: "MINIM"}
+            - {kind: var, decl: 29, name: "minim"}
           value: {kind: bool_const, type: boolean, value: false}
     - kind: procedure
       line: 59
-      name: "MAXIM"
+      name: "maxim"
       id: 32
       type: boolean
       formals:
-        - {name: "X", id: 33, spec: simple, type: integer, by_value: false}
-        - {name: "P", id: 34, spec: simple, type: integer, by_value: true}
+        - {name: "x", id: 33, spec: simple, type: integer, by_value: false}
+        - {name: "p", id: 34, spec: simple, type: integer, by_value: true}
       body:
         kind: if
         loc: 62/1
@@ -193,8 +193,8 @@ block:
           kind: binary
           type: boolean
           op: gt
-          left: {kind: var, type: integer, decl: 34, name: "P"}
-          right: {kind: var, type: integer, decl: 33, name: "X"}
+          left: {kind: var, type: integer, decl: 34, name: "p"}
+          right: {kind: var, type: integer, decl: 33, name: "x"}
         then:
           kind: compound
           loc: 63/1
@@ -202,24 +202,24 @@ block:
             - kind: assign
               loc: 64/1
               targets:
-                - {kind: var, decl: 33, name: "X"}
-              value: {kind: var, type: integer, decl: 34, name: "P"}
+                - {kind: var, decl: 33, name: "x"}
+              value: {kind: var, type: integer, decl: 34, name: "p"}
             - kind: assign
               loc: 65/1
               targets:
-                - {kind: var, decl: 32, name: "MAXIM"}
+                - {kind: var, decl: 32, name: "maxim"}
               value: {kind: bool_const, type: boolean, value: true}
         else:
           kind: assign
           loc: 68/1
           targets:
-            - {kind: var, decl: 32, name: "MAXIM"}
+            - {kind: var, decl: 32, name: "maxim"}
           value: {kind: bool_const, type: boolean, value: false}
   body:
     - kind: assign
       loc: 70/1
       targets:
-        - {kind: var, decl: 8, name: "NT"}
+        - {kind: var, decl: 8, name: "nt"}
       value:
         kind: binary
         type: integer
@@ -232,7 +232,7 @@ block:
             kind: call
             type: integer
             proc: 20
-            name: "DIV"
+            name: "div"
             args:
               - kind: std_func
                 type: integer
@@ -261,7 +261,7 @@ block:
                                 kind: call
                                 type: integer
                                 proc: 2
-                                name: "AVAILABLE"
+                                name: "available"
                                 args: []
                               right: {kind: int_const, type: integer, value: 1000}
                           right:
@@ -280,24 +280,24 @@ block:
     - kind: call
       loc: 71/1
       proc: 29
-      name: "MINIM"
+      name: "minim"
       args:
-        - {kind: var, type: integer, decl: 8, name: "NT"}
+        - {kind: var, type: integer, decl: 8, name: "nt"}
         - {kind: int_const, type: integer, value: 19}
     - kind: assign
       loc: 72/1
       targets:
-        - {kind: var, decl: 6, name: "AV"}
+        - {kind: var, decl: 6, name: "av"}
       value:
         kind: binary
         type: integer
         op: mul
-        left: {kind: var, type: integer, decl: 8, name: "NT"}
-        right: {kind: var, type: integer, decl: 8, name: "NT"}
+        left: {kind: var, type: integer, decl: 8, name: "nt"}
+        right: {kind: var, type: integer, decl: 8, name: "nt"}
     - kind: assign
       loc: 73/1
       targets:
-        - {kind: var, decl: 7, name: "TN"}
+        - {kind: var, decl: 7, name: "tn"}
       value:
         kind: binary
         type: integer
@@ -307,9 +307,9 @@ block:
           kind: call
           type: integer
           proc: 20
-          name: "DIV"
+          name: "div"
           args:
-            - {kind: var, type: integer, decl: 8, name: "NT"}
+            - {kind: var, type: integer, decl: 8, name: "nt"}
             - {kind: int_const, type: integer, value: 2}
     - kind: call
       loc: 74/1
@@ -321,10 +321,10 @@ block:
       op: write
       params:
         - {kind: int_const, type: integer, value: 54}
-        - {kind: string_const, type: string, value: "(13HFIELD SIZE = I2/23HO - HUMAN, X - COMPUTER)"}
+        - {kind: string_const, type: string, value: "(13HField size = I2/23HO - Human, X - Computer)"}
       items:
         - kind: item
-          expr: {kind: var, type: integer, decl: 8, name: "NT"}
+          expr: {kind: var, type: integer, decl: 8, name: "nt"}
     - kind: block
       loc: 77/1
       decls:
@@ -337,7 +337,7 @@ block:
             - {name: "RVRY", id: 38}
           bounds:
             - lower: {kind: int_const, type: integer, value: 1}
-              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+              upper: {kind: var, type: integer, decl: 6, name: "av"}
             - lower: {kind: int_const, type: integer, value: 0}
               upper: {kind: int_const, type: integer, value: 1}
             - lower: {kind: int_const, type: integer, value: 1}
@@ -349,7 +349,7 @@ block:
             - {name: "RVAL", id: 39}
           bounds:
             - lower: {kind: int_const, type: integer, value: 1}
-              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+              upper: {kind: var, type: integer, decl: 6, name: "av"}
             - lower: {kind: int_const, type: integer, value: 1}
               upper: {kind: int_const, type: integer, value: 4}
         - kind: arrays
@@ -360,7 +360,7 @@ block:
             - {name: "WT", id: 41}
           bounds:
             - lower: {kind: int_const, type: integer, value: 1}
-              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+              upper: {kind: var, type: integer, decl: 6, name: "av"}
             - lower: {kind: int_const, type: integer, value: 0}
               upper: {kind: int_const, type: integer, value: 1}
         - kind: arrays
@@ -371,7 +371,7 @@ block:
             - {name: "AY", id: 43}
           bounds:
             - lower: {kind: int_const, type: integer, value: 1}
-              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+              upper: {kind: var, type: integer, decl: 6, name: "av"}
         - kind: arrays
           line: 78
           type: integer
@@ -380,37 +380,37 @@ block:
             - {name: "AVNL", id: 45}
           bounds:
             - lower: {kind: int_const, type: integer, value: 1}
-              upper: {kind: var, type: integer, decl: 8, name: "NT"}
+              upper: {kind: var, type: integer, decl: 8, name: "nt"}
             - lower: {kind: int_const, type: integer, value: 1}
-              upper: {kind: var, type: integer, decl: 8, name: "NT"}
+              upper: {kind: var, type: integer, decl: 8, name: "nt"}
         - kind: procedure
           line: 82
           name: "CORR"
           id: 46
           type: none
           formals:
-            - {name: "X0", id: 47, spec: simple, type: integer, by_value: true}
-            - {name: "Y0", id: 48, spec: simple, type: integer, by_value: true}
+            - {name: "x0", id: 47, spec: simple, type: integer, by_value: true}
+            - {name: "y0", id: 48, spec: simple, type: integer, by_value: true}
           body:
             kind: block
             loc: 85/1
             decls:
-              - {kind: var, line: 86, name: "X", id: 59, type: integer}
-              - {kind: var, line: 86, name: "Y", id: 60, type: integer}
-              - {kind: var, line: 86, name: "DX", id: 61, type: integer}
-              - {kind: var, line: 86, name: "DY", id: 62, type: integer}
-              - {kind: var, line: 86, name: "MIN", id: 63, type: integer}
-              - {kind: var, line: 86, name: "MAX", id: 64, type: integer}
-              - {kind: var, line: 86, name: "Q", id: 65, type: integer}
-              - {kind: var, line: 86, name: "K", id: 66, type: integer}
-              - {kind: var, line: 86, name: "J", id: 67, type: integer}
-              - {kind: var, line: 86, name: "B", id: 68, type: integer}
-              - {kind: var, line: 86, name: "T", id: 69, type: integer}
-              - {kind: var, line: 86, name: "D", id: 70, type: integer}
-              - {kind: var, line: 86, name: "W", id: 71, type: integer}
-              - {kind: var, line: 87, name: "XDX", id: 72, type: integer}
-              - {kind: var, line: 87, name: "YDY", id: 73, type: integer}
-              - {kind: var, line: 87, name: "ZDZ", id: 74, type: integer}
+              - {kind: var, line: 86, name: "x", id: 59, type: integer}
+              - {kind: var, line: 86, name: "y", id: 60, type: integer}
+              - {kind: var, line: 86, name: "dx", id: 61, type: integer}
+              - {kind: var, line: 86, name: "dy", id: 62, type: integer}
+              - {kind: var, line: 86, name: "min", id: 63, type: integer}
+              - {kind: var, line: 86, name: "max", id: 64, type: integer}
+              - {kind: var, line: 86, name: "q", id: 65, type: integer}
+              - {kind: var, line: 86, name: "k", id: 66, type: integer}
+              - {kind: var, line: 86, name: "j", id: 67, type: integer}
+              - {kind: var, line: 86, name: "b", id: 68, type: integer}
+              - {kind: var, line: 86, name: "t", id: 69, type: integer}
+              - {kind: var, line: 86, name: "d", id: 70, type: integer}
+              - {kind: var, line: 86, name: "w", id: 71, type: integer}
+              - {kind: var, line: 87, name: "xdx", id: 72, type: integer}
+              - {kind: var, line: 87, name: "ydy", id: 73, type: integer}
+              - {kind: var, line: 87, name: "zdz", id: 74, type: integer}
               - {kind: label, line: 122, name: "WIN", id: 75}
               - {kind: label, line: 198, name: "NXT", id: 76}
               - {kind: label, line: 199, name: "NOR", id: 77}
@@ -419,12 +419,12 @@ block:
               - kind: assign
                 loc: 88/1
                 targets:
-                  - {kind: var, decl: 61, name: "DX"}
+                  - {kind: var, decl: 61, name: "dx"}
                 value: {kind: int_const, type: integer, value: 1}
               - kind: assign
                 loc: 89/1
                 targets:
-                  - {kind: var, decl: 62, name: "DY"}
+                  - {kind: var, decl: 62, name: "dy"}
                 value:
                   kind: unary
                   type: integer
@@ -433,11 +433,11 @@ block:
               - kind: assign
                 loc: 90/1
                 targets:
-                  - {kind: var, decl: 17, name: "KLAAR"}
+                  - {kind: var, decl: 17, name: "klaar"}
                 value: {kind: bool_const, type: boolean, value: false}
               - kind: for
                 loc: 91/1
-                control: {kind: var, decl: 65, name: "Q"}
+                control: {kind: var, decl: 65, name: "q"}
                 elements:
                   - kind: value
                     value: {kind: int_const, type: integer, value: 1}
@@ -454,8 +454,8 @@ block:
                     - kind: assign
                       loc: 93/1
                       targets:
-                        - {kind: var, decl: 74, name: "ZDZ"}
-                        - {kind: var, decl: 72, name: "XDX"}
+                        - {kind: var, decl: 74, name: "zdz"}
+                        - {kind: var, decl: 72, name: "xdx"}
                       value:
                         kind: binary
                         type: integer
@@ -464,13 +464,13 @@ block:
                           kind: binary
                           type: integer
                           op: sub
-                          left: {kind: var, type: integer, decl: 47, name: "X0"}
-                          right: {kind: var, type: integer, decl: 7, name: "TN"}
-                        right: {kind: var, type: integer, decl: 61, name: "DX"}
+                          left: {kind: var, type: integer, decl: 47, name: "x0"}
+                          right: {kind: var, type: integer, decl: 7, name: "tn"}
+                        right: {kind: var, type: integer, decl: 61, name: "dx"}
                     - kind: assign
                       loc: 94/1
                       targets:
-                        - {kind: var, decl: 73, name: "YDY"}
+                        - {kind: var, decl: 73, name: "ydy"}
                       value:
                         kind: binary
                         type: integer
@@ -479,20 +479,20 @@ block:
                           kind: binary
                           type: integer
                           op: sub
-                          left: {kind: var, type: integer, decl: 48, name: "Y0"}
-                          right: {kind: var, type: integer, decl: 7, name: "TN"}
-                        right: {kind: var, type: integer, decl: 62, name: "DY"}
+                          left: {kind: var, type: integer, decl: 48, name: "y0"}
+                          right: {kind: var, type: integer, decl: 7, name: "tn"}
+                        right: {kind: var, type: integer, decl: 62, name: "dy"}
                     - kind: call
                       loc: 95/1
                       proc: 29
-                      name: "MINIM"
+                      name: "minim"
                       args:
-                        - {kind: var, type: integer, decl: 74, name: "ZDZ"}
-                        - {kind: var, type: integer, decl: 73, name: "YDY"}
+                        - {kind: var, type: integer, decl: 74, name: "zdz"}
+                        - {kind: var, type: integer, decl: 73, name: "ydy"}
                     - kind: assign
                       loc: 96/1
                       targets:
-                        - {kind: var, decl: 63, name: "MIN"}
+                        - {kind: var, decl: 63, name: "min"}
                       value:
                         kind: binary
                         type: integer
@@ -502,12 +502,12 @@ block:
                           type: integer
                           op: sub
                           left: {kind: int_const, type: integer, value: 3}
-                          right: {kind: var, type: integer, decl: 7, name: "TN"}
-                        right: {kind: var, type: integer, decl: 74, name: "ZDZ"}
+                          right: {kind: var, type: integer, decl: 7, name: "tn"}
+                        right: {kind: var, type: integer, decl: 74, name: "zdz"}
                     - kind: assign
                       loc: 97/1
                       targets:
-                        - {kind: var, decl: 64, name: "MAX"}
+                        - {kind: var, decl: 64, name: "max"}
                       value:
                         kind: binary
                         type: integer
@@ -520,15 +520,15 @@ block:
                             kind: unary
                             type: integer
                             op: neg
-                            operand: {kind: var, type: integer, decl: 63, name: "MIN"}
-                          right: {kind: var, type: integer, decl: 72, name: "XDX"}
-                        right: {kind: var, type: integer, decl: 73, name: "YDY"}
+                            operand: {kind: var, type: integer, decl: 63, name: "min"}
+                          right: {kind: var, type: integer, decl: 72, name: "xdx"}
+                        right: {kind: var, type: integer, decl: 73, name: "ydy"}
                     - kind: call
                       loc: 98/1
                       proc: 32
-                      name: "MAXIM"
+                      name: "maxim"
                       args:
-                        - {kind: var, type: integer, decl: 63, name: "MIN"}
+                        - {kind: var, type: integer, decl: 63, name: "min"}
                         - kind: unary
                           type: integer
                           op: neg
@@ -536,9 +536,9 @@ block:
                     - kind: call
                       loc: 99/1
                       proc: 29
-                      name: "MINIM"
+                      name: "minim"
                       args:
-                        - {kind: var, type: integer, decl: 64, name: "MAX"}
+                        - {kind: var, type: integer, decl: 64, name: "max"}
                         - {kind: int_const, type: integer, value: 6}
                     - kind: if
                       loc: 100/1
@@ -546,15 +546,15 @@ block:
                         kind: binary
                         type: boolean
                         op: gt
-                        left: {kind: var, type: integer, decl: 63, name: "MIN"}
-                        right: {kind: var, type: integer, decl: 64, name: "MAX"}
+                        left: {kind: var, type: integer, decl: 63, name: "min"}
+                        right: {kind: var, type: integer, decl: 64, name: "max"}
                       then:
                         kind: goto
                         loc: 101/1
                         target: {kind: label_ref, type: none, label: 77, name: "NOR"}
                     - kind: for
                       loc: 102/1
-                      control: {kind: var, decl: 66, name: "K"}
+                      control: {kind: var, decl: 66, name: "k"}
                       elements:
                         - kind: value
                           value: {kind: int_const, type: integer, value: 0}
@@ -570,12 +570,12 @@ block:
                             array: 18
                             name: "DP"
                             subscripts:
-                              - {kind: var, type: integer, decl: 63, name: "MIN"}
-                              - {kind: var, type: integer, decl: 66, name: "K"}
+                              - {kind: var, type: integer, decl: 63, name: "min"}
+                              - {kind: var, type: integer, decl: 66, name: "k"}
                         value: {kind: int_const, type: integer, value: 0}
                     - kind: for
                       loc: 104/1
-                      control: {kind: var, decl: 66, name: "K"}
+                      control: {kind: var, decl: 66, name: "k"}
                       elements:
                         - kind: step_until
                           init:
@@ -592,7 +592,7 @@ block:
                           - kind: assign
                             loc: 106/1
                             targets:
-                              - {kind: var, decl: 68, name: "B"}
+                              - {kind: var, decl: 68, name: "b"}
                             value:
                               kind: element
                               type: integer
@@ -602,7 +602,7 @@ block:
                                 - kind: binary
                                   type: integer
                                   op: add
-                                  left: {kind: var, type: integer, decl: 47, name: "X0"}
+                                  left: {kind: var, type: integer, decl: 47, name: "x0"}
                                   right:
                                     kind: binary
                                     type: integer
@@ -611,13 +611,13 @@ block:
                                       kind: binary
                                       type: integer
                                       op: add
-                                      left: {kind: var, type: integer, decl: 63, name: "MIN"}
-                                      right: {kind: var, type: integer, decl: 66, name: "K"}
-                                    right: {kind: var, type: integer, decl: 61, name: "DX"}
+                                      left: {kind: var, type: integer, decl: 63, name: "min"}
+                                      right: {kind: var, type: integer, decl: 66, name: "k"}
+                                    right: {kind: var, type: integer, decl: 61, name: "dx"}
                                 - kind: binary
                                   type: integer
                                   op: add
-                                  left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                                  left: {kind: var, type: integer, decl: 48, name: "y0"}
                                   right:
                                     kind: binary
                                     type: integer
@@ -626,9 +626,9 @@ block:
                                       kind: binary
                                       type: integer
                                       op: add
-                                      left: {kind: var, type: integer, decl: 63, name: "MIN"}
-                                      right: {kind: var, type: integer, decl: 66, name: "K"}
-                                    right: {kind: var, type: integer, decl: 62, name: "DY"}
+                                      left: {kind: var, type: integer, decl: 63, name: "min"}
+                                      right: {kind: var, type: integer, decl: 66, name: "k"}
+                                    right: {kind: var, type: integer, decl: 62, name: "dy"}
                           - kind: assign
                             loc: 107/1
                             targets:
@@ -636,8 +636,8 @@ block:
                                 array: 18
                                 name: "DP"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 63, name: "MIN"}
-                                  - {kind: var, type: integer, decl: 68, name: "B"}
+                                  - {kind: var, type: integer, decl: 63, name: "min"}
+                                  - {kind: var, type: integer, decl: 68, name: "b"}
                             value:
                               kind: binary
                               type: integer
@@ -648,22 +648,22 @@ block:
                                 array: 18
                                 name: "DP"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 63, name: "MIN"}
-                                  - {kind: var, type: integer, decl: 68, name: "B"}
+                                  - {kind: var, type: integer, decl: 63, name: "min"}
+                                  - {kind: var, type: integer, decl: 68, name: "b"}
                               right: {kind: int_const, type: integer, value: 1}
                     - kind: for
                       loc: 109/1
-                      control: {kind: var, decl: 66, name: "K"}
+                      control: {kind: var, decl: 66, name: "k"}
                       elements:
                         - kind: step_until
                           init:
                             kind: binary
                             type: integer
                             op: add
-                            left: {kind: var, type: integer, decl: 63, name: "MIN"}
+                            left: {kind: var, type: integer, decl: 63, name: "min"}
                             right: {kind: int_const, type: integer, value: 1}
                           step: {kind: int_const, type: integer, value: 1}
-                          until: {kind: var, type: integer, decl: 64, name: "MAX"}
+                          until: {kind: var, type: integer, decl: 64, name: "max"}
                       body:
                         kind: compound
                         loc: 110/1
@@ -683,9 +683,9 @@ block:
                                   - kind: binary
                                     type: integer
                                     op: sub
-                                    left: {kind: var, type: integer, decl: 66, name: "K"}
+                                    left: {kind: var, type: integer, decl: 66, name: "k"}
                                     right: {kind: int_const, type: integer, value: 1}
-                                  - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                  - {kind: var, type: integer, decl: 14, name: "kleur"}
                               right: {kind: int_const, type: integer, value: 5}
                             then:
                               kind: goto
@@ -693,7 +693,7 @@ block:
                               target: {kind: label_ref, type: none, label: 75, name: "WIN"}
                           - kind: for
                             loc: 113/1
-                            control: {kind: var, decl: 68, name: "B"}
+                            control: {kind: var, decl: 68, name: "b"}
                             elements:
                               - kind: value
                                 value: {kind: int_const, type: integer, value: 0}
@@ -709,8 +709,8 @@ block:
                                   array: 18
                                   name: "DP"
                                   subscripts:
-                                    - {kind: var, type: integer, decl: 66, name: "K"}
-                                    - {kind: var, type: integer, decl: 68, name: "B"}
+                                    - {kind: var, type: integer, decl: 66, name: "k"}
+                                    - {kind: var, type: integer, decl: 68, name: "b"}
                               value:
                                 kind: element
                                 type: integer
@@ -720,12 +720,12 @@ block:
                                   - kind: binary
                                     type: integer
                                     op: sub
-                                    left: {kind: var, type: integer, decl: 66, name: "K"}
+                                    left: {kind: var, type: integer, decl: 66, name: "k"}
                                     right: {kind: int_const, type: integer, value: 1}
-                                  - {kind: var, type: integer, decl: 68, name: "B"}
+                                  - {kind: var, type: integer, decl: 68, name: "b"}
                           - kind: for
                             loc: 115/1
-                            control: {kind: var, decl: 67, name: "J"}
+                            control: {kind: var, decl: 67, name: "j"}
                             elements:
                               - kind: value
                                 value:
@@ -742,7 +742,7 @@ block:
                                 - kind: assign
                                   loc: 117/1
                                   targets:
-                                    - {kind: var, decl: 68, name: "B"}
+                                    - {kind: var, decl: 68, name: "b"}
                                   value:
                                     kind: element
                                     type: integer
@@ -752,7 +752,7 @@ block:
                                       - kind: binary
                                         type: integer
                                         op: add
-                                        left: {kind: var, type: integer, decl: 47, name: "X0"}
+                                        left: {kind: var, type: integer, decl: 47, name: "x0"}
                                         right:
                                           kind: binary
                                           type: integer
@@ -761,13 +761,13 @@ block:
                                             kind: binary
                                             type: integer
                                             op: add
-                                            left: {kind: var, type: integer, decl: 66, name: "K"}
-                                            right: {kind: var, type: integer, decl: 67, name: "J"}
-                                          right: {kind: var, type: integer, decl: 61, name: "DX"}
+                                            left: {kind: var, type: integer, decl: 66, name: "k"}
+                                            right: {kind: var, type: integer, decl: 67, name: "j"}
+                                          right: {kind: var, type: integer, decl: 61, name: "dx"}
                                       - kind: binary
                                         type: integer
                                         op: add
-                                        left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                                        left: {kind: var, type: integer, decl: 48, name: "y0"}
                                         right:
                                           kind: binary
                                           type: integer
@@ -776,9 +776,9 @@ block:
                                             kind: binary
                                             type: integer
                                             op: add
-                                            left: {kind: var, type: integer, decl: 66, name: "K"}
-                                            right: {kind: var, type: integer, decl: 67, name: "J"}
-                                          right: {kind: var, type: integer, decl: 62, name: "DY"}
+                                            left: {kind: var, type: integer, decl: 66, name: "k"}
+                                            right: {kind: var, type: integer, decl: 67, name: "j"}
+                                          right: {kind: var, type: integer, decl: 62, name: "dy"}
                                 - kind: assign
                                   loc: 118/1
                                   targets:
@@ -786,8 +786,8 @@ block:
                                       array: 18
                                       name: "DP"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 66, name: "K"}
-                                        - {kind: var, type: integer, decl: 68, name: "B"}
+                                        - {kind: var, type: integer, decl: 66, name: "k"}
+                                        - {kind: var, type: integer, decl: 68, name: "b"}
                                   value:
                                     kind: binary
                                     type: integer
@@ -798,14 +798,14 @@ block:
                                       array: 18
                                       name: "DP"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 66, name: "K"}
-                                        - {kind: var, type: integer, decl: 68, name: "B"}
+                                        - {kind: var, type: integer, decl: 66, name: "k"}
+                                        - {kind: var, type: integer, decl: 68, name: "b"}
                                     right:
                                       kind: std_func
                                       type: integer
                                       func: sign
                                       args:
-                                        - {kind: var, type: integer, decl: 67, name: "J"}
+                                        - {kind: var, type: integer, decl: 67, name: "j"}
                     - kind: if
                       loc: 121/1
                       condition:
@@ -818,8 +818,8 @@ block:
                           array: 18
                           name: "DP"
                           subscripts:
-                            - {kind: var, type: integer, decl: 64, name: "MAX"}
-                            - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                            - {kind: var, type: integer, decl: 64, name: "max"}
+                            - {kind: var, type: integer, decl: 14, name: "kleur"}
                         right: {kind: int_const, type: integer, value: 5}
                       then:
                         kind: labeled
@@ -833,14 +833,14 @@ block:
                             - kind: assign
                               loc: 123/1
                               targets:
-                                - {kind: var, decl: 17, name: "KLAAR"}
+                                - {kind: var, decl: 17, name: "klaar"}
                               value: {kind: bool_const, type: boolean, value: true}
                             - kind: goto
                               loc: 124/1
                               target: {kind: label_ref, type: none, label: 78, name: "UIT"}
                     - kind: for
                       loc: 126/1
-                      control: {kind: var, decl: 66, name: "K"}
+                      control: {kind: var, decl: 66, name: "k"}
                       elements:
                         - kind: step_until
                           init:
@@ -853,14 +853,14 @@ block:
                             kind: binary
                             type: integer
                             op: sub
-                            left: {kind: var, type: integer, decl: 63, name: "MIN"}
+                            left: {kind: var, type: integer, decl: 63, name: "min"}
                             right: {kind: int_const, type: integer, value: 1}
                         - kind: step_until
                           init:
                             kind: binary
                             type: integer
                             op: add
-                            left: {kind: var, type: integer, decl: 64, name: "MAX"}
+                            left: {kind: var, type: integer, decl: 64, name: "max"}
                             right: {kind: int_const, type: integer, value: 1}
                           step: {kind: int_const, type: integer, value: 1}
                           until: {kind: int_const, type: integer, value: 6}
@@ -872,19 +872,19 @@ block:
                             array: 18
                             name: "DP"
                             subscripts:
-                              - {kind: var, type: integer, decl: 66, name: "K"}
+                              - {kind: var, type: integer, decl: 66, name: "k"}
                               - {kind: int_const, type: integer, value: 0}
                           - kind: element
                             array: 18
                             name: "DP"
                             subscripts:
-                              - {kind: var, type: integer, decl: 66, name: "K"}
+                              - {kind: var, type: integer, decl: 66, name: "k"}
                               - {kind: int_const, type: integer, value: 1}
                         value: {kind: int_const, type: integer, value: 1}
                     - kind: assign
                       loc: 129/1
                       targets:
-                        - {kind: var, decl: 63, name: "MIN"}
+                        - {kind: var, decl: 63, name: "min"}
                       value:
                         kind: binary
                         type: integer
@@ -894,12 +894,12 @@ block:
                           type: integer
                           op: sub
                           left: {kind: int_const, type: integer, value: 1}
-                          right: {kind: var, type: integer, decl: 7, name: "TN"}
-                        right: {kind: var, type: integer, decl: 74, name: "ZDZ"}
+                          right: {kind: var, type: integer, decl: 7, name: "tn"}
+                        right: {kind: var, type: integer, decl: 74, name: "zdz"}
                     - kind: assign
                       loc: 130/1
                       targets:
-                        - {kind: var, decl: 64, name: "MAX"}
+                        - {kind: var, decl: 64, name: "max"}
                       value:
                         kind: binary
                         type: integer
@@ -912,15 +912,15 @@ block:
                             kind: unary
                             type: integer
                             op: neg
-                            operand: {kind: var, type: integer, decl: 63, name: "MIN"}
-                          right: {kind: var, type: integer, decl: 72, name: "XDX"}
-                        right: {kind: var, type: integer, decl: 73, name: "YDY"}
+                            operand: {kind: var, type: integer, decl: 63, name: "min"}
+                          right: {kind: var, type: integer, decl: 72, name: "xdx"}
+                        right: {kind: var, type: integer, decl: 73, name: "ydy"}
                     - kind: call
                       loc: 131/1
                       proc: 32
-                      name: "MAXIM"
+                      name: "maxim"
                       args:
-                        - {kind: var, type: integer, decl: 63, name: "MIN"}
+                        - {kind: var, type: integer, decl: 63, name: "min"}
                         - kind: unary
                           type: integer
                           op: neg
@@ -928,16 +928,16 @@ block:
                     - kind: call
                       loc: 132/1
                       proc: 29
-                      name: "MINIM"
+                      name: "minim"
                       args:
-                        - {kind: var, type: integer, decl: 64, name: "MAX"}
+                        - {kind: var, type: integer, decl: 64, name: "max"}
                         - {kind: int_const, type: integer, value: 4}
                     - kind: for
                       loc: 133/1
-                      control: {kind: var, decl: 66, name: "K"}
+                      control: {kind: var, decl: 66, name: "k"}
                       elements:
                         - kind: step_until
-                          init: {kind: var, type: integer, decl: 63, name: "MIN"}
+                          init: {kind: var, type: integer, decl: 63, name: "min"}
                           step: {kind: int_const, type: integer, value: 1}
                           until:
                             kind: unary
@@ -947,7 +947,7 @@ block:
                         - kind: step_until
                           init: {kind: int_const, type: integer, value: 1}
                           step: {kind: int_const, type: integer, value: 1}
-                          until: {kind: var, type: integer, decl: 64, name: "MAX"}
+                          until: {kind: var, type: integer, decl: 64, name: "max"}
                       body:
                         kind: compound
                         loc: 135/1
@@ -955,33 +955,33 @@ block:
                           - kind: assign
                             loc: 136/1
                             targets:
-                              - {kind: var, decl: 59, name: "X"}
+                              - {kind: var, decl: 59, name: "x"}
                             value:
                               kind: binary
                               type: integer
                               op: add
-                              left: {kind: var, type: integer, decl: 47, name: "X0"}
+                              left: {kind: var, type: integer, decl: 47, name: "x0"}
                               right:
                                 kind: binary
                                 type: integer
                                 op: mul
-                                left: {kind: var, type: integer, decl: 66, name: "K"}
-                                right: {kind: var, type: integer, decl: 61, name: "DX"}
+                                left: {kind: var, type: integer, decl: 66, name: "k"}
+                                right: {kind: var, type: integer, decl: 61, name: "dx"}
                           - kind: assign
                             loc: 137/1
                             targets:
-                              - {kind: var, decl: 60, name: "Y"}
+                              - {kind: var, decl: 60, name: "y"}
                             value:
                               kind: binary
                               type: integer
                               op: add
-                              left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                              left: {kind: var, type: integer, decl: 48, name: "y0"}
                               right:
                                 kind: binary
                                 type: integer
                                 op: mul
-                                left: {kind: var, type: integer, decl: 66, name: "K"}
-                                right: {kind: var, type: integer, decl: 62, name: "DY"}
+                                left: {kind: var, type: integer, decl: 66, name: "k"}
+                                right: {kind: var, type: integer, decl: 62, name: "dy"}
                           - kind: if
                             loc: 138/1
                             condition:
@@ -994,8 +994,8 @@ block:
                                 array: 44
                                 name: "BORD"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 59, name: "X"}
-                                  - {kind: var, type: integer, decl: 60, name: "Y"}
+                                  - {kind: var, type: integer, decl: 59, name: "x"}
+                                  - {kind: var, type: integer, decl: 60, name: "y"}
                               right: {kind: int_const, type: integer, value: 2}
                             then:
                               kind: compound
@@ -1004,23 +1004,23 @@ block:
                                 - kind: assign
                                   loc: 140/1
                                   targets:
-                                    - {kind: var, decl: 9, name: "VNL"}
+                                    - {kind: var, decl: 9, name: "vnl"}
                                   value:
                                     kind: element
                                     type: integer
                                     array: 45
                                     name: "AVNL"
                                     subscripts:
-                                      - {kind: var, type: integer, decl: 59, name: "X"}
-                                      - {kind: var, type: integer, decl: 60, name: "Y"}
+                                      - {kind: var, type: integer, decl: 59, name: "x"}
+                                      - {kind: var, type: integer, decl: 60, name: "y"}
                                 - kind: if
                                   loc: 141/1
                                   condition:
                                     kind: binary
                                     type: boolean
                                     op: gt
-                                    left: {kind: var, type: integer, decl: 9, name: "VNL"}
-                                    right: {kind: var, type: integer, decl: 12, name: "SW"}
+                                    left: {kind: var, type: integer, decl: 9, name: "vnl"}
+                                    right: {kind: var, type: integer, decl: 12, name: "sw"}
                                   then:
                                     kind: compound
                                     loc: 142/1
@@ -1032,8 +1032,8 @@ block:
                                             array: 45
                                             name: "AVNL"
                                             subscripts:
-                                              - {kind: var, type: integer, decl: 59, name: "X"}
-                                              - {kind: var, type: integer, decl: 60, name: "Y"}
+                                              - {kind: var, type: integer, decl: 59, name: "x"}
+                                              - {kind: var, type: integer, decl: 60, name: "y"}
                                         value: {kind: int_const, type: integer, value: 0}
                                       - kind: goto
                                         loc: 144/1
@@ -1044,7 +1044,7 @@ block:
                                     kind: binary
                                     type: boolean
                                     op: ne
-                                    left: {kind: var, type: integer, decl: 9, name: "VNL"}
+                                    left: {kind: var, type: integer, decl: 9, name: "vnl"}
                                     right: {kind: int_const, type: integer, value: 0}
                                   then:
                                     kind: compound
@@ -1057,12 +1057,12 @@ block:
                                             array: 39
                                             name: "RVAL"
                                             subscripts:
-                                              - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                              - {kind: var, type: integer, decl: 65, name: "Q"}
+                                              - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                              - {kind: var, type: integer, decl: 65, name: "q"}
                                         value: {kind: int_const, type: integer, value: 0}
                                       - kind: for
                                         loc: 149/1
-                                        control: {kind: var, decl: 68, name: "B"}
+                                        control: {kind: var, decl: 68, name: "b"}
                                         elements:
                                           - kind: value
                                             value: {kind: int_const, type: integer, value: 0}
@@ -1076,23 +1076,23 @@ block:
                                               array: 36
                                               name: "RNUM"
                                               subscripts:
-                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                - {kind: var, type: integer, decl: 68, name: "B"}
-                                                - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                - {kind: var, type: integer, decl: 68, name: "b"}
+                                                - {kind: var, type: integer, decl: 65, name: "q"}
                                             - kind: element
                                               array: 37
                                               name: "RLANG"
                                               subscripts:
-                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                - {kind: var, type: integer, decl: 68, name: "B"}
-                                                - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                - {kind: var, type: integer, decl: 68, name: "b"}
+                                                - {kind: var, type: integer, decl: 65, name: "q"}
                                             - kind: element
                                               array: 38
                                               name: "RVRY"
                                               subscripts:
-                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                - {kind: var, type: integer, decl: 68, name: "B"}
-                                                - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                - {kind: var, type: integer, decl: 68, name: "b"}
+                                                - {kind: var, type: integer, decl: 65, name: "q"}
                                           value: {kind: int_const, type: integer, value: 0}
                                   else:
                                     kind: compound
@@ -1101,14 +1101,14 @@ block:
                                       - kind: assign
                                         loc: 154/1
                                         targets:
-                                          - {kind: var, decl: 9, name: "VNL"}
+                                          - {kind: var, decl: 9, name: "vnl"}
                                           - kind: element
                                             array: 45
                                             name: "AVNL"
                                             subscripts:
-                                              - {kind: var, type: integer, decl: 59, name: "X"}
-                                              - {kind: var, type: integer, decl: 60, name: "Y"}
-                                        value: {kind: var, type: integer, decl: 12, name: "SW"}
+                                              - {kind: var, type: integer, decl: 59, name: "x"}
+                                              - {kind: var, type: integer, decl: 60, name: "y"}
+                                        value: {kind: var, type: integer, decl: 12, name: "sw"}
                                       - kind: assign
                                         loc: 155/1
                                         targets:
@@ -1116,8 +1116,8 @@ block:
                                             array: 42
                                             name: "AX"
                                             subscripts:
-                                              - {kind: var, type: integer, decl: 12, name: "SW"}
-                                        value: {kind: var, type: integer, decl: 59, name: "X"}
+                                              - {kind: var, type: integer, decl: 12, name: "sw"}
+                                        value: {kind: var, type: integer, decl: 59, name: "x"}
                                       - kind: assign
                                         loc: 156/1
                                         targets:
@@ -1125,21 +1125,21 @@ block:
                                             array: 43
                                             name: "AY"
                                             subscripts:
-                                              - {kind: var, type: integer, decl: 12, name: "SW"}
-                                        value: {kind: var, type: integer, decl: 60, name: "Y"}
+                                              - {kind: var, type: integer, decl: 12, name: "sw"}
+                                        value: {kind: var, type: integer, decl: 60, name: "y"}
                                       - kind: assign
                                         loc: 157/1
                                         targets:
-                                          - {kind: var, decl: 12, name: "SW"}
+                                          - {kind: var, decl: 12, name: "sw"}
                                         value:
                                           kind: binary
                                           type: integer
                                           op: add
-                                          left: {kind: var, type: integer, decl: 12, name: "SW"}
+                                          left: {kind: var, type: integer, decl: 12, name: "sw"}
                                           right: {kind: int_const, type: integer, value: 1}
                                       - kind: for
                                         loc: 158/1
-                                        control: {kind: var, decl: 67, name: "J"}
+                                        control: {kind: var, decl: 67, name: "j"}
                                         elements:
                                           - kind: value
                                             value: {kind: int_const, type: integer, value: 1}
@@ -1160,12 +1160,12 @@ block:
                                                   array: 39
                                                   name: "RVAL"
                                                   subscripts:
-                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                    - {kind: var, type: integer, decl: 67, name: "J"}
+                                                    - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                    - {kind: var, type: integer, decl: 67, name: "j"}
                                               value: {kind: int_const, type: integer, value: 0}
                                             - kind: for
                                               loc: 161/1
-                                              control: {kind: var, decl: 68, name: "B"}
+                                              control: {kind: var, decl: 68, name: "b"}
                                               elements:
                                                 - kind: value
                                                   value: {kind: int_const, type: integer, value: 0}
@@ -1179,27 +1179,27 @@ block:
                                                     array: 36
                                                     name: "RNUM"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 68, name: "B"}
-                                                      - {kind: var, type: integer, decl: 67, name: "J"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 68, name: "b"}
+                                                      - {kind: var, type: integer, decl: 67, name: "j"}
                                                   - kind: element
                                                     array: 37
                                                     name: "RLANG"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 68, name: "B"}
-                                                      - {kind: var, type: integer, decl: 67, name: "J"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 68, name: "b"}
+                                                      - {kind: var, type: integer, decl: 67, name: "j"}
                                                   - kind: element
                                                     array: 38
                                                     name: "RVRY"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 68, name: "B"}
-                                                      - {kind: var, type: integer, decl: 67, name: "J"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 68, name: "b"}
+                                                      - {kind: var, type: integer, decl: 67, name: "j"}
                                                 value: {kind: int_const, type: integer, value: 0}
                                 - kind: for
                                   loc: 167/1
-                                  control: {kind: var, decl: 67, name: "J"}
+                                  control: {kind: var, decl: 67, name: "j"}
                                   elements:
                                     - kind: step_until
                                       init:
@@ -1212,7 +1212,7 @@ block:
                                   body:
                                     kind: for
                                     loc: 168/1
-                                    control: {kind: var, decl: 68, name: "B"}
+                                    control: {kind: var, decl: 68, name: "b"}
                                     elements:
                                       - kind: value
                                         value: {kind: int_const, type: integer, value: 0}
@@ -1237,13 +1237,13 @@ block:
                                                 - kind: binary
                                                   type: integer
                                                   op: add
-                                                  left: {kind: var, type: integer, decl: 66, name: "K"}
-                                                  right: {kind: var, type: integer, decl: 67, name: "J"}
+                                                  left: {kind: var, type: integer, decl: 66, name: "k"}
+                                                  right: {kind: var, type: integer, decl: 67, name: "j"}
                                                 - kind: binary
                                                   type: integer
                                                   op: sub
                                                   left: {kind: int_const, type: integer, value: 1}
-                                                  right: {kind: var, type: integer, decl: 68, name: "B"}
+                                                  right: {kind: var, type: integer, decl: 68, name: "b"}
                                             right: {kind: int_const, type: integer, value: 0}
                                           then:
                                             kind: compound
@@ -1252,7 +1252,7 @@ block:
                                               - kind: assign
                                                 loc: 172/1
                                                 targets:
-                                                  - {kind: var, decl: 70, name: "D"}
+                                                  - {kind: var, decl: 70, name: "d"}
                                                 value:
                                                   kind: element
                                                   type: integer
@@ -1262,9 +1262,9 @@ block:
                                                     - kind: binary
                                                       type: integer
                                                       op: add
-                                                      left: {kind: var, type: integer, decl: 66, name: "K"}
-                                                      right: {kind: var, type: integer, decl: 67, name: "J"}
-                                                    - {kind: var, type: integer, decl: 68, name: "B"}
+                                                      left: {kind: var, type: integer, decl: 66, name: "k"}
+                                                      right: {kind: var, type: integer, decl: 67, name: "j"}
+                                                    - {kind: var, type: integer, decl: 68, name: "b"}
                                               - kind: assign
                                                 loc: 173/1
                                                 targets:
@@ -1272,8 +1272,8 @@ block:
                                                     array: 39
                                                     name: "RVAL"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 65, name: "q"}
                                                 value:
                                                   kind: binary
                                                   type: integer
@@ -1284,26 +1284,26 @@ block:
                                                     array: 39
                                                     name: "RVAL"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 65, name: "Q"}
-                                                  right: {kind: var, type: integer, decl: 70, name: "D"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 65, name: "q"}
+                                                  right: {kind: var, type: integer, decl: 70, name: "d"}
                                               - kind: if
                                                 loc: 174/1
                                                 condition:
                                                   kind: call
                                                   type: boolean
                                                   proc: 32
-                                                  name: "MAXIM"
+                                                  name: "maxim"
                                                   args:
                                                     - kind: element
                                                       type: integer
                                                       array: 37
                                                       name: "RLANG"
                                                       subscripts:
-                                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                        - {kind: var, type: integer, decl: 68, name: "B"}
-                                                        - {kind: var, type: integer, decl: 65, name: "Q"}
-                                                    - {kind: var, type: integer, decl: 70, name: "D"}
+                                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                        - {kind: var, type: integer, decl: 68, name: "b"}
+                                                        - {kind: var, type: integer, decl: 65, name: "q"}
+                                                    - {kind: var, type: integer, decl: 70, name: "d"}
                                                 then:
                                                   kind: assign
                                                   loc: 175/1
@@ -1312,9 +1312,9 @@ block:
                                                       array: 38
                                                       name: "RVRY"
                                                       subscripts:
-                                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                        - {kind: var, type: integer, decl: 68, name: "B"}
-                                                        - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                        - {kind: var, type: integer, decl: 68, name: "b"}
+                                                        - {kind: var, type: integer, decl: 65, name: "q"}
                                                   value: {kind: int_const, type: integer, value: 0}
                                                 else:
                                                   kind: if
@@ -1329,10 +1329,10 @@ block:
                                                       array: 37
                                                       name: "RLANG"
                                                       subscripts:
-                                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                        - {kind: var, type: integer, decl: 68, name: "B"}
-                                                        - {kind: var, type: integer, decl: 65, name: "Q"}
-                                                    right: {kind: var, type: integer, decl: 70, name: "D"}
+                                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                        - {kind: var, type: integer, decl: 68, name: "b"}
+                                                        - {kind: var, type: integer, decl: 65, name: "q"}
+                                                    right: {kind: var, type: integer, decl: 70, name: "d"}
                                                   then:
                                                     kind: assign
                                                     loc: 177/1
@@ -1341,9 +1341,9 @@ block:
                                                         array: 38
                                                         name: "RVRY"
                                                         subscripts:
-                                                          - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                          - {kind: var, type: integer, decl: 68, name: "B"}
-                                                          - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                          - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                          - {kind: var, type: integer, decl: 68, name: "b"}
+                                                          - {kind: var, type: integer, decl: 65, name: "q"}
                                                     value: {kind: int_const, type: integer, value: 1}
                                               - kind: assign
                                                 loc: 178/1
@@ -1352,9 +1352,9 @@ block:
                                                     array: 36
                                                     name: "RNUM"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 68, name: "B"}
-                                                      - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 68, name: "b"}
+                                                      - {kind: var, type: integer, decl: 65, name: "q"}
                                                 value:
                                                   kind: binary
                                                   type: integer
@@ -1365,9 +1365,9 @@ block:
                                                     array: 36
                                                     name: "RNUM"
                                                     subscripts:
-                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                      - {kind: var, type: integer, decl: 68, name: "B"}
-                                                      - {kind: var, type: integer, decl: 65, name: "Q"}
+                                                      - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                      - {kind: var, type: integer, decl: 68, name: "b"}
+                                                      - {kind: var, type: integer, decl: 65, name: "q"}
                                                   right: {kind: int_const, type: integer, value: 1}
                                 - kind: assign
                                   loc: 182/1
@@ -1376,30 +1376,30 @@ block:
                                       array: 40
                                       name: "TEMPO"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
                                         - {kind: int_const, type: integer, value: 0}
                                     - kind: element
                                       array: 40
                                       name: "TEMPO"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
                                         - {kind: int_const, type: integer, value: 1}
                                     - kind: element
                                       array: 41
                                       name: "WT"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
                                         - {kind: int_const, type: integer, value: 0}
                                     - kind: element
                                       array: 41
                                       name: "WT"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: var, type: integer, decl: 9, name: "vnl"}
                                         - {kind: int_const, type: integer, value: 1}
                                   value: {kind: int_const, type: integer, value: 4}
                                 - kind: for
                                   loc: 186/1
-                                  control: {kind: var, decl: 67, name: "J"}
+                                  control: {kind: var, decl: 67, name: "j"}
                                   elements:
                                     - kind: value
                                       value: {kind: int_const, type: integer, value: 1}
@@ -1412,7 +1412,7 @@ block:
                                   body:
                                     kind: for
                                     loc: 187/1
-                                    control: {kind: var, decl: 68, name: "B"}
+                                    control: {kind: var, decl: 68, name: "b"}
                                     elements:
                                       - kind: value
                                         value: {kind: int_const, type: integer, value: 0}
@@ -1425,7 +1425,7 @@ block:
                                         - kind: assign
                                           loc: 189/1
                                           targets:
-                                            - {kind: var, decl: 69, name: "T"}
+                                            - {kind: var, decl: 69, name: "t"}
                                           value:
                                             kind: binary
                                             type: integer
@@ -1437,40 +1437,40 @@ block:
                                               array: 37
                                               name: "RLANG"
                                               subscripts:
-                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                - {kind: var, type: integer, decl: 68, name: "B"}
-                                                - {kind: var, type: integer, decl: 67, name: "J"}
+                                                - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                - {kind: var, type: integer, decl: 68, name: "b"}
+                                                - {kind: var, type: integer, decl: 67, name: "j"}
                                         - kind: assign
                                           loc: 190/1
                                           targets:
-                                            - {kind: var, decl: 71, name: "W"}
+                                            - {kind: var, decl: 71, name: "w"}
                                           value:
                                             kind: binary
                                             type: integer
                                             op: sub
-                                            left: {kind: var, type: integer, decl: 69, name: "T"}
+                                            left: {kind: var, type: integer, decl: 69, name: "t"}
                                             right:
                                               kind: element
                                               type: integer
                                               array: 38
                                               name: "RVRY"
                                               subscripts:
-                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                - {kind: var, type: integer, decl: 68, name: "B"}
-                                                - {kind: var, type: integer, decl: 67, name: "J"}
+                                                - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                - {kind: var, type: integer, decl: 68, name: "b"}
+                                                - {kind: var, type: integer, decl: 67, name: "j"}
                                         - kind: call
                                           loc: 191/1
                                           proc: 29
-                                          name: "MINIM"
+                                          name: "minim"
                                           args:
                                             - kind: element
                                               type: integer
                                               array: 40
                                               name: "TEMPO"
                                               subscripts:
-                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                - {kind: var, type: integer, decl: 68, name: "B"}
-                                            - {kind: var, type: integer, decl: 69, name: "T"}
+                                                - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                - {kind: var, type: integer, decl: 68, name: "b"}
+                                            - {kind: var, type: integer, decl: 69, name: "t"}
                                         - kind: if
                                           loc: 192/1
                                           condition:
@@ -1480,16 +1480,16 @@ block:
                                               kind: call
                                               type: boolean
                                               proc: 29
-                                              name: "MINIM"
+                                              name: "minim"
                                               args:
                                                 - kind: element
                                                   type: integer
                                                   array: 41
                                                   name: "WT"
                                                   subscripts:
-                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                    - {kind: var, type: integer, decl: 68, name: "B"}
-                                                - {kind: var, type: integer, decl: 71, name: "W"}
+                                                    - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                    - {kind: var, type: integer, decl: 68, name: "b"}
+                                                - {kind: var, type: integer, decl: 71, name: "w"}
                                             then: {kind: bool_const, type: boolean, value: false}
                                             else:
                                               kind: binary
@@ -1499,7 +1499,7 @@ block:
                                                 kind: binary
                                                 type: boolean
                                                 op: eq
-                                                left: {kind: var, type: integer, decl: 71, name: "W"}
+                                                left: {kind: var, type: integer, decl: 71, name: "w"}
                                                 right: {kind: int_const, type: integer, value: 1}
                                               right:
                                                 kind: binary
@@ -1511,8 +1511,8 @@ block:
                                                   array: 41
                                                   name: "WT"
                                                   subscripts:
-                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                    - {kind: var, type: integer, decl: 68, name: "B"}
+                                                    - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                    - {kind: var, type: integer, decl: 68, name: "b"}
                                                 right: {kind: int_const, type: integer, value: 1}
                                           then:
                                             kind: assign
@@ -1522,8 +1522,8 @@ block:
                                                 array: 41
                                                 name: "WT"
                                                 subscripts:
-                                                  - {kind: var, type: integer, decl: 9, name: "VNL"}
-                                                  - {kind: var, type: integer, decl: 68, name: "B"}
+                                                  - {kind: var, type: integer, decl: 9, name: "vnl"}
+                                                  - {kind: var, type: integer, decl: 68, name: "b"}
                                             value: {kind: int_const, type: integer, value: 0}
                           - kind: labeled
                             loc: 198/1
@@ -1541,24 +1541,24 @@ block:
                           kind: binary
                           type: boolean
                           op: eq
-                          left: {kind: var, type: integer, decl: 65, name: "Q"}
+                          left: {kind: var, type: integer, decl: 65, name: "q"}
                           right: {kind: int_const, type: integer, value: 3}
                         then:
                           kind: assign
                           loc: 200/1
                           targets:
-                            - {kind: var, decl: 61, name: "DX"}
+                            - {kind: var, decl: 61, name: "dx"}
                           value: {kind: int_const, type: integer, value: 0}
                         else:
                           kind: assign
                           loc: 202/1
                           targets:
-                            - {kind: var, decl: 62, name: "DY"}
+                            - {kind: var, decl: 62, name: "dy"}
                           value:
                             kind: binary
                             type: integer
                             op: add
-                            left: {kind: var, type: integer, decl: 62, name: "DY"}
+                            left: {kind: var, type: integer, decl: 62, name: "dy"}
                             right: {kind: int_const, type: integer, value: 1}
               - kind: labeled
                 loc: 204/1
@@ -1571,8 +1571,8 @@ block:
           id: 49
           type: none
           formals:
-            - {name: "X", id: 50, spec: simple, type: integer, by_value: true}
-            - {name: "Y", id: 51, spec: simple, type: integer, by_value: true}
+            - {name: "x", id: 50, spec: simple, type: integer, by_value: true}
+            - {name: "y", id: 51, spec: simple, type: integer, by_value: true}
           body:
             kind: compound
             loc: 209/1
@@ -1584,35 +1584,35 @@ block:
                     array: 44
                     name: "BORD"
                     subscripts:
-                      - {kind: var, type: integer, decl: 50, name: "X"}
-                      - {kind: var, type: integer, decl: 51, name: "Y"}
-                value: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                      - {kind: var, type: integer, decl: 50, name: "x"}
+                      - {kind: var, type: integer, decl: 51, name: "y"}
+                value: {kind: var, type: integer, decl: 14, name: "kleur"}
               - kind: call
                 loc: 211/1
                 proc: 46
                 name: "CORR"
                 args:
-                  - {kind: var, type: integer, decl: 50, name: "X"}
-                  - {kind: var, type: integer, decl: 51, name: "Y"}
+                  - {kind: var, type: integer, decl: 50, name: "x"}
+                  - {kind: var, type: integer, decl: 51, name: "y"}
               - kind: assign
                 loc: 212/1
                 targets:
-                  - {kind: var, decl: 14, name: "KLEUR"}
+                  - {kind: var, decl: 14, name: "kleur"}
                 value:
                   kind: binary
                   type: integer
                   op: sub
                   left: {kind: int_const, type: integer, value: 1}
-                  right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                  right: {kind: var, type: integer, decl: 14, name: "kleur"}
               - kind: assign
                 loc: 213/1
                 targets:
-                  - {kind: var, decl: 15, name: "ZNR"}
+                  - {kind: var, decl: 15, name: "znr"}
                 value:
                   kind: binary
                   type: integer
                   op: add
-                  left: {kind: var, type: integer, decl: 15, name: "ZNR"}
+                  left: {kind: var, type: integer, decl: 15, name: "znr"}
                   right: {kind: int_const, type: integer, value: 1}
         - kind: procedure
           line: 216
@@ -1620,8 +1620,8 @@ block:
           id: 52
           type: none
           formals:
-            - {name: "X", id: 53, spec: simple, type: integer, by_value: true}
-            - {name: "Y", id: 54, spec: simple, type: integer, by_value: true}
+            - {name: "x", id: 53, spec: simple, type: integer, by_value: true}
+            - {name: "y", id: 54, spec: simple, type: integer, by_value: true}
           body:
             kind: compound
             loc: 219/1
@@ -1629,14 +1629,14 @@ block:
               - kind: call
                 loc: 220/1
                 proc: 3
-                name: "DRAW"
+                name: "draw"
                 args:
                   - {kind: var, type: integer, decl: 44, name: "BORD"}
-                  - {kind: var, type: integer, decl: 8, name: "NT"}
-                  - {kind: var, type: integer, decl: 15, name: "ZNR"}
-                  - {kind: var, type: integer, decl: 14, name: "KLEUR"}
-                  - {kind: var, type: integer, decl: 53, name: "X"}
-                  - {kind: var, type: integer, decl: 54, name: "Y"}
+                  - {kind: var, type: integer, decl: 8, name: "nt"}
+                  - {kind: var, type: integer, decl: 15, name: "znr"}
+                  - {kind: var, type: integer, decl: 14, name: "kleur"}
+                  - {kind: var, type: integer, decl: 53, name: "x"}
+                  - {kind: var, type: integer, decl: 54, name: "y"}
         - kind: procedure
           line: 223
           name: "SEL"
@@ -1647,34 +1647,34 @@ block:
             kind: block
             loc: 224/1
             decls:
-              - {kind: var, line: 225, name: "V", id: 79, type: integer}
-              - {kind: var, line: 225, name: "K", id: 80, type: integer}
-              - {kind: var, line: 225, name: "J", id: 81, type: integer}
-              - {kind: var, line: 225, name: "WSL", id: 82, type: integer}
-              - {kind: var, line: 225, name: "W", id: 83, type: integer}
-              - {kind: var, line: 225, name: "M", id: 84, type: integer}
+              - {kind: var, line: 225, name: "v", id: 79, type: integer}
+              - {kind: var, line: 225, name: "k", id: 80, type: integer}
+              - {kind: var, line: 225, name: "j", id: 81, type: integer}
+              - {kind: var, line: 225, name: "wsl", id: 82, type: integer}
+              - {kind: var, line: 225, name: "w", id: 83, type: integer}
+              - {kind: var, line: 225, name: "m", id: 84, type: integer}
             body:
               - kind: assign
                 loc: 226/1
                 targets:
-                  - {kind: var, decl: 83, name: "W"}
+                  - {kind: var, decl: 83, name: "w"}
                 value: {kind: int_const, type: integer, value: 4}
               - kind: assign
                 loc: 227/1
                 targets:
-                  - {kind: var, decl: 79, name: "V"}
-                  - {kind: var, decl: 84, name: "M"}
+                  - {kind: var, decl: 79, name: "v"}
+                  - {kind: var, decl: 84, name: "m"}
                 value: {kind: int_const, type: integer, value: 0}
               - kind: for
                 loc: 228/1
-                control: {kind: var, decl: 80, name: "K"}
+                control: {kind: var, decl: 80, name: "k"}
                 elements:
                   - kind: step_until
                     init:
                       kind: binary
                       type: integer
                       op: sub
-                      left: {kind: var, type: integer, decl: 12, name: "SW"}
+                      left: {kind: var, type: integer, decl: 12, name: "sw"}
                       right: {kind: int_const, type: integer, value: 1}
                     step:
                       kind: unary
@@ -1706,13 +1706,13 @@ block:
                                 array: 42
                                 name: "AX"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 80, name: "K"}
+                                  - {kind: var, type: integer, decl: 80, name: "k"}
                               - kind: element
                                 type: integer
                                 array: 43
                                 name: "AY"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 80, name: "K"}
+                                  - {kind: var, type: integer, decl: 80, name: "k"}
                           right: {kind: int_const, type: integer, value: 2}
                         then:
                           kind: binary
@@ -1724,42 +1724,42 @@ block:
                             array: 41
                             name: "WT"
                             subscripts:
-                              - {kind: var, type: integer, decl: 80, name: "K"}
+                              - {kind: var, type: integer, decl: 80, name: "k"}
                               - kind: binary
                                 type: integer
                                 op: sub
                                 left: {kind: int_const, type: integer, value: 1}
-                                right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                right: {kind: var, type: integer, decl: 14, name: "kleur"}
                           right: {kind: int_const, type: integer, value: 0}
                         else: {kind: bool_const, type: boolean, value: false}
                       then:
                         kind: call
                         loc: 233/1
                         proc: 29
-                        name: "MINIM"
+                        name: "minim"
                         args:
-                          - {kind: var, type: integer, decl: 83, name: "W"}
+                          - {kind: var, type: integer, decl: 83, name: "w"}
                           - kind: element
                             type: integer
                             array: 40
                             name: "TEMPO"
                             subscripts:
-                              - {kind: var, type: integer, decl: 80, name: "K"}
+                              - {kind: var, type: integer, decl: 80, name: "k"}
                               - kind: binary
                                 type: integer
                                 op: sub
                                 left: {kind: int_const, type: integer, value: 1}
-                                right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                right: {kind: var, type: integer, decl: 14, name: "kleur"}
               - kind: for
                 loc: 235/1
-                control: {kind: var, decl: 80, name: "K"}
+                control: {kind: var, decl: 80, name: "k"}
                 elements:
                   - kind: step_until
                     init:
                       kind: binary
                       type: integer
                       op: sub
-                      left: {kind: var, type: integer, decl: 12, name: "SW"}
+                      left: {kind: var, type: integer, decl: 12, name: "sw"}
                       right: {kind: int_const, type: integer, value: 1}
                     step:
                       kind: unary
@@ -1791,13 +1791,13 @@ block:
                                 array: 42
                                 name: "AX"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 80, name: "K"}
+                                  - {kind: var, type: integer, decl: 80, name: "k"}
                               - kind: element
                                 type: integer
                                 array: 43
                                 name: "AY"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 80, name: "K"}
+                                  - {kind: var, type: integer, decl: 80, name: "k"}
                           right: {kind: int_const, type: integer, value: 2}
                         then:
                           kind: cond
@@ -1812,9 +1812,9 @@ block:
                               array: 40
                               name: "TEMPO"
                               subscripts:
-                                - {kind: var, type: integer, decl: 80, name: "K"}
-                                - {kind: var, type: integer, decl: 14, name: "KLEUR"}
-                            right: {kind: var, type: integer, decl: 83, name: "W"}
+                                - {kind: var, type: integer, decl: 80, name: "k"}
+                                - {kind: var, type: integer, decl: 14, name: "kleur"}
+                            right: {kind: var, type: integer, decl: 83, name: "w"}
                           then: {kind: bool_const, type: boolean, value: true}
                           else:
                             kind: cond
@@ -1829,50 +1829,50 @@ block:
                                 array: 41
                                 name: "WT"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 80, name: "K"}
+                                  - {kind: var, type: integer, decl: 80, name: "k"}
                                   - kind: binary
                                     type: integer
                                     op: sub
                                     left: {kind: int_const, type: integer, value: 1}
-                                    right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                    right: {kind: var, type: integer, decl: 14, name: "kleur"}
                               right: {kind: int_const, type: integer, value: 0}
                             then:
                               kind: binary
                               type: boolean
                               op: eq
-                              left: {kind: var, type: integer, decl: 83, name: "W"}
+                              left: {kind: var, type: integer, decl: 83, name: "w"}
                               right:
                                 kind: element
                                 type: integer
                                 array: 40
                                 name: "TEMPO"
                                 subscripts:
-                                  - {kind: var, type: integer, decl: 80, name: "K"}
+                                  - {kind: var, type: integer, decl: 80, name: "k"}
                                   - kind: binary
                                     type: integer
                                     op: sub
                                     left: {kind: int_const, type: integer, value: 1}
-                                    right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                    right: {kind: var, type: integer, decl: 14, name: "kleur"}
                             else: {kind: bool_const, type: boolean, value: false}
                         else: {kind: bool_const, type: boolean, value: false}
                       then:
                         kind: block
                         loc: 242/1
                         decls:
-                          - {kind: var, line: 243, name: "A", id: 85, type: integer}
-                          - {kind: var, line: 243, name: "B", id: 86, type: integer}
+                          - {kind: var, line: 243, name: "a", id: 85, type: integer}
+                          - {kind: var, line: 243, name: "b", id: 86, type: integer}
                         body:
                           - kind: assign
                             loc: 244/1
                             targets:
-                              - {kind: var, decl: 85, name: "A"}
+                              - {kind: var, decl: 85, name: "a"}
                             value:
                               kind: call
                               type: integer
                               proc: 24
                               name: "SUM"
                               args:
-                                - {kind: var, type: integer, decl: 81, name: "J"}
+                                - {kind: var, type: integer, decl: 81, name: "j"}
                                 - {kind: int_const, type: integer, value: 1}
                                 - {kind: int_const, type: integer, value: 4}
                                 - kind: binary
@@ -1893,8 +1893,8 @@ block:
                                         array: 39
                                         name: "RVAL"
                                         subscripts:
-                                          - {kind: var, type: integer, decl: 80, name: "K"}
-                                          - {kind: var, type: integer, decl: 81, name: "J"}
+                                          - {kind: var, type: integer, decl: 80, name: "k"}
+                                          - {kind: var, type: integer, decl: 81, name: "j"}
                                   right:
                                     kind: convert
                                     type: real
@@ -1905,20 +1905,20 @@ block:
                                       array: 36
                                       name: "RNUM"
                                       subscripts:
-                                        - {kind: var, type: integer, decl: 80, name: "K"}
-                                        - {kind: var, type: integer, decl: 14, name: "KLEUR"}
-                                        - {kind: var, type: integer, decl: 81, name: "J"}
+                                        - {kind: var, type: integer, decl: 80, name: "k"}
+                                        - {kind: var, type: integer, decl: 14, name: "kleur"}
+                                        - {kind: var, type: integer, decl: 81, name: "j"}
                           - kind: assign
                             loc: 246/1
                             targets:
-                              - {kind: var, decl: 86, name: "B"}
+                              - {kind: var, decl: 86, name: "b"}
                             value:
                               kind: call
                               type: integer
                               proc: 24
                               name: "SUM"
                               args:
-                                - {kind: var, type: integer, decl: 81, name: "J"}
+                                - {kind: var, type: integer, decl: 81, name: "j"}
                                 - {kind: int_const, type: integer, value: 0}
                                 - {kind: int_const, type: integer, value: 1}
                                 - kind: binary
@@ -1948,8 +1948,8 @@ block:
                                           array: 41
                                           name: "WT"
                                           subscripts:
-                                            - {kind: var, type: integer, decl: 80, name: "K"}
-                                            - {kind: var, type: integer, decl: 81, name: "J"}
+                                            - {kind: var, type: integer, decl: 80, name: "k"}
+                                            - {kind: var, type: integer, decl: 81, name: "j"}
                                     right:
                                       kind: binary
                                       type: real
@@ -1962,8 +1962,8 @@ block:
                                           - kind: binary
                                             type: integer
                                             op: sub
-                                            left: {kind: var, type: integer, decl: 81, name: "J"}
-                                            right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                            left: {kind: var, type: integer, decl: 81, name: "j"}
+                                            right: {kind: var, type: integer, decl: 14, name: "kleur"}
                                       right: {kind: real_const, type: real, value: 2.0}
                           - kind: if
                             loc: 248/1
@@ -1971,25 +1971,25 @@ block:
                               kind: call
                               type: boolean
                               proc: 32
-                              name: "MAXIM"
+                              name: "maxim"
                               args:
-                                - {kind: var, type: integer, decl: 79, name: "V"}
+                                - {kind: var, type: integer, decl: 79, name: "v"}
                                 - kind: binary
                                   type: integer
                                   op: add
-                                  left: {kind: var, type: integer, decl: 85, name: "A"}
-                                  right: {kind: var, type: integer, decl: 86, name: "B"}
+                                  left: {kind: var, type: integer, decl: 85, name: "a"}
+                                  right: {kind: var, type: integer, decl: 86, name: "b"}
                             then:
                               kind: assign
                               loc: 249/1
                               targets:
-                                - {kind: var, decl: 84, name: "M"}
-                              value: {kind: var, type: integer, decl: 80, name: "K"}
+                                - {kind: var, decl: 84, name: "m"}
+                              value: {kind: var, type: integer, decl: 80, name: "k"}
               - kind: assign
                 loc: 252/1
                 targets:
                   - {kind: var, decl: 55, name: "SEL"}
-                value: {kind: var, type: integer, decl: 84, name: "M"}
+                value: {kind: var, type: integer, decl: 84, name: "m"}
         - {kind: label, line: 270, name: "MENS", id: 56}
         - {kind: label, line: 284, name: "MACH", id: 57}
         - {kind: label, line: 297, name: "LKLAAR", id: 58}
@@ -2001,21 +2001,21 @@ block:
           args: []
         - kind: for
           loc: 256/1
-          control: {kind: var, decl: 10, name: "X"}
+          control: {kind: var, decl: 10, name: "x"}
           elements:
             - kind: step_until
               init: {kind: int_const, type: integer, value: 1}
               step: {kind: int_const, type: integer, value: 1}
-              until: {kind: var, type: integer, decl: 8, name: "NT"}
+              until: {kind: var, type: integer, decl: 8, name: "nt"}
           body:
             kind: for
             loc: 257/1
-            control: {kind: var, decl: 11, name: "Y"}
+            control: {kind: var, decl: 11, name: "y"}
             elements:
               - kind: step_until
                 init: {kind: int_const, type: integer, value: 1}
                 step: {kind: int_const, type: integer, value: 1}
-                until: {kind: var, type: integer, decl: 8, name: "NT"}
+                until: {kind: var, type: integer, decl: 8, name: "nt"}
             body:
               kind: compound
               loc: 258/1
@@ -2027,8 +2027,8 @@ block:
                       array: 44
                       name: "BORD"
                       subscripts:
-                        - {kind: var, type: integer, decl: 10, name: "X"}
-                        - {kind: var, type: integer, decl: 11, name: "Y"}
+                        - {kind: var, type: integer, decl: 10, name: "x"}
+                        - {kind: var, type: integer, decl: 11, name: "y"}
                   value: {kind: int_const, type: integer, value: 2}
                 - kind: assign
                   loc: 260/1
@@ -2037,13 +2037,13 @@ block:
                       array: 45
                       name: "AVNL"
                       subscripts:
-                        - {kind: var, type: integer, decl: 10, name: "X"}
-                        - {kind: var, type: integer, decl: 11, name: "Y"}
+                        - {kind: var, type: integer, decl: 10, name: "x"}
+                        - {kind: var, type: integer, decl: 11, name: "y"}
                   value: {kind: int_const, type: integer, value: 0}
         - kind: assign
           loc: 262/1
           targets:
-            - {kind: var, decl: 14, name: "KLEUR"}
+            - {kind: var, decl: 14, name: "kleur"}
           value:
             kind: std_func
             type: integer
@@ -2052,7 +2052,7 @@ block:
               - kind: call
                 type: integer
                 proc: 1
-                name: "XEEN"
+                name: "xeen"
                 args:
                   - {kind: int_const, type: integer, value: 33554432}
         - kind: call
@@ -2063,8 +2063,8 @@ block:
         - kind: assign
           loc: 264/1
           targets:
-            - {kind: var, decl: 12, name: "SW"}
-            - {kind: var, decl: 15, name: "ZNR"}
+            - {kind: var, decl: 12, name: "sw"}
+            - {kind: var, decl: 15, name: "znr"}
           value: {kind: int_const, type: integer, value: 1}
         - kind: if
           loc: 265/1
@@ -2072,7 +2072,7 @@ block:
             kind: binary
             type: boolean
             op: eq
-            left: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+            left: {kind: var, type: integer, decl: 14, name: "kleur"}
             right: {kind: int_const, type: integer, value: 0}
           then:
             kind: compound
@@ -2083,15 +2083,15 @@ block:
                 proc: 52
                 name: "PRINTZET"
                 args:
-                  - {kind: var, type: integer, decl: 7, name: "TN"}
-                  - {kind: var, type: integer, decl: 7, name: "TN"}
+                  - {kind: var, type: integer, decl: 7, name: "tn"}
+                  - {kind: var, type: integer, decl: 7, name: "tn"}
               - kind: call
                 loc: 268/1
                 proc: 49
                 name: "ZET"
                 args:
-                  - {kind: var, type: integer, decl: 7, name: "TN"}
-                  - {kind: var, type: integer, decl: 7, name: "TN"}
+                  - {kind: var, type: integer, decl: 7, name: "tn"}
+                  - {kind: var, type: integer, decl: 7, name: "tn"}
         - kind: labeled
           loc: 270/1
           label: 56
@@ -2100,29 +2100,29 @@ block:
             kind: assign
             loc: 271/1
             targets:
-              - {kind: var, decl: 10, name: "X"}
+              - {kind: var, decl: 10, name: "x"}
             value:
               kind: call
               type: integer
               proc: 20
-              name: "DIV"
+              name: "div"
               args:
                 - kind: call
                   type: integer
                   proc: 1
-                  name: "XEEN"
+                  name: "xeen"
                   args:
                     - {kind: int_const, type: integer, value: 992}
                 - {kind: int_const, type: integer, value: 32}
         - kind: assign
           loc: 272/1
           targets:
-            - {kind: var, decl: 11, name: "Y"}
+            - {kind: var, decl: 11, name: "y"}
           value:
             kind: call
             type: integer
             proc: 1
-            name: "XEEN"
+            name: "xeen"
             args:
               - {kind: int_const, type: integer, value: 31}
         - kind: if
@@ -2143,26 +2143,26 @@ block:
                   kind: binary
                   type: boolean
                   op: eq
-                  left: {kind: var, type: integer, decl: 10, name: "X"}
+                  left: {kind: var, type: integer, decl: 10, name: "x"}
                   right: {kind: int_const, type: integer, value: 0}
                 right:
                   kind: binary
                   type: boolean
                   op: gt
-                  left: {kind: var, type: integer, decl: 10, name: "X"}
-                  right: {kind: var, type: integer, decl: 8, name: "NT"}
+                  left: {kind: var, type: integer, decl: 10, name: "x"}
+                  right: {kind: var, type: integer, decl: 8, name: "nt"}
               right:
                 kind: binary
                 type: boolean
                 op: eq
-                left: {kind: var, type: integer, decl: 11, name: "Y"}
+                left: {kind: var, type: integer, decl: 11, name: "y"}
                 right: {kind: int_const, type: integer, value: 0}
             right:
               kind: binary
               type: boolean
               op: gt
-              left: {kind: var, type: integer, decl: 11, name: "Y"}
-              right: {kind: var, type: integer, decl: 8, name: "NT"}
+              left: {kind: var, type: integer, decl: 11, name: "y"}
+              right: {kind: var, type: integer, decl: 8, name: "nt"}
           then:
             kind: goto
             loc: 274/1
@@ -2179,8 +2179,8 @@ block:
               array: 44
               name: "BORD"
               subscripts:
-                - {kind: var, type: integer, decl: 10, name: "X"}
-                - {kind: var, type: integer, decl: 11, name: "Y"}
+                - {kind: var, type: integer, decl: 10, name: "x"}
+                - {kind: var, type: integer, decl: 11, name: "y"}
             right: {kind: int_const, type: integer, value: 2}
           then:
             kind: goto
@@ -2191,8 +2191,8 @@ block:
           proc: 52
           name: "PRINTZET"
           args:
-            - {kind: var, type: integer, decl: 10, name: "X"}
-            - {kind: var, type: integer, decl: 11, name: "Y"}
+            - {kind: var, type: integer, decl: 10, name: "x"}
+            - {kind: var, type: integer, decl: 11, name: "y"}
         - kind: if
           loc: 278/1
           condition:
@@ -2203,7 +2203,7 @@ block:
               kind: call
               type: integer
               proc: 1
-              name: "XEEN"
+              name: "xeen"
               args:
                 - kind: unary
                   type: integer
@@ -2219,11 +2219,11 @@ block:
           proc: 49
           name: "ZET"
           args:
-            - {kind: var, type: integer, decl: 10, name: "X"}
-            - {kind: var, type: integer, decl: 11, name: "Y"}
+            - {kind: var, type: integer, decl: 10, name: "x"}
+            - {kind: var, type: integer, decl: 11, name: "y"}
         - kind: if
           loc: 281/1
-          condition: {kind: var, type: boolean, decl: 17, name: "KLAAR"}
+          condition: {kind: var, type: boolean, decl: 17, name: "klaar"}
           then:
             kind: goto
             loc: 282/1
@@ -2236,7 +2236,7 @@ block:
             kind: assign
             loc: 284/2
             targets:
-              - {kind: var, decl: 16, name: "KM"}
+              - {kind: var, decl: 16, name: "km"}
             value:
               kind: call
               type: integer
@@ -2249,7 +2249,7 @@ block:
             kind: binary
             type: boolean
             op: eq
-            left: {kind: var, type: integer, decl: 16, name: "KM"}
+            left: {kind: var, type: integer, decl: 16, name: "km"}
             right: {kind: int_const, type: integer, value: 0}
           then:
             kind: compound
@@ -2265,7 +2265,7 @@ block:
                 op: write
                 params:
                   - {kind: int_const, type: integer, value: 54}
-                  - {kind: string_const, type: string, value: "(11H IK GEEF OP)"}
+                  - {kind: string_const, type: string, value: "(11H Ik geef op)"}
                 items: []
               - kind: goto
                 loc: 289/1
@@ -2273,46 +2273,46 @@ block:
         - kind: assign
           loc: 291/1
           targets:
-            - {kind: var, decl: 10, name: "X"}
+            - {kind: var, decl: 10, name: "x"}
           value:
             kind: element
             type: integer
             array: 42
             name: "AX"
             subscripts:
-              - {kind: var, type: integer, decl: 16, name: "KM"}
+              - {kind: var, type: integer, decl: 16, name: "km"}
         - kind: assign
           loc: 292/1
           targets:
-            - {kind: var, decl: 11, name: "Y"}
+            - {kind: var, decl: 11, name: "y"}
           value:
             kind: element
             type: integer
             array: 43
             name: "AY"
             subscripts:
-              - {kind: var, type: integer, decl: 16, name: "KM"}
+              - {kind: var, type: integer, decl: 16, name: "km"}
         - kind: call
           loc: 293/1
           proc: 52
           name: "PRINTZET"
           args:
-            - {kind: var, type: integer, decl: 10, name: "X"}
-            - {kind: var, type: integer, decl: 11, name: "Y"}
+            - {kind: var, type: integer, decl: 10, name: "x"}
+            - {kind: var, type: integer, decl: 11, name: "y"}
         - kind: call
           loc: 294/1
           proc: 49
           name: "ZET"
           args:
-            - {kind: var, type: integer, decl: 10, name: "X"}
-            - {kind: var, type: integer, decl: 11, name: "Y"}
+            - {kind: var, type: integer, decl: 10, name: "x"}
+            - {kind: var, type: integer, decl: 11, name: "y"}
         - kind: if
           loc: 295/1
           condition:
             kind: unary
             type: boolean
             op: not
-            operand: {kind: var, type: boolean, decl: 17, name: "KLAAR"}
+            operand: {kind: var, type: boolean, decl: 17, name: "klaar"}
           then:
             kind: goto
             loc: 296/1
@@ -2333,7 +2333,7 @@ block:
             kind: binary
             type: boolean
             op: eq
-            left: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+            left: {kind: var, type: integer, decl: 14, name: "kleur"}
             right: {kind: int_const, type: integer, value: 0}
           then:
             kind: io
@@ -2341,7 +2341,7 @@ block:
             op: write
             params:
               - {kind: int_const, type: integer, value: 54}
-              - {kind: string_const, type: string, value: "(16H U HEBT GEWONNEN)"}
+              - {kind: string_const, type: string, value: "(16H U hebt gewonnen)"}
             items: []
           else:
             kind: io
@@ -2349,5 +2349,5 @@ block:
             op: write
             params:
               - {kind: int_const, type: integer, value: 54}
-              - {kind: string_const, type: string, value: "(16H IK HEB GEWONNEN)"}
+              - {kind: string_const, type: string, value: "(16H Ik heb gewonnen)"}
             items: []

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The lexer: numbers, strings, keywords, comments, 'COMMON', errors.
+// The lexer: numbers, strings, keywords, comments, 'common', errors.
 //
 #include "lexer.h"
 
@@ -59,11 +59,15 @@ TEST(Lexer, numbers)
 
 TEST(Lexer, strings)
 {
-    auto t = tokens("''A B'' '('C')' ''X'101'Y'' 'EOP'");
+    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750'''\n'EOP'");
     ASSERT_EQ(t.size(), 4u);
-    EXPECT_EQ(t[0].text, "A B");
-    EXPECT_EQ(t[1].text, "C");
-    EXPECT_EQ(t[2].text, "XAY");
+    EXPECT_EQ(t[0].text, "A b");
+    EXPECT_EQ(t[1].text, "Ж");
+    EXPECT_EQ(t[2].text, "XAY⏨");
+
+    std::string messages;
+    tokens("X := ''ab\ncd", &messages);
+    EXPECT_EQ(messages, "x.alg:1: error: Unterminated string\n");
 }
 
 TEST(Lexer, keywords_and_names)
@@ -71,9 +75,11 @@ TEST(Lexer, keywords_and_names)
     EXPECT_EQ(syms("'BEGIN' 'INTEGER' ALPHA1; 'END' 'EOP'"),
               (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::SEMICOLON, Sym::END,
                                  Sym::EOP }));
-    auto t = tokens("ABCDEFGH 'EOP'");
-    EXPECT_EQ(t[0].text, "ABCDEFGH");
-    EXPECT_EQ(t[0].key(), "ABCDEF");
+    EXPECT_EQ(syms("'begin' 'Integer' x 'end' 'eop'"),
+              (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::END, Sym::EOP }));
+    auto t = tokens("AbcDefGhij, Счёт1 'EOP'");
+    EXPECT_EQ(t[0].text, "AbcDefGhij");
+    EXPECT_EQ(t[2].text, "Счёт1");
     EXPECT_EQ(
         syms("A := B ** C (/ D /) 'LE' 'NOTEQUAL' 'EOP'"),
         (std::vector<Sym>{ Sym::IDENT, Sym::ASSIGN, Sym::IDENT, Sym::POWER, Sym::IDENT,
@@ -91,7 +97,7 @@ TEST(Lexer, comment_and_after_end)
     EXPECT_EQ(syms(text), (std::vector<Sym>{ Sym::BEGIN, Sym::IDENT, Sym::END, Sym::SEMICOLON,
                                              Sym::END, Sym::EOP }));
     EXPECT_EQ(messages,
-              "x.alg:1: warning: Text after 'END' is skipped up to ';', 'END', 'ELSE' or 'EOP'\n");
+              "x.alg:1: warning: Text after 'end' is skipped up to ';', 'end', 'else' or 'eop'\n");
 }
 
 TEST(Lexer, common)

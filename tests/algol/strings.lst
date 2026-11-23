@@ -1,17 +1,17 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ STRING VARIABLES, ARRAYS, LENGTH AND INDEXING;
-     3.         ′STRING′ S, T;
-     4.         ′STRING′ ′ARRAY′ A[1:2];
-     5.         ′INTEGER′ I;
-     6.         S := ′′ABCDEF′′;
+     1.     'BEGIN'
+     2.         'COMMENT' STRING VARIABLES, ARRAYS, LENGTH AND INDEXING;
+     3.         'STRING' S, T;
+     4.         'STRING' 'ARRAY' A[1:2];
+     5.         'INTEGER' I;
+     6.         S := ''ABCDEF'';
      7.         T := S;
-     8.         A[1] := ′′XY′′; A[2] := S;
+     8.         A[1] := ''XY''; A[2] := S;
      9.         PRINT(LENGTH(S), LENGTH(A[1]));
-    10.         ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ LENGTH(S) ′DO′ PRINT(S[I]);
+    10.         'FOR' I := 1 'STEP' 1 'UNTIL' LENGTH(S) 'DO' PRINT(S[I]);
     11.         PRINT(NEWLINE, T, A[1], A[2])
-    12.     ′END′
-    13.     ′EOP′
+    12.     'END'
+    13.     'EOP'
 

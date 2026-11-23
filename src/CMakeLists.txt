@@ -1,6 +1,5 @@
 add_library(algol STATIC
     ast.cpp
-    card.cpp
     checker.cpp
     diag.cpp
     frontend.cpp

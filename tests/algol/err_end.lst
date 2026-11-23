@@ -1,12 +1,12 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     ′BEGIN′
-     2.         ′COMMENT′ MISSING END, EXPONENT OVERFLOW;
-     3.         ′REAL′ X;
+     1.     'BEGIN'
+     2.         'COMMENT' MISSING END, EXPONENT OVERFLOW;
+     3.         'REAL' X;
      4.         X := 1.0⏨20;
-     5.         ′BEGIN′
+     5.         'BEGIN'
      6.             X := 0
-     7.     ′END′
-     8.     ′EOP′
+     7.     'END'
+     8.     'EOP'
 

@@ -1,5 +1,8 @@
 # Source encoding
 
+> History: this describes the original compiler and its C++ rewrite on the `besm6` branch.
+> `algc` on `main` reads UTF-8 directly: see the source language in CLAUDE.md.
+
 How source text reaches the original compiler, what it accepts, and what our compiler will
 accept in UTF-8.
 
