@@ -21,6 +21,11 @@ original is in `doc/`.
 
 Goal: `algc file.alg -o prog` produces a native executable on x86_64, arm64 and riscv64.
 
+**Done.** The code generator and the runtime are described in doc/codegen.md; the 32 test
+programs with a `dubna` run give the same output natively, on x86_64 and, under qemu, on
+aarch64 and riscv64. `own` variables are not done (the front end rejects them, as the
+original did).
+
 - **Front end** (done). The passes of the original are gone; that version stays on the
   `besm6` branch. A new lexer, parser and checker build the AST (doc/ast.asdl), without the
   size limits of the original, with GNU-style messages.

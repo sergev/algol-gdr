@@ -1237,8 +1237,10 @@ private:
         if (s.kind == Symbol::PROC)
             return fn_->call("i64", ir::global_name(s.func->fn->name()),
                              { frame_of(s.func->parent), list });
-        if (s.kind == Symbol::EXTERNAL && !s.by_value)
+        if (s.kind == Symbol::EXTERNAL && !s.by_value) {
+            module_.declare("i64", s.name, "ptr, ptr");
             return fn_->call("i64", ir::global_name(s.name), { ir::null(), list });
+        }
         if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::PROCEDURE) {
             ir::Value pair = slot(s.owner, s.slot);
             ir::Value code = fn_->load("ptr", pair);

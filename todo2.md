@@ -5,7 +5,8 @@ x86_64, arm64 and riscv64, and every program in `tests/algol/` that ran under `d
 prints the same output natively.
 
 **Where we are.** The front end (lexer, parser, checker → AST) and the code generator to
-LLVM IR (doc/codegen.md) are done; 30 of the test programs run natively and match `dubna`.
+LLVM IR (doc/codegen.md) are done; all 32 test programs with a `.out` run natively and match
+`dubna`, on x86_64, aarch64 and riscv64.
 The BESM-6 compiler is on the `besm6` branch.
 
 **How.** As in `blang` (`/home/vak/Project/Cursor/blang`, `driver.go`): the compiler writes
@@ -19,9 +20,4 @@ runs.
 
 ## Tasks
 
-### Targets and finish
-
-- **E24** Every program of `tests/algol` with a `.out` (32 of them) passes natively on x86_64. Where
-  the output differs only because of 64-bit arithmetic, keep a separate expected file
-  `X.native.out` and say why in doc/codegen.md. `make install` installs `algc` and
-  `libalgol.a`; README usage updated.
+All tasks of Milestone 2 are done; Milestone 3 is next (Roadmap.md).

@@ -30,6 +30,7 @@ const std::vector<std::string> programs = {
     "arrays_check",
     "blocks",
     "boolean",
+    "bozp_ybyb",
     "comment",
     "common",
     "cond",

@@ -189,6 +189,10 @@ tests/run_test.cpp). `NAME.native.out` replaces it where the output really diffe
 | quine | the original's printer shows `'` as `′` |
 | quinio | upper case only; `-` lines are dubna's prompts for input |
 
+Reals are compared to about the last digit: BESM-6 rounding gives `-6.00000000001` where
+the host gives `-6.00000000000` (arith, mixed, test2, exprs2). The `_code` and `_algol`
+procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
+
 ## Input and output
 
 - `_write`, `_print` and `_punch` with a Fortran format (the last parameter; the unit number

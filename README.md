@@ -6,11 +6,13 @@ backend. It began as a re-creation in C++20 of the BESM-6 Algol-GDR compiler (AL
 
 ## Status
 
-The front end reads the language of the original and builds a typed AST; its messages are
-GNU style (`file.alg:12: error: …`). The C++ rewrite of the original compiler, which made
-the same listings and object modules, is on the `besm6` branch. Next: an LLVM backend for native executables on
-x86_64, arm64 and riscv64, full Algol-60 with a complete runtime library, and the Algol-60
-programs in
+`algc` compiles the language of the original (with `_keywords`, UTF-8) to native
+executables on x86_64, arm64 and riscv64: LLVM IR, compiled and linked by `clang` with the
+runtime library `libalgol.a`. Messages are GNU style (`file.alg:12: error: …`). All 32 test
+programs that ran under the `dubna` emulator print the same output natively (see
+doc/codegen.md for the few expected differences). The C++ rewrite of the original compiler,
+which made the same listings and object modules, is on the `besm6` branch. Next: full
+Algol-60 with a complete runtime library, and the Algol-60 programs in
 [x1-algol-compiler/examples](https://github.com/sergev/x1-algol-compiler/tree/main/examples).
 The plan is in [Roadmap.md](Roadmap.md).
 
@@ -60,7 +62,17 @@ Identifiers may have any length and are case-sensitive; letters may be Latin, Gr
 Cyrillic. The operators `× ↑ ≥ ≤ ≠ ¬ ∧ ∨ ⊃ ≡` may be used for their word forms, and `⏨` is the
 exponent sign. The listing shows the source lines as written, numbered.
 
-For now the compiler only checks the program: code generation is being moved to LLVM.
+Example:
+
+```
+$ algc hello.alg            # makes ./hello
+$ ./hello
+Hello, World!
+$ algc --target=riscv64-linux-gnu -o hello-rv hello.alg
+```
+
+`make install` installs `algc` to `bin/` and `libalgol.a` to `lib/` (and `lib/TRIPLE/` for
+cross targets) under the prefix (`/usr/local` by default).
 
 ## Related projects
 
