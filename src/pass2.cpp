@@ -75,24 +75,34 @@ constexpr unsigned REL_TEXT     = 020422; // RELATION, 2 words
 constexpr unsigned REL_MIXED    = 020400; // by relation code: the code for an integer and a real
 constexpr unsigned NUMERIC      = 020317; // by type: nonzero for real and integer
 constexpr unsigned ONE          = 01632;  // the slot of the constant 1
+constexpr unsigned ASSIGN_TEXT  = 022110; // ':='
+constexpr unsigned LEFT_PART    = 017702; // *0457B
+constexpr unsigned AFTER_LEFT   = 017720; // *0475B
+constexpr unsigned NEXT_LEFT    = 017736; // *0513B
+constexpr unsigned LEFT_COUNT   = 017737; // *0514B
+constexpr unsigned BAD_LEFT     = 017757; // format: ILLEGAL LEFT PART OR INPUT ELEMENT
 constexpr unsigned NOT_DECLARED = 017311; // text, name at +010
 constexpr unsigned WRONG_ORDER  = 017322; // text, name at +010
 constexpr unsigned INCORRECT    = 022051; // text up to 022056
 constexpr unsigned SCRATCH      = 017333; // *0110B
 constexpr unsigned POSITION_SRC = 021670;
 
-constexpr Word HEADER        = 0'4000'0000'0000'0000; // D-list: a block header
-constexpr Word DESCRIPTOR    = 0'2000'0000'0000'0000;
-constexpr Word BIT41         = 0'0020'0000'0000'0000;
-constexpr Word BIT48         = 0'4000'0000'0000'0000;
-constexpr Word BIT39         = 0'0000'4000'0000'0000;
-constexpr Word PARAMS        = 0'0000'0000'0370'0000; // number of parameters
-constexpr Word IN_COMMON_CLR = 0'7770'0777'7777'7777;
-constexpr Word IN_COMMON     = 0'0001'0000'0000'0000;
-constexpr Word DIMENSIONS    = 0'0000'0000'0070'0000;
-constexpr Word COMMON_SIMPLE = 0'0000'0000'0010'0000;
-constexpr Word RECORD_CLR    = 0'7777'7400'0377'7777; // descriptor without bits 33-21: the
-                                                      // shadowed binding, then the array record
+constexpr Word HEADER         = 0'4000'0000'0000'0000; // D-list: a block header
+constexpr Word DESCRIPTOR     = 0'2000'0000'0000'0000;
+constexpr Word BIT41          = 0'0020'0000'0000'0000;
+constexpr Word BIT48          = 0'4000'0000'0000'0000;
+constexpr Word BIT39          = 0'0000'4000'0000'0000;
+constexpr Word PARAMS         = 0'0000'0000'0370'0000; // number of parameters
+constexpr Word VARIABLE       = 020000;                // TYPES: the item can be a left part
+constexpr Word ASSIGNED       = 0'0004'0000'0000'0000; // a formal by name assigned to
+constexpr Word NOT_ASSIGNABLE = 0'0010'0000'0000'0000;
+constexpr Word RESULT_SET     = 0200000; // in a function's word after it: assigned
+constexpr Word IN_COMMON_CLR  = 0'7770'0777'7777'7777;
+constexpr Word IN_COMMON      = 0'0001'0000'0000'0000;
+constexpr Word DIMENSIONS     = 0'0000'0000'0070'0000;
+constexpr Word COMMON_SIMPLE  = 0'0000'0000'0010'0000;
+constexpr Word RECORD_CLR     = 0'7777'7400'0377'7777; // descriptor without bits 33-21: the
+                                                       // shadowed binding, then the array record
 
 Word cyclic_add(Word a, Word b)
 {
@@ -1231,6 +1241,160 @@ unsigned uminus_item(Machine &m)
     return EMIT_M14;
 }
 
+// *0513B: read the next left part.
+unsigned next_left(Machine &m)
+{
+    m.call(READ, 13, LEFT_COUNT);
+    return LEFT_COUNT;
+}
+
+//
+// *0514B: one left part less (the count is one less than their number);
+// after the last, return from the statement.
+//
+unsigned left_count(Machine &m)
+{
+    unsigned at = (m.M[Machine::SP] - 3) & 077777;
+    m.acc       = m.mem[at];
+    m.arx(7, 02717);
+    m.mem[at] = m.acc;
+    if (m.uza()) {
+        m.set_m(Machine::SP, m.M[Machine::SP] - 5);
+        return m.mem[m.M[Machine::SP]] & 077777;
+    }
+    m.acc                                  = 0;
+    m.mem[(m.M[Machine::SP] - 1) & 077777] = 0;
+    m.set_logical();
+    return LEFT_PART;
+}
+
+// *0512B: write the left part M4 with the code M14.
+unsigned emit_left(Machine &m)
+{
+    m.call(EMIT_M4, 13, NEXT_LEFT);
+    return next_left(m);
+}
+
+//
+// *0475B: after its type check, a left part by its kind: a variable (0100),
+// a formal by name (0101, marked assigned; illegal if not assignable), the
+// name of a function inside its body (0100 with its word after it, which is
+// marked); an element or a switch designator goes to *0554B.
+//
+unsigned after_left(Machine &m)
+{
+    if (m.M[1])
+        return 017777;
+    if (!m.M[4])
+        return next_left(m);
+    switch (m.M[6]) {
+    case 0:
+        m.set_m(14, 0100);
+        return emit_left(m);
+    case 2:
+    case 3:
+        m.acc                        = m.mem[(m.M[4] + 1) & 077777] | RESULT_SET;
+        m.mem[(m.M[4] + 1) & 077777] = m.acc;
+        m.rau                        = 003;
+        m.set_m(8, NEXT_LEFT);
+        m.acc = m.M[4];
+        m.arith(0, BLOCK, 005);
+        if (m.uza())
+            return illegal_use(m);
+        m.acc = m.mem[(m.M[4] + 1) & 077777] & 077777;
+        m.arith(0, BLOCK, 006);
+        if (m.uza())
+            return illegal_use(m);
+        m.set_m(4, m.M[4] + 1);
+        m.set_m(14, 0100);
+        return emit_left(m);
+    case 5:
+        m.acc         = m.mem[m.M[4]] | ASSIGNED;
+        m.mem[m.M[4]] = m.acc;
+        m.acc &= NOT_ASSIGNABLE;
+        m.set_logical();
+        m.set_m(8, NEXT_LEFT);
+        if (m.acc)
+            return illegal_use(m);
+        m.set_m(14, 0101);
+        return emit_left(m);
+    case 1:
+    case 4:
+    case 6:
+    case 7:
+        m.set_m(8, NEXT_LEFT);
+        return illegal_use(m);
+    default:
+        return 017722 + m.M[6];
+    }
+}
+
+//
+// *0457B: a left part, against the type at [M15-2] (the right side's, then
+// the previous left part's): 063 or 064 when integer and real, TYPE ERROR
+// ':=' when [M15-1] (the right side's type, 0 after the first left part) is
+// 0, ILLEGAL USE when not alike.
+//
+unsigned left_part(Machine &m)
+{
+    auto at = [&](unsigned k) -> Word & { return m.mem[(m.M[Machine::SP] - k) & 077777]; };
+    m.acc   = m.mem[TYPES + m.M[1]] & VARIABLE;
+    m.rmr   = 0;
+    m.set_logical();
+    if (!m.acc) {
+        m.call(PARSE_READ, 12, 017755);
+        m.set_m(13, BAD_LEFT);
+        m.set_m(8, LEFT_COUNT);
+        return message(m);
+    }
+    m.set_m(13, 017705);
+    lookup(m);
+    if (!m.M[4])
+        return after_left(m);
+    m.acc = at(2);
+    m.set_m(13, 017707);
+    type_pair(m);
+    switch (m.M[14]) {
+    case 0:
+        return after_left(m);
+    case 1:
+        m.set_m(14, 063);
+        break;
+    case 2:
+        m.set_m(14, 064);
+        break;
+    case 3:
+        m.set_m(8, AFTER_LEFT);
+        return illegal_use(m);
+    default:
+        return 017707 + m.M[14];
+    }
+    m.acc = m.M[14];
+    m.call(EMIT_A, 13, 017714);
+    m.acc = m.M[5];
+    at(2) = m.acc;
+    m.set_m(8, AFTER_LEFT);
+    m.acc = at(1);
+    if (m.acc)
+        return after_left(m);
+    m.acc = m.mem[ASSIGN_TEXT];
+    return type_error(m);
+}
+
+// Code 022, := with n+1 left parts: the right side first.
+unsigned assign_item(Machine &m)
+{
+    m.push(m.M[2]);
+    m.call(PARSE, 12, 017677);
+    m.push(m.M[5]);
+    m.push(m.M[5]);
+    m.acc = m.mem[ASSIGN_TEXT];
+    m.set_m(8, LEFT_PART);
+    if (!m.M[5])
+        return type_error(m);
+    return left_part(m);
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -1420,6 +1584,11 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[020354] = relation_item;
     pass.m.natives[020424] = uplus_item;
     pass.m.natives[020430] = uminus_item;
+    pass.m.natives[017675] = assign_item;
+    pass.m.natives[017702] = left_part;
+    pass.m.natives[017720] = after_left;
+    pass.m.natives[017736] = next_left;
+    pass.m.natives[017737] = left_count;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
