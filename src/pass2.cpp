@@ -83,6 +83,15 @@ constexpr unsigned BOUND_LOOP   = 020176; // *0753B
 constexpr unsigned SET_POSITION = 017535; // *0312B
 constexpr unsigned DECL_END     = 017553; // *0330B
 constexpr unsigned NO_ASSIGNMENT = 017563; // format
+constexpr unsigned SLICE_CODE    = 022125; // 050
+constexpr unsigned STRING_DESC   = 022134; // a string's descriptor under STRING_MASK
+constexpr unsigned STRING_MASK   = 022111;
+constexpr unsigned IO_ARG        = 021122; // an argument of an I/O statement, through M12
+constexpr unsigned IO_ERROR      = 020437; // format: ILLEGAL ARGUMENT OF I/O STATEMENT
+constexpr unsigned BAD_INPUT     = 020502; // format: ILLEGAL INPUT OF
+constexpr unsigned IO_ITEMS      = 022126; // items of I/O statements: +0, +2, +4
+constexpr unsigned IO_073        = 022145;
+constexpr unsigned IO_101        = 022112;
 constexpr unsigned ELEMENTS      = 02024;  // the elements of the FOR list
 constexpr unsigned STEP_KIND     = 02023;  // the last item of a STEP element: 0137, 0140, 034
 constexpr unsigned FOR_ELEMENT   = 021466; // *2243B: through M11
@@ -2139,6 +2148,266 @@ unsigned body_end_item(Machine &m)
     return 017601;
 }
 
+//
+// *1324B: a string slice S[i] or S[i:j] (the marker 050 or 0250 pushed):
+// S must be a string (017, or 022 by name), the indices integers.
+//
+unsigned slice(Machine &m)
+{
+    m.set_m(13, 020550);
+    lookup(m);
+    if (m.M[4]) {
+        m.set_m(8, 020556);
+        m.acc = (m.mem[m.M[4]] ^ m.mem[STRING_DESC]) & m.mem[STRING_MASK];
+        m.set_logical();
+        if (m.acc) {
+            illegal_use(m);
+        } else {
+            m.set_m(14, m.M[6] ? 022 : 017);
+            m.call(EMIT_M4, 13, 020556);
+        }
+    }
+    m.call(PARSE, 12, 020557);
+    m.set_m(13, 020560);
+    index_type(m);
+    m.acc = m.mem[(m.M[Machine::SP] - 1) & 077777] ^ m.mem[SLICE_CODE];
+    m.set_logical();
+    if (!m.acc) {
+        m.call(PARSE_READ, 12, 020562);
+        m.set_m(13, 020563);
+        index_type(m);
+    }
+    m.xta(Machine::SP, 0);
+    m.set_m(5, 4);
+    m.set_m(13, RETURN_SUB);
+    return EMIT_A;
+}
+
+// Code 050: a slice S[i:j].
+unsigned slice_item(Machine &m)
+{
+    m.acc = m.mem[SLICE_CODE];
+    m.push(m.acc);
+    return slice(m);
+}
+
+// *1342B: an element of a string S[i] (from SUBSCRIPT): one index, not a left part.
+unsigned string_element(Machine &m)
+{
+    m.set_m(2, m.M[2] - 1);
+    if (m.M[2])
+        return illegal_use(m);
+    m.set_m(12, m.M[12] - 046);
+    if (!m.M[12])
+        return illegal_use(m);
+    m.set_m(14, 0250);
+    m.acc                                  = 0250;
+    m.mem[(m.M[Machine::SP] - 1) & 077777] = m.acc;
+    return slice(m);
+}
+
+// 20457: the last argument of an I/O statement, an integer; then 0121.
+unsigned io_last(Machine &m)
+{
+    m.call(IO_ARG, 12, 020460);
+    m.set_m(5, m.M[5] - 2);
+    if (m.M[5]) {
+        m.set_m(13, IO_ERROR);
+        m.set_m(8, 020462);
+        message(m);
+    }
+    m.set_m(14, 0121);
+    m.set_m(13, RETURN_SUB);
+    return EMIT_M14;
+}
+
+// 20453: a string argument, then the last one.
+unsigned io_string(Machine &m)
+{
+    m.call(IO_ARG, 12, 020454);
+    m.set_m(5, m.M[5] - 4);
+    if (m.M[5]) {
+        m.set_m(13, IO_ERROR);
+        m.acc = m.mem[REPORTED];
+        m.set_logical();
+        if (!m.acc) {
+            m.set_m(8, 020457);
+            message(m);
+        }
+    }
+    return io_last(m);
+}
+
+// Codes 064, 063: M4 0473, a string and an integer argument.
+unsigned io_write(Machine &m, unsigned code)
+{
+    m.set_m(4, code);
+    m.set_m(14, 0473);
+    m.call(EMIT_M4, 13, 020452);
+    m.call(READ, 13, 020453);
+    return io_string(m);
+}
+
+unsigned io_064(Machine &m)
+{
+    return io_write(m, 051);
+}
+
+unsigned io_063(Machine &m)
+{
+    return io_write(m, 060);
+}
+
+// Codes 100, 103, 070-072: M4 0273 and an integer argument.
+unsigned io_control(Machine &m, unsigned code, unsigned ret)
+{
+    m.set_m(4, code);
+    m.set_m(14, 0273);
+    m.call(EMIT_M4, 13, ret);
+    m.call(READ, 13, 020457);
+    return io_last(m);
+}
+
+unsigned io_100(Machine &m)
+{
+    return io_control(m, 025, 020465);
+}
+
+unsigned io_103(Machine &m)
+{
+    return io_control(m, 026, 020465);
+}
+
+unsigned io_071(Machine &m)
+{
+    return io_control(m, 033, 020540);
+}
+
+unsigned io_070(Machine &m)
+{
+    return io_control(m, 034, 020540);
+}
+
+unsigned io_072(Machine &m)
+{
+    return io_control(m, 035, 020540);
+}
+
+//
+// Code 065, an input statement: a string variable is written as 017 with
+// its item; anything else must be a string (ILLEGAL INPUT OF) and becomes
+// the left parts of an assignment.
+//
+unsigned io_065(Machine &m)
+{
+    m.call(READ, 13, 020467);
+    m.set_m(13, 020470);
+    lookup(m);
+    m.acc = m.M[5] ^ 4;
+    m.set_logical();
+    if (m.acc) {
+        m.set_m(13, BAD_INPUT);
+        m.set_m(8, 020473);
+        message_name(m);
+    }
+    if (!m.M[1]) {
+        m.set_m(6, m.M[6] - 1);
+        if (!m.M[6]) {
+            m.set_m(14, 017);
+            m.call(EMIT_M4, 13, 020507);
+            m.acc = m.mem[IO_ITEMS + 2];
+            m.call(EMIT_A, 13, 020510);
+            m.set_m(13, RETURN_SUB);
+            return READ;
+        }
+    }
+    m.acc = m.mem[IO_ITEMS];
+    m.call(EMIT_A, 13, 020476);
+    m.set_m(13, 020477);
+    lookup(m);
+    m.acc = 1;
+    m.push(m.acc);
+    m.push(m.M[5]);
+    m.push(m.M[5]);
+    m.acc = m.M[5];
+    return LEFT_PART;
+}
+
+// Code 074: an array argument as 017 with its item, else the expression.
+unsigned io_074(Machine &m)
+{
+    m.call(READ, 13, 020512);
+    if (!m.M[1]) {
+        m.set_m(13, 020513);
+        lookup(m);
+        m.set_m(6, m.M[6] - 1);
+        if (!m.M[6]) {
+            m.set_m(14, 017);
+            m.call(EMIT_M4, 13, 020517);
+            m.acc = m.mem[IO_ITEMS + 4];
+            m.call(EMIT_A, 13, 020520);
+            m.set_m(13, RETURN_SUB);
+            return READ;
+        }
+    }
+    m.acc = m.mem[IO_ITEMS];
+    m.call(EMIT_A, 13, 020515);
+    m.set_m(12, RETURN_SUB);
+    return PARSE_READ;
+}
+
+// Code 073.
+unsigned io_073(Machine &m)
+{
+    m.acc = m.mem[IO_073];
+    m.call(EMIT_A, 13, 020522);
+    m.set_m(13, RETURN_SUB);
+    return READ;
+}
+
+// Code 101: 023 0473, a string argument, 0125, the last one.
+unsigned io_101(Machine &m)
+{
+    m.set_m(4, 023);
+    m.set_m(14, 0473);
+    m.call(EMIT_M4, 13, 020524);
+    m.call(READ, 13, 020525);
+    m.call(IO_ARG, 12, 020526);
+    m.set_m(5, m.M[5] - 4);
+    if (m.M[5]) {
+        m.set_m(13, IO_ERROR);
+        m.set_m(8, 020531);
+        message(m);
+    }
+    m.acc = m.mem[IO_101];
+    m.call(EMIT_A, 13, 020532);
+    m.set_m(14, 0125);
+    m.call(EMIT_M14, 13, 020462);
+    m.set_m(14, 0121);
+    m.set_m(13, RETURN_SUB);
+    return EMIT_M14;
+}
+
+// Codes 066, 067: their item, then two arguments as 064, 063.
+unsigned io_two(Machine &m, unsigned item)
+{
+    m.acc = m.mem[item];
+    m.call(EMIT_A, 13, 020544);
+    m.call(READ, 13, 020545);
+    m.call(IO_ARG, 12, 020453);
+    return io_string(m);
+}
+
+unsigned io_066(Machine &m)
+{
+    return io_two(m, 022117);
+}
+
+unsigned io_067(Machine &m)
+{
+    return io_two(m, 022073);
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -2354,6 +2623,21 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[017544] = procedure_item;
     pass.m.natives[017553] = decl_end;
     pass.m.natives[017574] = body_end_item;
+    pass.m.natives[020546] = slice_item;
+    pass.m.natives[020565] = string_element;
+    pass.m.natives[020445] = io_064;
+    pass.m.natives[020446] = io_063;
+    pass.m.natives[020447] = io_100;
+    pass.m.natives[020450] = io_103;
+    pass.m.natives[020466] = io_065;
+    pass.m.natives[020511] = io_074;
+    pass.m.natives[020521] = io_073;
+    pass.m.natives[020523] = io_101;
+    pass.m.natives[020534] = io_071;
+    pass.m.natives[020535] = io_070;
+    pass.m.natives[020536] = io_072;
+    pass.m.natives[020541] = io_066;
+    pass.m.natives[020542] = io_067;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);

@@ -22,6 +22,9 @@ scripts/gen-pass.py $hooks --native 17223 --native 22027 --native 17420 --native
     --native 21534 --native 21540 --native 21546 --native 21617 --native 17567 \
     --native 17543 --native 21637 --native 20162 --native 20176 --native 20177 \
     --native 20200 --native 21206 --native 17533 --native 17544 --native 17553 \
-    --native 17574 pass2 17223-22161 $shared > src/pass2_gen.cpp
+    --native 17574 --native 20546 --native 20565 --native 20445 --native 20446 \
+    --native 20447 --native 20450 --native 20466 --native 20511 --native 20521 \
+    --native 20523 --native 20534 --native 20535 --native 20536 --native 20541 \
+    --native 20542 pass2 17223-22161 $shared > src/pass2_gen.cpp
 scripts/gen-pass.py $hooks --native 22716 pass3 22162-23522 $shared > src/pass3_gen.cpp
 scripts/gen-pass.py $hooks pass4 23523-26257 $shared 30034-30117 > src/pass4_gen.cpp
