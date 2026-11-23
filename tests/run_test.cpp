@@ -22,10 +22,23 @@ namespace {
 const std::string compiler = BUILD_DIR "/src/algc";
 
 // The programs the code generator handles so far.
+// clang-format off
 const std::vector<std::string> programs = {
-    "arith", "blocks", "cond",        "for",   "boolean", "comment",
-    "empty", "hello",  "hello_algol", "pages", "print",   "symbols",
+    "arith",
+    "blocks",
+    "boolean",
+    "comment",
+    "cond",
+    "empty",
+    "for",
+    "hello",
+    "hello_algol",
+    "pages",
+    "print",
+    "stdfunc",
+    "symbols",
 };
+// clang-format on
 
 std::vector<std::string> tokens(const std::string &text)
 {
@@ -159,4 +172,14 @@ _end _eop
               "             1              2              4              6             10 "
               " 5.00000000000e-01    1.00000000000e+00    1.50000000000e+00   \n"
               "            10 \n");
+}
+
+TEST(Run, domain_error)
+{
+    const std::string src = BUILD_DIR "/run_sqrt.alg";
+    std::ofstream(src) << "_begin PRINT(1); PRINT(SQRT(-1.0)) _end _eop\n";
+    auto r =
+        run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "             1 \nError: Square root of a negative number -1\n");
 }

@@ -263,6 +263,8 @@ private:
                     return module_.string(n.value);
                 } else if constexpr (std::is_same_v<T, expr::Var>) {
                     return load(e.type, address(n.decl));
+                } else if constexpr (std::is_same_v<T, expr::StdFunc>) {
+                    return std_func(n);
                 } else if constexpr (std::is_same_v<T, expr::Unary>) {
                     return unary(n, e.type);
                 } else if constexpr (std::is_same_v<T, expr::Binary>) {
@@ -279,6 +281,49 @@ private:
                 }
             },
             e.node);
+    }
+
+    ir::Value std_func(const expr::StdFunc &f)
+    {
+        const Expr &arg = *f.args.at(0);
+        ir::Value x     = expr(arg);
+        // The functions of reals take an integer as a real.
+        if (arg.type == Type::INTEGER && f.func != StdFunc::SIGN && f.func != StdFunc::ENTIER)
+            x = convert(x, Type::INTEGER, Type::REAL);
+        auto libm       = [&](const char *name) {
+            module_.declare("double", name, "double");
+            return fn_->call("double", std::string("@") + name, { x });
+        };
+        switch (f.func) {
+        case StdFunc::ABS:
+            return libm("llvm.fabs.f64");
+        case StdFunc::SIGN: {
+            bool real    = arg.type == Type::REAL;
+            ir::Value z  = real ? ir::real(0) : ir::i64(0);
+            ir::Value gt = real ? fn_->fcmp("ogt", x, z) : fn_->icmp("sgt", x, z);
+            ir::Value lt = real ? fn_->fcmp("olt", x, z) : fn_->icmp("slt", x, z);
+            return fn_->binop("sub", fn_->cast("zext", gt, "i64"), fn_->cast("zext", lt, "i64"));
+        }
+        case StdFunc::ENTIER:
+            if (arg.type == Type::INTEGER)
+                return x;
+            return fn_->cast("fptosi", libm("llvm.floor.f64"), "i64");
+        case StdFunc::SQRT:
+            return runtime("double", "algol_sqrt", { x });
+        case StdFunc::LN:
+            return runtime("double", "algol_ln", { x });
+        case StdFunc::SIN:
+            return libm("sin");
+        case StdFunc::COS:
+            return libm("cos");
+        case StdFunc::ARCTAN:
+            return libm("atan");
+        case StdFunc::EXP:
+            return libm("exp");
+        case StdFunc::LENGTH:
+            return runtime("i64", "algol_string_length", { x });
+        }
+        throw std::logic_error("bad function");
     }
 
     ir::Value unary(const expr::Unary &u, Type t)

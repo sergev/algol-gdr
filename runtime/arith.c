@@ -72,3 +72,17 @@ int64_t algol_bits_shift(int64_t bits, int64_t n)
         return 0;
     return (int64_t)(n >= 0 ? b << n : b >> -n);
 }
+
+double algol_sqrt(double x)
+{
+    if (x < 0)
+        algol_error("Square root of a negative number %g", x);
+    return sqrt(x);
+}
+
+double algol_ln(double x)
+{
+    if (x <= 0)
+        algol_error("Logarithm of a number not above 0: %g", x);
+    return log(x);
+}

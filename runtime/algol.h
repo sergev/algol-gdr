@@ -33,4 +33,8 @@ double algol_rpow(double base, int64_t exp);
 double algol_power(double x, double y);
 int64_t algol_bits_shift(int64_t bits, int64_t n);
 
+// Standard functions with a domain.
+double algol_sqrt(double x);
+double algol_ln(double x);
+
 #endif

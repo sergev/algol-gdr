@@ -25,8 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E16** Standard functions: `ABS`, `SIGN`, `SQRT`, `SIN`, `COS`, `ARCTAN`, `LN`, `EXP`,
-  `ENTIER`, and the others pass 2 knows by number. Test stdfunc.
 - **E17** Arrays: descriptors (base, bounds, strides), dynamic bounds evaluated on block
   entry, storage freed on block exit (`stacksave`/`stackrestore` or the heap for large
   ones), element access, `--check` bounds checks through the runtime. Test arrays,
