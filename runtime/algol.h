@@ -32,8 +32,21 @@ void algol_newline(void);
 void algol_newpage(void);
 
 // _write with a format.
-void algol_format_begin(const char *format);
+void algol_format_begin(int64_t unit, const char *format);
 void algol_format_end(void);
+void algol_encode_begin(const char *format);
+char *algol_encode_end(int64_t count);
+void algol_fread_begin(int64_t unit, const char *format);
+void algol_decode_begin(const char *format, const char *string);
+void algol_fread_end(void);
+int64_t algol_fread_integer(void);
+double algol_fread_real(void);
+_Bool algol_fread_boolean(void);
+char *algol_fread_string(void);
+void algol_fread_array(int64_t *desc, int64_t type);
+void algol_rewind(int64_t unit);
+void algol_backspace(int64_t unit);
+void algol_endfile(int64_t unit);
 void algol_format_integer(int64_t v);
 void algol_format_real(double v);
 void algol_format_boolean(_Bool v);

@@ -226,15 +226,25 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
   is stored in its destination with the conversion of its type. `maxreal`, `minreal`,
   `maxint`, `epsilon` are constants; `stop` is `algol_stop`.
 
-- `_write`, `_print` and `_punch` with a Fortran format (the last parameter; the unit number
-  is not used) print through `algol_format_*`: `Iw`, `Fw.d`, `Ew.d` (`0.ddddE+xx`), `Gw.d`
-  (as `E`), `Aw`, `Lw`, `nX`, `nH…`, `'…'`, `/`, repeat counts and groups. When the items
-  outrun the format it starts again on a new line; the statement ends its line. There is
-  no carriage-control column.
-- `READ` and `_read` read values separated by white space from standard input (a format is
-  not used): integers, reals, `true`/`false`, words as strings; a whole array element by
+- `_write (unit, format)`, `_print (format)` and `_punch (format)` write through
+  `algol_format_*` (runtime/format.c): `Iw`, `Fw.d`, `Ew.d` (`0.ddddE+xx`), `Gw.d` (as `E`),
+  `Aw`, `Lw`, `nX`, `nH…`, `'…'`, `/`, repeat counts and groups. When the items outrun the
+  format it starts again on a new record; the statement ends its record. There is no
+  carriage-control column. `_print` and `_punch` go to standard output.
+- Units: 54 is the terminal (standard input and output); another unit `n` is the file
+  `$ALGC_UNITn`, else `fort.n`, opened at its first use (for writing: emptied).
+  `_rewind (n)`, `_backspace (n)` (to the start of the record before) and `_endfile (n)`
+  (the file ends here) act on an open unit.
+- `_read (unit, format)` reads records through `algol_fread_*` with the same edits: a
+  field of width `w`; `Fw.d` without a point takes the last `d` digits as the fraction; a
+  width of 0 takes the next word.
+- `READ` and `_read` without a format read values separated by white space from standard
+  input: integers, reals, `true`/`false`, words as strings; a whole array element by
   element. `stdout` is flushed before reading.
-- `_decode`, `_encode`, `_rewind`, `_backspace`, `_endfile` are not supported.
+- `_encode (n, format, s)` writes the items into the string variable `s`, `n` characters
+  (padded with blanks or cut); `_decode (n, format, s)` reads them from the first `n`
+  characters of `s`. Records of a string are separated by `'\n'`. The order of the
+  parameters is Fortran's `ENCODE (n, format, buffer)`.
 
 ## Names
 

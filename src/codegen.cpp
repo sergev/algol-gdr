@@ -1635,8 +1635,25 @@ private:
         }
     }
 
-    // PRINT, _write with a format, READ.
-    enum class IoMode { PRINT, FORMAT, READ } io_mode_{};
+    // PRINT; _write, _print, _punch with a format; READ, free or with a
+    // format; _encode, _decode; the units (runtime/format.c).
+    enum class IoMode { PRINT, FORMAT, READ, FREAD } io_mode_{};
+
+    // The parameters of _write (unit, format) and _read: the format is the
+    // last string, the unit the first integer (-1: standard output).
+    ir::Value io_format(const stmt::Io &s)
+    {
+        if (!s.params.empty() && s.params.back()->type == Type::STRING)
+            return expr(*s.params.back());
+        return ir::null();
+    }
+
+    ir::Value io_unit(const stmt::Io &s, int64_t none)
+    {
+        if (!s.params.empty() && numeric(s.params.front()->type))
+            return convert(expr(*s.params.front()), s.params.front()->type, Type::INTEGER);
+        return ir::i64(none);
+    }
 
     void io(const stmt::Io &s)
     {
@@ -1647,21 +1664,65 @@ private:
             return;
         case IoOp::WRITE:
         case IoOp::PUNCH: {
-            ir::Value format = ir::null();
-            if (!s.params.empty() && s.params.back()->type == Type::STRING)
-                format = expr(*s.params.back());
-            io_mode_ = IoMode::FORMAT;
-            runtime("void", "algol_format_begin", { format });
+            ir::Value unit   = io_unit(s, -1);
+            ir::Value format = io_format(s);
+            io_mode_         = IoMode::FORMAT;
+            runtime("void", "algol_format_begin", { unit, format });
             io_items(s.items);
             runtime("void", "algol_format_end", {});
             return;
         }
-        case IoOp::READ:
-            io_mode_ = IoMode::READ;
+        case IoOp::READ: {
+            if (s.params.empty() || s.params.back()->type != Type::STRING) {
+                io_mode_ = IoMode::READ;
+                io_items(s.items);
+                return;
+            }
+            ir::Value unit   = io_unit(s, 54);
+            ir::Value format = io_format(s);
+            io_mode_         = IoMode::FREAD;
+            runtime("void", "algol_fread_begin", { unit, format });
             io_items(s.items);
+            runtime("void", "algol_fread_end", {});
             return;
-        default:
-            unsupported(std::string("'_") + to_string(s.op) + "'");
+        }
+        case IoOp::DECODE: {
+            // _decode (n, format, s): items from the first n characters of s.
+            ir::Value n      = expr(*s.params.at(0));
+            ir::Value format = expr(*s.params.at(1));
+            ir::Value text   = expr(*s.params.at(2));
+            text             = runtime("ptr", "algol_string_slice", { text, ir::i64(1), n });
+            io_mode_         = IoMode::FREAD;
+            runtime("void", "algol_decode_begin", { format, text });
+            io_items(s.items);
+            runtime("void", "algol_fread_end", {});
+            return;
+        }
+        case IoOp::ENCODE: {
+            // _encode (n, format, s): s := the items, n characters.
+            ir::Value n      = expr(*s.params.at(0));
+            ir::Value format = expr(*s.params.at(1));
+            io_mode_         = IoMode::FORMAT;
+            runtime("void", "algol_encode_begin", { format });
+            io_items(s.items);
+            ir::Value text = runtime("ptr", "algol_encode_end", { n });
+            const Expr &d  = *s.params.at(2);
+            Cell c         = std::holds_alternative<expr::Element>(d.node)
+                                 ? element_cell(std::get<expr::Element>(d.node).array,
+                                                std::get<expr::Element>(d.node).subscripts)
+                                 : var_cell(std::get<expr::Var>(d.node).decl);
+            store(c, text);
+            return;
+        }
+        case IoOp::REWIND:
+            runtime("void", "algol_rewind", { io_unit(s, 54) });
+            return;
+        case IoOp::BACKSPACE:
+            runtime("void", "algol_backspace", { io_unit(s, 54) });
+            return;
+        case IoOp::ENDFILE:
+            runtime("void", "algol_endfile", { io_unit(s, 54) });
+            return;
         }
     }
 
@@ -1692,7 +1753,8 @@ private:
     void io_item(const Expr &e)
     {
         static const char *const names[]  = { "integer", "real", "boolean", "string", "bits" };
-        static const char *const prefix[] = { "algol_print_", "algol_format_", "algol_read_" };
+        static const char *const prefix[] = { "algol_print_", "algol_format_", "algol_read_",
+                                              "algol_fread_" };
         const char *pre                   = prefix[int(io_mode_)];
         auto var                          = std::get_if<expr::Var>(&e.node);
         if (var && (symbol(var->decl).kind == Symbol::ARRAY ||
@@ -1710,7 +1772,7 @@ private:
             unsupported("This item of input or output");
         }
         std::string name = std::string(pre) + names[int(e.type)];
-        if (io_mode_ != IoMode::READ) {
+        if (io_mode_ == IoMode::PRINT || io_mode_ == IoMode::FORMAT) {
             runtime("void", name, { expr(e) });
             return;
         }

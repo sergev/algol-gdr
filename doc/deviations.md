@@ -31,7 +31,6 @@ set of standard procedures.
 
 | Deviation | Where | Task |
 |---|---|---|
-| Algol-GDR I/O: `_read` ignores its format; `_decode`, `_encode`, `_rewind`, `_backspace`, `_endfile` not supported; the unit number is ignored | code generator, runtime | F12 |
 | Integer overflow wraps around; division by zero and real overflow are not reported; string and switch indices are checked only in part; calls through formal procedures are not checked against the procedure | code generator, runtime | F13 |
 | Array subscripts are checked only with `--check` | code generator | F13 |
 

@@ -1213,10 +1213,39 @@ StmtPtr Checker::io_stmt(SrcLoc loc, const syn::stmt::Io &io)
         { Sym::ENDFILE, IoOp::ENDFILE },
     };
     stmt::Io out;
-    out.op = ops.at(io.op);
+    out.op                 = ops.at(io.op);
+    const std::string what = to_string(io.op);
     for (size_t k = 0; k < io.params.size(); k++)
-        out.params.push_back(actual(*io.params[k], nullptr, int(k) + 1, to_string(io.op)));
+        out.params.push_back(actual(*io.params[k], nullptr, int(k) + 1, what));
     out.items = io_items(io.items, loc.line);
+    auto type = [&](size_t k) { return out.params[k]->type; };
+    switch (out.op) {
+    case IoOp::DECODE:
+    case IoOp::ENCODE: {
+        // (count, format, string); _encode assigns the string.
+        if (out.params.size() != 3 || !numeric(type(0)) || type(1) != Type::STRING ||
+            type(2) != Type::STRING) {
+            error(loc.line, what + " needs a count, a format and a string");
+            break;
+        }
+        out.params[0] = convert(std::move(out.params[0]), Type::INTEGER, loc.line, what);
+        const Expr &d = *out.params[2];
+        bool var      = std::holds_alternative<expr::Element>(d.node) ||
+                   (std::holds_alternative<expr::Var>(d.node) &&
+                    sym(std::get<expr::Var>(d.node).decl - 1).kind == Kind::SIMPLE);
+        if (out.op == IoOp::ENCODE && !var)
+            error(loc.line, what + " needs a string variable");
+        break;
+    }
+    case IoOp::REWIND:
+    case IoOp::BACKSPACE:
+    case IoOp::ENDFILE:
+        if (out.params.size() != 1 || !numeric(type(0)))
+            error(loc.line, what + " needs a unit number");
+        break;
+    default:
+        break;
+    }
     return make_stmt(loc, std::move(out));
 }
 

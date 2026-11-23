@@ -1,16 +1,22 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// _write, _print and _punch with a Fortran format: ''(I3, F7.2, 10HTEXT, 2X, A, /)''.
+// Input and output with a Fortran format: ''(I3, F7.2, 10HTEXT, 2X, A, /)''.
 // Edits: Iw, Fw.d, Ew.d, Gw.d (as E), Aw, Lw, nX, nH…, '…', /, repeat counts and
-// groups. When the items outrun the format it starts again with a new line;
-// the statement ends its line. No carriage control: every column is printed.
+// groups. When the items outrun the format it starts again with a new record;
+// a statement ends its record. No carriage control: every column is printed.
+//
+// Output goes to standard output (_print, _punch, unit 54), a unit file
+// (_write), or a string (_encode); input comes from standard input (unit
+// 54), a unit file (_read) or a string (_decode). On input a data edit of
+// width 0 takes the next word of the record.
 //
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "algol.h"
 #include "internal.h"
@@ -25,8 +31,17 @@ typedef struct {
 
 static Edit edits[MAX_EDITS];
 static int nedits, pos;
+
+// The record being written or read.
 static char *line;
-static size_t line_len, line_cap;
+static size_t line_len, line_cap, line_pos;
+
+// Where it goes or comes from.
+static FILE *file;    // a unit file, or null for standard input and output
+static int to_string; // _encode
+static char *text;    // _encode: what is written so far
+static size_t text_len;
+static const char *source; // _decode: the rest of the string
 
 static void put(const char *s, size_t n)
 {
@@ -34,18 +49,11 @@ static void put(const char *s, size_t n)
         line_cap = (line_len + n + 1) * 2;
         line     = realloc(line, line_cap);
         if (!line)
-            algol_error("No memory for output");
+            algol_error("No memory for a record");
     }
     memcpy(line + line_len, s, n);
     line_len += n;
-}
-
-static void new_line(void)
-{
-    put("\n", 1);
-    line[line_len] = 0; // put() leaves room
-    algol_print_string(line);
-    line_len = 0;
+    line[line_len] = 0;
 }
 
 static int number(const char **p)
@@ -140,16 +148,120 @@ static void parse(const char **p)
     }
 }
 
-// The edits up to the next data edit; at the end of the format, a new line
-// and the format again (when data is waiting).
-static const Edit *next_data(int data)
+static void start(const char *format)
+{
+    const char *p = format ? format : "";
+    while (*p == ' ')
+        p++;
+    if (*p == '(')
+        p++;
+    nedits = pos = 0;
+    parse(&p);
+    line_len = line_pos = 0;
+    put("", 0);
+}
+
+//
+// Units: 54 is the terminal; n is the file $ALGC_UNITn, else fort.n.
+//
+enum { MAX_UNITS = 100, TERMINAL = 54 };
+
+static FILE *units[MAX_UNITS];
+
+static FILE *unit_file(int64_t unit, int writing)
+{
+    if (unit < 0 || unit >= MAX_UNITS)
+        algol_error("No unit %lld", (long long)unit);
+    if (units[unit])
+        return units[unit];
+    char var[32], name[32];
+    snprintf(var, sizeof(var), "ALGC_UNIT%d", (int)unit);
+    snprintf(name, sizeof(name), "fort.%d", (int)unit);
+    const char *path = getenv(var) ? getenv(var) : name;
+    units[unit]      = fopen(path, writing ? "w+" : "r+");
+    if (!units[unit])
+        algol_error("Cannot open %s for unit %lld", path, (long long)unit);
+    return units[unit];
+}
+
+// The file of a unit, or null for the terminal.
+static FILE *unit_of(int64_t unit, int writing)
+{
+    return unit < 0 || unit == TERMINAL ? NULL : unit_file(unit, writing);
+}
+
+void algol_rewind(int64_t unit)
+{
+    if (unit != TERMINAL && unit >= 0 && unit < MAX_UNITS && units[unit])
+        rewind(units[unit]);
+}
+
+// To the start of the record before the current position.
+void algol_backspace(int64_t unit)
+{
+    if (unit == TERMINAL || unit < 0 || unit >= MAX_UNITS || !units[unit])
+        return;
+    FILE *f  = units[unit];
+    long off = ftell(f);
+    if (off <= 0)
+        return;
+    off--; // the end of the last record
+    while (off > 0) {
+        fseek(f, off - 1, SEEK_SET);
+        if (getc(f) == '\n')
+            break;
+        off--;
+    }
+    fseek(f, off, SEEK_SET);
+}
+
+// The file ends at the current position.
+void algol_endfile(int64_t unit)
+{
+    if (unit == TERMINAL || unit < 0 || unit >= MAX_UNITS || !units[unit])
+        return;
+    FILE *f = units[unit];
+    fflush(f);
+    if (ftruncate(fileno(f), ftell(f)) != 0)
+        algol_error("Cannot end the file of unit %lld", (long long)unit);
+}
+
+//
+// Output.
+//
+static void new_line(void)
+{
+    if (to_string) {
+        // Records of a string are separated by '\n'.
+        text = realloc(text, text_len + line_len + 2);
+        if (!text)
+            algol_error("No memory for a string");
+        if (text_len)
+            text[text_len++] = '\n';
+        memcpy(text + text_len, line, line_len);
+        text_len += line_len;
+        text[text_len] = 0;
+    } else if (file) {
+        fwrite(line, 1, line_len, file);
+        putc('\n', file);
+    } else {
+        put("\n", 1);
+        algol_print_string(line);
+    }
+    line_len = 0;
+    put("", 0);
+}
+
+// The edits up to the next data edit; at the end of the format, a new record
+// and the format again (when data is waiting). record starts a record.
+static const Edit *next_edit(int data, void (*record)(void))
 {
     int wrapped = 0;
     for (;;) {
         if (pos >= nedits) {
             if (!data || wrapped)
                 return NULL;
-            new_line();
+            record();
             pos     = 0;
             wrapped = 1;
             continue;
@@ -157,14 +269,20 @@ static const Edit *next_data(int data)
         const Edit *e = &edits[pos];
         switch (e->kind) {
         case 'H':
-            put(e->text, e->w);
+            if (record == new_line)
+                put(e->text, e->w);
+            else
+                line_pos += e->w;
             break;
         case 'X':
-            for (int k = 0; k < e->w; k++)
-                put(" ", 1);
+            if (record == new_line)
+                for (int k = 0; k < e->w; k++)
+                    put(" ", 1);
+            else
+                line_pos += e->w;
             break;
         case '/':
-            new_line();
+            record();
             break;
         default:
             if (!data)
@@ -174,6 +292,14 @@ static const Edit *next_data(int data)
         }
         pos++;
     }
+}
+
+static const Edit *next_data(void)
+{
+    const Edit *e = next_edit(1, new_line);
+    if (!e)
+        algol_error("Format without data edits");
+    return e;
 }
 
 // A field of width w, right-justified; asterisks when it does not fit.
@@ -195,22 +321,55 @@ static void field(const char *s, int w)
     put(s, n);
 }
 
-void algol_format_begin(const char *format)
+void algol_format_begin(int64_t unit, const char *format)
 {
-    const char *p = format ? format : "";
-    while (*p == ' ')
-        p++;
-    if (*p == '(')
-        p++;
-    nedits = pos = 0;
-    parse(&p);
-    line_len = 0;
+    file      = unit_of(unit, 1);
+    to_string = 0;
+    start(format);
 }
 
 void algol_format_end(void)
 {
-    next_data(0);
+    next_edit(0, new_line);
     new_line();
+    if (file)
+        fflush(file);
+}
+
+void algol_encode_begin(const char *format)
+{
+    file      = NULL;
+    to_string = 1;
+    free(text);
+    text     = NULL;
+    text_len = 0;
+    start(format);
+}
+
+// The text, count characters: padded with blanks or cut.
+char *algol_encode_end(int64_t count)
+{
+    next_edit(0, new_line);
+    new_line();
+    to_string     = 0;
+    const char *s = text ? text : "";
+    int64_t n     = algol_string_length(s);
+    char *r;
+    if (n >= count) {
+        r = algol_string_slice(s, 1, count);
+    } else {
+        size_t len = strlen(s);
+        r          = malloc(len + (count - n) + 1);
+        if (!r)
+            algol_error("No memory for a string");
+        memcpy(r, s, len);
+        memset(r + len, ' ', count - n);
+        r[len + count - n] = 0;
+    }
+    free(text);
+    text     = NULL;
+    text_len = 0;
+    return r;
 }
 
 static void real_field(const Edit *e, double v)
@@ -240,10 +399,8 @@ static void real_field(const Edit *e, double v)
 
 void algol_format_integer(int64_t v)
 {
-    const Edit *e = next_data(1);
+    const Edit *e = next_data();
     char buf[32];
-    if (!e)
-        algol_error("Format without data edits");
     if (e->kind == 'F' || e->kind == 'E') {
         real_field(e, (double)v);
         return;
@@ -254,26 +411,19 @@ void algol_format_integer(int64_t v)
 
 void algol_format_real(double v)
 {
-    const Edit *e = next_data(1);
-    if (!e)
-        algol_error("Format without data edits");
-    real_field(e, v);
+    real_field(next_data(), v);
 }
 
 void algol_format_boolean(_Bool v)
 {
-    const Edit *e = next_data(1);
-    if (!e)
-        algol_error("Format without data edits");
+    const Edit *e = next_data();
     field(v ? "T" : "F", e->w);
 }
 
 void algol_format_string(const char *s)
 {
-    const Edit *e = next_data(1);
-    if (!e)
-        algol_error("Format without data edits");
-    s = s ? s : "";
+    const Edit *e = next_data();
+    s             = s ? s : "";
     if (e->kind == 'A' && e->w > 0 && (int)algol_string_length(s) > e->w) {
         char *head = algol_string_slice(s, 1, e->w);
         put(head, strlen(head));
@@ -303,6 +453,197 @@ void algol_format_array(const int64_t *desc, int64_t type)
             break;
         default:
             algol_format_string((const char *)(intptr_t)data[i]);
+        }
+    }
+}
+
+//
+// Input: records from the terminal, a unit file or a string.
+//
+static int at_end; // no record could be read
+
+static void next_record(void)
+{
+    line_len = line_pos = 0;
+    put("", 0);
+    if (source) {
+        // _decode: the records of the string.
+        const char *nl = strchr(source, '\n');
+        size_t n       = nl ? (size_t)(nl - source) : strlen(source);
+        put(source, n);
+        source = nl ? nl + 1 : source + n;
+        return;
+    }
+    FILE *f = file ? file : stdin;
+    if (!file)
+        fflush(stdout);
+    int c;
+    at_end = 1;
+    while ((c = getc(f)) != EOF) {
+        at_end = 0;
+        if (c == '\n')
+            break;
+        char ch = (char)c;
+        put(&ch, 1);
+    }
+}
+
+// The characters of a field of width w, or the next word for w = 0.
+static char *take(int w)
+{
+    static char buf[1024];
+    size_t n = 0;
+    if (w == 0) {
+        while (line_pos < line_len && isspace((unsigned char)line[line_pos]))
+            line_pos++;
+        if (line_pos >= line_len && at_end)
+            algol_error("End of the input");
+        while (line_pos < line_len && !isspace((unsigned char)line[line_pos]) &&
+               n + 1 < sizeof(buf))
+            buf[n++] = line[line_pos++];
+    } else {
+        for (int k = 0; k < w && n + 1 < sizeof(buf); k++)
+            buf[n++] = line_pos < line_len ? line[line_pos++] : ' ';
+    }
+    buf[n] = 0;
+    return buf;
+}
+
+static const Edit *next_input(void)
+{
+    const Edit *e = next_edit(1, next_record);
+    if (!e)
+        algol_error("Format without data edits");
+    return e;
+}
+
+// Blanks out of a numeric field.
+static char *squeeze(char *s)
+{
+    char *d = s;
+    for (const char *p = s; *p; p++)
+        if (*p != ' ')
+            *d++ = *p;
+    *d = 0;
+    return s;
+}
+
+// A real; without a point, the last d digits of the mantissa are the
+// fraction.
+static double read_real(const Edit *e)
+{
+    char *s = squeeze(take(e->w));
+    if (!*s)
+        return 0;
+    char *end;
+    double v = strtod(s, &end);
+    if (*end)
+        algol_error("Not a number in the input: %s", s);
+    if (!strchr(s, '.') && e->d > 0) {
+        char *x = strpbrk(s, "eEdD+-");
+        if (x == s && (*x == '+' || *x == '-'))
+            x = strpbrk(s + 1, "eEdD+-");
+        double m = strtod(s, NULL);
+        double p = x ? pow(10, strtol(x + (toupper((unsigned char)*x) == 'E' ||
+                                           toupper((unsigned char)*x) == 'D'),
+                                      NULL, 10))
+                     : 1;
+        v        = m / pow(10, e->d) * p;
+    }
+    return v;
+}
+
+static int64_t read_integer(const Edit *e)
+{
+    if (e->kind == 'F' || e->kind == 'E')
+        return llround(read_real(e));
+    char *s = squeeze(take(e->w));
+    if (!*s)
+        return 0;
+    char *end;
+    long long v = strtoll(s, &end, 10);
+    if (*end)
+        algol_error("Not an integer in the input: %s", s);
+    return v;
+}
+
+void algol_fread_begin(int64_t unit, const char *format)
+{
+    file   = unit_of(unit, 0);
+    source = NULL;
+    start(format);
+    next_record();
+}
+
+void algol_decode_begin(const char *format, const char *string)
+{
+    file   = NULL;
+    source = string ? string : "";
+    start(format);
+    next_record();
+}
+
+void algol_fread_end(void)
+{
+    source = NULL;
+}
+
+int64_t algol_fread_integer(void)
+{
+    return read_integer(next_input());
+}
+
+double algol_fread_real(void)
+{
+    const Edit *e = next_input();
+    if (e->kind == 'I')
+        return (double)read_integer(e);
+    return read_real(e);
+}
+
+_Bool algol_fread_boolean(void)
+{
+    char *s = squeeze(take(next_input()->w));
+    if (*s == '.')
+        s++;
+    char c = (char)toupper((unsigned char)*s);
+    if (c != 'T' && c != 'F')
+        algol_error("Not a Boolean in the input: %s", s);
+    return c == 'T';
+}
+
+char *algol_fread_string(void)
+{
+    const Edit *e = next_input();
+    const char *s = e->w ? take(e->w) : line + line_pos;
+    char *r       = malloc(strlen(s) + 1);
+    if (!r)
+        algol_error("No memory for a string");
+    strcpy(r, s);
+    if (!e->w)
+        line_pos = line_len;
+    return r;
+}
+
+void algol_fread_array(int64_t *desc, int64_t type)
+{
+    int64_t *data = ARRAY_DATA(desc);
+    for (int64_t i = 0; i < desc[1]; i++) {
+        switch (type) {
+        case T_INTEGER:
+        case T_BITS:
+            data[i] = algol_fread_integer();
+            break;
+        case T_REAL: {
+            double v = algol_fread_real();
+            memcpy(&data[i], &v, 8);
+            break;
+        }
+        case T_BOOLEAN:
+            data[i] = algol_fread_boolean();
+            break;
+        default:
+            data[i] = (int64_t)(intptr_t)algol_fread_string();
         }
     }
 }

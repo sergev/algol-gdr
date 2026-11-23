@@ -318,6 +318,19 @@ TEST(Run, fault_and_stop)
     EXPECT_EQ(run_text("stop", "_begin PRINT(1); STOP; PRINT(2) _end\n"), "             1 \n");
 }
 
+// Units, formats, _encode and _decode: unit 7 a file of its own.
+TEST(Run, gdr_io)
+{
+    const std::string exe = BUILD_DIR "/run_gdr_io";
+    auto c                = run_command(compiler + " -o " + exe + " " TEST_DIR "/a60/gdr_io.alg");
+    ASSERT_EQ(c.exit_code, 0) << c.output;
+    std::filesystem::remove(exe + ".7");
+    auto r = run_command("ALGC_UNIT7=" + exe + ".7 " + exe + " < " TEST_DIR "/a60/gdr_io.in");
+    EXPECT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_EQ(compare(r.output, file_contents(TEST_DIR "/a60/gdr_io.out")), "") << r.output;
+    EXPECT_EQ(file_contents(exe + ".7"), "  9\n");
+}
+
 TEST(Run, division_by_zero)
 {
     const std::string src = BUILD_DIR "/run_idiv.alg";

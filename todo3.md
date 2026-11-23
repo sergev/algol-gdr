@@ -16,9 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Runtime
 
-- **F12** Algol-GDR I/O completed: `_read` with a format, `_decode` and `_encode` (formatted
-  conversion to and from strings), `_rewind`, `_backspace`, `_endfile` on units mapped to
-  files (`$ALGC_UNITn`, else `fort.n`; 54 is the terminal). Tests.
 - **F13** Run-time checks with `--check`: integer overflow (`llvm.*.with.overflow`), division
   by zero, real overflow to infinity, string indices, switch indices, the number and kinds of
   actual parameters through formal procedures. Each check a test that it stops the program
