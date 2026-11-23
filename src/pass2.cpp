@@ -2,8 +2,6 @@
 
 #include "translated.h"
 
-unsigned shared_code(Machine &m, unsigned pc);
-
 namespace {
 
 // Cells of the workspace.
@@ -3702,7 +3700,7 @@ unsigned finish(Machine &m)
 
 Stream pass2(Context &ctx, const Stream &input)
 {
-    TranslatedPass pass(ctx, shared_code);
+    TranslatedPass pass(ctx);
     pass.m.natives[017223] = start;
     pass.m.natives[017352] = read_item;
     pass.m.natives[017363] = emit_item;

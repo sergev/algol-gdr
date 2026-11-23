@@ -2,8 +2,6 @@
 
 #include "translated.h"
 
-unsigned shared_code(Machine &m, unsigned pc);
-
 namespace {
 
 constexpr unsigned M7          = 023523; // base of the constants: M7+2441… = 26164…
@@ -3340,7 +3338,7 @@ Stream pass4(Context &ctx, const Stream &input)
     // The stream of the previous pass is in the workspace and on the drums,
     // where it left it.
     (void)input;
-    TranslatedPass pass(ctx, shared_code);
+    TranslatedPass pass(ctx);
     auto &n          = pass.m.natives;
     n[023523]        = start;
     n[023623]        = prologue_done;

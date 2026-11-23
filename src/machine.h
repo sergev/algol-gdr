@@ -12,9 +12,9 @@
 #include "workspace.h"
 
 //
-// BESM-6 state for the code translated from the overlay (scripts/gen-pass.py):
-// one call per instruction, with the semantics of dubna's processor.cpp.
-// The address field of each instruction goes through field(), which adds the
+// BESM-6 state for the passes still written instruction by instruction: one
+// call per instruction, with the semantics of dubna's processor.cpp. The
+// address field of each instruction goes through field(), which adds the
 // modifier C of a preceding UTC/WTC and clears it.
 //
 class Machine {
@@ -36,21 +36,18 @@ public:
     using Natives = std::map<unsigned, std::function<unsigned(Machine &)>>;
     Natives natives;
 
-    // Called at the marked entries of the translated code.
+    // Called at the entries of the stream writes (27114, 27126, 27137).
     std::function<void(Machine &, unsigned)> on_entry;
-
-    // Called before each instruction: address and half (1 = right).
-    std::function<void(Machine &, unsigned, bool)> trace;
 
     // The whole overlay, then the workspace over it.
     void load_image();
 
-    // Run translated code from pc until it jumps out of it; returns the address.
-    using Code = unsigned (*)(Machine &, unsigned);
-    unsigned run(Code code, unsigned pc);
+    // Run the natives from pc until one returns an address without a native
+    // or stop; returns that address.
+    unsigned run(unsigned pc);
 
-    // From a native: run the translated routine at addr as called by a VJM
-    // through register reg at ret-1, until it returns to ret.
+    // From a native: run the routine at addr as called by a VJM through
+    // register reg at ret-1, until it returns to ret.
     void call(unsigned addr, unsigned reg, unsigned ret);
     static constexpr unsigned RETURN = 077777; // outside the code: a jump there ends run()
     unsigned stop{ RETURN };                   // a computed jump there leaves the code
@@ -247,8 +244,6 @@ public:
     [[noreturn]] static void illegal(unsigned addr);
 
 private:
-    Code code_{};
-
     void shift(int n);
     void e70(Word info);
 };

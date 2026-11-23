@@ -1,32 +1,20 @@
-# Passes translated from the overlay
+# Passes 2–4 on a machine
 
-Under the hybrid plan (todo1.md), passes 2–4 run first as the code of the original,
-translated to C++ one instruction at a time; their routines are then replaced by hand-written
-C++ under the tests.
+Passes 2–4 are C++ routines that still work instruction by instruction on a BESM-6 state
+(`Machine`), as the passes of the overlay did. They leave it one by one (todo1.md): a pass
+off the machine works on `Context` alone.
 
 ## Pieces
 
-- `scripts/gen-pass.py NAME RANGES…` reads overlay ALGOL from monsys.9 and writes
-  `unsigned NAME_code(Machine &m, unsigned pc)`. Every word of the ranges is translated,
-  data too (never run). Each half becomes one call of `Machine` (`m.xta(7, 02670)`); a
-  word address is a label. Jumps with a constant target go to the label, others (through a
-  register, or after UTC/WTC) through a `switch` over the labels. A jump out of the ranges
-  returns its address. `--hook ADDR` calls `m.on_entry` there. `--native ADDR` makes the
-  code return ADDR when it gets there (by a jump, a call or falling through), so that
-  `Machine::run` calls the C++ routine registered at ADDR, which returns the address to go
-  on at. The words of a `--replaced FIRST-LAST` range are not translated: reaching any of
-  them leaves the code, so it must be a native, or the pass stops with an error.
-- `scripts/gen-passes` regenerates `src/shared_gen.cpp`: the shared code the passes still
-  run as the original: the driver's print routine 01644–01735, the streams 27114–27244, the
-  formatter 27733–30000, number to text 30001–30033.
 - `src/machine.*`: memory (32K words), M1–M15, A, Y, the mode register and the modifier C,
-  with the semantics of dubna's `processor.cpp` (arithmetic through `Arith`). `run()` loops:
-  a jump to a native routine runs it and continues at the address it returns (the return
-  register of its callers).
+  with the semantics of dubna's `processor.cpp` (arithmetic through `Arith`). Each routine is
+  a native registered at its original address; `run()` calls the native at pc and goes on
+  at the address it returns (the return register of its callers). `call(addr, reg, ret)`
+  runs a routine as a VJM through `reg` at `ret`−1 would.
 - `src/translated.*`: `TranslatedPass` sets the machine up from the `Context`, writes the
-  input stream through the original stream helper, runs the pass from its entry with M13 =
-  its return address in the driver, records the items written at 27114/27126/27137 and
-  copies the workspace, registers and `FLGEX*` back.
+  input stream through the stream module, runs the pass from its entry with M13 = its return
+  address in the driver, records the items written at 27114/27126/27137 and copies the
+  workspace, registers and `FLGEX*` back. Its natives are the routines the passes share.
 
 ## The machine state a pass expects
 
@@ -43,22 +31,20 @@ C++ under the tests.
 
 Address 0 reads as zero: stores there are dropped (pass 2 stores to it, then reads it).
 
-Native routines:
-- **ASMPRINT 12000**: pops the last and the first word, takes the indent in A, and prints one
-  row through `Listing::row`; leaves M14 = 0 and pops the word under them into A (the
-  caller's A, as in any call with the arguments on the stack). 01644 itself is translated (its split of long
-  texts and its state cells 01736–01740 match the original).
-- **`*70`**: drum pages and sectors into `Workspace::drum`.
+Shared natives (src/translated.cpp), instruction by instruction where their state matters:
 
-**Passes 2–4 are C++** (src/pass2.cpp, src/pass3.cpp, src/pass4.cpp): it runs on a `Machine` with `shared_code` only, so every
-address of 17223–26257 and 30034 they reach is a native; the parser's framework (read, write helpers,
-subtree parse, dispatch through the high halves of 21720, return) is native too. Their data is
-still the machine's memory (copied from and back to the `Context`), and they read and write
-their streams through the original stream module (27114–27244), so pages, drums and registers
-come out exactly; the driver's print 01644 is the original too.
+| Address | Routine |
+|---|---|
+| 01644 | `print_text`: a text, split after 10 words; state cells 01736–01740 |
+| 12000 | ASMPRINT: pops the last and the first word, takes the indent in A, prints one row through `Listing::row`; leaves M14 = 0 and pops the word under them into A |
+| 27114–27213 | the stream module: `write_back`, `write_forward`, `write_word_back`, `read_back`, `read_forward`, `read_word_back`, `page_io` |
+| 27733 | `format_line` |
+| 30001 | `itoa6` |
 
-Routines of the passes rewritten in C++ (`--native` or `--replaced` in `scripts/gen-passes` for
-the translated passes), each working on the machine's memory and leaving its registers as the original does:
+`*70` moves drum pages and sectors into `Workspace::drum`.
+
+Routines of the passes, each working on the machine's memory and leaving its registers as
+the original does:
 
 | Pass | Address | Routine |
 |---|---|---|
@@ -80,7 +66,6 @@ the translated passes), each working on the machine's memory and leaving its reg
 | 2 | 20445–20565 | I/O statements, string slices |
 | 2 | 20571–21342 | calls, arguments, thunks, VALUE, standard and non-ALGOL procedures |
 
-| 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
 | 3 | 22162–22326 | `start`, `next_item`, `copy_item`, `fold`, `for_scan` (src/pass3.cpp): the main loop, 146, 026/064, FOR's first scan |
 | 3 | 22327–23426 | the rewrite of a FOR loop: a native per entry (`register_rewrite`) |
 | 3 | 22716 | `intern_constant` |
@@ -98,15 +83,15 @@ Natives write memory through `Machine::store`, which drops stores to address 0 a
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep
 reading as zero.
 
-A native may run a translated routine with `Machine::call(addr, reg, ret)`: as a VJM through
-`reg` at `ret`−1 would, so the registers and the cells the routine saves them in come out as
-in the original; the generated dispatch returns when the routine jumps to `ret` (`m.stop`).
+A native may run another with `Machine::call(addr, reg, ret)`: as a VJM through `reg` at
+`ret`−1 would, so the registers and the cells the routine saves them in come out as in the
+original; `run()` returns when the routine jumps to `ret` (`m.stop`).
 
 ## Input stream
 
-A translated pass reads the stream of the previous pass where that pass left it: in the
+A pass reads the stream of the previous pass where that pass left it: in the
 stream pages (06000–11777) and on drums 26 and 27, with the cursors 02000/02001. After a
-translated pass they are in the `Context`; for the tests, `NAME.mem` has them. Pass 1 is
+pass they are in the `Context`; for the tests, `NAME.mem` has them. Pass 1 is
 C++ and keeps its stream in a vector, so pass 2 first writes it again as the original pass 1
 does: forward through 27126 from the cursor at 15403. Pages, drum zones and cursors are then
 those of the original.
@@ -118,32 +103,3 @@ those of the original.
 | 4 | 23523 | 01633 | forward (27154) | forward (27126) |
 
 Pass 4 also calls 30034–30117 (ISO name to TEXT).
-
-## Debugging
-
-`ALGOL_TRACE=FILE` makes `TranslatedPass` write the address, half and A before each
-instruction. `scripts/trace-diff.py` compares it with a `dubna -d ir` trace of the same job
-and prints where the control flow first differs. Reads of cells the C++ passes do not set
-exactly (pass 1's scratch cells, the result cell of 30001) show up as differences of A.
-
-## Coverage
-
-`ALGOL_COVERAGE=FILE` appends the halves each translated pass ran. `scripts/coverage.py`
-compiles every test program with it and lists per pass the code words never run, each with
-the label before it in the Madlen source (code: the C ranges of `algol.sym`/`.tsym` without
-the words of six printable characters, which are message texts, plus whatever ran). With the
-41 programs of tests/algol, before passes 2 and 3 were rewritten:
-
-| Pass | Halves of code run | Unrun |
-|---|---|---|
-| 2 | 1999 of 2340 (85%) | 20 pieces of 1–6 words: entries of jump tables by type and kind, short branches |
-| 3 | 1172 of 1252 (93%), after for2 | only data |
-| 4 | 1971 of 2152 (91%), after mixed | 24526–24530, 24601, 24612 (branches after non-ALGOL arguments and calls), 25330–25334 (0352: an octal base to a constant power, which pass 2 folds when the base is a constant) |
-| shared | 279 of 350 (79%) | 27137 (backward write of a word), 27165, 27220, 01653 (no listing) |
-
-Test programs for pass 2 (err_pass2, exprs, exprs2, externals, err_common2) were found by
-compiling one statement at a time, every expression of a list in every context of a list,
-and keeping the statements that ran new code.
-
-The rewrite of an unrun piece is not checked by the tests: each pass's first task adds
-programs that run it, or the piece is kept as found and marked unverified.

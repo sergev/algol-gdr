@@ -5,8 +5,8 @@
 
 //
 // Pass 2 (G17223): reads the stream of pass 1 backward, binds identifiers
-// and checks types; writes its stream backward. For now the code of the
-// original, translated by scripts/gen-pass.py (pass2_gen.cpp).
+// and checks types; writes its stream backward. C++ on a
+// Machine (doc/translation.md).
 //
 Stream pass2(Context &ctx, const Stream &input);
 

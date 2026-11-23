@@ -5,8 +5,8 @@
 
 //
 // Pass 4 (G23523): code generation; reads the stream of pass 3 (of pass 2 in
-// check mode) and writes instruction halves and pseudo-items. For now the
-// code of the original, translated by scripts/gen-pass.py (pass4_gen.cpp).
+// check mode) and writes instruction halves and pseudo-items. C++ on a
+// Machine (doc/translation.md).
 //
 Stream pass4(Context &ctx, const Stream &input);
 

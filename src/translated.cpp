@@ -1,8 +1,6 @@
 #include "translated.h"
 
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
 
 #include "listing.h"
 
@@ -20,6 +18,294 @@ constexpr unsigned PRINT    = 01644; // text first..last on the stack, indent in
 constexpr unsigned FORMAT   = 027733;
 constexpr unsigned ITOA     = 030001;
 constexpr unsigned ITOA_TXT = 00027; // the text of G30001
+
+constexpr unsigned SP = Machine::SP;
+
+//
+// G27114…G27213: the stream module, as the original instruction by
+// instruction (doc/passes.md). Cursors at 02000 (read) and 02001 (write);
+// the value in and out in A, return through M13.
+//
+
+// 27173: page I/O, op in M14: 0 read forward, 1 write forward, 2 read
+// backward, 3 write backward. M11, M12 and A are kept.
+unsigned page_io(Machine &m)
+{
+    m.its(0, 013);
+    m.its(0, 014);
+    m.its(0, 016);
+    m.utc(0, 027232);
+    m.aax(0, 0);
+    m.ati(0, 013);
+    m.ita(0, 016);
+    m.asn(0, 0101);
+    m.ati(0, 014);
+    m.utm(12, 027214);
+    m.xta(11, 02000);
+    m.arx(12, 0);
+    m.atx(11, 02000);
+    m.vtm(12, 027114);
+    m.asn(0, 0117);
+    m.atx(SP, 0);
+    m.yta(0, 0);
+    m.aex(SP, 0);
+    m.apx(12, 0130);
+    m.aux(12, 0122);
+    m.xts(11, 02000);
+    m.aax(12, 0126);
+    m.aex(SP, 0);
+    m.atx(11, 02000);
+    m.apx(12, 0123);
+    m.aux(12, 0115);
+    m.utc(0, 027216);
+    m.aex(11, 0);
+    m.atx(SP, 1);
+    m.extracode(070, SP, 1);
+    m.xta(SP, 0);
+    m.sti(0, 014);
+    m.sti(0, 013);
+    return m.M[13];
+}
+
+// 27123: after a backward write, the page when its first word is passed.
+unsigned write_back_end(Machine &m)
+{
+    m.ita(0, 016);
+    m.asn(0, 032);
+    if (m.u1a())
+        return m.M[13];
+    m.vtm(14, 3);
+    return page_io(m);
+}
+
+// 27114: write a half, backward.
+unsigned write_back(Machine &m)
+{
+    if (m.on_entry)
+        m.on_entry(m, 027114);
+    m.xts(0, 02001);
+    m.ati(0, 016);
+    m.utc(0, 027240);
+    m.arx(0, 0);
+    m.atx(0, 02001);
+    if (!m.uza()) {
+        m.xta(SP, 0);
+        m.atx(14, 0);
+        return m.M[13];
+    }
+    m.xta(SP, 0);
+    m.asn(0, 050);
+    m.aex(14, 0);
+    m.atx(14, 0);
+    return write_back_end(m);
+}
+
+// 27126: write a half, forward.
+unsigned write_forward(Machine &m)
+{
+    if (m.on_entry)
+        m.on_entry(m, 027126);
+    m.xts(0, 02001);
+    m.ati(0, 016);
+    m.utc(0, 027241);
+    m.arx(0, 0);
+    m.atx(0, 02001);
+    if (!m.u1a()) {
+        m.xta(SP, 0);
+        m.asn(0, 050);
+        m.atx(14, 0);
+        return m.M[13];
+    }
+    m.xta(SP, 0);
+    m.aex(14, 0);
+    m.atx(14, 0);
+    m.xta(0, 02001);
+    m.asn(0, 032);
+    if (m.u1a())
+        return m.M[13];
+    m.vtm(14, 1);
+    return page_io(m);
+}
+
+// 27137: write a word, backward.
+unsigned write_word_back(Machine &m)
+{
+    if (m.on_entry)
+        m.on_entry(m, 027137);
+    m.xts(0, 02001);
+    m.ati(0, 016);
+    m.utc(0, 027243);
+    m.arx(0, 0);
+    m.atx(0, 02001);
+    m.xta(SP, 0);
+    m.atx(14, 0);
+    return write_back_end(m);
+}
+
+// 27146: the right half of the word at M14.
+unsigned right_half(Machine &m)
+{
+    m.xta(14, 0);
+    m.utc(0, 027235);
+    m.aax(0, 0);
+    return m.M[13];
+}
+
+// 27143: read a half, backward.
+unsigned read_back(Machine &m)
+{
+    m.xta(0, 02000);
+    m.ati(0, 016);
+    m.utc(0, 027240);
+    m.arx(0, 0);
+    m.atx(0, 02000);
+    if (!m.uza())
+        return right_half(m);
+    m.ita(0, 016);
+    m.asn(0, 032);
+    bool more = m.u1a();
+    m.xta(14, 0);
+    m.asn(0, 0130);
+    if (more)
+        return m.M[13];
+    m.vtm(14, 2);
+    return page_io(m);
+}
+
+// 27154: read a half, forward.
+unsigned read_forward(Machine &m)
+{
+    m.xta(0, 02000);
+    m.ati(0, 016);
+    m.utc(0, 027241);
+    m.arx(0, 0);
+    m.atx(0, 02000);
+    if (!m.u1a()) {
+        m.xta(14, 0);
+        m.asn(0, 0130);
+        return m.M[13];
+    }
+    m.xta(0, 02000);
+    m.asn(0, 032);
+    if (m.u1a())
+        return right_half(m);
+    m.xta(14, 0);
+    m.utc(0, 027235);
+    m.aax(0, 0);
+    m.vtm(14, 0);
+    return page_io(m);
+}
+
+// 27165: read a word, backward.
+unsigned read_word_back(Machine &m)
+{
+    m.xta(0, 02000);
+    m.ati(0, 016);
+    m.utc(0, 027243);
+    m.arx(0, 0);
+    m.atx(0, 02000);
+    m.ita(0, 016);
+    m.asn(0, 032);
+    bool more = !m.uza();
+    m.xta(14, 0);
+    if (more)
+        return m.M[13];
+    m.vtm(14, 2);
+    return page_io(m);
+}
+
+//
+// AG01644: print the text first..last (on the stack, popped with the word
+// under them, which is returned in A), as the original instruction by
+// instruction: unless setftn:one,long, a text of 11 words or more goes out
+// as 10 words, then the rest without trailing blank words, indented by 15.
+// The date header (01524) is printed before any pass runs.
+//
+unsigned print_text(Machine &m)
+{
+    m.rte(0, 07777);
+    m.atx(0, 01736);
+    m.xta(0, 0);
+    m.atx(0, 01740);
+    for (;;) {
+        m.ita(0, 015);
+        m.asn(0, 061);
+        m.aox(SP, 0);
+        m.asn(0, 061);
+        m.aox(SP, 0);
+        m.atx(0, 01737);
+        m.xta(0, DATED);
+        m.aox(0, NOLISFL);
+        if (!m.u1a())
+            throw std::runtime_error("01644: no date header");
+        m.xta(0, 01737);
+        m.ati(0, 016);
+        m.asn(0, 0117);
+        m.ati(0, 015);
+        m.xta(0, REGIM);
+        m.aax(0, 01733);
+        m.aex(0, 01733);
+        bool split = false;
+        if (!m.uza()) {
+            m.ita(0, 015);
+            m.ntr(0, 3);
+            m.its(0, 016);
+            m.arith(SP, 0, 006); // x-a
+            m.arith(0, 01732, 005);
+            split = m.uza();
+        }
+        if (!split) {
+            m.ita(0, 016);
+            m.its(0, 015);
+            m.xts(0, 01740);
+            m.call(ASMPRINT, 13, 01667);
+            break;
+        }
+        m.xta(0, 01737);
+        m.arx(0, 01732);
+        m.atx(0, 01737);
+        m.ita(0, 016);
+        m.utm(14, 011);
+        m.its(0, 016);
+        m.xts(0, 01740);
+        m.call(ASMPRINT, 13, 01676);
+        m.xts(0, 01737);
+        m.ati(0, 016);
+        m.asn(0, 0117);
+        m.ati(0, 015);
+        bool blank = false;
+        for (;;) { // trailing blank words
+            m.xta(13, 0);
+            m.aax(0, 01734);
+            if (m.u1a())
+                break;
+            m.ita(0, 015);
+            m.its(0, 016);
+            m.aex(SP, 0);
+            if (m.uza()) {
+                m.stx(0, 0);
+                blank = true;
+                break;
+            }
+            m.utm(13, 077777);
+        }
+        if (blank)
+            break;
+        m.xta(0, 01735);
+        m.atx(0, 01740);
+        m.ita(0, 016);
+        m.its(0, 015);
+        m.xts(0, 01740);
+        m.xts(0, 01737);
+        m.asn(0, 0136);
+        m.sti(0, 015);
+    }
+    m.xts(0, 01737);
+    m.asn(0, 0136);
+    m.sti(0, 015);
+    m.xtr(0, 01736);
+    return m.M[13];
+}
 
 // Bytes of a format from the word at addr: 0200+k inserts the text of data
 // word k (a format itself), 0 ends it.
@@ -108,7 +394,7 @@ unsigned itoa6(Machine &m)
 
 } // namespace
 
-TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), code_(code)
+TranslatedPass::TranslatedPass(Context &ctx) : ctx_(ctx)
 {
     m.drums = &ctx.ws;
     m.load_image();
@@ -121,6 +407,13 @@ TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), co
     m.mem[REGIM]     = (ctx.options.setftn_one ? 04000000000000000 : 0) |
                    (ctx.options.setftn_long ? 02000000000000000 : 0);
     m.mem[DATED]        = ctx.options.no_listing ? 0 : 06000000000000000;
+    m.natives[PRINT]    = print_text;
+    m.natives[027114]   = write_back;
+    m.natives[027126]   = write_forward;
+    m.natives[027137]   = write_word_back;
+    m.natives[027143]   = read_back;
+    m.natives[027154]   = read_forward;
+    m.natives[027165]   = read_word_back;
     m.natives[FORMAT]   = format_line;
     m.natives[ITOA]     = itoa6;
     m.natives[ASMPRINT] = [this](Machine &mm) {
@@ -145,7 +438,7 @@ void TranslatedPass::write_stream(const Stream &s, unsigned entry, Word cursor, 
     for (const Item &item : s) {
         m.acc = item.bits;
         m.set_m(13, Machine::RETURN);
-        m.run(code_, entry);
+        m.run(entry);
     }
     if (keep_cursors) {
         m.mem[CURSOR_W - 1] = saved[0];
@@ -158,35 +451,7 @@ Stream TranslatedPass::run(unsigned entry, unsigned ret)
     std::vector<std::pair<unsigned, Word>> writes;
     m.on_entry = [&](Machine &mm, unsigned addr) { writes.emplace_back(addr, mm.acc); };
     m.set_m(13, ret);
-    // ALGOL_TRACE=file: address, half and A before each instruction.
-    // ALGOL_COVERAGE=file: the halves run, appended.
-    std::FILE *tf = nullptr;
-    if (const char *name = std::getenv("ALGOL_TRACE"))
-        tf = std::fopen(name, "w");
-    std::vector<bool> run_halves;
-    const char *cov_name = std::getenv("ALGOL_COVERAGE");
-    if (cov_name)
-        run_halves.resize(2 * Machine::MEMSIZE);
-    if (tf || cov_name)
-        m.trace = [tf, &run_halves](const Machine &mm, unsigned addr, bool right) {
-            if (tf)
-                std::fprintf(tf, "%05o %c %016llo\n", addr, right ? 'R' : 'L',
-                             (unsigned long long)mm.acc);
-            if (!run_halves.empty())
-                run_halves[2 * addr + right] = true;
-        };
-    unsigned pc = m.run(code_, entry);
-    m.trace     = nullptr;
-    if (tf)
-        std::fclose(tf);
-    if (cov_name) {
-        if (std::FILE *cf = std::fopen(cov_name, "a")) {
-            for (unsigned i = 0; i < run_halves.size(); i++)
-                if (run_halves[i])
-                    std::fprintf(cf, "%05o %c\n", i / 2, i % 2 ? 'R' : 'L');
-            std::fclose(cf);
-        }
-    }
+    unsigned pc = m.run(entry);
     m.on_entry = nullptr;
     if (pc != ret)
         throw std::runtime_error("translated pass left at " + std::to_string(pc));

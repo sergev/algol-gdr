@@ -8,11 +8,18 @@ program. Passes 1, 5, 6 are plain C++ on `Context`. Passes 2–4 are C++ on a `M
 (`machine.*`, `translated.*`): routines registered as natives at their original addresses,
 chained by the addresses they return. Their data, stack and registers live in the machine
 (passes 3 and 4 are still instruction by instruction: `m.xta`, `m.aex`, …). Their streams
-go through the original stream module, which with the driver's print routine 01644, the
-formatter 27733 and 30001 is translated code in `shared_gen.cpp`
+go through the original stream module (pages, drums, cursors at 02000/02001), a native
+instruction by instruction in `translated.cpp` with 01644, 27733 and 30001
 ([doc/translation.md](doc/translation.md)). What we know about the original is in `doc/`
 ([passes.md](doc/passes.md), [tables.md](doc/tables.md), [runtime-abi.md](doc/runtime-abi.md),
 [stdarray.md](doc/stdarray.md), [encoding.md](doc/encoding.md)).
+
+**Streams.** The `.sN` goldens record the items in the order of the write calls; pass 3
+rewrites a FOR loop over what it has written (moving the cursors back, editing page words),
+so its final stream differs from that record. When a pass leaves the machine it takes its
+input from the `Stream` argument as a vector and writes a vector; pass 3's output becomes
+the final contents (the pass-3 goldens and pass 4's input follow), and `PassMem` skips the
+stream pages, their drum zones and the cursors of that pass.
 
 **How the rest is done.** A pass leaves the machine from the inside out: leaf routines first
 become functions with real arguments and results, called from the remaining machine-level
@@ -25,16 +32,6 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 
 ## Tasks
 
-### Streams and printing
-
-- **D1** Streams as vectors: the stream entries the passes call (27114, 27126 write; 27143,
-  27154 read) as C++ over `Stream` vectors; passes 3 and 4 take their input from the
-  `Stream` argument as pass 2 does, not from the pages and drums the previous pass left.
-  `PassMem` skips the stream pages and their drum zones (they are no longer written).
-- **D2** Printing in C++: 01644 and the formatter 27733 as functions on `Listing` (30001 is
-  already C++); `shared_gen.cpp`, `scripts/gen-passes`, `gen-pass.py`, `coverage.py`,
-  `trace-diff.py` and the `ALGOL_TRACE`/`ALGOL_COVERAGE` hooks removed; docs updated.
-
 ### Pass 4 off the machine
 
 - **D3** Leaves: emit (23655), the template interpreter (23734), operand load and save,
@@ -45,13 +42,14 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 - **D6** Subscripts and arrays, array segments, pass 3's register items.
 - **D7** FOR loops, procedure calls, arguments and thunks, VALUE, non-ALGOL calls, G30034.
 - **D8** Main loop and dispatch (table 26056) as a C++ loop; `Pass4` a class on `Context`,
-  no `Machine`.
+  no `Machine`. Streams as vectors: pass 3 still on the machine, its final stream is read
+  out of its pages and drum zones between its cursors (for the tests, from `.mem`).
 
 ### Pass 3 off the machine
 
 - **D9** Main loop, folding, procedure end, EOP, FOR first scan (22232), constants.
-- **D10** The FOR rewrite (prefix-tree parser, register allocation, loop end); `Pass3` a
-  class on `Context`, no `Machine`.
+- **D10** The FOR rewrite (prefix-tree parser, register allocation, loop end) on vectors;
+  `Pass3` a class on `Context`, no `Machine`.
 
 ### Pass 2 off the machine
 
@@ -60,12 +58,13 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 - **D13** Statements and declarations: assignments, IF, FOR, switches, arrays and bounds,
   procedures, blocks.
 - **D14** Calls, actual parameters, thunks, I/O and non-ALGOL arguments; the main loop;
-  `Pass2` a class on `Context`, no `Machine`.
+  streams as vectors; `Pass2` a class on `Context`, no `Machine`.
 
 ### Cleanup
 
-- **D15** Remove `machine.*` and `translated.*`; `ctx.regs` keeps only what a later pass
-  reads, and `PassMem` checks only those registers; doc/translation.md retired, CLAUDE.md
+- **D15** Remove `machine.*` and `translated.*` (01644, 27733, 30001 to plain
+  functions on `Listing`); `ctx.regs` keeps only what a later pass reads, and `PassMem`
+  checks only those registers; doc/translation.md retired, CLAUDE.md
   and doc/passes.md updated.
 - **D16** Pass 1 parser as readable functions instead of the labels and the explicit stack
   of the original, under the same tests.

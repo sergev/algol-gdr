@@ -2,8 +2,6 @@
 
 #include "translated.h"
 
-unsigned shared_code(Machine &m, unsigned pc);
-
 namespace {
 
 constexpr unsigned READ        = 027154; // the next item of the input stream in A
@@ -1911,7 +1909,7 @@ Stream pass3(Context &ctx, const Stream &input)
     // The stream of the previous pass is in the workspace and on the drums,
     // where it left it.
     (void)input;
-    TranslatedPass pass(ctx, shared_code);
+    TranslatedPass pass(ctx);
     register_rewrite(pass.m);
     pass.m.natives[022162] = start;
     pass.m.natives[022167] = next_item;

@@ -5,14 +5,15 @@
 #include "passes.h"
 
 //
-// A pass run as code translated from the overlay (scripts/gen-pass.py), on a
-// Machine set up from the Context and written back to it at the end.
+// A pass run on a Machine set up from the Context and written back to it at
+// the end; the shared routines of the overlay (stream module, 01644, 27733,
+// 30001) are natives.
 //
 class TranslatedPass {
 public:
     static constexpr unsigned CHECKFL = 00521; // check mode: no pass 3
 
-    TranslatedPass(Context &ctx, Machine::Code code);
+    explicit TranslatedPass(Context &ctx);
 
     Machine m;
 
@@ -28,7 +29,6 @@ public:
 
 private:
     Context &ctx_;
-    Machine::Code code_;
 };
 
 #endif
