@@ -81,22 +81,24 @@ constexpr unsigned SWITCH_TEXT  = 022114; // SWITCH
 constexpr unsigned BOUNDS       = 02031;  // constant bounds of an array segment, or 0
 constexpr unsigned BOUND_LOOP   = 020176; // *0753B
 constexpr unsigned SET_POSITION = 017535; // *0312B
-constexpr unsigned ELEMENTS     = 02024;  // the elements of the FOR list
-constexpr unsigned STEP_KIND    = 02023;  // the last item of a STEP element: 0137, 0140, 034
-constexpr unsigned FOR_ELEMENT  = 021466; // *2243B: through M11
-constexpr unsigned AFTER_STEP   = 021600; // *2355B
-constexpr unsigned EMIT_ITEM    = 017363; // *0140B: the item read, through M13
-constexpr unsigned ASSIGN_TEXT  = 022110; // ':='
-constexpr unsigned LEFT_PART    = 017702; // *0457B
-constexpr unsigned AFTER_LEFT   = 017720; // *0475B
-constexpr unsigned NEXT_LEFT    = 017736; // *0513B
-constexpr unsigned LEFT_COUNT   = 017737; // *0514B
-constexpr unsigned BAD_LEFT     = 017757; // format: ILLEGAL LEFT PART OR INPUT ELEMENT
-constexpr unsigned NOT_DECLARED = 017311; // text, name at +010
-constexpr unsigned WRONG_ORDER  = 017322; // text, name at +010
-constexpr unsigned INCORRECT    = 022051; // text up to 022056
-constexpr unsigned SCRATCH      = 017333; // *0110B
-constexpr unsigned POSITION_SRC = 021670;
+constexpr unsigned DECL_END     = 017553; // *0330B
+constexpr unsigned NO_ASSIGNMENT = 017563; // format
+constexpr unsigned ELEMENTS      = 02024;  // the elements of the FOR list
+constexpr unsigned STEP_KIND     = 02023;  // the last item of a STEP element: 0137, 0140, 034
+constexpr unsigned FOR_ELEMENT   = 021466; // *2243B: through M11
+constexpr unsigned AFTER_STEP    = 021600; // *2355B
+constexpr unsigned EMIT_ITEM     = 017363; // *0140B: the item read, through M13
+constexpr unsigned ASSIGN_TEXT   = 022110; // ':='
+constexpr unsigned LEFT_PART     = 017702; // *0457B
+constexpr unsigned AFTER_LEFT    = 017720; // *0475B
+constexpr unsigned NEXT_LEFT     = 017736; // *0513B
+constexpr unsigned LEFT_COUNT    = 017737; // *0514B
+constexpr unsigned BAD_LEFT      = 017757; // format: ILLEGAL LEFT PART OR INPUT ELEMENT
+constexpr unsigned NOT_DECLARED  = 017311; // text, name at +010
+constexpr unsigned WRONG_ORDER   = 017322; // text, name at +010
+constexpr unsigned INCORRECT     = 022051; // text up to 022056
+constexpr unsigned SCRATCH       = 017333; // *0110B
+constexpr unsigned POSITION_SRC  = 021670;
 
 constexpr Word HEADER         = 0'4000'0000'0000'0000; // D-list: a block header
 constexpr Word DESCRIPTOR     = 0'2000'0000'0000'0000;
@@ -110,7 +112,8 @@ constexpr Word ASSIGNED       = 0'0004'0000'0000'0000; // a formal by name assig
 constexpr Word NOT_ASSIGNABLE = 0'0010'0000'0000'0000;
 constexpr Word RESULT_SET     = 0200000; // in a function's word after it: assigned
 constexpr Word MANTISSA       = 0'0017'7777'7777'7777;
-constexpr Word HAS_ARRAYS     = 0100000; // a block header: arrays declared
+constexpr Word HAS_ARRAYS     = 0100000;               // a block header: arrays declared
+constexpr Word FUNCTION       = 0'0360'0000'0000'0000; // a procedure's type
 constexpr Word IN_COMMON_CLR  = 0'7770'0777'7777'7777;
 constexpr Word IN_COMMON      = 0'0001'0000'0000'0000;
 constexpr Word DIMENSIONS     = 0'0000'0000'0070'0000;
@@ -2064,6 +2067,78 @@ unsigned syntax_error_item(Machine &m)
     return SET_POSITION;
 }
 
+// Is the D-list address A two words above the outermost block (DLIST_TOP2)?
+bool outermost(Machine &m)
+{
+    m.rau = 003;
+    m.arith(0, DLIST_TOP2, 005);
+    m.aex(7, 02651);
+    return !m.acc;
+}
+
+//
+// *0330B, after a procedure or a switch declaration: DLIST_TOP back from
+// the stack; 0145 and return, or for one declared in the outermost block
+// on at *1617B.
+//
+unsigned decl_end(Machine &m)
+{
+    m.acc = m.mem[DLIST_TOP];
+    m.sti(0, 4);
+    m.mem[DLIST_TOP] = m.acc;
+    m.acc            = m.M[4];
+    if (outermost(m)) {
+        m.set_m(4, m.M[4] - 1);
+        m.set_m(12, RETURN_SUB);
+        return 021042;
+    }
+    m.set_m(13, RETURN_SUB);
+    m.set_m(14, 0145);
+    return EMIT_M14;
+}
+
+//
+// Code 042, a procedure declaration (read after its body): its scope is
+// closed. A function (a type in bits 44-41 of its descriptor) whose result
+// was never assigned: NO ASSIGNMENT TO.
+//
+unsigned procedure_item(Machine &m)
+{
+    m.set_m(10, 017545);
+    m.call(017567, 10, 017545);
+    m.set_m(4, unsigned(m.mem[DLIST_TOP]));
+    m.acc = m.mem[(m.M[4] - 1) & 077777] & FUNCTION;
+    m.set_logical();
+    if (m.acc) {
+        m.acc = m.mem[m.M[4]] & RESULT_SET;
+        if (!m.acc) {
+            m.set_m(13, NO_ASSIGNMENT);
+            m.acc = m.mem[(m.M[4] - 1) & 077777];
+            m.set_m(3, unsigned(m.acc));
+            m.set_m(8, DECL_END);
+            message_name(m);
+        }
+    }
+    return decl_end(m);
+}
+
+//
+// Code 062, the end of a procedure body (read first): DLIST_TOP pushed and
+// set to it; 0146 unless declared in the outermost block; its scope is
+// opened as a FOR's.
+//
+unsigned body_end_item(Machine &m)
+{
+    m.push(m.mem[DLIST_TOP]);
+    m.acc            = m.M[3];
+    m.mem[DLIST_TOP] = m.acc;
+    if (!outermost(m)) {
+        m.set_m(14, 0146);
+        m.call(EMIT_M14, 13, 017601);
+    }
+    return 017601;
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -2276,6 +2351,9 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[020200] = array_item;
     pass.m.natives[021206] = copy_item;
     pass.m.natives[017533] = syntax_error_item;
+    pass.m.natives[017544] = procedure_item;
+    pass.m.natives[017553] = decl_end;
+    pass.m.natives[017574] = body_end_item;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
