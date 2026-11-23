@@ -1,47 +1,20 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The listing: the compiler in check mode must print NAME.lst (from the
-// original with *call setftn:one,long, which sets check mode) from the banner
-// up to *END FILE, without what passes 5 and 6 printed: the line table and
-// the summary line.
+// The listing: the compiler in check mode must print NAME.lst. It was the
+// listing of the original with *call setftn:one,long (which sets check mode),
+// from the banner on, without what passes 5 and 6 printed.
 //
 #include "listing.h"
 
 #include <gtest/gtest.h>
 
-#include <fstream>
 #include <sstream>
 
 #include "golden.h"
 #include "passes.h"
 #include "source.h"
-
-// NAME.lst from the banner up to *END FILE.
-static std::string expected(const std::string &name)
-{
-    std::ifstream lst(path(name, ".lst"));
-    std::string line, text;
-    bool on = false;
-    while (std::getline(lst, line)) {
-        if (line.rfind("A L G O L", 0) == 0)
-            on = true;
-        if (line.rfind("*END FILE", 0) == 0)
-            break;
-        if (line.rfind("CTPOKИ", 0) == 0) {
-            // The line table up to an empty line, then the summary and its
-            // empty line.
-            while (std::getline(lst, line) && !line.empty()) {
-            }
-            std::getline(lst, line);
-            std::getline(lst, line);
-            continue;
-        }
-        if (on)
-            text += line + "\n";
-    }
-    return text;
-}
+#include "util.h"
 
 class ListingTest : public ::testing::TestWithParam<std::string> {};
 
@@ -57,7 +30,7 @@ TEST_P(ListingTest, text)
     ctx.source  = read_source(path(name, ".alg"));
     Stream stream;
     compile(ctx, stream);
-    EXPECT_EQ(out.str(), expected(name));
+    EXPECT_EQ(out.str(), file_contents(path(name, ".lst")));
 }
 
 static std::string param_name(const ::testing::TestParamInfo<std::string> &p)

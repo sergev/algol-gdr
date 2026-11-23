@@ -33,7 +33,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 - `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `workspace.*` (its shared data as words), `word.h` (48-bit word).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
-  original compiler: `.lst` listings (without the line table and summary of passes 5–6),
+  original compiler: `.lst` listings (the original's from the banner on, without the line
+  table and summary of passes 5–6; made now by `algc --list --check`),
   `.out` run output under `dubna`, `.s1`/`.s2`/`.mem`/`.lex` pass streams; side files
   `.pre` (`*check`)/`.run`/`.in`/`.norun` ([doc/reference-toolchain.md](doc/reference-toolchain.md)).
   `listing_test` compares our listings with them, `pass_test` each pass on its own (input:

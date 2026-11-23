@@ -1,8 +1,3 @@
-*NAME ERR_MANY
-*CALL SETFTN:ONE,LONG
-*PUNCH
-*ALGOL
-                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
 
@@ -73,4 +68,3 @@ ERROR 21    EXPRESSION
     35.         I := (1;
     36.     ′END′
     37.     ′EOP′
-*END FILE

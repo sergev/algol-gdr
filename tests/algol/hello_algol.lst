@@ -1,8 +1,3 @@
-*NAME HELLO_ALGOL
-*CALL SETFTN:ONE,LONG
-*PUNCH
-*ALGOL
-                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
 
@@ -11,9 +6,3 @@ A L G O L - Г Д P
      3.     ′END′
      4.     ′EOP′
 
-CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
-   1 - 00001 00001 00004
-
-PROGRAM   ДЛИHA:   16 00020B BPEMЯ:  0.00 CEK. KAPT:   4
-
-*END FILE

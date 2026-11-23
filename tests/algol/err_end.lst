@@ -1,8 +1,3 @@
-*NAME ERR_END
-*CALL SETFTN:ONE,LONG
-*PUNCH
-*ALGOL
-                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
 
@@ -17,4 +12,3 @@ ERROR 11    REAL OVERFLOW
      8.     ′EOP′
 ERROR 46    STATEMENT
 ↑EOP↑ BEFORE END OF PROGRAM
-*END FILE

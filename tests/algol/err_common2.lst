@@ -1,8 +1,3 @@
-*NAME ERR_COMMON2
-*CALL SETFTN:ONE,LONG
-*PUNCH
-*ALGOL
-                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
 
@@ -25,4 +20,3 @@ A L G O L - Г Д P
 *****ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA F
 NO ASSIGNMENT TO ′F′. NEXT STATEMENT IS    9/ 1
  * * INCORRECT ALGOL PROGRAM * *
-*END FILE

@@ -1,8 +1,3 @@
-*NAME ERR_NOEOP
-*CALL SETFTN:ONE,LONG
-*PUNCH
-*ALGOL
-                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
 
@@ -12,4 +7,3 @@ A L G O L - Г Д P
      4.         I := 1
      5.     ′END′
 HET ′EOP′ !
-*END FILE

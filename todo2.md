@@ -23,9 +23,6 @@ reference for the native runs.
 
 ### Cut the BESM-6 back end
 
-- **E2** Listing without the back end: source lines and messages as before; the line-address
-  table and the `PROGRAM ДЛИHA` line go. Regenerate `.lst` from our compiler and check by
-  diff that only those parts changed. `--check` stays (it will mean bounds checks).
 - **E3** Remove the `dubna` tooling: `scripts/ref-*`, `trace-*`, `capture-streams*`,
   `disasm-overlay.py`, `dubna-filter`, `make goldens`; doc/stdarray.md, traces.md,
   reference-toolchain.md, runtime-abi.md part B. Keep runtime-abi.md part A (what the
