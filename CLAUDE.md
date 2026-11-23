@@ -103,16 +103,17 @@ Milestones (all done; the history is in README.md):
 ## Source language
 
 UTF-8 text. Keywords are `_` and a word, in any case (`_begin`, `_eop` may end the program); a
-blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in `''…''`
-or `'('…')'` (`'ddd'` inside: a character by its octal code point; `′` is a quote too), octal
-constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give
+blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in
+`` `…' `` or `‘…’`, nested, the inner quotes kept; the Algol-GDR `''…''` and `'('…')'`
+(`'ddd'` inside: a character by its octal code point; `′` is a quote too) are deprecated, a
+warning at the first one of a file. Octal constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give
 keywords in lower case, messages as `_begin`. Blanks are ignored inside names and numbers
 (`noun phrase` is `nounphrase`). The original wrote keywords in quotes: `'BEGIN'`. Identifiers:
 Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as written;
 standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column limit. The exponent
 sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
 `≡`, `÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`,
-strings `` `…' `` that nest (`.a60`, as x1-algol-compiler/examples). The X1 library procedures
+strings `` `…' `` as in the other form (`.a60`, as x1-algol-compiler/examples). The X1 library procedures
 (`PRINTTEXT`, `FLOT`, `SUM`, `read`, …) are standard identifiers; `print` is X1's in the
 publication form, Algol-GDR's `PRINT` otherwise. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
 first 6 characters.

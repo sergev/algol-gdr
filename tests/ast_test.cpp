@@ -62,7 +62,7 @@ static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
 
 INSTANTIATE_TEST_SUITE_P(algol, AstGolden, ::testing::ValuesIn(program_names()), param_name);
 
-// _begin _real X; L: X := 1; PRINT(''A'', X) _end
+// _begin _real X; L: X := 1; PRINT(`A', X) _end
 TEST(Ast, print)
 {
     Program p;

@@ -39,13 +39,13 @@ _begin
 
     _procedure connective;
         _if R <.3 _then
-            P('' and'')
+            P(` and')
         _else _if rr < .55 _then
-            P('' but'')
+            P(` but')
         _else _if rr <.8 _then
-            P('' because'')
+            P(` because')
         _else
-            P('' though'');
+            P(` though');
 
     _procedure subject;
         _if R < .8 _then
@@ -63,20 +63,20 @@ _begin
 
     _procedure property;
         _if R <.25 _then
-            P('' with blue eyes'')
+            P(` with blue eyes')
         _else _if rr < .5 _then
-            P('' in a mink coat'')
+            P(` in a mink coat')
         _else
             _begin
-                P('' from'');
+                P(` from');
                 _if R < .25 _then
-                    P('' Australia'')
+                    P(` Australia')
                 _else _if rr < .5 _then
-                    P('' Switserland'')
+                    P(` Switserland')
                 _else _if rr <.75 _then
-                    P('' Siberia'')
+                    P(` Siberia')
                 _else
-                    P('' Cleveland (Ohio)'')
+                    P(` Cleveland (Ohio)')
             _end;
 
     _procedure noun phrase;
@@ -116,7 +116,7 @@ _begin
 
     _procedure relsentence;
     _begin
-        P('', that'');
+        P(`, that');
         _if R < .4 _then
             _begin
                 subject;
@@ -137,9 +137,9 @@ _begin
     _procedure quality;
     _begin
             _if R < .45 _then
-                P('' was'')
+                P(` was')
             _else
-                P('' is'');
+                P(` is');
             _if R < .4 _then
                 adje
             _else
@@ -157,114 +157,114 @@ _begin
 
     _procedure subname;
         _if R < .2 _then
-            P('' he'')
+            P(` he')
         _else _if rr < .4 _then
-            P('' Jim'')
+            P(` Jim')
         _else _if rr < .6 _then
-            P('' Mary'')
+            P(` Mary')
         _else _if rr < .8 _then
-            P('' she'')
+            P(` she')
         _else _if rr < .9 _then
-            P('' David Livingstone'')
+            P(` David Livingstone')
         _else
-            P('' the world Famous X8 Computer'');
+            P(` the world Famous X8 Computer');
 
     _procedure objname;
         _if R < .2 _then
-            P('' him'')
+            P(` him')
         _else _if rr < .4 _then
-            P('' Jim'')
+            P(` Jim')
         _else _if rr < .6 _then
-            P('' Mary'')
+            P(` Mary')
         _else _if rr < .8 _then
-            P('' her'')
+            P(` her')
         _else _if rr < .95 _then
-            P('' David Livingstone'')
+            P(` David Livingstone')
         _else
-            P('' a computer'');
+            P(` a computer');
 
     _procedure modifier;
         _if R < .33 _then
-            P('' always'')
+            P(` always')
         _else _if rr < .67 _then
-            P('' often'')
+            P(` often')
         _else
-            P('' never'');
+            P(` never');
 
     _procedure article;
         _if R < .35 _then
-            P('' a'')
+            P(` a')
         _else _if rr < .75 _then
-            P('' the'')
+            P(` the')
         _else _if rr < .87 _then
-            P('' this'')
+            P(` this')
         _else
-            P('' that'');
+            P(` that');
 
     _procedure noun;
         _if R < .17 _then
-            P('' boy'')
+            P(` boy')
         _else _if rr < .33 _then
-            P('' tree'')
+            P(` tree')
         _else _if rr < .5 _then
-            P('' girl'')
+            P(` girl')
         _else _if rr < .67 _then
-            P('' bear'')
+            P(` bear')
         _else _if rr < .83 _then
-            P('' hunter'')
+            P(` hunter')
         _else
-            P('' lamb'');
+            P(` lamb');
 
     _procedure adjective;
         _if R < .2 _then
-            P('' little'')
+            P(` little')
         _else _if rr < .4 _then
-            P('' nice'')
+            P(` nice')
         _else _if rr < .6 _then
-            P('' big'')
+            P(` big')
         _else _if rr < .8 _then
-            P('' green'')
+            P(` green')
         _else
-            P('' bad'');
+            P(` bad');
 
     _procedure adverb;
         _if R < .4 _then
-            P('' very'')
+            P(` very')
         _else _if rr < .6 _then
-            P('' extraordinarily'')
+            P(` extraordinarily')
         _else
-            P('' rather'');
+            P(` rather');
 
     _procedure verb;
         _if R < .45 _then
             _begin
                 _if R < .2 _then
-                    P('' saw'')
+                    P(` saw')
                 _else _if rr < .4 _then
-                    P('' liked'')
+                    P(` liked')
                 _else _if rr < .6 _then
-                    P('' dreamt about'')
+                    P(` dreamt about')
                 _else _if rr < .7 _then
-                    P('' smelled'')
+                    P(` smelled')
                 _else _if rr < .8 _then
-                    P('' ate'')
+                    P(` ate')
                 _else
-                    P('' had'')
+                    P(` had')
             _end
         _else
             _begin
                 _if R < .2 _then
-                    P('' sees'')
+                    P(` sees')
                 _else _if rr < .4 _then
-                    P('' likes'')
+                    P(` likes')
                 _else _if rr < .6 _then
-                    P('' dreams about'')
+                    P(` dreams about')
                 _else _if rr < .7 _then
-                    P('' eats'')
+                    P(` eats')
                 _else _if rr < .8 _then
-                    P('' smells'')
+                    P(` smells')
                 _else
-                    P('' has'')
+                    P(` has')
             _end;
 NZ:
     sentence;

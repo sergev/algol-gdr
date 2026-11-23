@@ -6,9 +6,9 @@ A L G O L - Г Д P
      3.         _string S, T;
      4.         _string _array A[1:2];
      5.         _integer I;
-     6.         S := ''ABCDEF'';
+     6.         S := `ABCDEF';
      7.         T := S;
-     8.         A[1] := ''XY''; A[2] := S;
+     8.         A[1] := `XY'; A[2] := S;
      9.         PRINT(LENGTH(S), LENGTH(A[1]));
     10.         _for I := 1 _step 1 _until LENGTH(S) _do PRINT(S[I]);
     11.         PRINT(NEWLINE, T, A[1], A[2])

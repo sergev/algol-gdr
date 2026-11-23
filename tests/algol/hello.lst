@@ -2,7 +2,7 @@ A L G O L - Г Д P
     (7.01.82)
 
      1.     _begin
-     2.         print(''Hello, World!'');
+     2.         print(`Hello, World!');
      3.     _end
      4.     _eop
 

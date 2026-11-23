@@ -157,6 +157,7 @@ private:
     bool semicolon_{}; // a number ended with '.,'
     bool eof_{};
     bool publication_{}; // keywords underlined: b̲e̲g̲i̲n̲, strings in `…'
+    bool old_string_{};  // a string in '' was seen: warned once
     int string_line_{};  // where an open string began
     Sym last_{ Sym::SEMICOLON };
 

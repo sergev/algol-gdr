@@ -3,7 +3,7 @@ A L G O L - Г Д P
 
      1.     _begin _comment SYMBOLS IN COMMENTS AND STRINGS;
      2.       _integer I;
-     3.       PRINT(''A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N'');
+     3.       PRINT(`A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N');
      4.       I := 1;
      5.       _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
      6.       I := 2;
@@ -146,7 +146,7 @@ A L G O L - Г Д P
    143.       I := 137;
    144.       I := 138;
    145.       I := 139;
-   146.       PRINT(''@'', I)
+   146.       PRINT(`@', I)
    147.     _end
    148.     _eop
 

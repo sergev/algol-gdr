@@ -43,10 +43,10 @@ _begin _integer k, n, m; _real r; _integer _array ia[1:3];
     k := 0; twice(bump); pass(bump);
     PRINT(NEWLINE, k);
     jump(L1);
-    PRINT(''missed'');
+    PRINT(`missed');
 L1: zap(ia);
     PRINT(ia[1]);
     go(L2);
-    PRINT(''missed'');
-L2: PRINT(NEWLINE, ''done'')
+    PRINT(`missed');
+L2: PRINT(NEWLINE, `done')
 _end

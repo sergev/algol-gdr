@@ -24,7 +24,7 @@ Write `hello.alg`:
 
 ```
 _begin
-    PRINT(''Hello, World!'')
+    PRINT(`Hello, World!')
 _end
 _eop
 ```
@@ -40,7 +40,9 @@ Hello, World!
 ## Writing programs
 
 - Keywords start with an underscore: `_begin`, `_end`, `_integer`, `_if`, `_then`.
-- Strings are in double apostrophes: `''text''`.
+- Strings are in a backquote and an apostrophe: `` `text' ``. They nest: `` `a `b' c' ``;
+  a string with a lone apostrophe is written `‘…’`. The old `''text''` still works, with
+  a warning.
 - The program ends with `_eop`.
 - Use `PRINT(...)` to print numbers and strings, and `NEWLINE` to start a new line; or the
   standard Algol 60 procedures `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.

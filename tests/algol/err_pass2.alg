@@ -23,7 +23,7 @@ M: X := 1;
   I := IP(B);
   I := IA[B];
   I := IA[1,2];
-  I := ''S''+''T'';
+  I := `S'+`T';
   IP(1) := 1;
   IA := 1;
   LENGTH := 1;
@@ -48,7 +48,7 @@ M: X := 1;
   X := -B;
   STOP(I);
   ASSIGN(I);
-  PP(1, I, B, RA, L, P0, ''S'', S);
-  PP(1, X, B, RA, CP, P0, ''S'', S)
+  PP(1, I, B, RA, L, P0, `S', S);
+  PP(1, X, B, RA, CP, P0, `S', S)
 _end
 _eop

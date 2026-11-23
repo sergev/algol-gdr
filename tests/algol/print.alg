@@ -3,10 +3,10 @@ _begin
     PRINT(0, 1, -1, 123456789);
     PRINT(0.0, 1.0, -1.0, 3.1415926, 1.0⏨18, 1.0⏨-18);
     PRINT(_true, _false);
-    PRINT(''STRING ONE'', '('STRING TWO')');
-    PRINT(NEWLINE, ''AFTER NEWLINE'');
+    PRINT(`STRING ONE', `STRING TWO');
+    PRINT(NEWLINE, `AFTER NEWLINE');
     PRINT(1, NEWLINE, 2);
     PRINT(NEWPAGE);
-    PRINT(''LAST'')
+    PRINT(`LAST')
 _end
 _eop

@@ -5,7 +5,7 @@ err_pass2.alg:21:10: error: Type error in the value of ':=': boolean instead of 
 err_pass2.alg:23:11: error: Argument 1 of 'IP' does not match formal parameter 'N'
 err_pass2.alg:24:11: error: Type error in a subscript: boolean instead of integer
 err_pass2.alg:25:8: error: Wrong number of subscripts of 'IA'
-err_pass2.alg:26:13: error: Type error in the value of ':=': string instead of integer
+err_pass2.alg:26:11: error: Type error in the value of ':=': string instead of integer
 err_pass2.alg:27:3: error: Illegal left part of an assignment
 err_pass2.alg:28:3: error: Cannot assign to 'IA'
 err_pass2.alg:29:3: error: Illegal use of 'LENGTH'

@@ -19,6 +19,6 @@ L3: B := I = 3 _and _not (I > 5) _or _false;
     _end;
     _for I := 0 _step 1 _until 4 _do P(I, A);
     PRINT(A[4, 0], B, C, K);
-    PRINT('('HELLO FROM ALGOL')')
+    PRINT(`HELLO FROM ALGOL')
 _end
 _eop

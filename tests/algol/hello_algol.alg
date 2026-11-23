@@ -1,4 +1,4 @@
 _begin
-    print(''Hello, Algol!'');
+    print(`Hello, Algol!');
 _end
 _eop

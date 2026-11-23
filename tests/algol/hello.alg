@@ -1,4 +1,4 @@
 _begin
-    print(''Hello, World!'');
+    print(`Hello, World!');
 _end
 _eop

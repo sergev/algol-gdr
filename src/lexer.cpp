@@ -511,10 +511,15 @@ Token Lexer::after_end()
     return make(Sym::SEMICOLON);
 }
 
-// A string: ''…'' or '('…')'; 'ddd' inside is a character by its octal code.
+// A string of Algol-GDR: ''…'' or '('…')'; 'ddd' inside is a character by
+// its octal code. Deprecated: a warning at the first one.
 Token Lexer::string()
 {
-    Pos start    = start_;
+    Pos start = start_;
+    if (!old_string_) {
+        old_string_ = true;
+        diag_.warning(start, "Strings in '' are deprecated: write `text'");
+    }
     string_line_ = start;
     skip_blanks_ = false;
     std::string text;

@@ -59,15 +59,30 @@ TEST(Lexer, numbers)
 
 TEST(Lexer, strings)
 {
-    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750'''\n_eop");
+    // `…' nested, the inner quotes kept; ‘…’ for a lone apostrophe.
+    std::string messages;
+    auto t = tokens("`A b' `x `y' z' ‘'’ `'\n_eop", &messages);
+    ASSERT_EQ(t.size(), 5u);
+    EXPECT_EQ(t[0].text, "A b");
+    EXPECT_EQ(t[1].text, "x `y' z");
+    EXPECT_EQ(t[2].text, "'");
+    EXPECT_EQ(t[3].text, "");
+    EXPECT_EQ(messages, "");
+
+    tokens("X := `ab\ncd", &messages);
+    EXPECT_EQ(messages, "x.alg:1: error: Unterminated string\n");
+}
+
+// The strings of Algol-GDR, deprecated: one warning.
+TEST(Lexer, old_strings)
+{
+    std::string messages;
+    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750'''\n_eop", &messages);
     ASSERT_EQ(t.size(), 4u);
     EXPECT_EQ(t[0].text, "A b");
     EXPECT_EQ(t[1].text, "Ж");
     EXPECT_EQ(t[2].text, "XAY⏨");
-
-    std::string messages;
-    tokens("X := ''ab\ncd", &messages);
-    EXPECT_EQ(messages, "x.alg:1: error: Unterminated string\n");
+    EXPECT_EQ(messages, "x.alg:1:1: warning: Strings in '' are deprecated: write `text'\n");
 }
 
 TEST(Lexer, keywords_and_names)
@@ -132,6 +147,7 @@ TEST(Lexer, errors)
               "x.alg:1:5: error: Unknown keyword _foo\n"
               "x.alg:1:10: error: Write a keyword as _begin, not in quotes\n"
               "x.alg:1:18: error: Malformed number\n"
+              "x.alg:2:1: warning: Strings in '' are deprecated: write `text'\n"
               "x.alg:2:1: error: Bad character code in a string\n");
     EXPECT_EQ(t.back().sym, Sym::END_OF_FILE);
 }

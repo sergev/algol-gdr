@@ -31,7 +31,7 @@ _begin
     div := entier(a/b);
 
     _procedure NLCR;
-    _write (54,''(/)'');
+    _write (54,`(/)');
 
     _integer _procedure SUM(a, b, c, d);
         _value b, c;
@@ -72,7 +72,7 @@ _begin
     av := nt * nt;
     tn := 1 + div(nt, 2);
     NLCR;
-    _write(54, ''(13HField size = I2/23HO - Human, X - Computer)'') nt;
+    _write(54, `(13HField size = I2/23HO - Human, X - Computer)') nt;
 
     _begin
         _integer _array RNUM, RLANG, RVRY[1 : av, 0 : 1, 1 : 4],
@@ -285,7 +285,7 @@ MACH:   km := SEL;
         _if km = 0 _then
         _begin
             NLCR;
-            _write (54, ''(11H Ik geef op)'');
+            _write (54, `(11H Ik geef op)');
             _goto LKLAAR
         _end;
         x := AX[km];
@@ -296,9 +296,9 @@ MACH:   km := SEL;
             _goto MENS;
 LKLAAR: NLCR;
         _if kleur = 0 _then
-            _write (54, ''(16H U hebt gewonnen)'')
+            _write (54, `(16H U hebt gewonnen)')
         _else
-            _write (54, ''(16H Ik heb gewonnen)'')
+            _write (54, `(16H Ik heb gewonnen)')
     _end
 _end
 _eop

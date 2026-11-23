@@ -6,11 +6,11 @@ A L G O L - Г Д P
      3.         PRINT(0, 1, -1, 123456789);
      4.         PRINT(0.0, 1.0, -1.0, 3.1415926, 1.0⏨18, 1.0⏨-18);
      5.         PRINT(_true, _false);
-     6.         PRINT(''STRING ONE'', '('STRING TWO')');
-     7.         PRINT(NEWLINE, ''AFTER NEWLINE'');
+     6.         PRINT(`STRING ONE', `STRING TWO');
+     7.         PRINT(NEWLINE, `AFTER NEWLINE');
      8.         PRINT(1, NEWLINE, 2);
      9.         PRINT(NEWPAGE);
-    10.         PRINT(''LAST'')
+    10.         PRINT(`LAST')
     11.     _end
     12.     _eop
 

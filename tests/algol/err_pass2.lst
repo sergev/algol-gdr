@@ -26,7 +26,7 @@ A L G O L - Г Д P
     23.       I := IP(B);
     24.       I := IA[B];
     25.       I := IA[1,2];
-    26.       I := ''S''+''T'';
+    26.       I := `S'+`T';
     27.       IP(1) := 1;
     28.       IA := 1;
     29.       LENGTH := 1;
@@ -51,8 +51,8 @@ A L G O L - Г Д P
     48.       X := -B;
     49.       STOP(I);
     50.       ASSIGN(I);
-    51.       PP(1, I, B, RA, L, P0, ''S'', S);
-    52.       PP(1, X, B, RA, CP, P0, ''S'', S)
+    51.       PP(1, I, B, RA, L, P0, `S', S);
+    52.       PP(1, X, B, RA, CP, P0, `S', S)
     53.     _end
     54.     _eop
 

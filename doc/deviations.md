@@ -10,11 +10,11 @@ it added. The last section is how the X1 library differs from `x1sim` (Milestone
 The reference language is printed with underlined keywords and symbols that a keyboard does
 not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60.asdl):
 
-- Keywords are `_word` in any case; strings are `''…''` or `'('…')'` and do not nest; the
+- Keywords are `_word` in any case; strings are `` `…' `` or `‘…’`, nested, the inner
+  quotes kept (the Algol-GDR `''…''` and `'('…')'`, which do not nest, are deprecated); the
   ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ÷ ↑` have ASCII and word forms.
 - A file with an underlined letter (U+0332) is in the publication form: keywords are
-  underlined words (`b̲e̲g̲i̲n̲`, `g̲o̲ t̲o̲`), strings `` `…' `` or `‘…’`, nested, the inner
-  quotes kept. Both forms read the same symbols otherwise.
+  underlined words (`b̲e̲g̲i̲n̲`, `g̲o̲ t̲o̲`). Both forms read the same symbols otherwise.
 - The program may end with `_eop`, as on the original.
 - Standard identifiers (`sqrt`, `print`, …) are recognized in any case; a declaration of the
   same name hides them, as in the Report. `print` is the X1 procedure in the publication
@@ -27,7 +27,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 | A `goto` to a switch designator whose index is out of range stops the program; the Report (4.3.5) makes it a dummy statement | code generator | An error shows the bug where a silent dummy statement would hide it |
 | A formal parameter without a specification takes its kind and type from its uses in the body (below), not from each actual | checker | The code needs one kind per formal; real with conversion serves integer actuals too |
 | An array called by value keeps the element type of the actual, not the formal's | code generator | Accesses convert through the tag, so values are right; only a copy of another type would differ |
-| Strings of the `_keyword` form do not nest | lexer | The Algol-GDR form; the publication form nests |
 | The standard identifiers of Algol-GDR (`PRINT`, `READ`, `NEWLINE`, `LOAD`, …), of IFIP and of the X1 library (`PRINTTEXT`, `FLOT`, `SUM`, …) are predeclared | checker | Programs of those systems use them; a declaration hides them |
 | Recursion is limited by the machine stack | — | Frames are on the stack (man or boy at k = 12 needs about 1 MB) |
 

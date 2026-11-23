@@ -378,9 +378,9 @@ TEST(Run, control)
   I := 0; S := 0;
 L: I := I + 1;
   _if I _le 10 _then _begin S := S + I; _goto L _end;
-  _if S = 55 _then PRINT(''OK'') _else PRINT(''BAD'');
-  _if S > 100 _then PRINT(''BAD'');
-  _begin _integer J; J := I; _if J = 11 _then _goto M; PRINT(''BAD'') _end;
+  _if S = 55 _then PRINT(`OK') _else PRINT(`BAD');
+  _if S > 100 _then PRINT(`BAD');
+  _begin _integer J; J := I; _if J = 11 _then _goto M; PRINT(`BAD') _end;
 M: PRINT(S, I)
 _end _eop
 )"),
@@ -425,7 +425,7 @@ TEST(Run, goto_frees_arrays)
 TEST(Run, fault_and_stop)
 {
     const std::string src = BUILD_DIR "/run_fault.alg";
-    std::ofstream(src) << "_begin outinteger(1, 5); fault(''bad value'', 2.5) _end\n";
+    std::ofstream(src) << "_begin outinteger(1, 5); fault(`bad value', 2.5) _end\n";
     auto r = run_command(compiler + " -o " BUILD_DIR "/run_fault " + src +
                          " && " BUILD_DIR "/run_fault");
     EXPECT_EQ(r.exit_code, 1);
@@ -492,7 +492,7 @@ TEST(Run, checks)
         { "_real x; x := maxreal; x := x × 10", "Real overflow" },
         { "_real x; x := 1000; x := exp(x)", "Real overflow" },
         { "_integer i; i := maxreal", "Real 1.79769e+308 too large for an integer" },
-        { "_string s; s := ''abc''; PRINT(s[5])", "String index [5:5] out of range 1..3" },
+        { "_string s; s := `abc'; PRINT(s[5])", "String index [5:5] out of range 1..3" },
         { "_switch w := L; _goto w[2]; L:", "Switch index 2 out of range" },
         { "_procedure p(a, b); _real a, b; ; _procedure q(f); _procedure f; f(1); q(p)",
           "Procedure p called with 1 parameters instead of 2" },
@@ -584,7 +584,7 @@ TEST(Run, by_name)
   PRINT(S);
   I := 5; INC(I); PRINT(I);
   PRINT(TWICE(SQ, 3));
-  T := ''HI''; SAY(T); SAY(''THERE'')
+  T := `HI'; SAY(T); SAY(`THERE')
 _end _eop
 )"),
               " 3.00000000000e+01                6  8.10000000000e+01   HITHERE\n");
@@ -617,7 +617,7 @@ L1: N := N + 1; PRINT(N);
   PRINT(-2);
 L2: _if N < 2 _then _goto L1;
   _goto L1;
-L3: PRINT(''DONE'')
+L3: PRINT(`DONE')
 _end _eop
 )"),
               "             1              2 DONE\n");
@@ -626,10 +626,10 @@ _end _eop
 TEST(Run, strings)
 {
     EXPECT_EQ(run_text("strings2", R"(_begin _string S, T;
-  S := ''Счёт'' + ''-42'';
+  S := `Счёт' + `-42';
   PRINT(LENGTH(S), S[2], S[2:4], S[5:7]);
   T := S[1:4];
-  PRINT(T = ''Счёт'', T < ''Сча'', T _ne S, ''ab'' < ''b'')
+  PRINT(T = `Счёт', T < `Сча', T _ne S, `ab' < `b')
 _end _eop
 )"),
               "             7 ччёт-42true  false true  true  \n");
@@ -667,8 +667,8 @@ TEST(Run, format_and_read)
     const std::string src = BUILD_DIR "/run_format.alg";
     std::ofstream(src) << R"(_begin _integer I; _real X; _integer _array A[1:3];
   READ(I, X, A);
-  _write(54, ''(4HI = I3, 2X, F6.2/3(I2, 1X), E12.4)'') I, X, A, X * 100;
-  _print(''(2HA:, 2I3)'') A
+  _write(54, `(4HI = I3, 2X, F6.2/3(I2, 1X), E12.4)') I, X, A, X * 100;
+  _print(`(2HA:, 2I3)') A
 _end _eop
 )";
     const std::string input = BUILD_DIR "/run_format.in";
