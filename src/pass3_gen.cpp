@@ -6890,6 +6890,7 @@ L30033:
     }
     { pc = 030034; goto dispatch; }
 dispatch:
+    if (pc == m.stop) return pc;
     switch (pc) {
     case 001644: goto L01644;
     case 001645: goto L01645;

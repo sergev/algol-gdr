@@ -83,6 +83,7 @@ void Machine::load_image()
 
 unsigned Machine::run(Code code, unsigned pc)
 {
+    code_ = code;
     for (;;) {
         pc      = code(*this, pc);
         auto it = natives.find(pc);
@@ -90,6 +91,18 @@ unsigned Machine::run(Code code, unsigned pc)
             return pc;
         pc = it->second(*this);
     }
+}
+
+void Machine::call(unsigned addr, unsigned reg, unsigned ret)
+{
+    unsigned saved = stop;
+    stop           = ret;
+    set_m(reg, ret);
+    unsigned pc = run(code_, addr);
+    stop        = saved;
+    if (pc != ret)
+        throw std::runtime_error("call of " + std::to_string(addr) + " left at " +
+                                 std::to_string(pc));
 }
 
 void Machine::illegal(unsigned addr)

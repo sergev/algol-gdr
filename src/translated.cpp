@@ -9,7 +9,6 @@
 namespace {
 
 constexpr unsigned STACK    = 053401; // M17 when the driver calls a pass
-constexpr unsigned RETURN   = 077777; // M13: a jump there ends the run
 constexpr unsigned REGIM    = 00523;  // *REGIM//: bit 48 setftn:one, bit 47 setftn:long
 constexpr unsigned FLGEX    = 00702;
 constexpr unsigned NOLISFL  = 00705;
@@ -54,7 +53,7 @@ void TranslatedPass::write_stream(const Stream &s, unsigned entry, Word cursor, 
     m.mem[CURSOR_W] = cursor;
     for (const Item &item : s) {
         m.acc = item.bits;
-        m.set_m(13, RETURN);
+        m.set_m(13, Machine::RETURN);
         m.run(code_, entry);
     }
     if (keep_cursors) {

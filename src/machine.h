@@ -48,6 +48,12 @@ public:
     using Code = unsigned (*)(Machine &, unsigned);
     unsigned run(Code code, unsigned pc);
 
+    // From a native: run the translated routine at addr as called by a VJM
+    // through register reg at ret-1, until it returns to ret.
+    void call(unsigned addr, unsigned reg, unsigned ret);
+    static constexpr unsigned RETURN = 077777; // outside the code: a jump there ends run()
+    unsigned stop{ RETURN };                   // a computed jump there leaves the code
+
     //
     // Addressing.
     //
@@ -240,6 +246,8 @@ public:
     [[noreturn]] static void illegal(unsigned addr);
 
 private:
+    Code code_{};
+
     void shift(int n);
     void e70(Word info);
 };

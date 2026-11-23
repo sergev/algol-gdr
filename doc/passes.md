@@ -359,8 +359,24 @@ A block header has bit 48 set, and its low 12 bits give the end address.
     (0 simple, 1 array or switch, 2 procedure with parameters, 3 procedure without).
   - One message per subtree; sibling subtrees each report. An undeclared identifier is
     reported once, at its last use.
-- **End of the pass.** It links array descriptors to the array records in `AD04000`, and
-  prints `* * INCORRECT ALGOL PROGRAM * *` if `FLGEX*` is set.
+- **Start of the pass (17223, C++).**
+  - The read cursor 02000 is the write cursor of pass 1 + 0200000; one item is read (EOP).
+    The write cursor becomes the constant at 22113. 02004 and 02026 get M3, 02022 M3<<12.
+  - 'COMMON' elements (the table at 27245, a zero second word ends it; block entries have
+    slot 0): the name slot must hold the element's name, else `**HECOOTBETCTBИE …` (not
+    declared); the declaration at D3 must be in this slot, else `*****ПEPEПYTAH ПOPЯДOK …`.
+    Each message adds 1 to `FLGEX*`.
+  - Each D-list declaration (05777 down to a zero word, block headers skipped) whose slot is
+    a 'COMMON' element gets bits 39–34 cleared and bit 40 set, plus 0100000 when it has no
+    dimensions.
+  - 02025 = 02003, 02032 = 04000 (the array records); page 02000 goes to drum 26 zone 0;
+    the identifier slots below 02003 are cleared; [M3] = 06000 and the outer scope is opened
+    (17455); the six words 21670… (`PROGR/END`, the position before any statement marker)
+    go to 02011; EOP (075) is written.
+- **End of the pass (22027, C++).** At the first item: for each array record at 04000 up to
+  02032, its descriptors (count in bits 11–7, the first at bits 23–12) get the record address
+  in bits 33–21 and bit 48. Then `* * INCORRECT ALGOL PROGRAM * *` (22051–22056, through
+  27733) if `FLGEX*` is set, and the return into the driver pushed at the start.
 
 ### Messages (V)
 

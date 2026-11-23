@@ -9,6 +9,7 @@ Every word is translated, data included; jumps go to labels, computed ones throu
 switch. A --hook address calls m.on_entry when the code reaches it. Semantics of
 the instructions: src/machine.h. Reaching a --native address (by a jump, a
 call or falling through) returns it, for Machine::run to call the C++ routine there.
+A computed jump to m.stop returns it (the end of Machine::call).
 """
 import argparse
 import importlib.util
@@ -156,6 +157,7 @@ def main():
     for line in out:
         print(line)
     print('dispatch:')
+    print('    if (pc == m.stop) return pc;')
     print('    switch (pc) {')
     for a in words:
         print(f'    case 0{a:05o}: goto L{a:05o};')

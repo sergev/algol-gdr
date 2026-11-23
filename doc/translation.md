@@ -13,7 +13,8 @@ C++ under the tests.
   register, or after UTC/WTC) through a `switch` over the labels. A jump out of the ranges
   returns its address. `--hook ADDR` calls `m.on_entry` there. `--native ADDR` makes the
   code return ADDR when it gets there (by a jump, a call or falling through), so that
-  `Machine::run` calls the C++ routine registered at ADDR.
+  `Machine::run` calls the C++ routine registered at ADDR, which returns the address to go
+  on at.
 - `scripts/gen-passes` regenerates `src/passN_gen.cpp`. Each pass gets its own copy of the
   shared code it calls: the driver's print routine 01644–01735, the streams 27114–27244,
   the formatter 27733–30000, number to text 30001–30033.
@@ -53,7 +54,13 @@ the machine's memory and leaving its registers as the original does:
 
 | Pass | Address | Routine |
 |---|---|---|
+| 2 | 17223 | `start` (src/pass2.cpp): up to the main loop at 17352 |
+| 2 | 22027 | `finish`: from the first item to the return into the driver |
 | 3 | 22716 | `intern_constant` (src/pass3.cpp) |
+
+A native may run a translated routine with `Machine::call(addr, reg, ret)`: as a VJM through
+`reg` at `ret`−1 would, so the registers and the cells the routine saves them in come out as
+in the original; the generated dispatch returns when the routine jumps to `ret` (`m.stop`).
 
 ## Input stream
 

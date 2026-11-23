@@ -22,9 +22,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 2 (G17223)
 
-- **C4** Pass 2 start and end: saving the names to drum 26 zone 0, the first scan over the
-  'COMMON' table and the D-list, linking array descriptors to the records at 04000,
-  `* * INCORRECT ALGOL PROGRAM * *`.
 - **C5** Messages: the formatter G27733 and G30001 as C++ (texts with arguments, names from
   the saved page, `NEXT STATEMENT IS l/s`), used by pass 2 through natives.
 - **C6** Scopes: block open and close over the reversed stream, identifier binding and the
