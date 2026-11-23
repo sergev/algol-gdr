@@ -63,6 +63,11 @@ constexpr unsigned PARSE_READ   = 017446; // *0223B: the subtree of the item rea
 constexpr unsigned EMIT_A       = 017364; // *0141B: item A, through M13
 constexpr unsigned OPS          = 020142; // + - * /: real code <<24, integer code <<30, text
 constexpr unsigned STRING_PLUS  = 022137; // the item of + on strings
+constexpr unsigned INDEX_TEXT   = 022121; // INDEX
+constexpr unsigned SUBSCRIPT    = 020003; // *0560B
+constexpr unsigned NEXT_SUB     = 020020; // *0575B
+constexpr unsigned INDEX_DONE   = 020041; // *0616B
+constexpr unsigned ARITH_LEFT   = 020110; // *0665B
 constexpr unsigned NOT_DECLARED = 017311; // text, name at +010
 constexpr unsigned WRONG_ORDER  = 017322; // text, name at +010
 constexpr unsigned INCORRECT    = 022051; // text up to 022056
@@ -697,6 +702,229 @@ unsigned divide_item(Machine &m)
     return arith_left(m);
 }
 
+//
+// *0644B: a subscript of type M5: a real one gets 063 (to integer), an
+// integer one is fine, else TYPE ERROR INDEX (through M8 = M13). Returns
+// through M13.
+//
+unsigned index_type(Machine &m)
+{
+    switch (m.M[5]) {
+    case 1:
+        m.acc = 063;
+        m.call(EMIT_A, 13, m.M[13]);
+        return m.M[13];
+    case 2:
+        return m.M[13];
+    case 0:
+    case 3:
+    case 4:
+    case 5:
+        m.set_m(8, m.M[13]);
+        m.acc = m.mem[INDEX_TEXT];
+        m.set_logical();
+        return type_error(m);
+    default:
+        return 020070 + m.M[5];
+    }
+}
+
+//
+// *0656B: A = the dimensions of the array M4; another number of subscripts
+// (at [M15-1]) is an illegal use, through M8 = M13. Returns through M13.
+//
+unsigned subscript_count(Machine &m)
+{
+    m.rmr = m.acc;
+    m.acc ^= m.mem[(m.M[Machine::SP] - 1) & 077777];
+    m.set_logical();
+    if (!m.acc)
+        return m.M[13];
+    m.set_m(8, m.M[13]);
+    return illegal_use(m);
+}
+
+// *0654B: the dimensions in bits 19-15; a formal array without them gets them.
+unsigned array_dims(Machine &m)
+{
+    m.acc = (m.mem[m.M[4]] >> 15) & 037;
+    m.rmr = 0;
+    m.set_logical();
+    if (m.acc)
+        return subscript_count(m);
+    m.acc         = (m.mem[(m.M[Machine::SP] - 1) & 077777] << 15) & WORD_MASK;
+    m.acc         = m.mem[m.M[4]] ^ m.acc;
+    m.mem[m.M[4]] = m.acc;
+    return m.M[13];
+}
+
+//
+// *0560B: an array element or a switch designator: slot M3 with M2
+// subscripts (M12: 044, 046, 025 for a switch). The item a<<12 | n<<7 | M12
+// goes out first, then each subscript (NEXT_SUB).
+//
+unsigned subscripted(Machine &m)
+{
+    m.push(m.M[2]);
+    m.set_m(13, 020005);
+    lookup(m);
+    if (m.M[4]) {
+        m.set_m(8, 020012);
+        m.set_m(6, m.M[6] - 1);
+        if (m.M[6])
+            return 020565;
+        if (m.M[5]) {
+            m.set_m(13, 020012);
+            array_dims(m);
+        } else {
+            m.set_m(12, 025);
+        }
+    }
+    m.push(m.M[5]);
+    Word count = m.mem[(m.M[Machine::SP] - 2) & 077777];
+    m.acc      = (Word(m.M[4]) << 12) | ((count << 7) & WORD_MASK) | m.M[12];
+    m.rmr      = 0;
+    m.set_logical();
+    m.call(EMIT_A, 13, 020017);
+    m.call(READ, 13, NEXT_SUB);
+    return NEXT_SUB;
+}
+
+// Code 021: an array element.
+unsigned element_item(Machine &m)
+{
+    m.set_m(12, 044);
+    return subscripted(m);
+}
+
+// *0554B: a switch designator in a left part: as if called from *0514B.
+unsigned left_designator(Machine &m)
+{
+    m.set_m(12, 046);
+    m.set_m(13, 017737);
+    m.push(m.M[13]);
+    m.acc = 0;
+    m.push(0);
+    return subscripted(m);
+}
+
+//
+// *0612B: the left operand of i+c or i-c, c pushed as c<<12 (030 with c
+// comes out at INDEX_DONE).
+//
+unsigned index_offset(Machine &m, Word c)
+{
+    m.acc = (c << 12) & WORD_MASK;
+    m.push(m.acc);
+    m.set_m(12, INDEX_DONE);
+    return PARSE;
+}
+
+//
+// A general subscript i+e or i-e: as the operator's handler would, in a
+// frame returning to INDEX_DONE with 0 pushed.
+//
+unsigned index_general(Machine &m, unsigned op)
+{
+    m.push(0);
+    m.push(INDEX_DONE);
+    m.push(0);
+    m.acc = m.mem[op];
+    m.push(m.acc);
+    m.set_m(13, INDEX_DONE);
+    m.set_m(14, op);
+    m.set_m(12, ARITH_LEFT);
+    return PARSE_READ;
+}
+
+// A small integer constant in slot M3: below the limit at M7+k.
+bool small_constant(Machine &m, unsigned limit)
+{
+    m.acc = m.mem[NAMES + m.M[3]];
+    m.arith(7, limit, 005);
+    return !m.uza();
+}
+
+//
+// *0575B: the next subscript (read backwards), by how it ends: a constant
+// below 2048 is an item 045 c; i+c, i-c with c below 2048, 64 are 030 c
+// after i; anything else is the expression, then 030 0.
+//
+unsigned next_subscript(Machine &m)
+{
+    m.acc = m.mem[TYPES + m.M[1]];
+    m.set_m(14, unsigned(m.acc >> 7) & 3);
+    m.acc = m.M[14];
+    m.rmr = 0;
+    m.set_logical();
+    switch (m.M[14]) {
+    case 1:
+        if (small_constant(m, 02720)) {
+            m.acc = m.mem[NAMES + m.M[3]] & 07777;
+            m.set_logical();
+            m.set_m(14, 045);
+            m.call(EMIT_SHIFTED, 13, 020032);
+            m.set_m(13, 020044);
+            return READ;
+        }
+        [[fallthrough]];
+    case 0:
+        m.acc = 0;
+        m.push(0);
+        m.set_m(12, INDEX_DONE);
+        return PARSE_READ;
+    case 2:
+        m.call(READ, 13, 020033);
+        m.acc = m.M[1] ^ 024;
+        if (m.acc || !small_constant(m, 02720))
+            return index_general(m, OPS);
+        m.acc = m.mem[NAMES + m.M[3]] & 07777;
+        return index_offset(m, m.acc);
+    case 3:
+        m.call(READ, 13, 020053);
+        m.acc = m.M[1] ^ 024;
+        if (m.acc || !small_constant(m, 02713))
+            return index_general(m, OPS + 1);
+        m.acc = m.mem[NAMES + m.M[3]];
+        m.rau = 003;
+        m.arith(7, 02731, 006);
+        m.acc &= 07777;
+        return index_offset(m, m.acc);
+    }
+    return 0;
+}
+
+// *0621B: one subscript less; after the last, M5 back and return.
+unsigned subscript_done(Machine &m)
+{
+    unsigned at = (m.M[Machine::SP] - 2) & 077777;
+    m.acc       = m.mem[at];
+    m.rau       = 003;
+    m.arith(7, 02646, 005);
+    m.mem[at] = m.acc;
+    m.rau     = 007;
+    if (m.acc)
+        return NEXT_SUB;
+    m.xta(Machine::SP, 0);
+    m.sti(0, 5);
+    return RETURN_SUB;
+}
+
+// *0616B: after a subscript: its type, then 030 with the offset pushed.
+unsigned index_done(Machine &m)
+{
+    m.set_m(13, 020042);
+    unsigned pc = index_type(m);
+    if (pc != 020042)
+        return pc;
+    m.set_m(14, 030);
+    m.acc = 030;
+    m.acc ^= m.mem[(m.M[Machine::SP] - 1) & 077777];
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    m.call(EMIT_A, 13, 020044);
+    return subscript_done(m);
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -871,6 +1099,15 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[020152] = minus_item;
     pass.m.natives[020153] = times_item;
     pass.m.natives[020154] = divide_item;
+    pass.m.natives[017777] = left_designator;
+    pass.m.natives[020002] = element_item;
+    pass.m.natives[020003] = subscripted;
+    pass.m.natives[020020] = next_subscript;
+    pass.m.natives[020041] = index_done;
+    pass.m.natives[020044] = subscript_done;
+    pass.m.natives[020067] = index_type;
+    pass.m.natives[020101] = subscript_count;
+    pass.m.natives[020110] = arith_left;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
