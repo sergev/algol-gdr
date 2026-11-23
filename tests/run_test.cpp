@@ -45,7 +45,9 @@ const std::vector<std::string> programs = {
     "pages",
     "print",
     "proc",
+    "quine",
     "stdfunc",
+    "strings",
     "switch",
     "symbols",
     "test1",
@@ -296,4 +298,16 @@ L3: PRINT(''DONE'')
 _end _eop
 )"),
               "             1              2 DONE\n");
+}
+
+TEST(Run, strings)
+{
+    EXPECT_EQ(run_text("strings2", R"(_begin _string S, T;
+  S := ''Счёт'' + ''-42'';
+  PRINT(LENGTH(S), S[2], S[2:4], S[5:7]);
+  T := S[1:4];
+  PRINT(T = ''Счёт'', T < ''Сча'', T _ne S, ''ab'' < ''b'')
+_end _eop
+)"),
+              "             7 ччёт-42true  false true  true  \n");
 }

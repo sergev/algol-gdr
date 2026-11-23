@@ -25,11 +25,11 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E21** Strings: relations, concatenation, slices, `LENGTH`, string parameters. Test
-  strings, quine, quinio (with `.in`).
 - **E22** _common blocks as named global structs shared between compilation units;
   _code procedures as external C functions with pointer arguments (C calling convention,
-  documented). Test common; externals compiles and links against a C stub.
+  documented). `_write` and `_print` with a Fortran format (`''(I2, F7.3, 10HTEXT, /)''`), and
+  READ from standard input. Test common; externals compiles and links against a C stub;
+  quinio (with `.in`) with C stubs for its Fortran and Madlen procedures (`quinio.c`).
 
 ### Targets and finish
 

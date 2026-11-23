@@ -409,6 +409,13 @@ private:
                     return from_result(call(n.proc, n.args), e.type);
                 } else if constexpr (std::is_same_v<T, expr::StdFunc>) {
                     return std_func(n);
+                } else if constexpr (std::is_same_v<T, expr::StringElement>) {
+                    ir::Value s = expr(*n.string);
+                    return runtime("ptr", "algol_string_element", { s, subscript(*n.index) });
+                } else if constexpr (std::is_same_v<T, expr::Slice>) {
+                    ir::Value s = expr(*n.string);
+                    ir::Value a = subscript(*n.first);
+                    return runtime("ptr", "algol_string_slice", { s, a, subscript(*n.last) });
                 } else if constexpr (std::is_same_v<T, expr::Unary>) {
                     return unary(n, e.type);
                 } else if constexpr (std::is_same_v<T, expr::Binary>) {
@@ -489,7 +496,7 @@ private:
         switch (b.op) {
         case BinaryOp::ADD:
             if (t == Type::STRING)
-                unsupported("String concatenation");
+                return runtime("ptr", "algol_string_concat", { l, r });
             return fn_->binop(real ? "fadd" : "add", l, r);
         case BinaryOp::SUB:
             return fn_->binop(real ? "fsub" : "sub", l, r);

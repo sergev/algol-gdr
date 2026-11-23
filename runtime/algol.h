@@ -41,6 +41,13 @@ int64_t algol_bits_shift(int64_t bits, int64_t n);
 double algol_sqrt(double x);
 double algol_ln(double x);
 
+// Strings: UTF-8, indices of characters from 1.
+int64_t algol_string_length(const char *s);
+int64_t algol_string_compare(const char *a, const char *b);
+char *algol_string_concat(const char *a, const char *b);
+char *algol_string_slice(const char *s, int64_t first, int64_t last);
+char *algol_string_element(const char *s, int64_t i);
+
 // Arrays: descriptors of int64 words: data, count, dims, bounds (doc/codegen.md).
 void algol_array_alloc(int64_t *desc, int64_t dims);
 void algol_array_free(int64_t *desc);

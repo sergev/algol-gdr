@@ -169,6 +169,7 @@ tests/run_test.cpp). `NAME.native.out` replaces it where the output really diffe
 |---|---|
 | hello, hello_algol | the original prints upper case only |
 | symbols | the original's printer shows `≤ ≥ @` as `⩽ ⩾ °` |
+| quine | the original's printer shows `'` as `′` |
 
 ## Names
 
