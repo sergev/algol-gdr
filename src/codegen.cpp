@@ -18,6 +18,8 @@ using namespace ast;
 namespace {
 
 constexpr int SLOT_LINK   = 0; // static link
+constexpr int SLOT_JMPBUF = 1; // the jmp_buf of a function with non-local labels
+constexpr int SLOT_LABEL  = 2; // where a non-local goto goes
 constexpr int SLOT_RESULT = 3; // the value of a function
 constexpr int SLOT_HEADER = 4; // first free slot
 
@@ -27,6 +29,8 @@ struct Func {
     Func *parent{};
     int slots{ SLOT_HEADER };
     const decl::Procedure *proc{}; // null for the program
+    int labels{};                  // numbered from 1
+    std::vector<int> far_labels;   // reached by longjmp
 };
 
 // What a declaration is, and where it lives.
@@ -43,6 +47,10 @@ struct Symbol {
     Func *func{};                          // PROC: its function
     Spec spec;                             // FORMAL
     bool by_value{};                       // FORMAL
+    int index{};                           // LABEL: its number in the owner
+    bool far{};                            // LABEL: reached by longjmp
+    const decl::Switch *sw{};              // SWITCH
+    ir::Function *sfn{};                   // SWITCH: its function
 };
 
 // The memory type of a value type.
@@ -91,12 +99,15 @@ public:
             symbols_[e.id] = s;
         }
         declare(main_, *program.block);
+        scan(&main_, *program.block);
+        far_entry(main_);
         statement(*program.block);
         fn_->ret_void();
         finish(main_);
-        // Procedures, also those declared while generating others.
-        for (size_t i = 0; i < funcs_.size(); i++)
-            procedure(*funcs_[i]);
+        for (auto &f : funcs_)
+            procedure(*f);
+        for (int id : switches_)
+            switch_function(symbol(id));
         return module_.text();
     }
 
@@ -106,6 +117,8 @@ private:
     Func main_;
     std::map<int, Symbol> symbols_;
     std::vector<std::unique_ptr<Func>> funcs_; // procedures
+    std::vector<int> switches_;
+    std::map<const decl::Procedure *, Func *> proc_funcs_;
     int thunks_{};
     std::vector<const stmt::Block *> path_; // blocks being declared
 
@@ -172,12 +185,23 @@ private:
                     s.owner        = &f;
                     s.block        = f.fn->new_block("L." + n.name);
                     s.path         = path_;
+                    s.index        = ++f.labels;
                     symbols_[n.id] = s;
                 } else if constexpr (std::is_same_v<T, decl::Arrays>) {
                     for (const auto &a : n.arrays)
                         array(f, a.id, a.name, n.type, int(n.bounds.size()));
                 } else if constexpr (std::is_same_v<T, decl::Procedure>) {
                     declare_procedure(f, n);
+                } else if constexpr (std::is_same_v<T, decl::Switch>) {
+                    Symbol s;
+                    s.kind  = Symbol::SWITCH;
+                    s.name  = n.name;
+                    s.owner = &f;
+                    s.sw    = &n;
+                    s.sfn   = &module_.function("S." + std::to_string(n.id) + "." + n.name, "void",
+                                                { "ptr", "i64", "ptr" }, "", "internal");
+                    symbols_[n.id] = s;
+                    switches_.push_back(n.id);
                 } else {
                     unsupported("This declaration");
                 }
@@ -208,11 +232,12 @@ private:
     void declare_procedure(Func &f, const decl::Procedure &p)
     {
         funcs_.push_back(std::make_unique<Func>());
-        Func &pf  = *funcs_.back();
-        pf.parent = &f;
-        pf.proc   = &p;
-        pf.fn     = &module_.function("P." + std::to_string(p.id) + "." + p.name, "i64",
-                                      { "ptr", "ptr" }, "", "internal");
+        Func &pf        = *funcs_.back();
+        pf.parent       = &f;
+        pf.proc         = &p;
+        proc_funcs_[&p] = &pf;
+        pf.fn           = &module_.function("P." + std::to_string(p.id) + "." + p.name, "i64",
+                                            { "ptr", "ptr" }, "", "internal");
         Symbol s;
         s.kind         = Symbol::PROC;
         s.type         = p.type;
@@ -653,6 +678,259 @@ private:
         return fn_->gep("i64", data, index);
     }
 
+    //
+    // Labels reached from other functions: a label value {frame, index},
+    // longjmp to the frame's jmp_buf, and a switch on the index there.
+    //
+
+    // Labels used other than as the target of a goto in their own function.
+    void scan(Func *f, const Stmt &s)
+    {
+        std::visit(
+            [&](const auto &n) {
+                using T = std::decay_t<decltype(n)>;
+                if constexpr (std::is_same_v<T, stmt::Block>) {
+                    for (const auto &d : n.decls)
+                        scan(f, *d);
+                    for (const auto &b : n.body)
+                        scan(f, *b);
+                } else if constexpr (std::is_same_v<T, stmt::Compound>) {
+                    for (const auto &b : n.body)
+                        scan(f, *b);
+                } else if constexpr (std::is_same_v<T, stmt::Labeled>) {
+                    scan(f, *n.stmt);
+                } else if constexpr (std::is_same_v<T, stmt::Goto>) {
+                    auto ref = std::get_if<expr::LabelRef>(&n.target->node);
+                    if (!ref || symbol(ref->label).owner != f)
+                        scan(*n.target);
+                } else if constexpr (std::is_same_v<T, stmt::If>) {
+                    scan(*n.condition);
+                    scan(f, *n.then_stmt);
+                    if (n.else_stmt)
+                        scan(f, *n.else_stmt);
+                } else if constexpr (std::is_same_v<T, stmt::For>) {
+                    scan(n.control);
+                    scan(n.elements);
+                    scan(f, *n.body);
+                } else if constexpr (std::is_same_v<T, stmt::Assign>) {
+                    for (const auto &t : n.targets)
+                        scan(t);
+                    scan(*n.value);
+                } else if constexpr (std::is_same_v<T, stmt::Call> ||
+                                     std::is_same_v<T, stmt::StdProc>) {
+                    for (const auto &a : n.args)
+                        scan(*a);
+                } else if constexpr (std::is_same_v<T, stmt::Io>) {
+                    for (const auto &a : n.params)
+                        scan(*a);
+                    scan(n.items);
+                }
+            },
+            s.node);
+    }
+
+    void scan(Func *f, const Decl &d)
+    {
+        if (auto a = std::get_if<decl::Arrays>(&d.node)) {
+            for (const auto &b : a->bounds) {
+                scan(*b.lower);
+                scan(*b.upper);
+            }
+        } else if (auto sw = std::get_if<decl::Switch>(&d.node)) {
+            for (const auto &e : sw->elements)
+                scan(*e);
+        } else if (auto p = std::get_if<decl::Procedure>(&d.node)) {
+            scan(proc_funcs_.at(p), *p->body);
+        }
+        (void)f;
+    }
+
+    void scan(const IoList &items)
+    {
+        for (const auto &item : items) {
+            if (auto it = std::get_if<io::Item>(&item.node))
+                scan(*it->expr);
+            else if (auto fr = std::get_if<io::For>(&item.node)) {
+                scan(fr->control);
+                scan(fr->elements);
+                scan(fr->body);
+            }
+        }
+    }
+
+    void scan(const LeftPart &lp)
+    {
+        if (auto el = std::get_if<left::Element>(&lp))
+            for (const auto &e : el->subscripts)
+                scan(*e);
+    }
+
+    void scan(const std::vector<ForElement> &elements)
+    {
+        for (const auto &el : elements)
+            std::visit(
+                [&](const auto &x) {
+                    using T = std::decay_t<decltype(x)>;
+                    if constexpr (std::is_same_v<T, for_elem::Value>) {
+                        scan(*x.value);
+                    } else if constexpr (std::is_same_v<T, for_elem::While>) {
+                        scan(*x.value);
+                        scan(*x.condition);
+                    } else {
+                        scan(*x.init);
+                        scan(*x.step);
+                        scan(*x.until);
+                    }
+                },
+                el);
+    }
+
+    void scan(const Expr &e)
+    {
+        std::visit(
+            [&](const auto &n) {
+                using T = std::decay_t<decltype(n)>;
+                if constexpr (std::is_same_v<T, expr::LabelRef>) {
+                    Symbol &label = symbols_.at(n.label);
+                    if (label.kind == Symbol::LABEL && !label.far) {
+                        label.far = true;
+                        label.owner->far_labels.push_back(n.label);
+                    }
+                } else if constexpr (std::is_same_v<T, expr::Element>) {
+                    for (const auto &a : n.subscripts)
+                        scan(*a);
+                } else if constexpr (std::is_same_v<T, expr::Call> ||
+                                     std::is_same_v<T, expr::StdFunc>) {
+                    for (const auto &a : n.args)
+                        scan(*a);
+                } else if constexpr (std::is_same_v<T, expr::Unary>) {
+                    scan(*n.operand);
+                } else if constexpr (std::is_same_v<T, expr::Binary>) {
+                    scan(*n.left);
+                    scan(*n.right);
+                } else if constexpr (std::is_same_v<T, expr::Cond>) {
+                    scan(*n.condition);
+                    scan(*n.then_expr);
+                    scan(*n.else_expr);
+                } else if constexpr (std::is_same_v<T, expr::Convert>) {
+                    scan(*n.expr);
+                } else if constexpr (std::is_same_v<T, expr::StringElement>) {
+                    scan(*n.string);
+                    scan(*n.index);
+                } else if constexpr (std::is_same_v<T, expr::Slice>) {
+                    scan(*n.string);
+                    scan(*n.first);
+                    scan(*n.last);
+                } else if constexpr (std::is_same_v<T, expr::SwitchElement>) {
+                    scan(*n.index);
+                }
+            },
+            e.node);
+    }
+
+    // On entry to a function with far labels: setjmp, and after a longjmp
+    // a switch to the label.
+    void far_entry(const Func &f)
+    {
+        if (f.far_labels.empty())
+            return;
+        ir::Value jb = fn_->stack_alloc("i64", 64, 16);
+        fn_->store(jb, slot(&f, SLOT_JMPBUF));
+        module_.declare("i32", "_setjmp", "ptr", "returns_twice");
+        ir::Value r = fn_->call("i32", "@_setjmp", { jb }, " returns_twice");
+        auto *go    = fn_->new_block("far");
+        auto *body  = fn_->new_block("body");
+        fn_->cond_br(fn_->icmp("ne", r, { "i32", "0" }), go, body);
+        fn_->set_block(go);
+        std::vector<std::pair<int64_t, const ir::Block *>> cases(f.far_labels.size());
+        std::transform(f.far_labels.begin(), f.far_labels.end(), cases.begin(), [this](int id) {
+            return std::pair<int64_t, const ir::Block *>(symbol(id).index, symbol(id).block);
+        });
+        auto *bad = fn_->new_block("far.bad");
+        fn_->switch_(fn_->load("i64", slot(&f, SLOT_LABEL)), bad, cases);
+        fn_->set_block(bad);
+        fn_->unreachable();
+        fn_->set_block(body);
+    }
+
+    // The label value of a designational expression: {frame, index}.
+    std::pair<ir::Value, ir::Value> label_value(const Expr &e)
+    {
+        auto ref = std::get_if<expr::LabelRef>(&e.node);
+        auto var = std::get_if<expr::Var>(&e.node);
+        if (ref && symbol(ref->label).kind == Symbol::LABEL) {
+            const Symbol &label = symbol(ref->label);
+            return { frame_of(label.owner), ir::i64(label.index) };
+        }
+        if (ref || var) {
+            // A formal label.
+            const Symbol &s = symbol(ref ? ref->label : var->decl);
+            ir::Value cell  = call_thunk(slot(s.owner, s.slot));
+            return { fn_->load("ptr", cell), fn_->load("i64", fn_->gep("ptr", cell, ir::i64(1))) };
+        }
+        if (auto se = std::get_if<expr::SwitchElement>(&e.node)) {
+            ir::Value index = subscript(*se->index);
+            const Symbol &s = symbol(se->switch_);
+            ir::Value code, frame;
+            if (s.kind == Symbol::SWITCH) {
+                code  = { "ptr", ir::global_name(s.sfn->name()) };
+                frame = frame_of(s.owner);
+            } else {
+                ir::Value pair = slot(s.owner, s.slot);
+                code           = fn_->load("ptr", pair);
+                frame          = fn_->load("ptr", fn_->gep("ptr", pair, ir::i64(1)));
+            }
+            ir::Value out = fn_->stack_alloc("i64", 2);
+            fn_->call("void", code.ref, { frame, index, out });
+            return { fn_->load("ptr", out), fn_->load("i64", fn_->gep("ptr", out, ir::i64(1))) };
+        }
+        if (auto c = std::get_if<expr::Cond>(&e.node)) {
+            ir::Value cond = expr(*c->condition);
+            auto *yes      = fn_->new_block("des.then");
+            auto *no       = fn_->new_block("des.else");
+            auto *done     = fn_->new_block("des.end");
+            fn_->cond_br(cond, yes, no);
+            fn_->set_block(yes);
+            auto a      = label_value(*c->then_expr);
+            auto *a_end = fn_->block();
+            fn_->br(done);
+            fn_->set_block(no);
+            auto b      = label_value(*c->else_expr);
+            auto *b_end = fn_->block();
+            fn_->br(done);
+            fn_->set_block(done);
+            return { fn_->phi("ptr", { { a.first, a_end }, { b.first, b_end } }),
+                     fn_->phi("i64", { { a.second, a_end }, { b.second, b_end } }) };
+        }
+        unsupported("This designational expression");
+    }
+
+    // A switch: element k's label value to out.
+    void switch_function(const Symbol &s)
+    {
+        fn_            = s.sfn;
+        scope_         = s.owner;
+        frame_         = fn_->param(0);
+        ir::Value out  = fn_->param(2);
+        auto *bad      = fn_->new_block("bad");
+        auto *dispatch = fn_->block();
+        std::vector<std::pair<int64_t, const ir::Block *>> cases;
+        for (size_t k = 0; k < s.sw->elements.size(); k++) {
+            auto *b = fn_->new_block("elem");
+            cases.push_back({ int64_t(k + 1), b });
+            fn_->set_block(b);
+            auto [frame, index] = label_value(*s.sw->elements[k]);
+            fn_->store(frame, out);
+            fn_->store(index, fn_->gep("ptr", out, ir::i64(1)));
+            fn_->ret_void();
+        }
+        fn_->set_block(dispatch);
+        fn_->switch_(fn_->param(1), bad, cases);
+        fn_->set_block(bad);
+        runtime("void", "algol_switch_error", { fn_->param(1) }, "noreturn");
+        fn_->unreachable();
+    }
+
     void if_stmt(const stmt::If &s)
     {
         ir::Value cond = expr(*s.condition);
@@ -674,8 +952,13 @@ private:
     void go_to(const Expr &target)
     {
         auto ref = std::get_if<expr::LabelRef>(&target.node);
-        if (!ref || symbol(ref->label).owner != scope_ || fn_ != scope_->fn)
-            unsupported("This goto");
+        if (!ref || symbol(ref->label).kind != Symbol::LABEL ||
+            symbol(ref->label).owner != scope_ || fn_ != scope_->fn) {
+            auto [frame, index] = label_value(target);
+            runtime("void", "algol_goto", { frame, index }, "noreturn");
+            fn_->unreachable();
+            return;
+        }
         const Symbol &label = symbol(ref->label);
         for (auto it = active_.rbegin(); it != active_.rend(); ++it)
             if (std::find(label.path.begin(), label.path.end(), it->block) == label.path.end())
@@ -834,6 +1117,7 @@ private:
                 break;
             }
         }
+        far_entry(f);
         statement(*p.body);
         if (fn_->open()) {
             for (const auto &formal : p.formals)
@@ -956,8 +1240,10 @@ private:
     std::pair<ir::Value, ir::Value> thunk(const Expr &e, const Formal *formal)
     {
         // A name parameter passed on: its own pair.
-        if (auto v = std::get_if<expr::Var>(&e.node)) {
-            const Symbol &s = symbol(v->decl);
+        auto v   = std::get_if<expr::Var>(&e.node);
+        auto ref = std::get_if<expr::LabelRef>(&e.node);
+        if (v || ref) {
+            const Symbol &s = symbol(v ? v->decl : ref->label);
             if (s.kind == Symbol::FORMAL && !s.by_value &&
                 (s.spec.kind == Spec::SIMPLE || s.spec.kind == Spec::LABEL)) {
                 ir::Value pair = slot(s.owner, s.slot);
@@ -1000,10 +1286,26 @@ private:
             if (s.kind == Symbol::VAR || s.kind == Symbol::FORMAL)
                 return address(var->decl);
         }
+        if (var && symbol(var->decl).kind == Symbol::SWITCH) {
+            const Symbol &s = symbol(var->decl);
+            ir::Value cell  = temp(2);
+            fn_->store({ "ptr", ir::global_name(s.sfn->name()) }, cell);
+            fn_->store(frame_of(s.owner), fn_->gep("ptr", cell, ir::i64(1)));
+            return cell;
+        }
+        if (var && symbol(var->decl).kind == Symbol::FORMAL &&
+            symbol(var->decl).spec.kind == Spec::SWITCH)
+            return slot(symbol(var->decl).owner, symbol(var->decl).slot);
         if (auto el = std::get_if<expr::Element>(&e.node))
             return element(el->array, el->subscripts);
-        if (e.type == Type::NONE)
-            unsupported("This actual parameter");
+        if (e.type == Type::NONE) {
+            // A designational expression: its label value.
+            auto [frame, index] = label_value(e);
+            ir::Value cell      = temp(2);
+            fn_->store(frame, cell);
+            fn_->store(index, fn_->gep("ptr", cell, ir::i64(1)));
+            return cell;
+        }
         // An expression: its value in a temporary, in the formal's type.
         Type t      = formal && formal->spec.kind == Spec::SIMPLE && formal->spec.type != Type::NONE
                           ? formal->spec.type

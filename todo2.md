@@ -25,9 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E20** Labels and switches across procedures: non-local GOTO out of a procedure or a
-  thunk (setjmp/longjmp, only for labels pass 2 marks as used outside), switches and
-  designational expressions, labels as parameters. Test switch.
 - **E21** Strings: relations, concatenation, slices, `LENGTH`, string parameters. Test
   strings, quine, quinio (with `.in`).
 - **E22** _common blocks as named global structs shared between compilation units;

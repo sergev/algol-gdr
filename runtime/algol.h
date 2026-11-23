@@ -18,6 +18,10 @@ _Noreturn void algol_error(const char *fmt, ...);
 // The end of the program: the print line flushed.
 _Noreturn void algol_stop(void);
 
+// A goto to a label of another function, and a bad switch index.
+_Noreturn void algol_goto(void **frame, int64_t index);
+_Noreturn void algol_switch_error(int64_t index);
+
 // PRINT.
 void algol_print_integer(int64_t v);
 void algol_print_real(double v);

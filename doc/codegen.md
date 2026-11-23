@@ -111,6 +111,12 @@ the temporary.
   blocks left are not freed.
 - A switch is a function `void @S.<id>.<name>(ptr %frame, i64 %index, ptr %out)` writing
   the label value of element `index` to `out`; an index out of range is a run-time error.
+  A switch as a parameter is the pair `{fn, frame}`.
+- A formal label keeps the thunk pair of its actual; the thunk gives the address of a label
+  value. A `goto` to it, or to a switch element or a conditional designational expression,
+  goes through `algol_goto` even when the label is local.
+- `setjmp` is glibc's `_setjmp` and the runtime jumps with `_longjmp`: the signal mask is
+  not saved.
 
 ## FOR
 

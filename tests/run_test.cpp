@@ -32,7 +32,12 @@ const std::vector<std::string> programs = {
     "comment",
     "cond",
     "empty",
+    "exprs",
+    "exprs2",
     "for",
+    "for2",
+    "for2_check",
+    "goto",
     "hello",
     "hello_algol",
     "man_or_boy",
@@ -41,9 +46,11 @@ const std::vector<std::string> programs = {
     "print",
     "proc",
     "stdfunc",
+    "switch",
     "symbols",
     "test1",
     "test2",
+    "test3",
 };
 // clang-format on
 
@@ -263,4 +270,30 @@ TEST(Run, juggle_compiles)
 {
     auto r = run_command(compiler + " -c -o " BUILD_DIR "/juggle.o " TEST_DIR "/algol/juggle.alg");
     EXPECT_EQ(r.exit_code, 0) << r.output;
+}
+
+// Labels and switches as parameters; jumps out of nested procedures.
+TEST(Run, far_goto)
+{
+    EXPECT_EQ(run_text("far_goto", R"(_begin _integer N;
+  _switch SW := L1, L2;
+  _procedure JUMP(L); _label L; _goto L;
+  _procedure PICK(S, I); _switch S; _integer I; _goto S[I];
+  _procedure DEEP(K); _value K; _integer K;
+    _begin _procedure INNER; _if K = 0 _then _goto L3 _else DEEP(K - 1);
+      INNER
+    _end;
+  N := 0;
+  JUMP(L1);
+  PRINT(-1);
+L1: N := N + 1; PRINT(N);
+  _if N = 1 _then PICK(SW, 2);
+  _if N = 2 _then DEEP(5);
+  PRINT(-2);
+L2: _if N < 2 _then _goto L1;
+  _goto L1;
+L3: PRINT(''DONE'')
+_end _eop
+)"),
+              "             1              2 DONE\n");
 }

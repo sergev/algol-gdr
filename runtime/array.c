@@ -17,7 +17,7 @@ enum { T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_BITS };
 void algol_array_alloc(int64_t *desc, int64_t dims)
 {
     int64_t count = 1;
-    desc[2] = dims;
+    desc[2]       = dims;
     for (int64_t k = 0; k < dims; k++) {
         int64_t lo = desc[3 + 2 * k], hi = desc[4 + 2 * k];
         if (hi < lo)
