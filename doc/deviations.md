@@ -2,7 +2,8 @@
 
 How `algc` differs from the Revised Report on the Algorithmic Language Algol 60 (1963),
 where, and why. Milestone 3 removed the others; the programs of `tests/a60/` check what
-it added.
+it added. The last section is how the X1 library differs from `x1sim` (Milestone 4,
+`tests/x1/`).
 
 ## Representation
 
@@ -16,7 +17,8 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
   quotes kept. Both forms read the same symbols otherwise.
 - The program may end with `_eop`, as on the original.
 - Standard identifiers (`sqrt`, `print`, …) are recognized in any case; a declaration of the
-  same name hides them, as in the Report.
+  same name hides them, as in the Report. `print` is the X1 procedure in the publication
+  form and Algol-GDR's `PRINT` in the `_keyword` form; `read` in an expression is X1's.
 
 ## Language
 
@@ -26,7 +28,7 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 | A formal parameter without a specification takes its kind and type from its uses in the body (below), not from each actual | checker | The code needs one kind per formal; real with conversion serves integer actuals too |
 | An array called by value keeps the element type of the actual, not the formal's | code generator | Accesses convert through the tag, so values are right; only a copy of another type would differ |
 | Strings of the `_keyword` form do not nest | lexer | The Algol-GDR form; the publication form nests |
-| The standard identifiers of Algol-GDR (`PRINT`, `READ`, `NEWLINE`, `LOAD`, …) and of IFIP are predeclared | checker | Algol-GDR programs use them; a declaration hides them |
+| The standard identifiers of Algol-GDR (`PRINT`, `READ`, `NEWLINE`, `LOAD`, …), of IFIP and of the X1 library (`PRINTTEXT`, `FLOT`, `SUM`, …) are predeclared | checker | Programs of those systems use them; a declaration hides them |
 | Recursion is limited by the machine stack | — | Frames are on the stack (man or boy at k = 12 needs about 1 MB) |
 
 ## Run time
@@ -80,3 +82,21 @@ not deviations.
 - Extensions of Algol-GDR (`_string` and `_bits` variables and arrays, substrings `s[i:j]`,
   `_code`, `_algol` and `_common`, `PRINT`, `READ`, `_print` …) are not part of the
   Report; programs that do not use them are not affected.
+
+## The X1 library
+
+The procedures of the Electrologica X1 (`PRINTTEXT`, `PRSYM`, `SPACE`, `TAB`, `NLCR`,
+`print`, `FIXT`, `ABSFIXT`, `FLOT`, `read`, `RESYM`, `XEEN`, `SUM`, `EVEN`, `RANDOM`,
+`SETRANDOM`, `TIMEOFDAY`) do what they do under `x1sim` of x1-algol-compiler, the reference
+of Milestone 4 (doc/codegen.md). Every example of x1-algol-compiler compiles unchanged and
+prints what `x1sim` prints; none is skipped. Where it differs:
+
+| Difference | Reason |
+|---|---|
+| Integers are 64-bit, not the 27 bits of the X1 (no overflow at 2²⁶) | The host's; no example depends on it |
+| Reals are IEEE double: 53 bits of mantissa, not 40, so the 13 digits of `print` may differ in the last ones (whetstone, by about 1e-10) | The host's; more exact |
+| `FIXT`, `ABSFIXT`, `FLOT` round an exact half (a value exactly between two printed numbers) up; `x1sim` rounds it either way, by the error of its `long double` | The same output on every target |
+| `RANDOM` is another generator (SplitMix64) than `x1sim`'s, seeded by `SETRANDOM` with the bits of the real | `x1sim`'s is the C++ library's; only its range and repeatability are promised |
+| `stop` ends the program (IFIP); on the X1 it only made the next `XEEN` ask for the switches again | No example calls it; IFIP programs need theirs |
+| `TIMEOFDAY` is `$ALGC_TIMEOFDAY` when that is set | Tests of programs that use the time |
+| Lines are not broken at 144 positions, pages not at 60 lines (the X8 manual) | As `x1sim` |

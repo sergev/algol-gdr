@@ -8,9 +8,10 @@ Goal: port the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Du
 system) to modern 64-bit machines (x86_64, arm64, riscv64) as **`algc`**, in **C++20** with
 UTF-8 input/output and LLVM as an external backend. Milestones 0 (groundwork), 1 (the C++
 rewrite, same objects and listings as the original; on the `besm6` branch), 2 (a new
-front end and an LLVM backend: native executables for x86_64, arm64, riscv64) and 3 (Algol
-60 of the Revised Report, the publication form, IFIP I/O, checks; doc/deviations.md) are
-done. Next is Milestone 4 (Roadmap.md). Plan files `todoN.md` list only the tasks left (IDs like
+front end and an LLVM backend: native executables for x86_64, arm64, riscv64), 3 (Algol
+60 of the Revised Report, the publication form, IFIP I/O, checks; doc/deviations.md) and 4
+(the X1 library: the x1-algol-compiler examples run as under `x1sim`) are done; no
+milestone is planned next (Roadmap.md). Plan files `todoN.md` list only the tasks left (IDs like
 A6.3); delete a task when it is done, in the same commit.
 
 ## Commands
@@ -38,7 +39,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages, `file:line:column:`), `listing.*`
   (the printout).
 - `runtime/` — the run-time library `libalgol.a` (C, uses libc and libm): `main` calls the
-  program's `algol_main`; printing, errors. algc finds it in `../runtime` or `../lib` from
+  program's `algol_main`; printing, errors; `ifip.c` the IFIP procedures, `format.c`
+  Algol-GDR I/O, `x1.c` the X1 library. algc finds it in `../runtime` or `../lib` from
   itself (or `$ALGC_RUNTIME`); for `--target=T` in `../runtime/T` or `../lib/T`, built by
   CMake for each `/usr/T` sysroot (aarch64, riscv64). `run_test` runs the programs under
   qemu for those targets too.
@@ -50,7 +52,9 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   from `dubna` are frozen: the tools that made them are on the `besm6` branch.
   `listing_test` checks the `.lst` files, `ast_test` the `.ast` and `.err` files; `run_test`
   compiles the programs it lists natively and compares their output with `NAME.native.out`
-  (where the native run differs for a reason) or `NAME.out`.
+  (where the native run differs for a reason) or `NAME.out`. `tests/a60/` holds the
+  conformance programs (outputs by hand); `tests/x1/` the X1 examples with their `x1sim`
+  outputs (frozen, made by `tests/x1/goldens.sh`), compared line by line.
 - `doc/` — findings about the original compiler (history: the code they describe is on the
   `besm6` branch): [passes.md](doc/passes.md) (driver, passes 1–2, their streams),
   [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
@@ -69,7 +73,7 @@ Milestones (from Roadmap.md):
    (done).
 3. Extend the parser to full Algol-60 and develop a full runtime library (done; what
    remains different is in [doc/deviations.md](doc/deviations.md)).
-4. Compile and run all programs from x1-algol-compiler/examples.
+4. Compile and run all programs from x1-algol-compiler/examples (done: `tests/x1/`).
 
 Detailed plan: [Roadmap.md](Roadmap.md).
 

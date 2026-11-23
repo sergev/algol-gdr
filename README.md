@@ -54,6 +54,29 @@ _eop
 
 The `tests/algol/` directory has more examples.
 
+## Programs in the publication form
+
+A file with underlined keywords, as Algol 60 was printed, is read in that form, with the
+procedures of the Electrologica X1 library (`PRINTTEXT`, `print`, `NLCR`, `FIXT`, `FLOT`,
+`read`, `SUM`, …). Write `hello.a60`:
+
+```
+b̲e̲g̲i̲n̲
+    PRINTTEXT(`Hello, `Algol'');
+    NLCR
+e̲n̲d̲
+```
+
+```
+$ algc hello.a60
+$ ./hello
+Hello, `Algol'
+```
+
+The programs of [x1-algol-compiler](https://github.com/sergev/x1-algol-compiler) run this
+way, with the output of its X1 simulator; they are in `tests/x1/`, with the Lisp
+interpreter, the pentomino solver and others.
+
 ## Options
 
 | Option | Meaning |
