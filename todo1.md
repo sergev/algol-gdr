@@ -20,12 +20,8 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ## Tasks
 
-### Pass 2 (G17223)
-
 ### Pass 3 (G22162)
 
-- **C11** Test programs for what C1 shows unrun in pass 3 (FOR loops with several arrays,
-  nested loops, steps of both signs, loops it gives up on).
 - **C12** The copy loop and the simple rewrites: constant folding of unary minus and int→real,
   adjacent procedure declarations, EOP.
 - **C13** FOR loops, first scan: the classification table 22264, when a loop is given up.

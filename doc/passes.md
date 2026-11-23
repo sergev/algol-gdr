@@ -592,6 +592,7 @@ subscript computation. An access through a stepped register has no subscript lef
 | 22214 | fold a constant |
 | 22232 | FOR, first scan: classify each item (3-bit table at 22264); give up on statements it cannot handle |
 | 22327, 22352 | set up the rewrite; rewrite scan (handler table 22365, jumps at 22407) |
+| 22365 | rewrite scan classes: 6 bits per code (word code>>3, bits 6·(code&7)); class c jumps through word 22407+c/2 (left half if c even). E.g. 0130–0134 → 23115, 024/0163 (labels) → 22507 |
 | 22716 | intern a constant (C++): search slots n+1…01634 (n = the free slot at 02003) for an equal word, else take slot n and move 02003 down; A = 02032 = `slot<<12 \| 023`, plus 0200 for a negative value; returns through M12 |
 | 23231 | end of FOR: emit the preamble, the loop and the increments |
 | 23343 | EOP |
