@@ -113,7 +113,7 @@ struct CommonBlock {
 
 struct Token {
     Sym sym{ Sym::END_OF_FILE };
-    Pos line{}; // and column
+    Pos line{};       // and column
     std::string text; // identifier as written, or the characters of a string (UTF-8)
     int64_t ival{};   // INTEGER_CONST
     double rval{};    // REAL_CONST
@@ -156,7 +156,7 @@ private:
     bool semicolon_{}; // a number ended with '.,'
     bool eof_{};
     bool publication_{}; // keywords underlined: b̲e̲g̲i̲n̲, strings in `…'
-    int string_line_{}; // where an open string began
+    int string_line_{};  // where an open string began
     Sym last_{ Sym::SEMICOLON };
 
     char32_t fetch();

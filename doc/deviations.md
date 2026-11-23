@@ -31,7 +31,6 @@ set of standard procedures.
 
 | Deviation | Where | Task |
 |---|---|---|
-| No IFIP I/O (`inreal`, `outreal`, `outstring`, …), nor `maxreal`, `minreal`, `maxint`, `epsilon`, `stop`, `fault` | checker, runtime | F11 |
 | Algol-GDR I/O: `_read` ignores its format; `_decode`, `_encode`, `_rewind`, `_backspace`, `_endfile` not supported; the unit number is ignored | code generator, runtime | F12 |
 | Integer overflow wraps around; division by zero and real overflow are not reported; string and switch indices are checked only in part; calls through formal procedures are not checked against the procedure | code generator, runtime | F13 |
 | Array subscripts are checked only with `--check` | code generator | F13 |
@@ -59,6 +58,13 @@ not deviations.
 - Extensions, after X1: `_then _if … _else` (the `_else` goes with the inner `_if`, with a
   warning); `÷` on real operands, rounded to integers first. A function that does not
   assign its result gets a warning, not an error.
+- The IFIP procedures (`inreal`, `ininteger`, `insymbol`, `outreal`, `outinteger`,
+  `outstring`, `outsymbol`, `outterminator`, `length`, `stop`, `fault`, `maxreal`,
+  `minreal`, `maxint`, `epsilon`): channel 0 is standard input, 1 standard output. A
+  number is written as `printf` `%g` with the fewest of 15–17 digits that read back, then
+  a blank (the terminator). `insymbol` gives the place of the symbol in the string, or
+  minus its code point; `outsymbol` with a negative number writes the code point.
+  `maxreal`, `minreal` and `epsilon` are those of IEEE double, `maxint` 2⁶³ − 1.
 - An array called by value keeps the type of the actual's elements.
 - An unsigned integer as an actual parameter is a label when the formal is specified
   `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.

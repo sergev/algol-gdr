@@ -16,10 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Runtime
 
-- **F11** The I/O of the IFIP modified report as standard procedures: `inreal`, `outreal`,
-  `ininteger`, `outinteger`, `outstring`, `insymbol`, `outsymbol`, `length`, `outterminator`;
-  and `maxreal`, `minreal`, `maxint`, `epsilon`, `stop`, `fault`. Channel 0 is standard input,
-  1 standard output (documented). Tests.
 - **F12** Algol-GDR I/O completed: `_read` with a format, `_decode` and `_encode` (formatted
   conversion to and from strings), `_rewind`, `_backspace`, `_endfile` on units mapped to
   files (`$ALGC_UNITn`, else `fort.n`; 54 is the terminal). Tests.

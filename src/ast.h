@@ -28,7 +28,23 @@ struct SrcLoc {
 enum class Type { INTEGER, REAL, BOOLEAN, STRING, BITS, NONE };
 
 enum class StdFunc { ABS, SIGN, SQRT, SIN, COS, ARCTAN, LN, EXP, ENTIER, LENGTH };
-enum class StdProc { STOP, LOAD, LOADGO, ASSIGN, ATOS, STOA };
+enum class StdProc {
+    STOP,
+    LOAD,
+    LOADGO,
+    ASSIGN,
+    ATOS,
+    STOA,
+    ININTEGER,
+    INREAL,
+    INSYMBOL,
+    OUTINTEGER,
+    OUTREAL,
+    OUTSTRING,
+    OUTSYMBOL,
+    OUTTERMINATOR,
+    FAULT
+};
 enum class IoOp { PRINT, PUNCH, READ, WRITE, DECODE, ENCODE, REWIND, BACKSPACE, ENDFILE };
 enum class UnaryOp { NEG, NOT };
 enum class BinaryOp {

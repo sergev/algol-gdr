@@ -83,7 +83,10 @@ module AST {
              | Element(int array, Expr* subscripts)
 
     -- Standard procedures used as statements.
+    -- The IFIP procedures: the channel first; destinations are Var or Element.
     StdProc = Stop | Load | LoadGo | Assign | Atos | Stoa
+            | InInteger | InReal | InSymbol | OutInteger | OutReal | OutString
+            | OutSymbol | OutTerminator | Fault
 
     -- I/O statements. The standard PRINT and READ are Print and Read;
     -- the keywords _print and _write are Write.

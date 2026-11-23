@@ -210,8 +210,8 @@ struct External {
 
 struct Program {
     std::vector<External> externals;
-    DeclList decls; // 'COMMON' before the program
-    StmtPtr body;   // the program: a block or compound statement, maybe labeled;
+    DeclList decls;      // 'COMMON' before the program
+    StmtPtr body;        // the program: a block or compound statement, maybe labeled;
     DeclList procedures; // or procedures compiled alone: a unit
 };
 

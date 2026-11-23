@@ -10,6 +10,7 @@
 #include "checker.h"
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <optional>
 #include <set>
@@ -304,20 +305,61 @@ enum class Std {
     ASSIGN,
     ATOS,
     STOA,
+    // The IFIP input and output.
+    ININTEGER,
+    INREAL,
+    INSYMBOL,
+    OUTINTEGER,
+    OUTREAL,
+    OUTSTRING,
+    OUTSYMBOL,
+    OUTTERMINATOR,
+    FAULT,
+    MAXREAL,
+    MINREAL,
+    MAXINT,
+    EPSILON,
 };
 
 // A standard identifier by its name in any case.
 Std standard(const std::string &name)
 {
     static const std::map<std::string, Std> table = {
-        { "ABS", Std::ABS },         { "ARCTAN", Std::ARCTAN },   { "COS", Std::COS },
-        { "ENTIER", Std::ENTIER },   { "EXP", Std::EXP },         { "LENGTH", Std::LENGTH },
-        { "LN", Std::LN },           { "SIGN", Std::SIGN },       { "SIN", Std::SIN },
-        { "SQRT", Std::SQRT },       { "PRINT", Std::PRINT },     { "READ", Std::READ },
-        { "NEWLIN", Std::NEWLINE },  { "NEWPAG", Std::NEWPAGE },  { "STOP", Std::STOP },
-        { "NEWLINE", Std::NEWLINE }, { "NEWPAGE", Std::NEWPAGE }, { "LOAD", Std::LOAD },
-        { "LOADGO", Std::LOADGO },   { "ASSIGN", Std::ASSIGN },   { "ATOS", Std::ATOS },
+        { "ABS", Std::ABS },
+        { "ARCTAN", Std::ARCTAN },
+        { "COS", Std::COS },
+        { "ENTIER", Std::ENTIER },
+        { "EXP", Std::EXP },
+        { "LENGTH", Std::LENGTH },
+        { "LN", Std::LN },
+        { "SIGN", Std::SIGN },
+        { "SIN", Std::SIN },
+        { "SQRT", Std::SQRT },
+        { "PRINT", Std::PRINT },
+        { "READ", Std::READ },
+        { "NEWLIN", Std::NEWLINE },
+        { "NEWPAG", Std::NEWPAGE },
+        { "STOP", Std::STOP },
+        { "NEWLINE", Std::NEWLINE },
+        { "NEWPAGE", Std::NEWPAGE },
+        { "LOAD", Std::LOAD },
+        { "LOADGO", Std::LOADGO },
+        { "ASSIGN", Std::ASSIGN },
+        { "ATOS", Std::ATOS },
         { "STOA", Std::STOA },
+        { "ININTEGER", Std::ININTEGER },
+        { "INREAL", Std::INREAL },
+        { "INSYMBOL", Std::INSYMBOL },
+        { "OUTINTEGER", Std::OUTINTEGER },
+        { "OUTREAL", Std::OUTREAL },
+        { "OUTSTRING", Std::OUTSTRING },
+        { "OUTSYMBOL", Std::OUTSYMBOL },
+        { "OUTTERMINATOR", Std::OUTTERMINATOR },
+        { "FAULT", Std::FAULT },
+        { "MAXREAL", Std::MAXREAL },
+        { "MINREAL", Std::MINREAL },
+        { "MAXINT", Std::MAXINT },
+        { "EPSILON", Std::EPSILON },
     };
     std::string upper = name;
     std::transform(upper.begin(), upper.end(), upper.begin(),
@@ -422,6 +464,8 @@ private:
     std::vector<ForElement> for_elements(const std::vector<syn::ForElement> &list, Type t,
                                          Pos line);
     StmtPtr call_stmt(SrcLoc loc, const syn::Expr &e);
+    StmtPtr ifip(SrcLoc loc, Std s, const std::string &name, const syn::ExprList *args, Pos line);
+    ExprPtr arithmetic(const syn::Expr &e, Type t, const std::string &what);
     StmtPtr std_stmt(SrcLoc loc, Std s, const std::string &name, const syn::ExprList *args,
                      Pos line);
     StmtPtr io_stmt(SrcLoc loc, const syn::stmt::Io &io);
@@ -948,6 +992,80 @@ std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement>
     return out;
 }
 
+// The IFIP procedures: (channel, …), the channel an integer; a destination
+// is a variable or an element.
+StmtPtr Checker::ifip(SrcLoc loc, Std s, const std::string &nm, const syn::ExprList *args, Pos line)
+{
+    // The kinds of the parameters: c channel, i integer, r real, s string,
+    // I and R integer and real destinations.
+    static const std::map<Std, std::pair<StdProc, const char *>> table = {
+        { Std::ININTEGER, { StdProc::ININTEGER, "cI" } },
+        { Std::INREAL, { StdProc::INREAL, "cR" } },
+        { Std::INSYMBOL, { StdProc::INSYMBOL, "csI" } },
+        { Std::OUTINTEGER, { StdProc::OUTINTEGER, "ci" } },
+        { Std::OUTREAL, { StdProc::OUTREAL, "cr" } },
+        { Std::OUTSTRING, { StdProc::OUTSTRING, "cs" } },
+        { Std::OUTSYMBOL, { StdProc::OUTSYMBOL, "csi" } },
+        { Std::OUTTERMINATOR, { StdProc::OUTTERMINATOR, "c" } },
+        { Std::FAULT, { StdProc::FAULT, "sr" } },
+    };
+    const auto &[proc, kinds] = table.at(s);
+    std::string params        = kinds;
+    size_t n                  = args ? args->size() : 0;
+    stmt::StdProc out;
+    out.proc = proc;
+    if (n != params.size()) {
+        error(line, "Wrong number of arguments of " + quoted(nm));
+        return make_stmt(loc, stmt::Dummy{});
+    }
+    for (size_t k = 0; k < n; k++) {
+        const syn::Expr &a = *(*args)[k];
+        std::string what   = "argument " + std::to_string(k + 1) + " of " + quoted(nm);
+        switch (params[k]) {
+        case 'c':
+        case 'i':
+            out.args.push_back(arithmetic(a, Type::INTEGER, what));
+            break;
+        case 'r':
+            out.args.push_back(arithmetic(a, Type::REAL, what));
+            break;
+        case 's': {
+            ExprPtr e = expr(a);
+            if (e->type != Type::STRING && e->type != Type::NONE)
+                error(a.line,
+                      "Type error in " + what + ": " + to_string(e->type) + " instead of string");
+            out.args.push_back(std::move(e));
+            break;
+        }
+        default: {
+            Type t  = Type::NONE;
+            auto lp = left_part(a, t);
+            if (!lp)
+                return make_stmt(loc, stmt::Dummy{});
+            if (!numeric(t)) {
+                error(a.line, "Type error in " + what + ": " + to_string(t) + " instead of " +
+                                  (params[k] == 'I' ? "integer" : "real"));
+                return make_stmt(loc, stmt::Dummy{});
+            }
+            if (auto v = std::get_if<left::Var>(&*lp)) {
+                out.args.push_back(make_expr(t, expr::Var{ v->decl }));
+            } else {
+                auto &el = std::get<left::Element>(*lp);
+                out.args.push_back(
+                    make_expr(t, expr::Element{ el.array, std::move(el.subscripts) }));
+            }
+        }
+        }
+    }
+    return make_stmt(loc, std::move(out));
+}
+
+// A number converted to type t.
+ExprPtr Checker::arithmetic(const syn::Expr &e, Type t, const std::string &what)
+{
+    return convert(expr(e), t, e.line, what);
+}
+
 // A procedure statement: a call, or a standard procedure.
 StmtPtr Checker::call_stmt(SrcLoc loc, const syn::Expr &e)
 {
@@ -1049,6 +1167,16 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
         if (n)
             error(line, quoted(nm) + " has no arguments");
         return make_stmt(loc, stmt::StdProc{ StdProc::STOP, {} });
+    case Std::ININTEGER:
+    case Std::INREAL:
+    case Std::INSYMBOL:
+    case Std::OUTINTEGER:
+    case Std::OUTREAL:
+    case Std::OUTSTRING:
+    case Std::OUTSYMBOL:
+    case Std::OUTTERMINATOR:
+    case Std::FAULT:
+        return ifip(loc, s, nm, args, line);
     case Std::ASSIGN:
         if (n != 2)
             error(line, quoted(nm) + " needs two arguments");
@@ -1361,13 +1489,23 @@ ExprPtr Checker::named(const std::string &nm, Pos line, bool argument)
     int i = lookup(nm);
     if (i < 0) {
         Std s = standard(nm);
-        if (s == Std::NONE) {
+        switch (s) {
+        case Std::NONE:
             if (undeclared_.insert(nm).second)
                 error(line, "Undeclared identifier " + quoted(nm));
-        } else {
+            return bad();
+        case Std::MAXREAL:
+            return make_expr(Type::REAL, expr::RealConst{ std::numeric_limits<double>::max() });
+        case Std::MINREAL:
+            return make_expr(Type::REAL, expr::RealConst{ std::numeric_limits<double>::min() });
+        case Std::EPSILON:
+            return make_expr(Type::REAL, expr::RealConst{ std::numeric_limits<double>::epsilon() });
+        case Std::MAXINT:
+            return make_expr(Type::INTEGER, expr::IntConst{ std::numeric_limits<int64_t>::max() });
+        default:
             error(line, "Illegal use of " + quoted(nm));
+            return bad();
         }
-        return bad();
     }
     const Symbol &s = sym(i);
     switch (s.kind) {

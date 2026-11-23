@@ -149,6 +149,11 @@ static std::string check_messages(const std::string &text)
 
 TEST(Checker, messages)
 {
+    EXPECT_EQ(
+        check_messages("_begin _boolean b; outreal(1, b); ininteger(0); outstring(1, 3) _end"),
+        "x.alg:1:31: error: Type error in argument 2 of 'outreal': boolean instead of real\n"
+        "x.alg:1:35: error: Wrong number of arguments of 'ininteger'\n"
+        "x.alg:1:62: error: Type error in argument 2 of 'outstring': integer instead of string\n");
     EXPECT_EQ(check_messages("_begin _integer I; _boolean B;\n"
                              "I := B; J := 1; _goto I\n_end _eop"),
               "x.alg:2:6: error: Type error in the value of ':=': boolean instead of integer\n"

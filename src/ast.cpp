@@ -23,7 +23,10 @@ overloaded(F...) -> overloaded<F...>;
 const char *const TYPE_NAMES[]     = { "integer", "real", "boolean", "string", "bits", "none" };
 const char *const STD_FUNC_NAMES[] = { "abs",    "sign", "sqrt", "sin",    "cos",
                                        "arctan", "ln",   "exp",  "entier", "length" };
-const char *const STD_PROC_NAMES[] = { "stop", "load", "loadgo", "assign", "atos", "stoa" };
+const char *const STD_PROC_NAMES[] = { "stop",      "load",          "loadgo",    "assign",
+                                       "atos",      "stoa",          "ininteger", "inreal",
+                                       "insymbol",  "outinteger",    "outreal",   "outstring",
+                                       "outsymbol", "outterminator", "fault" };
 const char *const IO_OP_NAMES[]    = { "print",  "punch",  "read",      "write",  "decode",
                                        "encode", "rewind", "backspace", "endfile" };
 const char *const UNARY_NAMES[]    = { "neg", "not" };

@@ -220,6 +220,12 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
 
 ## Input and output
 
+- The IFIP procedures call `algol_ininteger`, `algol_inreal`, `algol_insymbol`,
+  `algol_outinteger`, `algol_outreal`, `algol_outstring`, `algol_outsymbol`,
+  `algol_outterminator`, `algol_fault` (runtime/ifip.c), with the channel first; an input
+  is stored in its destination with the conversion of its type. `maxreal`, `minreal`,
+  `maxint`, `epsilon` are constants; `stop` is `algol_stop`.
+
 - `_write`, `_print` and `_punch` with a Fortran format (the last parameter; the unit number
   is not used) print through `algol_format_*`: `Iw`, `Fw.d`, `Ew.d` (`0.ddddE+xx`), `Gw.d`
   (as `E`), `Aw`, `Lw`, `nX`, `nH…`, `'…'`, `/`, repeat counts and groups. When the items

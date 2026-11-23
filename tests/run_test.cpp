@@ -61,6 +61,7 @@ const std::vector<std::string> programs = {
     "algol/test3",
     "a60/for",
     "a60/goto_arrays",
+    "a60/ifip",
     "a60/intdiv",
     "a60/own",
     "a60/parameters",
@@ -303,6 +304,18 @@ TEST(Run, goto_frees_arrays)
     ASSERT_EQ(c.exit_code, 0) << c.output;
     auto r = run_command("ulimit -v 1000000; " + exe);
     EXPECT_EQ(r.exit_code, 0) << r.output;
+}
+
+// fault stops the program with a message; stop without one.
+TEST(Run, fault_and_stop)
+{
+    const std::string src = BUILD_DIR "/run_fault.alg";
+    std::ofstream(src) << "_begin outinteger(1, 5); fault(''bad value'', 2.5) _end\n";
+    auto r = run_command(compiler + " -o " BUILD_DIR "/run_fault " + src +
+                         " && " BUILD_DIR "/run_fault");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "5 \nError: bad value 2.5\n");
+    EXPECT_EQ(run_text("stop", "_begin PRINT(1); STOP; PRINT(2) _end\n"), "             1 \n");
 }
 
 TEST(Run, division_by_zero)

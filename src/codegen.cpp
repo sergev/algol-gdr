@@ -738,6 +738,8 @@ private:
                     assign(n);
                 } else if constexpr (std::is_same_v<T, stmt::Io>) {
                     io(n);
+                } else if constexpr (std::is_same_v<T, stmt::StdProc>) {
+                    std_proc(n);
                 } else {
                     unsupported("This statement");
                 }
@@ -1568,6 +1570,69 @@ private:
             return var_cell(v->decl);
         const auto &el = std::get<left::Element>(lp);
         return element_cell(el.array, el.subscripts);
+    }
+
+    // STOP and the IFIP procedures (runtime/ifip.c).
+    void std_proc(const stmt::StdProc &p)
+    {
+        auto arg  = [&](size_t k) { return expr(*p.args.at(k)); };
+        auto dest = [&](size_t k) {
+            const Expr &e = *p.args.at(k);
+            if (auto el = std::get_if<expr::Element>(&e.node))
+                return element_cell(el->array, el->subscripts);
+            return var_cell(std::get<expr::Var>(e.node).decl);
+        };
+        switch (p.proc) {
+        case StdProc::STOP:
+            runtime("void", "algol_stop", {}, "noreturn");
+            fn_->unreachable();
+            return;
+        case StdProc::ININTEGER: {
+            ir::Value ch = arg(0);
+            Cell c       = dest(1);
+            store(c, convert(runtime("i64", "algol_ininteger", { ch }), Type::INTEGER, c.type));
+            return;
+        }
+        case StdProc::INREAL: {
+            ir::Value ch = arg(0);
+            Cell c       = dest(1);
+            store(c, convert(runtime("double", "algol_inreal", { ch }), Type::REAL, c.type));
+            return;
+        }
+        case StdProc::INSYMBOL: {
+            ir::Value ch = arg(0);
+            ir::Value s  = arg(1);
+            Cell c       = dest(2);
+            store(c, convert(runtime("i64", "algol_insymbol", { ch, s }), Type::INTEGER, c.type));
+            return;
+        }
+        case StdProc::OUTINTEGER:
+            runtime("void", "algol_outinteger", { arg(0), arg(1) });
+            return;
+        case StdProc::OUTREAL:
+            runtime("void", "algol_outreal", { arg(0), arg(1) });
+            return;
+        case StdProc::OUTSTRING:
+            runtime("void", "algol_outstring", { arg(0), arg(1) });
+            return;
+        case StdProc::OUTSYMBOL: {
+            ir::Value ch = arg(0);
+            ir::Value s  = arg(1);
+            runtime("void", "algol_outsymbol", { ch, s, arg(2) });
+            return;
+        }
+        case StdProc::OUTTERMINATOR:
+            runtime("void", "algol_outterminator", { arg(0) });
+            return;
+        case StdProc::FAULT: {
+            ir::Value s = arg(0);
+            runtime("void", "algol_fault", { s, arg(1) }, "noreturn");
+            fn_->unreachable();
+            return;
+        }
+        default:
+            unsupported(std::string("'") + to_string(p.proc) + "'");
+        }
     }
 
     // PRINT, _write with a format, READ.

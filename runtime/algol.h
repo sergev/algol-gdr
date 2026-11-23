@@ -47,6 +47,17 @@ _Bool algol_read_boolean(void);
 char *algol_read_string(void);
 void algol_read_array(int64_t *desc, int64_t type);
 
+// The IFIP procedures (ifip.c).
+int64_t algol_ininteger(int64_t channel);
+double algol_inreal(int64_t channel);
+int64_t algol_insymbol(int64_t channel, const char *str);
+void algol_outinteger(int64_t channel, int64_t v);
+void algol_outreal(int64_t channel, double v);
+void algol_outstring(int64_t channel, const char *s);
+void algol_outsymbol(int64_t channel, const char *str, int64_t n);
+void algol_outterminator(int64_t channel);
+_Noreturn void algol_fault(const char *s, double r);
+
 // Integer division, exponentiation.
 int64_t algol_idiv(int64_t a, int64_t b);
 int64_t algol_ipow(int64_t base, int64_t exp);
