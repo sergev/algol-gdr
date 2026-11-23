@@ -549,6 +549,14 @@ STATEMENT IS 304/ 2` with a bogus line number (not investigated).
 Written backwards, so pass 3 reads it forwards. `d` is a descriptor (D-list) address, `s` a
 constant slot; items with an operand carry it in bits 24–13.
 
+Read forwards it is mostly in prefix order: an operator before its operands, a statement's
+item before its parts (`0100 v` then the value; `027` or `0130`–`0134` then the condition,
+the branches, `031`, `054`, or `053` without ELSE). Exceptions: the subscripts come before
+their array item (`045`/`030` …, then `044`, `046`, `025` or `0103`), the arguments of a call
+between its end item and the procedure (`0110` … `020 p`, `0121` … `0126 p`/`065 p`/`073`).
+Blocks without arrays leave no items; nor do compound statements. The order was found on
+the test programs and is what `src/ast_builder.cpp` reads.
+
 | Code | Item |
 |---|---|
 | 017, 022 | value of a variable; of a formal by name |
@@ -576,16 +584,16 @@ constant slot; items with an operand carry it in bits 24–13.
 | 056, 035, 034, 0140 | FOR elements: plain, WHILE, STEP-UNTIL integer, real |
 | 0137, 0136, 0135 | integer constant step; expression element; by-name element |
 | 036, `d<<12 \| 037` | block begin, end |
-| 0102, 040, 0104 | block with arrays, array segment, end of bounds |
+| 0102, 040, 0104 | block with arrays; array segment `a<<12 \| n<<7` (n arrays at a … a+n−1); end of bounds `k<<7` (k dimensions) |
 | 0146, 0145 | jump around a procedure body, its target |
 | 0142, 0144, 0143 | switch elements: label, expression; end |
 | 0127, 0154, 0155 | VALUE: start, a real formal, end |
-| `p<<12 \| 020`, 0110 | call, its end |
+| `p<<12 \| 020`, 0110 | call, its end; `n<<12 \| 057` LOAD with n arguments |
 | 0111–0116, 0117, 0120, 0156 | arguments: constant, variable, procedure, label, array, thunk start / end, expression, string |
 | 057 | `n<<12`: the standard function with an expression argument |
 | 0126, 065 | non-ALGOL call (typed), then 0121–0125, 066, 074 per argument |
-| 071, 072 | standard procedure items |
-| 0473, 0273 | I/O statements |
+| 071, 072 | standard procedure items: `071 n` SIN…ENTIER (n 0–8), LENGTH (0100); PRINT of an expression (010+type), of an array (017+type, then `017 a`), READ of a variable (072+type, then `017 d`); `072` NEWLINE (057), NEWPAGE (016) in PRINT; READ to left parts (051+type, after them); in I/O lists a string variable (`071 030`), an array (`071 031`), after an element (`072 027`), the end (`072 032`) |
+| 0473, 0273 | I/O statements (`073 c`, c 060 for 'PRINT' and 'WRITE'): after `0121` and the parameters, then the list |
 | `L<<12 \| n<<7 \| 051` | statement marker |
 
 ## G30001 — integer to text (V)

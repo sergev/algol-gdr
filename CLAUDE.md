@@ -20,6 +20,7 @@ make test                # unit tests via ctest
 make test                # rebuilds unit_tests; plain make does not
 ./build/src/algc [--list] [--check] X.alg   # check; errors (listing with --list) on stdout
 ./build/src/algc --stop-after=2 X.alg      # print the pass-2 stream
+./build/src/algc --dump-ast X.alg          # print the AST (YAML)
 ```
 
 Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Format with
@@ -27,15 +28,15 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `tables.*` (the name table, D-list and 'COMMON' table the passes share), `symbols.*` (the tables decoded after pass 2), `ast.*` (the AST after doc/ast.asdl, its YAML form), `word.h` (48-bit word).
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `tables.*` (the name table, D-list and 'COMMON' table the passes share), `symbols.*` (the tables decoded after pass 2), `ast.*` (the AST after doc/ast.asdl, its YAML form), `ast_builder.*` (the AST from the pass-2 stream), `word.h` (48-bit word).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.lst` listings (the original's from the banner on, without the line
   table and summary of passes 5–6; made now by `algc --list --check`),
-  `.out` run output under `dubna`, `.s1`/`.s2` pass streams, `.lex` lexer symbols, `.sym` the decoded tables (ours: `ALGC_UPDATE_GOLDENS=1` rewrites them); side files
+  `.out` run output under `dubna`, `.s1`/`.s2` pass streams, `.lex` lexer symbols, `.sym` the decoded tables, `.ast` the AST (ours: `ALGC_UPDATE_GOLDENS=1` rewrites them); side files
   `.pre` (`*check`), `.in` (input of the run), `.run` (the extra `dubna` cards of the run:
   libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`). The goldens
   from `dubna` are frozen: the tools that made them are on the `besm6` branch.
-  `listing_test`, `pass_test` and `symbols_test` compare our compiler with them.
+  `listing_test`, `pass_test` and `symbols_test` compare our compiler with them; `ast_test` checks the `.ast` files.
 - `doc/` — findings about the original compiler: [passes.md](doc/passes.md) (driver, passes
   1–2, their streams), [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
   [runtime-abi.md](doc/runtime-abi.md) (what the run-time routines do),

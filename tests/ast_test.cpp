@@ -5,9 +5,48 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
+#include <fstream>
 #include <sstream>
 
+#include "ast_builder.h"
+#include "golden.h"
+#include "passes.h"
+#include "source.h"
+#include "util.h"
+
 using namespace ast;
+
+//
+// The AST of each program that compiles must print as NAME.ast. With
+// ALGC_UPDATE_GOLDENS set, NAME.ast is written instead.
+//
+class AstGolden : public ::testing::TestWithParam<std::string> {};
+
+TEST_P(AstGolden, yaml)
+{
+    const std::string &name = GetParam();
+    Context ctx;
+    load_options(ctx.options, name);
+    ctx.source = read_source(path(name, ".alg"));
+    Stream stream;
+    if (!compile(ctx, stream))
+        GTEST_SKIP() << "errors";
+    std::ostringstream out;
+    print(out, build_ast(ctx, stream));
+    if (std::getenv("ALGC_UPDATE_GOLDENS")) {
+        std::ofstream(path(name, ".ast")) << out.str();
+        return;
+    }
+    EXPECT_EQ(out.str(), file_contents(path(name, ".ast")));
+}
+
+static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
+{
+    return p.param;
+}
+
+INSTANTIATE_TEST_SUITE_P(algol, AstGolden, ::testing::ValuesIn(program_names()), param_name);
 
 // 'BEGIN' 'REAL' X; L: X := 1; PRINT(''A'', X) 'END'
 TEST(Ast, print)

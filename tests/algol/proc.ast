@@ -1,0 +1,305 @@
+externals: []
+block:
+  kind: block
+  loc: 1/2
+  decls:
+    - {kind: var, name: "I", id: 1, type: integer}
+    - {kind: var, name: "K", id: 2, type: integer}
+    - kind: arrays
+      type: real
+      arrays:
+        - {name: "V", id: 3}
+      bounds:
+        - lower: {kind: int_const, type: integer, value: 1}
+          upper: {kind: int_const, type: integer, value: 3}
+    - kind: procedure
+      name: "FACT"
+      id: 4
+      type: integer
+      formals:
+        - {name: "N", id: 5, spec: simple, type: integer, by_value: true}
+      body:
+        kind: assign
+        loc: 7/1
+        targets:
+          - {kind: var, decl: 4, name: "FACT"}
+        value:
+          kind: cond
+          type: integer
+          condition:
+            kind: binary
+            type: boolean
+            op: le
+            left: {kind: var, type: integer, decl: 5, name: "N"}
+            right: {kind: int_const, type: integer, value: 1}
+          then: {kind: int_const, type: integer, value: 1}
+          else:
+            kind: binary
+            type: integer
+            op: mul
+            left: {kind: var, type: integer, decl: 5, name: "N"}
+            right:
+              kind: call
+              type: integer
+              proc: 4
+              name: "FACT"
+              args:
+                - kind: binary
+                  type: integer
+                  op: sub
+                  left: {kind: var, type: integer, decl: 5, name: "N"}
+                  right: {kind: int_const, type: integer, value: 1}
+    - kind: procedure
+      name: "INC"
+      id: 6
+      type: none
+      formals:
+        - {name: "X", id: 7, spec: simple, type: integer, by_value: false}
+      body:
+        kind: assign
+        loc: 9/1
+        targets:
+          - {kind: var, decl: 7, name: "X"}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 7, name: "X"}
+          right: {kind: int_const, type: integer, value: 1}
+    - kind: procedure
+      name: "INCV"
+      id: 8
+      type: none
+      formals:
+        - {name: "X", id: 9, spec: simple, type: integer, by_value: true}
+      body:
+        kind: assign
+        loc: 11/1
+        targets:
+          - {kind: var, decl: 9, name: "X"}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 9, name: "X"}
+          right: {kind: int_const, type: integer, value: 1}
+    - kind: procedure
+      name: "SUM"
+      id: 10
+      type: real
+      formals:
+        - {name: "J", id: 11, spec: simple, type: integer, by_value: false}
+        - {name: "L", id: 12, spec: simple, type: integer, by_value: true}
+        - {name: "U", id: 13, spec: simple, type: integer, by_value: true}
+        - {name: "T", id: 14, spec: simple, type: real, by_value: false}
+      body:
+        kind: block
+        loc: 14/4
+        decls:
+          - {kind: var, name: "S", id: 15, type: real}
+        body:
+          - kind: assign
+            loc: 14/4
+            targets:
+              - {kind: var, decl: 15, name: "S"}
+            value:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: int_const, type: integer, value: 0}
+          - kind: for
+            loc: 15/1
+            control: {kind: var, decl: 11, name: "J"}
+            elements:
+              - kind: step_until
+                init: {kind: var, type: integer, decl: 12, name: "L"}
+                step: {kind: int_const, type: integer, value: 1}
+                until: {kind: var, type: integer, decl: 13, name: "U"}
+            body:
+              kind: assign
+              loc: 15/2
+              targets:
+                - {kind: var, decl: 15, name: "S"}
+              value:
+                kind: binary
+                type: real
+                op: add
+                left: {kind: var, type: real, decl: 15, name: "S"}
+                right: {kind: var, type: real, decl: 14, name: "T"}
+          - kind: assign
+            loc: 16/1
+            targets:
+              - {kind: var, decl: 10, name: "SUM"}
+            value: {kind: var, type: real, decl: 15, name: "S"}
+    - kind: procedure
+      name: "SQ"
+      id: 16
+      type: real
+      formals:
+        - {name: "X", id: 17, spec: simple, type: real, by_value: true}
+      body:
+        kind: assign
+        loc: 19/1
+        targets:
+          - {kind: var, decl: 16, name: "SQ"}
+        value:
+          kind: binary
+          type: real
+          op: mul
+          left: {kind: var, type: real, decl: 17, name: "X"}
+          right: {kind: var, type: real, decl: 17, name: "X"}
+    - kind: procedure
+      name: "APPLY"
+      id: 18
+      type: real
+      formals:
+        - {name: "F", id: 19, spec: procedure, type: real, by_value: false}
+        - {name: "X", id: 20, spec: simple, type: real, by_value: false}
+      body:
+        kind: assign
+        loc: 21/1
+        targets:
+          - {kind: var, decl: 18, name: "APPLY"}
+        value:
+          kind: call
+          type: real
+          proc: 19
+          name: "F"
+          args:
+            - {kind: var, type: real, decl: 20, name: "X"}
+    - kind: procedure
+      name: "NOARGS"
+      id: 21
+      type: none
+      formals: []
+      body:
+        kind: io
+        loc: 23/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: int_const, type: integer, value: 77}
+  body:
+    - kind: assign
+      loc: 24/1
+      targets:
+        - {kind: var, decl: 2, name: "K"}
+      value: {kind: int_const, type: integer, value: 1}
+    - kind: call
+      loc: 25/1
+      proc: 6
+      name: "INC"
+      args:
+        - {kind: var, type: integer, decl: 2, name: "K"}
+    - kind: call
+      loc: 25/2
+      proc: 8
+      name: "INCV"
+      args:
+        - {kind: var, type: integer, decl: 2, name: "K"}
+    - kind: io
+      loc: 26/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 2, name: "K"}
+        - kind: item
+          expr:
+            kind: call
+            type: integer
+            proc: 4
+            name: "FACT"
+            args:
+              - {kind: int_const, type: integer, value: 10}
+    - kind: assign
+      loc: 27/1
+      targets:
+        - kind: element
+          array: 3
+          name: "V"
+          subscripts:
+            - {kind: int_const, type: integer, value: 1}
+      value:
+        kind: convert
+        type: real
+        conv: int_to_real
+        expr: {kind: int_const, type: integer, value: 1}
+    - kind: assign
+      loc: 27/2
+      targets:
+        - kind: element
+          array: 3
+          name: "V"
+          subscripts:
+            - {kind: int_const, type: integer, value: 2}
+      value:
+        kind: convert
+        type: real
+        conv: int_to_real
+        expr: {kind: int_const, type: integer, value: 2}
+    - kind: assign
+      loc: 27/3
+      targets:
+        - kind: element
+          array: 3
+          name: "V"
+          subscripts:
+            - {kind: int_const, type: integer, value: 3}
+      value:
+        kind: convert
+        type: real
+        conv: int_to_real
+        expr: {kind: int_const, type: integer, value: 3}
+    - kind: io
+      loc: 28/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: call
+            type: real
+            proc: 10
+            name: "SUM"
+            args:
+              - {kind: var, type: integer, decl: 1, name: "I"}
+              - {kind: int_const, type: integer, value: 1}
+              - {kind: int_const, type: integer, value: 3}
+              - kind: binary
+                type: real
+                op: mul
+                left:
+                  kind: element
+                  type: real
+                  array: 3
+                  name: "V"
+                  subscripts:
+                    - {kind: var, type: integer, decl: 1, name: "I"}
+                right:
+                  kind: element
+                  type: real
+                  array: 3
+                  name: "V"
+                  subscripts:
+                    - {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: io
+      loc: 29/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: call
+            type: real
+            proc: 18
+            name: "APPLY"
+            args:
+              - {kind: var, type: real, decl: 16, name: "SQ"}
+              - {kind: real_const, type: real, value: 3.0}
+    - kind: call
+      loc: 31/1
+      proc: 21
+      name: "NOARGS"
+      args: []

@@ -1,0 +1,162 @@
+externals: []
+block:
+  kind: block
+  loc: 5/1
+  decls:
+    - {kind: var, name: "I", id: 1, type: integer}
+    - {kind: var, name: "S", id: 2, type: integer}
+    - {kind: var, name: "X", id: 3, type: real}
+  body:
+    - kind: assign
+      loc: 5/1
+      targets:
+        - {kind: var, decl: 2, name: "S"}
+      value: {kind: int_const, type: integer, value: 0}
+    - kind: for
+      loc: 6/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 10}
+      body:
+        kind: assign
+        loc: 6/2
+        targets:
+          - {kind: var, decl: 2, name: "S"}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 2, name: "S"}
+          right: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: io
+      loc: 7/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 2, name: "S"}
+    - kind: for
+      loc: 8/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 10}
+          step:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 3}
+          until: {kind: int_const, type: integer, value: 0}
+      body:
+        kind: io
+        loc: 8/2
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 9/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 5}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 4}
+      body:
+        kind: io
+        loc: 9/2
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr:
+              kind: unary
+              type: integer
+              op: neg
+              operand: {kind: int_const, type: integer, value: 1}
+    - kind: assign
+      loc: 10/1
+      targets:
+        - {kind: var, decl: 2, name: "S"}
+      value: {kind: int_const, type: integer, value: 1}
+    - kind: for
+      loc: 11/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: while
+          value:
+            kind: binary
+            type: integer
+            op: mul
+            left: {kind: var, type: integer, decl: 2, name: "S"}
+            right: {kind: int_const, type: integer, value: 2}
+          condition:
+            kind: binary
+            type: boolean
+            op: lt
+            left: {kind: var, type: integer, decl: 2, name: "S"}
+            right: {kind: int_const, type: integer, value: 100}
+      body:
+        kind: assign
+        loc: 11/2
+        targets:
+          - {kind: var, decl: 2, name: "S"}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: io
+      loc: 12/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 2, name: "S"}
+    - kind: for
+      loc: 13/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: value
+          value: {kind: int_const, type: integer, value: 1}
+        - kind: value
+          value: {kind: int_const, type: integer, value: 3}
+        - kind: value
+          value: {kind: int_const, type: integer, value: 7}
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 10}
+          step: {kind: int_const, type: integer, value: 5}
+          until: {kind: int_const, type: integer, value: 20}
+        - kind: value
+          value: {kind: var, type: integer, decl: 2, name: "S"}
+      body:
+        kind: io
+        loc: 13/2
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 14/1
+      control: {kind: var, decl: 3, name: "X"}
+      elements:
+        - kind: step_until
+          init: {kind: real_const, type: real, value: 0.5}
+          step: {kind: real_const, type: real, value: 0.25}
+          until: {kind: real_const, type: real, value: 1.0}
+      body:
+        kind: io
+        loc: 14/2
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: var, type: real, decl: 3, name: "X"}
+    - kind: io
+      loc: 15/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 1, name: "I"}

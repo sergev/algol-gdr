@@ -248,7 +248,7 @@ struct BoundPair {
 struct CommonElement {
     std::string name;
     int decl{};
-    std::vector<int> dims;
+    int size{}; // words
 };
 
 namespace decl {

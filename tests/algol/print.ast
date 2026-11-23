@@ -1,0 +1,93 @@
+externals: []
+block:
+  kind: block
+  loc: 3/1
+  decls: []
+  body:
+    - kind: io
+      loc: 3/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: int_const, type: integer, value: 0}
+        - kind: item
+          expr: {kind: int_const, type: integer, value: 1}
+        - kind: item
+          expr:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 1}
+        - kind: item
+          expr: {kind: int_const, type: integer, value: 123456789}
+    - kind: io
+      loc: 4/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: real_const, type: real, value: 0.0}
+        - kind: item
+          expr: {kind: real_const, type: real, value: 1.0}
+        - kind: item
+          expr:
+            kind: unary
+            type: real
+            op: neg
+            operand: {kind: real_const, type: real, value: 1.0}
+        - kind: item
+          expr: {kind: real_const, type: real, value: 3.1415925999972387}
+        - kind: item
+          expr: {kind: real_const, type: real, value: 999999999999737856.0}
+        - kind: item
+          expr: {kind: real_const, type: real, value: 1.0000000000013968e-18}
+    - kind: io
+      loc: 5/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: bool_const, type: boolean, value: true}
+        - kind: item
+          expr: {kind: bool_const, type: boolean, value: false}
+    - kind: io
+      loc: 6/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: string_const, type: string, value: "STRING ONE"}
+        - kind: item
+          expr: {kind: string_const, type: string, value: "STRING TWO"}
+    - kind: io
+      loc: 7/1
+      op: print
+      params: []
+      items:
+        - {kind: new_line}
+        - kind: item
+          expr: {kind: string_const, type: string, value: "AFTER NEWLINE"}
+    - kind: io
+      loc: 8/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: int_const, type: integer, value: 1}
+        - {kind: new_line}
+        - kind: item
+          expr: {kind: int_const, type: integer, value: 2}
+    - kind: io
+      loc: 9/1
+      op: print
+      params: []
+      items:
+        - {kind: new_page}
+    - kind: io
+      loc: 10/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: string_const, type: string, value: "LAST"}

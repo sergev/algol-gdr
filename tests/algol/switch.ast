@@ -1,0 +1,152 @@
+externals: []
+block:
+  kind: block
+  loc: 3/1
+  decls:
+    - {kind: var, name: "I", id: 1, type: integer}
+    - {kind: label, name: "NEXT", id: 3}
+    - {kind: label, name: "A", id: 4}
+    - {kind: label, name: "B", id: 5}
+    - {kind: label, name: "C", id: 6}
+    - {kind: label, name: "DONE", id: 7}
+    - {kind: label, name: "E", id: 8}
+    - kind: switch
+      name: "S"
+      id: 2
+      elements:
+        - {kind: label_ref, type: none, label: 4, name: "A"}
+        - {kind: label_ref, type: none, label: 5, name: "B"}
+        - kind: cond
+          type: none
+          condition:
+            kind: binary
+            type: boolean
+            op: gt
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: int_const, type: integer, value: 2}
+          then: {kind: label_ref, type: none, label: 6, name: "C"}
+          else: {kind: label_ref, type: none, label: 4, name: "A"}
+  body:
+    - kind: assign
+      loc: 5/1
+      targets:
+        - {kind: var, decl: 1, name: "I"}
+      value: {kind: int_const, type: integer, value: 0}
+    - kind: labeled
+      loc: 6/1
+      label: 3
+      name: "NEXT"
+      stmt:
+        kind: assign
+        loc: 6/1
+        targets:
+          - {kind: var, decl: 1, name: "I"}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 1}
+    - kind: if
+      loc: 8/1
+      condition:
+        kind: binary
+        type: boolean
+        op: gt
+        left: {kind: var, type: integer, decl: 1, name: "I"}
+        right: {kind: int_const, type: integer, value: 3}
+      then:
+        kind: goto
+        loc: 8/2
+        target: {kind: label_ref, type: none, label: 7, name: "DONE"}
+    - kind: goto
+      loc: 9/1
+      target:
+        kind: switch_element
+        type: none
+        switch: 2
+        name: "S"
+        index: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: labeled
+      loc: 10/1
+      label: 4
+      name: "A"
+      stmt:
+        kind: io
+        loc: 10/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: int_const, type: integer, value: 1}
+    - kind: goto
+      loc: 10/2
+      target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
+    - kind: labeled
+      loc: 11/1
+      label: 5
+      name: "B"
+      stmt:
+        kind: io
+        loc: 11/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: int_const, type: integer, value: 2}
+    - kind: goto
+      loc: 11/2
+      target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
+    - kind: labeled
+      loc: 12/1
+      label: 6
+      name: "C"
+      stmt:
+        kind: io
+        loc: 12/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: int_const, type: integer, value: 3}
+    - kind: goto
+      loc: 12/2
+      target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
+    - kind: labeled
+      loc: 13/1
+      label: 7
+      name: "DONE"
+      stmt:
+        kind: if
+        loc: 13/1
+        condition:
+          kind: binary
+          type: boolean
+          op: eq
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 4}
+        then:
+          kind: goto
+          loc: 13/1
+          target: {kind: label_ref, type: none, label: 8, name: "E"}
+        else:
+          kind: goto
+          loc: 13/1
+          target:
+            kind: switch_element
+            type: none
+            switch: 2
+            name: "S"
+            index: {kind: int_const, type: integer, value: 1}
+    - kind: labeled
+      loc: 15/1
+      label: 8
+      name: "E"
+      stmt:
+        kind: io
+        loc: 15/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: var, type: integer, decl: 1, name: "I"}

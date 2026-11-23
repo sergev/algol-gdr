@@ -1,0 +1,101 @@
+externals: []
+block:
+  kind: block
+  loc: 2/2
+  decls:
+    - {kind: var, name: "N", id: 2, type: integer}
+    - {kind: var, name: "K", id: 3, type: integer}
+    - kind: arrays
+      type: boolean
+      arrays:
+        - {name: "PRIME", id: 1}
+      bounds:
+        - lower: {kind: int_const, type: integer, value: 2}
+          upper: {kind: int_const, type: integer, value: 100}
+  body:
+    - kind: for
+      loc: 5/1
+      control: {kind: var, decl: 2, name: "N"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 2}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 100}
+      body:
+        kind: assign
+        loc: 6/1
+        targets:
+          - kind: element
+            array: 1
+            name: "PRIME"
+            subscripts:
+              - {kind: var, type: integer, decl: 2, name: "N"}
+        value: {kind: bool_const, type: boolean, value: true}
+    - kind: for
+      loc: 7/1
+      control: {kind: var, decl: 2, name: "N"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 2}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 100}
+      body:
+        kind: if
+        loc: 8/1
+        condition:
+          kind: element
+          type: boolean
+          array: 1
+          name: "PRIME"
+          subscripts:
+            - {kind: var, type: integer, decl: 2, name: "N"}
+        then:
+          kind: for
+          loc: 9/1
+          control: {kind: var, decl: 3, name: "K"}
+          elements:
+            - kind: step_until
+              init:
+                kind: binary
+                type: integer
+                op: add
+                left: {kind: var, type: integer, decl: 2, name: "N"}
+                right: {kind: var, type: integer, decl: 2, name: "N"}
+              step: {kind: var, type: integer, decl: 2, name: "N"}
+              until: {kind: int_const, type: integer, value: 100}
+          body:
+            kind: assign
+            loc: 10/1
+            targets:
+              - kind: element
+                array: 1
+                name: "PRIME"
+                subscripts:
+                  - {kind: var, type: integer, decl: 3, name: "K"}
+            value: {kind: bool_const, type: boolean, value: false}
+    - kind: for
+      loc: 11/1
+      control: {kind: var, decl: 2, name: "N"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 2}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 100}
+      body:
+        kind: if
+        loc: 12/1
+        condition:
+          kind: element
+          type: boolean
+          array: 1
+          name: "PRIME"
+          subscripts:
+            - {kind: var, type: integer, decl: 2, name: "N"}
+        then:
+          kind: io
+          loc: 13/1
+          op: print
+          params: []
+          items:
+            - kind: item
+              expr: {kind: var, type: integer, decl: 2, name: "N"}

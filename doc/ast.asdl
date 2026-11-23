@@ -5,6 +5,13 @@
 -- conversions are explicit (Convert), and every expression has its type.
 -- Codes in comments are the items of the pass-2 stream that make the node
 -- (doc/passes.md, "Output stream").
+--
+-- Built from the stream (src/ast_builder.cpp) for now: a block without
+-- arrays leaves no items, so its declarations go to the enclosing Block (or
+-- the procedure body, the program); declarations have no position yet.
+-- The text form (algc --dump-ast, tests/algol/*.ast) is YAML: a node is a
+-- mapping with its constructor as `kind` (snake_case), then its fields;
+-- a reference to a declaration also gives its `name`.
 module AST {
     -- Where a statement starts: the line, and the statement on the line (from
     -- the statement markers 051), as in "NEXT STATEMENT IS l/s".
@@ -37,7 +44,7 @@ module AST {
 
     BoundPair = (Expr lower, Expr upper)
 
-    CommonElement = (identifier name, int decl, int* dims)
+    CommonElement = (identifier name, int decl, int size)   -- size in words
 
     -- A formal parameter: called by value (in the VALUE list) or by name.
     Formal = (identifier name, int id, Spec spec, bool by_value)
@@ -74,7 +81,9 @@ module AST {
     -- Standard procedures used as statements.
     StdProc = Stop | Load | LoadGo | Assign | Atos | Stoa
 
-    -- I/O statements. The params come before the list:
+    -- I/O statements. Standard PRINT and READ items are Print and Read
+    -- (READ(LENGTH) and the like: no items); 'PRINT' and 'WRITE' are Write.
+    -- The params come before the list:
     --   Print, Punch: none;
     --   Read, Write: a unit and optionally a second one;
     --   Decode, Encode: three expressions; Rewind, Backspace, Endfile: the unit.

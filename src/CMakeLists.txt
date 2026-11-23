@@ -1,6 +1,7 @@
 add_library(algol STATIC
     arith.cpp
     ast.cpp
+    ast_builder.cpp
     card.cpp
     item.cpp
     listing.cpp

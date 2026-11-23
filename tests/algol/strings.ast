@@ -1,0 +1,117 @@
+externals: []
+block:
+  kind: block
+  loc: 1/2
+  decls:
+    - {kind: var, name: "S", id: 1, type: string}
+    - {kind: var, name: "T", id: 2, type: string}
+    - {kind: var, name: "I", id: 4, type: integer}
+    - kind: arrays
+      type: string
+      arrays:
+        - {name: "A", id: 3}
+      bounds:
+        - lower: {kind: int_const, type: integer, value: 1}
+          upper: {kind: int_const, type: integer, value: 2}
+  body:
+    - kind: assign
+      loc: 6/1
+      targets:
+        - {kind: var, decl: 1, name: "S"}
+      value: {kind: string_const, type: string, value: "ABCDEF"}
+    - kind: assign
+      loc: 7/1
+      targets:
+        - {kind: var, decl: 2, name: "T"}
+      value: {kind: var, type: string, decl: 1, name: "S"}
+    - kind: assign
+      loc: 8/1
+      targets:
+        - kind: element
+          array: 3
+          name: "A"
+          subscripts:
+            - {kind: int_const, type: integer, value: 1}
+      value: {kind: string_const, type: string, value: "XY"}
+    - kind: assign
+      loc: 8/2
+      targets:
+        - kind: element
+          array: 3
+          name: "A"
+          subscripts:
+            - {kind: int_const, type: integer, value: 2}
+      value: {kind: var, type: string, decl: 1, name: "S"}
+    - kind: io
+      loc: 9/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: length
+            args:
+              - {kind: var, type: string, decl: 1, name: "S"}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: length
+            args:
+              - kind: element
+                type: string
+                array: 3
+                name: "A"
+                subscripts:
+                  - {kind: int_const, type: integer, value: 1}
+    - kind: for
+      loc: 10/1
+      control: {kind: var, decl: 4, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until:
+            kind: std_func
+            type: integer
+            func: length
+            args:
+              - {kind: var, type: string, decl: 1, name: "S"}
+      body:
+        kind: io
+        loc: 10/2
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr:
+              kind: string_element
+              type: string
+              string: {kind: var, type: integer, decl: 4, name: "I"}
+              index: {kind: var, type: string, decl: 1, name: "S"}
+    - kind: io
+      loc: 11/1
+      op: print
+      params: []
+      items:
+        - {kind: new_line}
+        - kind: item
+          expr: {kind: var, type: string, decl: 2, name: "T"}
+        - kind: item
+          expr:
+            kind: element
+            type: string
+            array: 3
+            name: "A"
+            subscripts:
+              - {kind: int_const, type: integer, value: 1}
+        - kind: item
+          expr:
+            kind: element
+            type: string
+            array: 3
+            name: "A"
+            subscripts:
+              - {kind: int_const, type: integer, value: 2}

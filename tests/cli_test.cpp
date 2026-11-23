@@ -94,3 +94,10 @@ TEST(cli, bad_stop_after)
     EXPECT_NE(r.exit_code, 0);
     EXPECT_NE(r.output.find("--stop-after"), std::string::npos);
 }
+
+TEST(cli, dump_ast)
+{
+    auto r = run_command("(" + compiler + " --dump-ast " TEST_DIR "/algol/proc.alg 2>/dev/null)");
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_EQ(r.output, file_contents(TEST_DIR "/algol/proc.ast"));
+}

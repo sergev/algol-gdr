@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "ast.h"
+#include "ast_builder.h"
 #include "options.h"
 #include "passes.h"
 #include "source.h"
@@ -23,19 +25,21 @@ static void print_usage(std::ostream &out)
         << "    --list                  Listing of the program (else errors only)\n"
         << "    --check                 Run-time checks\n"
         << "    --stop-after=N          Print the stream of pass N (1-2) and stop\n"
+        << "    --dump-ast              Print the AST in YAML\n"
         << "    -h, --help              Display available options\n"
         << "    -V, --version           Print the version number and exit\n";
 }
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_LIST = 256, OPT_STOP_AFTER, OPT_CHECK };
+    enum { OPT_LIST = 256, OPT_STOP_AFTER, OPT_CHECK, OPT_DUMP_AST };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
         { "list", no_argument, nullptr, OPT_LIST },
         { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
         { "check", no_argument, nullptr, OPT_CHECK },
+        { "dump-ast", no_argument, nullptr, OPT_DUMP_AST },
         {},
     };
     Options opt;
@@ -63,6 +67,9 @@ int main(int argc, char *argv[])
             break;
         case OPT_CHECK:
             opt.check_mode = true;
+            break;
+        case OPT_DUMP_AST:
+            opt.dump_ast = true;
             break;
         case OPT_STOP_AFTER: {
             std::string arg = optarg;
@@ -94,10 +101,15 @@ int main(int argc, char *argv[])
             write_stream(std::cout, stream);
             return EXIT_SUCCESS;
         }
-        Listing listing(std::cout);
+        // With --dump-ast the listing goes to stderr.
+        Listing listing(opt.dump_ast ? std::cerr : std::cout);
         ctx.listing = &listing;
         Stream stream;
-        return compile(ctx, stream) ? EXIT_SUCCESS : EXIT_FAILURE;
+        if (!compile(ctx, stream))
+            return EXIT_FAILURE;
+        if (opt.dump_ast)
+            ast::print(std::cout, build_ast(ctx, stream));
+        return EXIT_SUCCESS;
     } catch (const std::exception &e) {
         std::cerr << prog_name << ": " << e.what() << "\n";
         return EXIT_FAILURE;

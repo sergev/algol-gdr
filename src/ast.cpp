@@ -582,11 +582,7 @@ private:
                                m.kind = Node::MAP;
                                m.flow = true;
                                m.add("name", quoted(e.name)).add("decl", scalar(number(e.decl)));
-                               Node dims = sequence();
-                               dims.flow = true;
-                               for (int x : e.dims)
-                                   dims.seq.push_back(scalar(number(x)));
-                               m.add("dims", std::move(dims));
+                               m.add("size", scalar(number(e.size)));
                                elements.seq.push_back(std::move(m));
                            }
                            n.add("elements", std::move(elements));

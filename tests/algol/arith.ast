@@ -1,0 +1,228 @@
+externals: []
+block:
+  kind: block
+  loc: 5/1
+  decls:
+    - {kind: var, name: "I", id: 1, type: integer}
+    - {kind: var, name: "J", id: 2, type: integer}
+    - {kind: var, name: "K", id: 3, type: integer}
+    - {kind: var, name: "X", id: 4, type: real}
+    - {kind: var, name: "Y", id: 5, type: real}
+  body:
+    - kind: assign
+      loc: 5/1
+      targets:
+        - {kind: var, decl: 1, name: "I"}
+      value: {kind: int_const, type: integer, value: 7}
+    - kind: assign
+      loc: 5/2
+      targets:
+        - {kind: var, decl: 2, name: "J"}
+      value: {kind: int_const, type: integer, value: 3}
+    - kind: io
+      loc: 6/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: add
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: var, type: integer, decl: 2, name: "J"}
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: sub
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: var, type: integer, decl: 2, name: "J"}
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: mul
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: var, type: integer, decl: 2, name: "J"}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: div
+            left:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: var, type: integer, decl: 1, name: "I"}
+            right:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: var, type: integer, decl: 2, name: "J"}
+    - kind: io
+      loc: 7/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: add
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right:
+              kind: binary
+              type: integer
+              op: mul
+              left: {kind: var, type: integer, decl: 2, name: "J"}
+              right: {kind: int_const, type: integer, value: 2}
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: mul
+            left:
+              kind: binary
+              type: integer
+              op: add
+              left: {kind: var, type: integer, decl: 1, name: "I"}
+              right: {kind: var, type: integer, decl: 2, name: "J"}
+            right: {kind: int_const, type: integer, value: 2}
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: add
+            left:
+              kind: unary
+              type: integer
+              op: neg
+              operand: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: var, type: integer, decl: 2, name: "J"}
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: sub
+            left:
+              kind: binary
+              type: integer
+              op: sub
+              left: {kind: var, type: integer, decl: 1, name: "I"}
+              right: {kind: var, type: integer, decl: 2, name: "J"}
+            right: {kind: int_const, type: integer, value: 1}
+    - kind: io
+      loc: 8/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: power
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: int_const, type: integer, value: 2}
+        - kind: item
+          expr:
+            kind: binary
+            type: integer
+            op: power
+            left: {kind: int_const, type: integer, value: 2}
+            right: {kind: int_const, type: integer, value: 10}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: power
+            left:
+              kind: binary
+              type: real
+              op: div
+              left:
+                kind: convert
+                type: real
+                conv: int_to_real
+                expr: {kind: int_const, type: integer, value: 1}
+              right: {kind: real_const, type: real, value: 2.0}
+            right: {kind: int_const, type: integer, value: 1}
+    - kind: assign
+      loc: 9/1
+      targets:
+        - {kind: var, decl: 4, name: "X"}
+      value: {kind: real_const, type: real, value: 1.5}
+    - kind: assign
+      loc: 9/2
+      targets:
+        - {kind: var, decl: 5, name: "Y"}
+      value:
+        kind: unary
+        type: real
+        op: neg
+        operand: {kind: real_const, type: real, value: 0.25}
+    - kind: io
+      loc: 10/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: add
+            left: {kind: var, type: real, decl: 4, name: "X"}
+            right: {kind: var, type: real, decl: 5, name: "Y"}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: mul
+            left: {kind: var, type: real, decl: 4, name: "X"}
+            right: {kind: var, type: real, decl: 5, name: "Y"}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: div
+            left: {kind: var, type: real, decl: 4, name: "X"}
+            right: {kind: var, type: real, decl: 5, name: "Y"}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: sub
+            left: {kind: var, type: real, decl: 4, name: "X"}
+            right: {kind: var, type: real, decl: 5, name: "Y"}
+    - kind: assign
+      loc: 11/1
+      targets:
+        - {kind: var, decl: 3, name: "K"}
+      value:
+        kind: convert
+        type: integer
+        conv: real_to_int
+        expr:
+          kind: binary
+          type: real
+          op: add
+          left: {kind: var, type: real, decl: 4, name: "X"}
+          right: {kind: real_const, type: real, value: 0.6000000000003638}
+    - kind: io
+      loc: 12/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 3, name: "K"}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: add
+            left: {kind: var, type: real, decl: 4, name: "X"}
+            right: {kind: var, type: integer, decl: 1, name: "I"}
+        - kind: item
+          expr: {kind: real_const, type: real, value: 1000.0}
+        - kind: item
+          expr: {kind: real_const, type: real, value: 0.025000000000005684}

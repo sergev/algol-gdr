@@ -1,0 +1,845 @@
+externals: []
+block:
+  kind: block
+  loc: 2/2
+  decls:
+    - {kind: var, name: "I", id: 1, type: integer}
+    - {kind: var, name: "J", id: 2, type: integer}
+    - {kind: var, name: "K", id: 3, type: integer}
+    - {kind: var, name: "B", id: 4, type: boolean}
+    - {kind: label, name: "L1", id: 7}
+    - {kind: label, name: "L2", id: 8}
+    - {kind: label, name: "L3", id: 9}
+    - kind: arrays
+      type: integer
+      arrays:
+        - {name: "IA", id: 5}
+      bounds:
+        - lower:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 10}
+          upper: {kind: int_const, type: integer, value: 20}
+    - kind: procedure
+      name: "SHOW"
+      id: 6
+      type: none
+      formals: []
+      body:
+        kind: compound
+        loc: 5/3
+        body:
+          - kind: for
+            loc: 5/3
+            control: {kind: var, decl: 3, name: "K"}
+            elements:
+              - kind: step_until
+                init:
+                  kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: int_const, type: integer, value: 10}
+                step: {kind: int_const, type: integer, value: 1}
+                until: {kind: int_const, type: integer, value: 20}
+            body:
+              kind: io
+              loc: 5/4
+              op: print
+              params: []
+              items:
+                - kind: item
+                  expr:
+                    kind: element
+                    type: integer
+                    array: 5
+                    name: "IA"
+                    subscripts:
+                      - {kind: var, type: integer, decl: 3, name: "K"}
+          - kind: for
+            loc: 6/1
+            control: {kind: var, decl: 3, name: "K"}
+            elements:
+              - kind: step_until
+                init:
+                  kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: int_const, type: integer, value: 10}
+                step: {kind: int_const, type: integer, value: 1}
+                until: {kind: int_const, type: integer, value: 20}
+            body:
+              kind: assign
+              loc: 6/2
+              targets:
+                - kind: element
+                  array: 5
+                  name: "IA"
+                  subscripts:
+                    - {kind: var, type: integer, decl: 3, name: "K"}
+              value: {kind: int_const, type: integer, value: 0}
+  body:
+    - kind: assign
+      loc: 8/1
+      targets:
+        - {kind: var, decl: 2, name: "J"}
+      value: {kind: int_const, type: integer, value: 1}
+    - kind: assign
+      loc: 8/2
+      targets:
+        - {kind: var, decl: 4, name: "B"}
+      value: {kind: bool_const, type: boolean, value: true}
+    - kind: for
+      loc: 9/1
+      control: {kind: var, decl: 3, name: "K"}
+      elements:
+        - kind: step_until
+          init:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 10}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 20}
+      body:
+        kind: assign
+        loc: 9/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - {kind: var, type: integer, decl: 3, name: "K"}
+        value: {kind: int_const, type: integer, value: 0}
+    - kind: for
+      loc: 10/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 10/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - {kind: var, type: integer, decl: 1, name: "I"}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 11/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 11/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left: {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: int_const, type: integer, value: 1}
+        value:
+          kind: element
+          type: integer
+          array: 5
+          name: "IA"
+          subscripts:
+            - {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: call
+      loc: 11/4
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 12/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 12/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: sub
+                left:
+                  kind: binary
+                  type: integer
+                  op: mul
+                  left: {kind: int_const, type: integer, value: 2}
+                  right: {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: int_const, type: integer, value: 1}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 13/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 13/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left:
+                  kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: int_const, type: integer, value: 5}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 10}
+    - kind: for
+      loc: 14/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 14/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: sub
+                left: {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: var, type: integer, decl: 2, name: "J"}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 20}
+    - kind: call
+      loc: 14/4
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 15/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: if
+        loc: 15/2
+        condition: {kind: var, type: boolean, decl: 4, name: "B"}
+        then:
+          kind: assign
+          loc: 15/3
+          targets:
+            - kind: element
+              array: 5
+              name: "IA"
+              subscripts:
+                - {kind: var, type: integer, decl: 1, name: "I"}
+          value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 16/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 16/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: sub
+                left: {kind: int_const, type: integer, value: 3}
+                right: {kind: var, type: integer, decl: 1, name: "I"}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 10}
+    - kind: for
+      loc: 17/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 17/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - {kind: int_const, type: integer, value: 1}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: call
+      loc: 17/4
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 18/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: if
+        loc: 18/2
+        condition: {kind: var, type: boolean, decl: 4, name: "B"}
+        then:
+          kind: goto
+          loc: 18/3
+          target: {kind: label_ref, type: none, label: 7, name: "L1"}
+    - kind: labeled
+      loc: 19/1
+      label: 7
+      name: "L1"
+      stmt:
+        kind: io
+        loc: 19/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 20/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: goto
+        loc: 20/2
+        target: {kind: label_ref, type: none, label: 8, name: "L2"}
+    - kind: labeled
+      loc: 21/1
+      label: 8
+      name: "L2"
+      stmt:
+        kind: io
+        loc: 21/1
+        op: print
+        params: []
+        items:
+          - kind: item
+            expr: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 22/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 22/2
+        targets:
+          - {kind: var, decl: 1, name: "I"}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: io
+      loc: 22/4
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 23/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: compound
+        loc: 24/3
+        body:
+          - kind: labeled
+            loc: 24/3
+            label: 9
+            name: "L3"
+            stmt:
+              kind: assign
+              loc: 24/3
+              targets:
+                - kind: element
+                  array: 5
+                  name: "IA"
+                  subscripts:
+                    - {kind: var, type: integer, decl: 1, name: "I"}
+              value:
+                kind: binary
+                type: integer
+                op: add
+                left:
+                  kind: element
+                  type: integer
+                  array: 5
+                  name: "IA"
+                  subscripts:
+                    - {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: int_const, type: integer, value: 1}
+          - kind: if
+            loc: 25/1
+            condition:
+              kind: binary
+              type: boolean
+              op: lt
+              left:
+                kind: element
+                type: integer
+                array: 5
+                name: "IA"
+                subscripts:
+                  - {kind: var, type: integer, decl: 1, name: "I"}
+              right: {kind: int_const, type: integer, value: 3}
+            then:
+              kind: goto
+              loc: 25/2
+              target: {kind: label_ref, type: none, label: 9, name: "L3"}
+    - kind: for
+      loc: 27/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: if
+        loc: 28/1
+        condition:
+          kind: binary
+          type: boolean
+          op: lt
+          left: {kind: var, type: integer, decl: 2, name: "J"}
+          right: {kind: int_const, type: integer, value: 2}
+        then:
+          kind: assign
+          loc: 28/2
+          targets:
+            - kind: element
+              array: 5
+              name: "IA"
+              subscripts:
+                - kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 3}
+          value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: call
+      loc: 29/1
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 30/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 3}
+          step:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 1}
+      body:
+        kind: assign
+        loc: 30/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - {kind: var, type: integer, decl: 1, name: "I"}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 31/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 3}
+          step:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 1}
+      body:
+        kind: assign
+        loc: 31/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left:
+                  kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 1}
+                right:
+                  kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 2}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: call
+      loc: 31/4
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 32/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: var, type: integer, decl: 2, name: "J"}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 32/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left: {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: int_const, type: integer, value: 1}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left:
+            kind: element
+            type: integer
+            array: 5
+            name: "IA"
+            subscripts:
+              - {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 1}
+    - kind: for
+      loc: 33/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: var, type: integer, decl: 2, name: "J"}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: if
+        loc: 33/2
+        condition: {kind: var, type: boolean, decl: 4, name: "B"}
+        then:
+          kind: assign
+          loc: 33/3
+          targets:
+            - kind: element
+              array: 5
+              name: "IA"
+              subscripts:
+                - kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 5}
+          value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: call
+      loc: 33/5
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 34/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 34/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: sub
+                left:
+                  kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 1}
+                right:
+                  kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 2}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 35/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 35/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: mul
+                left:
+                  kind: binary
+                  type: integer
+                  op: sub
+                  left: {kind: var, type: integer, decl: 1, name: "I"}
+                  right: {kind: int_const, type: integer, value: 1}
+                right:
+                  kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: int_const, type: integer, value: 2}
+                  right: {kind: int_const, type: integer, value: 1}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 10}
+    - kind: for
+      loc: 36/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 36/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left: {kind: int_const, type: integer, value: 1}
+                right: {kind: int_const, type: integer, value: 2}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 20}
+    - kind: call
+      loc: 36/4
+      proc: 6
+      name: "SHOW"
+      args: []
+    - kind: for
+      loc: 37/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 37/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left: {kind: var, type: integer, decl: 1, name: "I"}
+                right:
+                  kind: binary
+                  type: integer
+                  op: sub
+                  left: {kind: int_const, type: integer, value: 2}
+                  right: {kind: int_const, type: integer, value: 1}
+        value: {kind: var, type: integer, decl: 1, name: "I"}
+    - kind: for
+      loc: 38/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 38/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left: {kind: var, type: integer, decl: 1, name: "I"}
+                right:
+                  kind: binary
+                  type: integer
+                  op: mul
+                  left: {kind: int_const, type: integer, value: 2}
+                  right: {kind: int_const, type: integer, value: 3}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 10}
+    - kind: for
+      loc: 39/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 39/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: mul
+                left: {kind: var, type: integer, decl: 1, name: "I"}
+                right:
+                  kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: int_const, type: integer, value: 2}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 20}
+    - kind: for
+      loc: 40/1
+      control: {kind: var, decl: 1, name: "I"}
+      elements:
+        - kind: step_until
+          init: {kind: int_const, type: integer, value: 1}
+          step: {kind: int_const, type: integer, value: 1}
+          until: {kind: int_const, type: integer, value: 3}
+      body:
+        kind: assign
+        loc: 40/2
+        targets:
+          - kind: element
+            array: 5
+            name: "IA"
+            subscripts:
+              - kind: binary
+                type: integer
+                op: add
+                left:
+                  kind: binary
+                  type: integer
+                  op: sub
+                  left: {kind: int_const, type: integer, value: 2}
+                  right: {kind: var, type: integer, decl: 1, name: "I"}
+                right: {kind: int_const, type: integer, value: 5}
+        value:
+          kind: binary
+          type: integer
+          op: add
+          left: {kind: var, type: integer, decl: 1, name: "I"}
+          right: {kind: int_const, type: integer, value: 30}
+    - kind: call
+      loc: 41/1
+      proc: 6
+      name: "SHOW"
+      args: []

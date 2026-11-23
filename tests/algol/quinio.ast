@@ -1,0 +1,2308 @@
+externals:
+  - {kind: code, name: "XEEN", id: 1}
+  - {kind: code, name: "AVAILA", id: 2}
+  - {kind: code, name: "DRAW", id: 3}
+block:
+  kind: block
+  loc: 3/2
+  decls:
+    - {kind: var, name: "K", id: 4, type: integer}
+    - {kind: var, name: "J", id: 5, type: integer}
+    - {kind: var, name: "AV", id: 6, type: integer}
+    - {kind: var, name: "TN", id: 7, type: integer}
+    - {kind: var, name: "NT", id: 8, type: integer}
+    - {kind: var, name: "VNL", id: 9, type: integer}
+    - {kind: var, name: "X", id: 10, type: integer}
+    - {kind: var, name: "Y", id: 11, type: integer}
+    - {kind: var, name: "SW", id: 12, type: integer}
+    - {kind: var, name: "WM", id: 13, type: integer}
+    - {kind: var, name: "KLEUR", id: 14, type: integer}
+    - {kind: var, name: "ZNR", id: 15, type: integer}
+    - {kind: var, name: "KM", id: 16, type: integer}
+    - {kind: var, name: "KLAAR", id: 17, type: boolean}
+    - kind: arrays
+      type: integer
+      arrays:
+        - {name: "DP", id: 18}
+      bounds:
+        - lower:
+            kind: unary
+            type: integer
+            op: neg
+            operand: {kind: int_const, type: integer, value: 6}
+          upper: {kind: int_const, type: integer, value: 6}
+        - lower: {kind: int_const, type: integer, value: 0}
+          upper: {kind: int_const, type: integer, value: 2}
+    - kind: arrays
+      type: integer
+      arrays:
+        - {name: "Z", id: 19}
+      bounds:
+        - lower: {kind: int_const, type: integer, value: 1}
+          upper: {kind: int_const, type: integer, value: 6}
+    - kind: procedure
+      name: "DIV"
+      id: 20
+      type: integer
+      formals:
+        - {name: "A", id: 21, spec: simple, type: integer, by_value: true}
+        - {name: "B", id: 22, spec: simple, type: integer, by_value: true}
+      body:
+        kind: assign
+        loc: 31/1
+        targets:
+          - {kind: var, decl: 20, name: "DIV"}
+        value:
+          kind: std_func
+          type: integer
+          func: entier
+          args:
+            - kind: binary
+              type: real
+              op: div
+              left:
+                kind: convert
+                type: real
+                conv: int_to_real
+                expr: {kind: var, type: integer, decl: 21, name: "A"}
+              right:
+                kind: convert
+                type: real
+                conv: int_to_real
+                expr: {kind: var, type: integer, decl: 22, name: "B"}
+    - kind: procedure
+      name: "NLCR"
+      id: 23
+      type: none
+      formals: []
+      body:
+        kind: io
+        loc: 34/1
+        op: write
+        params:
+          - {kind: int_const, type: integer, value: 54}
+          - {kind: string_const, type: string, value: "(/)"}
+        items: []
+    - kind: procedure
+      name: "SUM"
+      id: 24
+      type: integer
+      formals:
+        - {name: "A", id: 25, spec: simple, type: integer, by_value: false}
+        - {name: "B", id: 26, spec: simple, type: integer, by_value: true}
+        - {name: "C", id: 27, spec: simple, type: integer, by_value: true}
+        - {name: "D", id: 28, spec: simple, type: real, by_value: false}
+      body:
+        kind: block
+        loc: 42/1
+        decls:
+          - {kind: var, name: "T", id: 29, type: real}
+        body:
+          - kind: assign
+            loc: 42/1
+            targets:
+              - {kind: var, decl: 29, name: "T"}
+            value:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: int_const, type: integer, value: 0}
+          - kind: for
+            loc: 43/1
+            control: {kind: var, decl: 25, name: "A"}
+            elements:
+              - kind: step_until
+                init: {kind: var, type: integer, decl: 26, name: "B"}
+                step: {kind: int_const, type: integer, value: 1}
+                until: {kind: var, type: integer, decl: 27, name: "C"}
+            body:
+              kind: assign
+              loc: 44/1
+              targets:
+                - {kind: var, decl: 29, name: "T"}
+              value:
+                kind: binary
+                type: real
+                op: add
+                left: {kind: var, type: real, decl: 29, name: "T"}
+                right: {kind: var, type: real, decl: 28, name: "D"}
+          - kind: assign
+            loc: 45/1
+            targets:
+              - {kind: var, decl: 24, name: "SUM"}
+            value:
+              kind: std_func
+              type: integer
+              func: entier
+              args:
+                - {kind: var, type: real, decl: 29, name: "T"}
+    - kind: procedure
+      name: "MINIM"
+      id: 30
+      type: boolean
+      formals:
+        - {name: "X", id: 31, spec: simple, type: integer, by_value: false}
+        - {name: "P", id: 32, spec: simple, type: integer, by_value: true}
+      body:
+        kind: if
+        loc: 51/1
+        condition:
+          kind: binary
+          type: boolean
+          op: lt
+          left: {kind: var, type: integer, decl: 32, name: "P"}
+          right: {kind: var, type: integer, decl: 31, name: "X"}
+        then:
+          kind: compound
+          loc: 53/1
+          body:
+            - kind: assign
+              loc: 53/1
+              targets:
+                - {kind: var, decl: 31, name: "X"}
+              value: {kind: var, type: integer, decl: 32, name: "P"}
+            - kind: assign
+              loc: 54/1
+              targets:
+                - {kind: var, decl: 30, name: "MINIM"}
+              value: {kind: bool_const, type: boolean, value: true}
+        else:
+          kind: assign
+          loc: 57/1
+          targets:
+            - {kind: var, decl: 30, name: "MINIM"}
+          value: {kind: bool_const, type: boolean, value: false}
+    - kind: procedure
+      name: "MAXIM"
+      id: 33
+      type: boolean
+      formals:
+        - {name: "X", id: 34, spec: simple, type: integer, by_value: false}
+        - {name: "P", id: 35, spec: simple, type: integer, by_value: true}
+      body:
+        kind: if
+        loc: 62/1
+        condition:
+          kind: binary
+          type: boolean
+          op: gt
+          left: {kind: var, type: integer, decl: 35, name: "P"}
+          right: {kind: var, type: integer, decl: 34, name: "X"}
+        then:
+          kind: compound
+          loc: 64/1
+          body:
+            - kind: assign
+              loc: 64/1
+              targets:
+                - {kind: var, decl: 34, name: "X"}
+              value: {kind: var, type: integer, decl: 35, name: "P"}
+            - kind: assign
+              loc: 65/1
+              targets:
+                - {kind: var, decl: 33, name: "MAXIM"}
+              value: {kind: bool_const, type: boolean, value: true}
+        else:
+          kind: assign
+          loc: 68/1
+          targets:
+            - {kind: var, decl: 33, name: "MAXIM"}
+          value: {kind: bool_const, type: boolean, value: false}
+  body:
+    - kind: assign
+      loc: 70/1
+      targets:
+        - {kind: var, decl: 8, name: "NT"}
+      value:
+        kind: binary
+        type: integer
+        op: add
+        left:
+          kind: binary
+          type: integer
+          op: mul
+          left:
+            kind: call
+            type: integer
+            proc: 20
+            name: "DIV"
+            args:
+              - kind: std_func
+                type: integer
+                func: entier
+                args:
+                  - kind: binary
+                    type: real
+                    op: sub
+                    left:
+                      kind: std_func
+                      type: real
+                      func: sqrt
+                      args:
+                        - kind: binary
+                          type: real
+                          op: div
+                          left:
+                            kind: convert
+                            type: real
+                            conv: int_to_real
+                            expr:
+                              kind: binary
+                              type: integer
+                              op: sub
+                              left:
+                                kind: call
+                                type: integer
+                                proc: 2
+                                name: "AVAILA"
+                                args: []
+                              right: {kind: int_const, type: integer, value: 1000}
+                          right:
+                            kind: convert
+                            type: real
+                            conv: int_to_real
+                            expr: {kind: int_const, type: integer, value: 36}
+                    right: {kind: real_const, type: real, value: 1.0}
+              - {kind: int_const, type: integer, value: 2}
+          right: {kind: int_const, type: integer, value: 2}
+        right: {kind: int_const, type: integer, value: 1}
+    - kind: call
+      loc: 71/1
+      proc: 30
+      name: "MINIM"
+      args:
+        - {kind: var, type: integer, decl: 8, name: "NT"}
+        - {kind: int_const, type: integer, value: 19}
+    - kind: assign
+      loc: 72/1
+      targets:
+        - {kind: var, decl: 6, name: "AV"}
+      value:
+        kind: binary
+        type: integer
+        op: mul
+        left: {kind: var, type: integer, decl: 8, name: "NT"}
+        right: {kind: var, type: integer, decl: 8, name: "NT"}
+    - kind: assign
+      loc: 73/1
+      targets:
+        - {kind: var, decl: 7, name: "TN"}
+      value:
+        kind: binary
+        type: integer
+        op: add
+        left: {kind: int_const, type: integer, value: 1}
+        right:
+          kind: call
+          type: integer
+          proc: 20
+          name: "DIV"
+          args:
+            - {kind: var, type: integer, decl: 8, name: "NT"}
+            - {kind: int_const, type: integer, value: 2}
+    - kind: call
+      loc: 74/1
+      proc: 23
+      name: "NLCR"
+      args: []
+    - kind: io
+      loc: 75/1
+      op: write
+      params:
+        - {kind: int_const, type: integer, value: 54}
+        - {kind: string_const, type: string, value: "(13HFIELD SIZE = I2/23HO - HUMAN, X - COMPUTER)"}
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 8, name: "NT"}
+    - kind: block
+      loc: 77/2
+      decls:
+        - {kind: label, name: "MENS", id: 84}
+        - {kind: label, name: "MACH", id: 85}
+        - {kind: label, name: "LKLAAR", id: 86}
+        - kind: arrays
+          type: integer
+          arrays:
+            - {name: "RNUM", id: 36}
+            - {name: "RLANG", id: 37}
+            - {name: "RVRY", id: 38}
+          bounds:
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+            - lower: {kind: int_const, type: integer, value: 0}
+              upper: {kind: int_const, type: integer, value: 1}
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: int_const, type: integer, value: 4}
+        - kind: arrays
+          type: integer
+          arrays:
+            - {name: "RVAL", id: 39}
+          bounds:
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: int_const, type: integer, value: 4}
+        - kind: arrays
+          type: integer
+          arrays:
+            - {name: "TEMPO", id: 40}
+            - {name: "WT", id: 41}
+          bounds:
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+            - lower: {kind: int_const, type: integer, value: 0}
+              upper: {kind: int_const, type: integer, value: 1}
+        - kind: arrays
+          type: integer
+          arrays:
+            - {name: "AX", id: 42}
+            - {name: "AY", id: 43}
+          bounds:
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: var, type: integer, decl: 6, name: "AV"}
+        - kind: arrays
+          type: integer
+          arrays:
+            - {name: "BORD", id: 44}
+            - {name: "AVNL", id: 45}
+          bounds:
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: var, type: integer, decl: 8, name: "NT"}
+            - lower: {kind: int_const, type: integer, value: 1}
+              upper: {kind: var, type: integer, decl: 8, name: "NT"}
+        - kind: procedure
+          name: "CORR"
+          id: 46
+          type: none
+          formals:
+            - {name: "X0", id: 47, spec: simple, type: integer, by_value: true}
+            - {name: "Y0", id: 48, spec: simple, type: integer, by_value: true}
+          body:
+            kind: block
+            loc: 88/1
+            decls:
+              - {kind: var, name: "X", id: 49, type: integer}
+              - {kind: var, name: "Y", id: 50, type: integer}
+              - {kind: var, name: "DX", id: 51, type: integer}
+              - {kind: var, name: "DY", id: 52, type: integer}
+              - {kind: var, name: "MIN", id: 53, type: integer}
+              - {kind: var, name: "MAX", id: 54, type: integer}
+              - {kind: var, name: "Q", id: 55, type: integer}
+              - {kind: var, name: "K", id: 56, type: integer}
+              - {kind: var, name: "J", id: 57, type: integer}
+              - {kind: var, name: "B", id: 58, type: integer}
+              - {kind: var, name: "T", id: 59, type: integer}
+              - {kind: var, name: "D", id: 60, type: integer}
+              - {kind: var, name: "W", id: 61, type: integer}
+              - {kind: var, name: "XDX", id: 62, type: integer}
+              - {kind: var, name: "YDY", id: 63, type: integer}
+              - {kind: var, name: "ZDZ", id: 64, type: integer}
+              - {kind: label, name: "WIN", id: 65}
+              - {kind: label, name: "NXT", id: 66}
+              - {kind: label, name: "NOR", id: 67}
+              - {kind: label, name: "UIT", id: 68}
+            body:
+              - kind: assign
+                loc: 88/1
+                targets:
+                  - {kind: var, decl: 51, name: "DX"}
+                value: {kind: int_const, type: integer, value: 1}
+              - kind: assign
+                loc: 89/1
+                targets:
+                  - {kind: var, decl: 52, name: "DY"}
+                value:
+                  kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: int_const, type: integer, value: 1}
+              - kind: assign
+                loc: 90/1
+                targets:
+                  - {kind: var, decl: 17, name: "KLAAR"}
+                value: {kind: bool_const, type: boolean, value: false}
+              - kind: for
+                loc: 91/1
+                control: {kind: var, decl: 55, name: "Q"}
+                elements:
+                  - kind: value
+                    value: {kind: int_const, type: integer, value: 1}
+                  - kind: value
+                    value: {kind: int_const, type: integer, value: 2}
+                  - kind: value
+                    value: {kind: int_const, type: integer, value: 3}
+                  - kind: value
+                    value: {kind: int_const, type: integer, value: 4}
+                body:
+                  kind: compound
+                  loc: 93/1
+                  body:
+                    - kind: assign
+                      loc: 93/1
+                      targets:
+                        - {kind: var, decl: 64, name: "ZDZ"}
+                        - {kind: var, decl: 62, name: "XDX"}
+                      value:
+                        kind: binary
+                        type: integer
+                        op: mul
+                        left:
+                          kind: binary
+                          type: integer
+                          op: sub
+                          left: {kind: var, type: integer, decl: 47, name: "X0"}
+                          right: {kind: var, type: integer, decl: 7, name: "TN"}
+                        right: {kind: var, type: integer, decl: 51, name: "DX"}
+                    - kind: assign
+                      loc: 94/1
+                      targets:
+                        - {kind: var, decl: 63, name: "YDY"}
+                      value:
+                        kind: binary
+                        type: integer
+                        op: mul
+                        left:
+                          kind: binary
+                          type: integer
+                          op: sub
+                          left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                          right: {kind: var, type: integer, decl: 7, name: "TN"}
+                        right: {kind: var, type: integer, decl: 52, name: "DY"}
+                    - kind: call
+                      loc: 95/1
+                      proc: 30
+                      name: "MINIM"
+                      args:
+                        - {kind: var, type: integer, decl: 64, name: "ZDZ"}
+                        - {kind: var, type: integer, decl: 63, name: "YDY"}
+                    - kind: assign
+                      loc: 96/1
+                      targets:
+                        - {kind: var, decl: 53, name: "MIN"}
+                      value:
+                        kind: binary
+                        type: integer
+                        op: sub
+                        left:
+                          kind: binary
+                          type: integer
+                          op: sub
+                          left: {kind: int_const, type: integer, value: 3}
+                          right: {kind: var, type: integer, decl: 7, name: "TN"}
+                        right: {kind: var, type: integer, decl: 64, name: "ZDZ"}
+                    - kind: assign
+                      loc: 97/1
+                      targets:
+                        - {kind: var, decl: 54, name: "MAX"}
+                      value:
+                        kind: binary
+                        type: integer
+                        op: sub
+                        left:
+                          kind: binary
+                          type: integer
+                          op: sub
+                          left:
+                            kind: unary
+                            type: integer
+                            op: neg
+                            operand: {kind: var, type: integer, decl: 53, name: "MIN"}
+                          right: {kind: var, type: integer, decl: 62, name: "XDX"}
+                        right: {kind: var, type: integer, decl: 63, name: "YDY"}
+                    - kind: call
+                      loc: 98/1
+                      proc: 33
+                      name: "MAXIM"
+                      args:
+                        - {kind: var, type: integer, decl: 53, name: "MIN"}
+                        - kind: unary
+                          type: integer
+                          op: neg
+                          operand: {kind: int_const, type: integer, value: 6}
+                    - kind: call
+                      loc: 99/1
+                      proc: 30
+                      name: "MINIM"
+                      args:
+                        - {kind: var, type: integer, decl: 54, name: "MAX"}
+                        - {kind: int_const, type: integer, value: 6}
+                    - kind: if
+                      loc: 100/1
+                      condition:
+                        kind: binary
+                        type: boolean
+                        op: gt
+                        left: {kind: var, type: integer, decl: 53, name: "MIN"}
+                        right: {kind: var, type: integer, decl: 54, name: "MAX"}
+                      then:
+                        kind: goto
+                        loc: 101/1
+                        target: {kind: label_ref, type: none, label: 67, name: "NOR"}
+                    - kind: for
+                      loc: 102/1
+                      control: {kind: var, decl: 56, name: "K"}
+                      elements:
+                        - kind: value
+                          value: {kind: int_const, type: integer, value: 0}
+                        - kind: value
+                          value: {kind: int_const, type: integer, value: 1}
+                        - kind: value
+                          value: {kind: int_const, type: integer, value: 2}
+                      body:
+                        kind: assign
+                        loc: 103/1
+                        targets:
+                          - kind: element
+                            array: 18
+                            name: "DP"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 53, name: "MIN"}
+                              - {kind: var, type: integer, decl: 56, name: "K"}
+                        value: {kind: int_const, type: integer, value: 0}
+                    - kind: for
+                      loc: 104/1
+                      control: {kind: var, decl: 56, name: "K"}
+                      elements:
+                        - kind: step_until
+                          init:
+                            kind: unary
+                            type: integer
+                            op: neg
+                            operand: {kind: int_const, type: integer, value: 2}
+                          step: {kind: int_const, type: integer, value: 1}
+                          until: {kind: int_const, type: integer, value: 2}
+                      body:
+                        kind: compound
+                        loc: 106/1
+                        body:
+                          - kind: assign
+                            loc: 106/1
+                            targets:
+                              - {kind: var, decl: 58, name: "B"}
+                            value:
+                              kind: element
+                              type: integer
+                              array: 44
+                              name: "BORD"
+                              subscripts:
+                                - kind: binary
+                                  type: integer
+                                  op: add
+                                  left: {kind: var, type: integer, decl: 47, name: "X0"}
+                                  right:
+                                    kind: binary
+                                    type: integer
+                                    op: mul
+                                    left:
+                                      kind: binary
+                                      type: integer
+                                      op: add
+                                      left: {kind: var, type: integer, decl: 53, name: "MIN"}
+                                      right: {kind: var, type: integer, decl: 56, name: "K"}
+                                    right: {kind: var, type: integer, decl: 51, name: "DX"}
+                                - kind: binary
+                                  type: integer
+                                  op: add
+                                  left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                                  right:
+                                    kind: binary
+                                    type: integer
+                                    op: mul
+                                    left:
+                                      kind: binary
+                                      type: integer
+                                      op: add
+                                      left: {kind: var, type: integer, decl: 53, name: "MIN"}
+                                      right: {kind: var, type: integer, decl: 56, name: "K"}
+                                    right: {kind: var, type: integer, decl: 52, name: "DY"}
+                          - kind: assign
+                            loc: 107/1
+                            targets:
+                              - kind: element
+                                array: 18
+                                name: "DP"
+                                subscripts:
+                                  - {kind: var, type: integer, decl: 53, name: "MIN"}
+                                  - {kind: var, type: integer, decl: 58, name: "B"}
+                            value:
+                              kind: binary
+                              type: integer
+                              op: add
+                              left:
+                                kind: element
+                                type: integer
+                                array: 18
+                                name: "DP"
+                                subscripts:
+                                  - {kind: var, type: integer, decl: 53, name: "MIN"}
+                                  - {kind: var, type: integer, decl: 58, name: "B"}
+                              right: {kind: int_const, type: integer, value: 1}
+                    - kind: for
+                      loc: 109/1
+                      control: {kind: var, decl: 56, name: "K"}
+                      elements:
+                        - kind: step_until
+                          init:
+                            kind: binary
+                            type: integer
+                            op: add
+                            left: {kind: var, type: integer, decl: 53, name: "MIN"}
+                            right: {kind: int_const, type: integer, value: 1}
+                          step: {kind: int_const, type: integer, value: 1}
+                          until: {kind: var, type: integer, decl: 54, name: "MAX"}
+                      body:
+                        kind: compound
+                        loc: 111/1
+                        body:
+                          - kind: if
+                            loc: 111/1
+                            condition:
+                              kind: binary
+                              type: boolean
+                              op: eq
+                              left:
+                                kind: element
+                                type: integer
+                                array: 18
+                                name: "DP"
+                                subscripts:
+                                  - kind: binary
+                                    type: integer
+                                    op: sub
+                                    left: {kind: var, type: integer, decl: 56, name: "K"}
+                                    right: {kind: int_const, type: integer, value: 1}
+                                  - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                              right: {kind: int_const, type: integer, value: 5}
+                            then:
+                              kind: goto
+                              loc: 112/1
+                              target: {kind: label_ref, type: none, label: 65, name: "WIN"}
+                          - kind: for
+                            loc: 113/1
+                            control: {kind: var, decl: 58, name: "B"}
+                            elements:
+                              - kind: value
+                                value: {kind: int_const, type: integer, value: 0}
+                              - kind: value
+                                value: {kind: int_const, type: integer, value: 1}
+                              - kind: value
+                                value: {kind: int_const, type: integer, value: 2}
+                            body:
+                              kind: assign
+                              loc: 114/1
+                              targets:
+                                - kind: element
+                                  array: 18
+                                  name: "DP"
+                                  subscripts:
+                                    - {kind: var, type: integer, decl: 56, name: "K"}
+                                    - {kind: var, type: integer, decl: 58, name: "B"}
+                              value:
+                                kind: element
+                                type: integer
+                                array: 18
+                                name: "DP"
+                                subscripts:
+                                  - kind: binary
+                                    type: integer
+                                    op: sub
+                                    left: {kind: var, type: integer, decl: 56, name: "K"}
+                                    right: {kind: int_const, type: integer, value: 1}
+                                  - {kind: var, type: integer, decl: 58, name: "B"}
+                          - kind: for
+                            loc: 115/1
+                            control: {kind: var, decl: 57, name: "J"}
+                            elements:
+                              - kind: value
+                                value:
+                                  kind: unary
+                                  type: integer
+                                  op: neg
+                                  operand: {kind: int_const, type: integer, value: 3}
+                              - kind: value
+                                value: {kind: int_const, type: integer, value: 2}
+                            body:
+                              kind: compound
+                              loc: 117/1
+                              body:
+                                - kind: assign
+                                  loc: 117/1
+                                  targets:
+                                    - {kind: var, decl: 58, name: "B"}
+                                  value:
+                                    kind: element
+                                    type: integer
+                                    array: 44
+                                    name: "BORD"
+                                    subscripts:
+                                      - kind: binary
+                                        type: integer
+                                        op: add
+                                        left: {kind: var, type: integer, decl: 47, name: "X0"}
+                                        right:
+                                          kind: binary
+                                          type: integer
+                                          op: mul
+                                          left:
+                                            kind: binary
+                                            type: integer
+                                            op: add
+                                            left: {kind: var, type: integer, decl: 56, name: "K"}
+                                            right: {kind: var, type: integer, decl: 57, name: "J"}
+                                          right: {kind: var, type: integer, decl: 51, name: "DX"}
+                                      - kind: binary
+                                        type: integer
+                                        op: add
+                                        left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                                        right:
+                                          kind: binary
+                                          type: integer
+                                          op: mul
+                                          left:
+                                            kind: binary
+                                            type: integer
+                                            op: add
+                                            left: {kind: var, type: integer, decl: 56, name: "K"}
+                                            right: {kind: var, type: integer, decl: 57, name: "J"}
+                                          right: {kind: var, type: integer, decl: 52, name: "DY"}
+                                - kind: assign
+                                  loc: 118/1
+                                  targets:
+                                    - kind: element
+                                      array: 18
+                                      name: "DP"
+                                      subscripts:
+                                        - {kind: var, type: integer, decl: 56, name: "K"}
+                                        - {kind: var, type: integer, decl: 58, name: "B"}
+                                  value:
+                                    kind: binary
+                                    type: integer
+                                    op: add
+                                    left:
+                                      kind: element
+                                      type: integer
+                                      array: 18
+                                      name: "DP"
+                                      subscripts:
+                                        - {kind: var, type: integer, decl: 56, name: "K"}
+                                        - {kind: var, type: integer, decl: 58, name: "B"}
+                                    right:
+                                      kind: std_func
+                                      type: integer
+                                      func: sign
+                                      args:
+                                        - {kind: var, type: integer, decl: 57, name: "J"}
+                    - kind: if
+                      loc: 121/1
+                      condition:
+                        kind: binary
+                        type: boolean
+                        op: eq
+                        left:
+                          kind: element
+                          type: integer
+                          array: 18
+                          name: "DP"
+                          subscripts:
+                            - {kind: var, type: integer, decl: 54, name: "MAX"}
+                            - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                        right: {kind: int_const, type: integer, value: 5}
+                      then:
+                        kind: compound
+                        loc: 122/1
+                        body:
+                          - kind: labeled
+                            loc: 122/1
+                            label: 65
+                            name: "WIN"
+                            stmt:
+                              kind: assign
+                              loc: 123/1
+                              targets:
+                                - {kind: var, decl: 17, name: "KLAAR"}
+                              value: {kind: bool_const, type: boolean, value: true}
+                          - kind: goto
+                            loc: 124/1
+                            target: {kind: label_ref, type: none, label: 68, name: "UIT"}
+                    - kind: for
+                      loc: 126/1
+                      control: {kind: var, decl: 56, name: "K"}
+                      elements:
+                        - kind: step_until
+                          init:
+                            kind: unary
+                            type: integer
+                            op: neg
+                            operand: {kind: int_const, type: integer, value: 6}
+                          step: {kind: int_const, type: integer, value: 1}
+                          until:
+                            kind: binary
+                            type: integer
+                            op: sub
+                            left: {kind: var, type: integer, decl: 53, name: "MIN"}
+                            right: {kind: int_const, type: integer, value: 1}
+                        - kind: step_until
+                          init:
+                            kind: binary
+                            type: integer
+                            op: add
+                            left: {kind: var, type: integer, decl: 54, name: "MAX"}
+                            right: {kind: int_const, type: integer, value: 1}
+                          step: {kind: int_const, type: integer, value: 1}
+                          until: {kind: int_const, type: integer, value: 6}
+                      body:
+                        kind: assign
+                        loc: 128/1
+                        targets:
+                          - kind: element
+                            array: 18
+                            name: "DP"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 56, name: "K"}
+                              - {kind: int_const, type: integer, value: 0}
+                          - kind: element
+                            array: 18
+                            name: "DP"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 56, name: "K"}
+                              - {kind: int_const, type: integer, value: 1}
+                        value: {kind: int_const, type: integer, value: 1}
+                    - kind: assign
+                      loc: 129/1
+                      targets:
+                        - {kind: var, decl: 53, name: "MIN"}
+                      value:
+                        kind: binary
+                        type: integer
+                        op: sub
+                        left:
+                          kind: binary
+                          type: integer
+                          op: sub
+                          left: {kind: int_const, type: integer, value: 1}
+                          right: {kind: var, type: integer, decl: 7, name: "TN"}
+                        right: {kind: var, type: integer, decl: 64, name: "ZDZ"}
+                    - kind: assign
+                      loc: 130/1
+                      targets:
+                        - {kind: var, decl: 54, name: "MAX"}
+                      value:
+                        kind: binary
+                        type: integer
+                        op: sub
+                        left:
+                          kind: binary
+                          type: integer
+                          op: sub
+                          left:
+                            kind: unary
+                            type: integer
+                            op: neg
+                            operand: {kind: var, type: integer, decl: 53, name: "MIN"}
+                          right: {kind: var, type: integer, decl: 62, name: "XDX"}
+                        right: {kind: var, type: integer, decl: 63, name: "YDY"}
+                    - kind: call
+                      loc: 131/1
+                      proc: 33
+                      name: "MAXIM"
+                      args:
+                        - {kind: var, type: integer, decl: 53, name: "MIN"}
+                        - kind: unary
+                          type: integer
+                          op: neg
+                          operand: {kind: int_const, type: integer, value: 4}
+                    - kind: call
+                      loc: 132/1
+                      proc: 30
+                      name: "MINIM"
+                      args:
+                        - {kind: var, type: integer, decl: 54, name: "MAX"}
+                        - {kind: int_const, type: integer, value: 4}
+                    - kind: for
+                      loc: 133/1
+                      control: {kind: var, decl: 56, name: "K"}
+                      elements:
+                        - kind: step_until
+                          init: {kind: var, type: integer, decl: 53, name: "MIN"}
+                          step: {kind: int_const, type: integer, value: 1}
+                          until:
+                            kind: unary
+                            type: integer
+                            op: neg
+                            operand: {kind: int_const, type: integer, value: 1}
+                        - kind: step_until
+                          init: {kind: int_const, type: integer, value: 1}
+                          step: {kind: int_const, type: integer, value: 1}
+                          until: {kind: var, type: integer, decl: 54, name: "MAX"}
+                      body:
+                        kind: compound
+                        loc: 136/1
+                        body:
+                          - kind: assign
+                            loc: 136/1
+                            targets:
+                              - {kind: var, decl: 49, name: "X"}
+                            value:
+                              kind: binary
+                              type: integer
+                              op: add
+                              left: {kind: var, type: integer, decl: 47, name: "X0"}
+                              right:
+                                kind: binary
+                                type: integer
+                                op: mul
+                                left: {kind: var, type: integer, decl: 56, name: "K"}
+                                right: {kind: var, type: integer, decl: 51, name: "DX"}
+                          - kind: assign
+                            loc: 137/1
+                            targets:
+                              - {kind: var, decl: 50, name: "Y"}
+                            value:
+                              kind: binary
+                              type: integer
+                              op: add
+                              left: {kind: var, type: integer, decl: 48, name: "Y0"}
+                              right:
+                                kind: binary
+                                type: integer
+                                op: mul
+                                left: {kind: var, type: integer, decl: 56, name: "K"}
+                                right: {kind: var, type: integer, decl: 52, name: "DY"}
+                          - kind: if
+                            loc: 138/1
+                            condition:
+                              kind: binary
+                              type: boolean
+                              op: eq
+                              left:
+                                kind: element
+                                type: integer
+                                array: 44
+                                name: "BORD"
+                                subscripts:
+                                  - {kind: var, type: integer, decl: 49, name: "X"}
+                                  - {kind: var, type: integer, decl: 50, name: "Y"}
+                              right: {kind: int_const, type: integer, value: 2}
+                            then:
+                              kind: compound
+                              loc: 140/1
+                              body:
+                                - kind: assign
+                                  loc: 140/1
+                                  targets:
+                                    - {kind: var, decl: 9, name: "VNL"}
+                                  value:
+                                    kind: element
+                                    type: integer
+                                    array: 45
+                                    name: "AVNL"
+                                    subscripts:
+                                      - {kind: var, type: integer, decl: 49, name: "X"}
+                                      - {kind: var, type: integer, decl: 50, name: "Y"}
+                                - kind: if
+                                  loc: 141/1
+                                  condition:
+                                    kind: binary
+                                    type: boolean
+                                    op: gt
+                                    left: {kind: var, type: integer, decl: 9, name: "VNL"}
+                                    right: {kind: var, type: integer, decl: 12, name: "SW"}
+                                  then:
+                                    kind: compound
+                                    loc: 143/1
+                                    body:
+                                      - kind: assign
+                                        loc: 143/1
+                                        targets:
+                                          - kind: element
+                                            array: 45
+                                            name: "AVNL"
+                                            subscripts:
+                                              - {kind: var, type: integer, decl: 49, name: "X"}
+                                              - {kind: var, type: integer, decl: 50, name: "Y"}
+                                        value: {kind: int_const, type: integer, value: 0}
+                                      - kind: goto
+                                        loc: 144/1
+                                        target: {kind: label_ref, type: none, label: 66, name: "NXT"}
+                                - kind: if
+                                  loc: 146/1
+                                  condition:
+                                    kind: binary
+                                    type: boolean
+                                    op: ne
+                                    left: {kind: var, type: integer, decl: 9, name: "VNL"}
+                                    right: {kind: int_const, type: integer, value: 0}
+                                  then:
+                                    kind: compound
+                                    loc: 148/1
+                                    body:
+                                      - kind: assign
+                                        loc: 148/1
+                                        targets:
+                                          - kind: element
+                                            array: 39
+                                            name: "RVAL"
+                                            subscripts:
+                                              - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                              - {kind: var, type: integer, decl: 55, name: "Q"}
+                                        value: {kind: int_const, type: integer, value: 0}
+                                      - kind: for
+                                        loc: 149/1
+                                        control: {kind: var, decl: 58, name: "B"}
+                                        elements:
+                                          - kind: value
+                                            value: {kind: int_const, type: integer, value: 0}
+                                          - kind: value
+                                            value: {kind: int_const, type: integer, value: 1}
+                                        body:
+                                          kind: assign
+                                          loc: 150/1
+                                          targets:
+                                            - kind: element
+                                              array: 36
+                                              name: "RNUM"
+                                              subscripts:
+                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                                - {kind: var, type: integer, decl: 55, name: "Q"}
+                                            - kind: element
+                                              array: 37
+                                              name: "RLANG"
+                                              subscripts:
+                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                                - {kind: var, type: integer, decl: 55, name: "Q"}
+                                            - kind: element
+                                              array: 38
+                                              name: "RVRY"
+                                              subscripts:
+                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                                - {kind: var, type: integer, decl: 55, name: "Q"}
+                                          value: {kind: int_const, type: integer, value: 0}
+                                  else:
+                                    kind: compound
+                                    loc: 154/1
+                                    body:
+                                      - kind: assign
+                                        loc: 154/1
+                                        targets:
+                                          - {kind: var, decl: 9, name: "VNL"}
+                                          - kind: element
+                                            array: 45
+                                            name: "AVNL"
+                                            subscripts:
+                                              - {kind: var, type: integer, decl: 49, name: "X"}
+                                              - {kind: var, type: integer, decl: 50, name: "Y"}
+                                        value: {kind: var, type: integer, decl: 12, name: "SW"}
+                                      - kind: assign
+                                        loc: 155/1
+                                        targets:
+                                          - kind: element
+                                            array: 42
+                                            name: "AX"
+                                            subscripts:
+                                              - {kind: var, type: integer, decl: 12, name: "SW"}
+                                        value: {kind: var, type: integer, decl: 49, name: "X"}
+                                      - kind: assign
+                                        loc: 156/1
+                                        targets:
+                                          - kind: element
+                                            array: 43
+                                            name: "AY"
+                                            subscripts:
+                                              - {kind: var, type: integer, decl: 12, name: "SW"}
+                                        value: {kind: var, type: integer, decl: 50, name: "Y"}
+                                      - kind: assign
+                                        loc: 157/1
+                                        targets:
+                                          - {kind: var, decl: 12, name: "SW"}
+                                        value:
+                                          kind: binary
+                                          type: integer
+                                          op: add
+                                          left: {kind: var, type: integer, decl: 12, name: "SW"}
+                                          right: {kind: int_const, type: integer, value: 1}
+                                      - kind: for
+                                        loc: 158/1
+                                        control: {kind: var, decl: 57, name: "J"}
+                                        elements:
+                                          - kind: value
+                                            value: {kind: int_const, type: integer, value: 1}
+                                          - kind: value
+                                            value: {kind: int_const, type: integer, value: 2}
+                                          - kind: value
+                                            value: {kind: int_const, type: integer, value: 3}
+                                          - kind: value
+                                            value: {kind: int_const, type: integer, value: 4}
+                                        body:
+                                          kind: compound
+                                          loc: 160/1
+                                          body:
+                                            - kind: assign
+                                              loc: 160/1
+                                              targets:
+                                                - kind: element
+                                                  array: 39
+                                                  name: "RVAL"
+                                                  subscripts:
+                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                    - {kind: var, type: integer, decl: 57, name: "J"}
+                                              value: {kind: int_const, type: integer, value: 0}
+                                            - kind: for
+                                              loc: 161/1
+                                              control: {kind: var, decl: 58, name: "B"}
+                                              elements:
+                                                - kind: value
+                                                  value: {kind: int_const, type: integer, value: 0}
+                                                - kind: value
+                                                  value: {kind: int_const, type: integer, value: 1}
+                                              body:
+                                                kind: assign
+                                                loc: 162/1
+                                                targets:
+                                                  - kind: element
+                                                    array: 36
+                                                    name: "RNUM"
+                                                    subscripts:
+                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                      - {kind: var, type: integer, decl: 58, name: "B"}
+                                                      - {kind: var, type: integer, decl: 57, name: "J"}
+                                                  - kind: element
+                                                    array: 37
+                                                    name: "RLANG"
+                                                    subscripts:
+                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                      - {kind: var, type: integer, decl: 58, name: "B"}
+                                                      - {kind: var, type: integer, decl: 57, name: "J"}
+                                                  - kind: element
+                                                    array: 38
+                                                    name: "RVRY"
+                                                    subscripts:
+                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                      - {kind: var, type: integer, decl: 58, name: "B"}
+                                                      - {kind: var, type: integer, decl: 57, name: "J"}
+                                                value: {kind: int_const, type: integer, value: 0}
+                                - kind: for
+                                  loc: 167/1
+                                  control: {kind: var, decl: 57, name: "J"}
+                                  elements:
+                                    - kind: step_until
+                                      init:
+                                        kind: unary
+                                        type: integer
+                                        op: neg
+                                        operand: {kind: int_const, type: integer, value: 2}
+                                      step: {kind: int_const, type: integer, value: 1}
+                                      until: {kind: int_const, type: integer, value: 2}
+                                  body:
+                                    kind: for
+                                    loc: 168/1
+                                    control: {kind: var, decl: 58, name: "B"}
+                                    elements:
+                                      - kind: value
+                                        value: {kind: int_const, type: integer, value: 0}
+                                      - kind: value
+                                        value: {kind: int_const, type: integer, value: 1}
+                                    body:
+                                      kind: if
+                                      loc: 170/1
+                                      condition:
+                                        kind: binary
+                                        type: boolean
+                                        op: eq
+                                        left:
+                                          kind: element
+                                          type: integer
+                                          array: 18
+                                          name: "DP"
+                                          subscripts:
+                                            - kind: binary
+                                              type: integer
+                                              op: add
+                                              left: {kind: var, type: integer, decl: 56, name: "K"}
+                                              right: {kind: var, type: integer, decl: 57, name: "J"}
+                                            - kind: binary
+                                              type: integer
+                                              op: sub
+                                              left: {kind: int_const, type: integer, value: 1}
+                                              right: {kind: var, type: integer, decl: 58, name: "B"}
+                                        right: {kind: int_const, type: integer, value: 0}
+                                      then:
+                                        kind: compound
+                                        loc: 172/1
+                                        body:
+                                          - kind: assign
+                                            loc: 172/1
+                                            targets:
+                                              - {kind: var, decl: 60, name: "D"}
+                                            value:
+                                              kind: element
+                                              type: integer
+                                              array: 18
+                                              name: "DP"
+                                              subscripts:
+                                                - kind: binary
+                                                  type: integer
+                                                  op: add
+                                                  left: {kind: var, type: integer, decl: 56, name: "K"}
+                                                  right: {kind: var, type: integer, decl: 57, name: "J"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                          - kind: assign
+                                            loc: 173/1
+                                            targets:
+                                              - kind: element
+                                                array: 39
+                                                name: "RVAL"
+                                                subscripts:
+                                                  - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                  - {kind: var, type: integer, decl: 55, name: "Q"}
+                                            value:
+                                              kind: binary
+                                              type: integer
+                                              op: add
+                                              left:
+                                                kind: element
+                                                type: integer
+                                                array: 39
+                                                name: "RVAL"
+                                                subscripts:
+                                                  - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                  - {kind: var, type: integer, decl: 55, name: "Q"}
+                                              right: {kind: var, type: integer, decl: 60, name: "D"}
+                                          - kind: if
+                                            loc: 174/1
+                                            condition:
+                                              kind: call
+                                              type: boolean
+                                              proc: 33
+                                              name: "MAXIM"
+                                              args:
+                                                - kind: element
+                                                  type: integer
+                                                  array: 37
+                                                  name: "RLANG"
+                                                  subscripts:
+                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                    - {kind: var, type: integer, decl: 58, name: "B"}
+                                                    - {kind: var, type: integer, decl: 55, name: "Q"}
+                                                - {kind: var, type: integer, decl: 60, name: "D"}
+                                            then:
+                                              kind: assign
+                                              loc: 175/1
+                                              targets:
+                                                - kind: element
+                                                  array: 38
+                                                  name: "RVRY"
+                                                  subscripts:
+                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                    - {kind: var, type: integer, decl: 58, name: "B"}
+                                                    - {kind: var, type: integer, decl: 55, name: "Q"}
+                                              value: {kind: int_const, type: integer, value: 0}
+                                            else:
+                                              kind: if
+                                              loc: 176/1
+                                              condition:
+                                                kind: binary
+                                                type: boolean
+                                                op: eq
+                                                left:
+                                                  kind: element
+                                                  type: integer
+                                                  array: 37
+                                                  name: "RLANG"
+                                                  subscripts:
+                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                    - {kind: var, type: integer, decl: 58, name: "B"}
+                                                    - {kind: var, type: integer, decl: 55, name: "Q"}
+                                                right: {kind: var, type: integer, decl: 60, name: "D"}
+                                              then:
+                                                kind: assign
+                                                loc: 177/1
+                                                targets:
+                                                  - kind: element
+                                                    array: 38
+                                                    name: "RVRY"
+                                                    subscripts:
+                                                      - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                      - {kind: var, type: integer, decl: 58, name: "B"}
+                                                      - {kind: var, type: integer, decl: 55, name: "Q"}
+                                                value: {kind: int_const, type: integer, value: 1}
+                                          - kind: assign
+                                            loc: 178/1
+                                            targets:
+                                              - kind: element
+                                                array: 36
+                                                name: "RNUM"
+                                                subscripts:
+                                                  - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                  - {kind: var, type: integer, decl: 58, name: "B"}
+                                                  - {kind: var, type: integer, decl: 55, name: "Q"}
+                                            value:
+                                              kind: binary
+                                              type: integer
+                                              op: add
+                                              left:
+                                                kind: element
+                                                type: integer
+                                                array: 36
+                                                name: "RNUM"
+                                                subscripts:
+                                                  - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                  - {kind: var, type: integer, decl: 58, name: "B"}
+                                                  - {kind: var, type: integer, decl: 55, name: "Q"}
+                                              right: {kind: int_const, type: integer, value: 1}
+                                - kind: assign
+                                  loc: 182/1
+                                  targets:
+                                    - kind: element
+                                      array: 40
+                                      name: "TEMPO"
+                                      subscripts:
+                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: int_const, type: integer, value: 0}
+                                    - kind: element
+                                      array: 40
+                                      name: "TEMPO"
+                                      subscripts:
+                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: int_const, type: integer, value: 1}
+                                    - kind: element
+                                      array: 41
+                                      name: "WT"
+                                      subscripts:
+                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: int_const, type: integer, value: 0}
+                                    - kind: element
+                                      array: 41
+                                      name: "WT"
+                                      subscripts:
+                                        - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                        - {kind: int_const, type: integer, value: 1}
+                                  value: {kind: int_const, type: integer, value: 4}
+                                - kind: for
+                                  loc: 186/1
+                                  control: {kind: var, decl: 57, name: "J"}
+                                  elements:
+                                    - kind: value
+                                      value: {kind: int_const, type: integer, value: 1}
+                                    - kind: value
+                                      value: {kind: int_const, type: integer, value: 2}
+                                    - kind: value
+                                      value: {kind: int_const, type: integer, value: 3}
+                                    - kind: value
+                                      value: {kind: int_const, type: integer, value: 4}
+                                  body:
+                                    kind: for
+                                    loc: 187/1
+                                    control: {kind: var, decl: 58, name: "B"}
+                                    elements:
+                                      - kind: value
+                                        value: {kind: int_const, type: integer, value: 0}
+                                      - kind: value
+                                        value: {kind: int_const, type: integer, value: 1}
+                                    body:
+                                      kind: compound
+                                      loc: 189/1
+                                      body:
+                                        - kind: assign
+                                          loc: 189/1
+                                          targets:
+                                            - {kind: var, decl: 59, name: "T"}
+                                          value:
+                                            kind: binary
+                                            type: integer
+                                            op: sub
+                                            left: {kind: int_const, type: integer, value: 4}
+                                            right:
+                                              kind: element
+                                              type: integer
+                                              array: 37
+                                              name: "RLANG"
+                                              subscripts:
+                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                                - {kind: var, type: integer, decl: 57, name: "J"}
+                                        - kind: assign
+                                          loc: 190/1
+                                          targets:
+                                            - {kind: var, decl: 61, name: "W"}
+                                          value:
+                                            kind: binary
+                                            type: integer
+                                            op: sub
+                                            left: {kind: var, type: integer, decl: 59, name: "T"}
+                                            right:
+                                              kind: element
+                                              type: integer
+                                              array: 38
+                                              name: "RVRY"
+                                              subscripts:
+                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                                - {kind: var, type: integer, decl: 57, name: "J"}
+                                        - kind: call
+                                          loc: 191/1
+                                          proc: 30
+                                          name: "MINIM"
+                                          args:
+                                            - kind: element
+                                              type: integer
+                                              array: 40
+                                              name: "TEMPO"
+                                              subscripts:
+                                                - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                - {kind: var, type: integer, decl: 58, name: "B"}
+                                            - {kind: var, type: integer, decl: 59, name: "T"}
+                                        - kind: if
+                                          loc: 192/1
+                                          condition:
+                                            kind: cond
+                                            type: boolean
+                                            condition:
+                                              kind: call
+                                              type: boolean
+                                              proc: 30
+                                              name: "MINIM"
+                                              args:
+                                                - kind: element
+                                                  type: integer
+                                                  array: 41
+                                                  name: "WT"
+                                                  subscripts:
+                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                    - {kind: var, type: integer, decl: 58, name: "B"}
+                                                - {kind: var, type: integer, decl: 61, name: "W"}
+                                            then: {kind: bool_const, type: boolean, value: false}
+                                            else:
+                                              kind: binary
+                                              type: boolean
+                                              op: and
+                                              left:
+                                                kind: binary
+                                                type: boolean
+                                                op: eq
+                                                left: {kind: var, type: integer, decl: 61, name: "W"}
+                                                right: {kind: int_const, type: integer, value: 1}
+                                              right:
+                                                kind: binary
+                                                type: boolean
+                                                op: eq
+                                                left:
+                                                  kind: element
+                                                  type: integer
+                                                  array: 41
+                                                  name: "WT"
+                                                  subscripts:
+                                                    - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                    - {kind: var, type: integer, decl: 58, name: "B"}
+                                                right: {kind: int_const, type: integer, value: 1}
+                                          then:
+                                            kind: assign
+                                            loc: 195/1
+                                            targets:
+                                              - kind: element
+                                                array: 41
+                                                name: "WT"
+                                                subscripts:
+                                                  - {kind: var, type: integer, decl: 9, name: "VNL"}
+                                                  - {kind: var, type: integer, decl: 58, name: "B"}
+                                            value: {kind: int_const, type: integer, value: 0}
+                          - kind: labeled
+                            loc: 198/1
+                            label: 66
+                            name: "NXT"
+                            stmt: {kind: dummy, loc: 198/1}
+                    - kind: labeled
+                      loc: 199/1
+                      label: 67
+                      name: "NOR"
+                      stmt:
+                        kind: if
+                        loc: 199/1
+                        condition:
+                          kind: binary
+                          type: boolean
+                          op: eq
+                          left: {kind: var, type: integer, decl: 55, name: "Q"}
+                          right: {kind: int_const, type: integer, value: 3}
+                        then:
+                          kind: assign
+                          loc: 200/1
+                          targets:
+                            - {kind: var, decl: 51, name: "DX"}
+                          value: {kind: int_const, type: integer, value: 0}
+                        else:
+                          kind: assign
+                          loc: 202/1
+                          targets:
+                            - {kind: var, decl: 52, name: "DY"}
+                          value:
+                            kind: binary
+                            type: integer
+                            op: add
+                            left: {kind: var, type: integer, decl: 52, name: "DY"}
+                            right: {kind: int_const, type: integer, value: 1}
+              - kind: labeled
+                loc: 204/1
+                label: 68
+                name: "UIT"
+                stmt: {kind: dummy, loc: 204/2}
+        - kind: procedure
+          name: "ZET"
+          id: 69
+          type: none
+          formals:
+            - {name: "X", id: 70, spec: simple, type: integer, by_value: true}
+            - {name: "Y", id: 71, spec: simple, type: integer, by_value: true}
+          body:
+            kind: compound
+            loc: 210/1
+            body:
+              - kind: assign
+                loc: 210/1
+                targets:
+                  - kind: element
+                    array: 44
+                    name: "BORD"
+                    subscripts:
+                      - {kind: var, type: integer, decl: 70, name: "X"}
+                      - {kind: var, type: integer, decl: 71, name: "Y"}
+                value: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+              - kind: call
+                loc: 211/1
+                proc: 46
+                name: "CORR"
+                args:
+                  - {kind: var, type: integer, decl: 70, name: "X"}
+                  - {kind: var, type: integer, decl: 71, name: "Y"}
+              - kind: assign
+                loc: 212/1
+                targets:
+                  - {kind: var, decl: 14, name: "KLEUR"}
+                value:
+                  kind: binary
+                  type: integer
+                  op: sub
+                  left: {kind: int_const, type: integer, value: 1}
+                  right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+              - kind: assign
+                loc: 213/1
+                targets:
+                  - {kind: var, decl: 15, name: "ZNR"}
+                value:
+                  kind: binary
+                  type: integer
+                  op: add
+                  left: {kind: var, type: integer, decl: 15, name: "ZNR"}
+                  right: {kind: int_const, type: integer, value: 1}
+        - kind: procedure
+          name: "PRINTZ"
+          id: 72
+          type: none
+          formals:
+            - {name: "X", id: 73, spec: simple, type: integer, by_value: true}
+            - {name: "Y", id: 74, spec: simple, type: integer, by_value: true}
+          body:
+            kind: call
+            loc: 220/1
+            proc: 3
+            name: "DRAW"
+            args:
+              - {kind: var, type: integer, decl: 44, name: "BORD"}
+              - {kind: var, type: integer, decl: 8, name: "NT"}
+              - {kind: var, type: integer, decl: 15, name: "ZNR"}
+              - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+              - {kind: var, type: integer, decl: 73, name: "X"}
+              - {kind: var, type: integer, decl: 74, name: "Y"}
+        - kind: procedure
+          name: "SEL"
+          id: 75
+          type: integer
+          formals: []
+          body:
+            kind: block
+            loc: 226/1
+            decls:
+              - {kind: var, name: "V", id: 76, type: integer}
+              - {kind: var, name: "K", id: 77, type: integer}
+              - {kind: var, name: "J", id: 78, type: integer}
+              - {kind: var, name: "WSL", id: 79, type: integer}
+              - {kind: var, name: "W", id: 80, type: integer}
+              - {kind: var, name: "M", id: 81, type: integer}
+              - {kind: var, name: "A", id: 82, type: integer}
+              - {kind: var, name: "B", id: 83, type: integer}
+            body:
+              - kind: assign
+                loc: 226/1
+                targets:
+                  - {kind: var, decl: 80, name: "W"}
+                value: {kind: int_const, type: integer, value: 4}
+              - kind: assign
+                loc: 227/1
+                targets:
+                  - {kind: var, decl: 76, name: "V"}
+                  - {kind: var, decl: 81, name: "M"}
+                value: {kind: int_const, type: integer, value: 0}
+              - kind: for
+                loc: 228/1
+                control: {kind: var, decl: 77, name: "K"}
+                elements:
+                  - kind: step_until
+                    init:
+                      kind: binary
+                      type: integer
+                      op: sub
+                      left: {kind: var, type: integer, decl: 12, name: "SW"}
+                      right: {kind: int_const, type: integer, value: 1}
+                    step:
+                      kind: unary
+                      type: integer
+                      op: neg
+                      operand: {kind: int_const, type: integer, value: 1}
+                    until: {kind: int_const, type: integer, value: 1}
+                body:
+                  kind: if
+                  loc: 230/1
+                  condition:
+                    kind: cond
+                    type: boolean
+                    condition:
+                      kind: binary
+                      type: boolean
+                      op: eq
+                      left:
+                        kind: element
+                        type: integer
+                        array: 44
+                        name: "BORD"
+                        subscripts:
+                          - kind: element
+                            type: integer
+                            array: 42
+                            name: "AX"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 77, name: "K"}
+                          - kind: element
+                            type: integer
+                            array: 43
+                            name: "AY"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 77, name: "K"}
+                      right: {kind: int_const, type: integer, value: 2}
+                    then:
+                      kind: binary
+                      type: boolean
+                      op: eq
+                      left:
+                        kind: element
+                        type: integer
+                        array: 41
+                        name: "WT"
+                        subscripts:
+                          - {kind: var, type: integer, decl: 77, name: "K"}
+                          - kind: binary
+                            type: integer
+                            op: sub
+                            left: {kind: int_const, type: integer, value: 1}
+                            right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                      right: {kind: int_const, type: integer, value: 0}
+                    else: {kind: bool_const, type: boolean, value: false}
+                  then:
+                    kind: call
+                    loc: 233/1
+                    proc: 30
+                    name: "MINIM"
+                    args:
+                      - {kind: var, type: integer, decl: 80, name: "W"}
+                      - kind: element
+                        type: integer
+                        array: 40
+                        name: "TEMPO"
+                        subscripts:
+                          - {kind: var, type: integer, decl: 77, name: "K"}
+                          - kind: binary
+                            type: integer
+                            op: sub
+                            left: {kind: int_const, type: integer, value: 1}
+                            right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+              - kind: for
+                loc: 235/1
+                control: {kind: var, decl: 77, name: "K"}
+                elements:
+                  - kind: step_until
+                    init:
+                      kind: binary
+                      type: integer
+                      op: sub
+                      left: {kind: var, type: integer, decl: 12, name: "SW"}
+                      right: {kind: int_const, type: integer, value: 1}
+                    step:
+                      kind: unary
+                      type: integer
+                      op: neg
+                      operand: {kind: int_const, type: integer, value: 1}
+                    until: {kind: int_const, type: integer, value: 1}
+                body:
+                  kind: if
+                  loc: 237/1
+                  condition:
+                    kind: cond
+                    type: boolean
+                    condition:
+                      kind: binary
+                      type: boolean
+                      op: eq
+                      left:
+                        kind: element
+                        type: integer
+                        array: 44
+                        name: "BORD"
+                        subscripts:
+                          - kind: element
+                            type: integer
+                            array: 42
+                            name: "AX"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 77, name: "K"}
+                          - kind: element
+                            type: integer
+                            array: 43
+                            name: "AY"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 77, name: "K"}
+                      right: {kind: int_const, type: integer, value: 2}
+                    then:
+                      kind: cond
+                      type: boolean
+                      condition:
+                        kind: binary
+                        type: boolean
+                        op: le
+                        left:
+                          kind: element
+                          type: integer
+                          array: 40
+                          name: "TEMPO"
+                          subscripts:
+                            - {kind: var, type: integer, decl: 77, name: "K"}
+                            - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                        right: {kind: var, type: integer, decl: 80, name: "W"}
+                      then: {kind: bool_const, type: boolean, value: true}
+                      else:
+                        kind: cond
+                        type: boolean
+                        condition:
+                          kind: binary
+                          type: boolean
+                          op: eq
+                          left:
+                            kind: element
+                            type: integer
+                            array: 41
+                            name: "WT"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 77, name: "K"}
+                              - kind: binary
+                                type: integer
+                                op: sub
+                                left: {kind: int_const, type: integer, value: 1}
+                                right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                          right: {kind: int_const, type: integer, value: 0}
+                        then:
+                          kind: binary
+                          type: boolean
+                          op: eq
+                          left: {kind: var, type: integer, decl: 80, name: "W"}
+                          right:
+                            kind: element
+                            type: integer
+                            array: 40
+                            name: "TEMPO"
+                            subscripts:
+                              - {kind: var, type: integer, decl: 77, name: "K"}
+                              - kind: binary
+                                type: integer
+                                op: sub
+                                left: {kind: int_const, type: integer, value: 1}
+                                right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                        else: {kind: bool_const, type: boolean, value: false}
+                    else: {kind: bool_const, type: boolean, value: false}
+                  then:
+                    kind: compound
+                    loc: 244/1
+                    body:
+                      - kind: assign
+                        loc: 244/1
+                        targets:
+                          - {kind: var, decl: 82, name: "A"}
+                        value:
+                          kind: call
+                          type: integer
+                          proc: 24
+                          name: "SUM"
+                          args:
+                            - {kind: var, type: integer, decl: 78, name: "J"}
+                            - {kind: int_const, type: integer, value: 1}
+                            - {kind: int_const, type: integer, value: 4}
+                            - kind: binary
+                              type: real
+                              op: add
+                              left:
+                                kind: binary
+                                type: real
+                                op: mul
+                                left: {kind: real_const, type: real, value: 2.0}
+                                right:
+                                  kind: element
+                                  type: integer
+                                  array: 39
+                                  name: "RVAL"
+                                  subscripts:
+                                    - {kind: var, type: integer, decl: 77, name: "K"}
+                                    - {kind: var, type: integer, decl: 78, name: "J"}
+                              right:
+                                kind: element
+                                type: integer
+                                array: 36
+                                name: "RNUM"
+                                subscripts:
+                                  - {kind: var, type: integer, decl: 77, name: "K"}
+                                  - {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                  - {kind: var, type: integer, decl: 78, name: "J"}
+                      - kind: assign
+                        loc: 246/1
+                        targets:
+                          - {kind: var, decl: 83, name: "B"}
+                        value:
+                          kind: call
+                          type: integer
+                          proc: 24
+                          name: "SUM"
+                          args:
+                            - {kind: var, type: integer, decl: 78, name: "J"}
+                            - {kind: int_const, type: integer, value: 0}
+                            - {kind: int_const, type: integer, value: 1}
+                            - kind: binary
+                              type: real
+                              op: power
+                              left:
+                                kind: convert
+                                type: real
+                                conv: int_to_real
+                                expr: {kind: int_const, type: integer, value: 2}
+                              right:
+                                kind: binary
+                                type: real
+                                op: sub
+                                left:
+                                  kind: binary
+                                  type: real
+                                  op: sub
+                                  left: {kind: real_const, type: real, value: 7.0}
+                                  right:
+                                    kind: element
+                                    type: integer
+                                    array: 41
+                                    name: "WT"
+                                    subscripts:
+                                      - {kind: var, type: integer, decl: 77, name: "K"}
+                                      - {kind: var, type: integer, decl: 78, name: "J"}
+                                right:
+                                  kind: binary
+                                  type: real
+                                  op: div
+                                  left:
+                                    kind: std_func
+                                    type: real
+                                    func: abs
+                                    args:
+                                      - kind: binary
+                                        type: integer
+                                        op: sub
+                                        left: {kind: var, type: integer, decl: 78, name: "J"}
+                                        right: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+                                  right: {kind: real_const, type: real, value: 2.0}
+                      - kind: if
+                        loc: 248/1
+                        condition:
+                          kind: call
+                          type: boolean
+                          proc: 33
+                          name: "MAXIM"
+                          args:
+                            - {kind: var, type: integer, decl: 76, name: "V"}
+                            - kind: binary
+                              type: integer
+                              op: add
+                              left: {kind: var, type: integer, decl: 82, name: "A"}
+                              right: {kind: var, type: integer, decl: 83, name: "B"}
+                        then:
+                          kind: assign
+                          loc: 249/1
+                          targets:
+                            - {kind: var, decl: 81, name: "M"}
+                          value: {kind: var, type: integer, decl: 77, name: "K"}
+              - kind: assign
+                loc: 252/1
+                targets:
+                  - {kind: var, decl: 75, name: "SEL"}
+                value: {kind: var, type: integer, decl: 81, name: "M"}
+      body:
+        - kind: call
+          loc: 255/1
+          proc: 23
+          name: "NLCR"
+          args: []
+        - kind: for
+          loc: 256/1
+          control: {kind: var, decl: 10, name: "X"}
+          elements:
+            - kind: step_until
+              init: {kind: int_const, type: integer, value: 1}
+              step: {kind: int_const, type: integer, value: 1}
+              until: {kind: var, type: integer, decl: 8, name: "NT"}
+          body:
+            kind: for
+            loc: 257/1
+            control: {kind: var, decl: 11, name: "Y"}
+            elements:
+              - kind: step_until
+                init: {kind: int_const, type: integer, value: 1}
+                step: {kind: int_const, type: integer, value: 1}
+                until: {kind: var, type: integer, decl: 8, name: "NT"}
+            body:
+              kind: compound
+              loc: 259/1
+              body:
+                - kind: assign
+                  loc: 259/1
+                  targets:
+                    - kind: element
+                      array: 44
+                      name: "BORD"
+                      subscripts:
+                        - {kind: var, type: integer, decl: 10, name: "X"}
+                        - {kind: var, type: integer, decl: 11, name: "Y"}
+                  value: {kind: int_const, type: integer, value: 2}
+                - kind: assign
+                  loc: 260/1
+                  targets:
+                    - kind: element
+                      array: 45
+                      name: "AVNL"
+                      subscripts:
+                        - {kind: var, type: integer, decl: 10, name: "X"}
+                        - {kind: var, type: integer, decl: 11, name: "Y"}
+                  value: {kind: int_const, type: integer, value: 0}
+        - kind: assign
+          loc: 262/1
+          targets:
+            - {kind: var, decl: 14, name: "KLEUR"}
+          value:
+            kind: std_func
+            type: integer
+            func: sign
+            args:
+              - kind: call
+                type: integer
+                proc: 1
+                name: "XEEN"
+                args:
+                  - {kind: int_const, type: integer, value: 33554432}
+        - kind: call
+          loc: 263/1
+          proc: 23
+          name: "NLCR"
+          args: []
+        - kind: assign
+          loc: 264/1
+          targets:
+            - {kind: var, decl: 12, name: "SW"}
+            - {kind: var, decl: 15, name: "ZNR"}
+          value: {kind: int_const, type: integer, value: 1}
+        - kind: if
+          loc: 265/1
+          condition:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+            right: {kind: int_const, type: integer, value: 0}
+          then:
+            kind: compound
+            loc: 267/1
+            body:
+              - kind: call
+                loc: 267/1
+                proc: 72
+                name: "PRINTZ"
+                args:
+                  - {kind: var, type: integer, decl: 7, name: "TN"}
+                  - {kind: var, type: integer, decl: 7, name: "TN"}
+              - kind: call
+                loc: 268/1
+                proc: 69
+                name: "ZET"
+                args:
+                  - {kind: var, type: integer, decl: 7, name: "TN"}
+                  - {kind: var, type: integer, decl: 7, name: "TN"}
+        - kind: labeled
+          loc: 270/1
+          label: 84
+          name: "MENS"
+          stmt:
+            kind: assign
+            loc: 270/1
+            targets:
+              - {kind: var, decl: 10, name: "X"}
+            value:
+              kind: call
+              type: integer
+              proc: 20
+              name: "DIV"
+              args:
+                - kind: call
+                  type: integer
+                  proc: 1
+                  name: "XEEN"
+                  args:
+                    - {kind: int_const, type: integer, value: 992}
+                - {kind: int_const, type: integer, value: 32}
+        - kind: assign
+          loc: 272/1
+          targets:
+            - {kind: var, decl: 11, name: "Y"}
+          value:
+            kind: call
+            type: integer
+            proc: 1
+            name: "XEEN"
+            args:
+              - {kind: int_const, type: integer, value: 31}
+        - kind: if
+          loc: 273/1
+          condition:
+            kind: binary
+            type: boolean
+            op: or
+            left:
+              kind: binary
+              type: boolean
+              op: or
+              left:
+                kind: binary
+                type: boolean
+                op: or
+                left:
+                  kind: binary
+                  type: boolean
+                  op: eq
+                  left: {kind: var, type: integer, decl: 10, name: "X"}
+                  right: {kind: int_const, type: integer, value: 0}
+                right:
+                  kind: binary
+                  type: boolean
+                  op: gt
+                  left: {kind: var, type: integer, decl: 10, name: "X"}
+                  right: {kind: var, type: integer, decl: 8, name: "NT"}
+              right:
+                kind: binary
+                type: boolean
+                op: eq
+                left: {kind: var, type: integer, decl: 11, name: "Y"}
+                right: {kind: int_const, type: integer, value: 0}
+            right:
+              kind: binary
+              type: boolean
+              op: gt
+              left: {kind: var, type: integer, decl: 11, name: "Y"}
+              right: {kind: var, type: integer, decl: 8, name: "NT"}
+          then:
+            kind: goto
+            loc: 274/1
+            target: {kind: label_ref, type: none, label: 84, name: "MENS"}
+        - kind: if
+          loc: 275/1
+          condition:
+            kind: binary
+            type: boolean
+            op: ne
+            left:
+              kind: element
+              type: integer
+              array: 44
+              name: "BORD"
+              subscripts:
+                - {kind: var, type: integer, decl: 10, name: "X"}
+                - {kind: var, type: integer, decl: 11, name: "Y"}
+            right: {kind: int_const, type: integer, value: 2}
+          then:
+            kind: goto
+            loc: 276/1
+            target: {kind: label_ref, type: none, label: 84, name: "MENS"}
+        - kind: call
+          loc: 277/1
+          proc: 72
+          name: "PRINTZ"
+          args:
+            - {kind: var, type: integer, decl: 10, name: "X"}
+            - {kind: var, type: integer, decl: 11, name: "Y"}
+        - kind: if
+          loc: 278/1
+          condition:
+            kind: binary
+            type: boolean
+            op: lt
+            left:
+              kind: call
+              type: integer
+              proc: 1
+              name: "XEEN"
+              args:
+                - kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: int_const, type: integer, value: 1}
+            right: {kind: int_const, type: integer, value: 0}
+          then:
+            kind: goto
+            loc: 279/1
+            target: {kind: label_ref, type: none, label: 84, name: "MENS"}
+        - kind: call
+          loc: 280/1
+          proc: 69
+          name: "ZET"
+          args:
+            - {kind: var, type: integer, decl: 10, name: "X"}
+            - {kind: var, type: integer, decl: 11, name: "Y"}
+        - kind: if
+          loc: 281/1
+          condition: {kind: var, type: boolean, decl: 17, name: "KLAAR"}
+          then:
+            kind: goto
+            loc: 282/1
+            target: {kind: label_ref, type: none, label: 86, name: "LKLAAR"}
+        - kind: labeled
+          loc: 284/1
+          label: 85
+          name: "MACH"
+          stmt:
+            kind: assign
+            loc: 284/1
+            targets:
+              - {kind: var, decl: 16, name: "KM"}
+            value:
+              kind: call
+              type: integer
+              proc: 75
+              name: "SEL"
+              args: []
+        - kind: if
+          loc: 285/1
+          condition:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 16, name: "KM"}
+            right: {kind: int_const, type: integer, value: 0}
+          then:
+            kind: compound
+            loc: 287/1
+            body:
+              - kind: call
+                loc: 287/1
+                proc: 23
+                name: "NLCR"
+                args: []
+              - kind: io
+                loc: 288/1
+                op: write
+                params:
+                  - {kind: int_const, type: integer, value: 54}
+                  - {kind: string_const, type: string, value: "(11H IK GEEF OP)"}
+                items: []
+              - kind: goto
+                loc: 289/1
+                target: {kind: label_ref, type: none, label: 86, name: "LKLAAR"}
+        - kind: assign
+          loc: 291/1
+          targets:
+            - {kind: var, decl: 10, name: "X"}
+          value:
+            kind: element
+            type: integer
+            array: 42
+            name: "AX"
+            subscripts:
+              - {kind: var, type: integer, decl: 16, name: "KM"}
+        - kind: assign
+          loc: 292/1
+          targets:
+            - {kind: var, decl: 11, name: "Y"}
+          value:
+            kind: element
+            type: integer
+            array: 43
+            name: "AY"
+            subscripts:
+              - {kind: var, type: integer, decl: 16, name: "KM"}
+        - kind: call
+          loc: 293/1
+          proc: 72
+          name: "PRINTZ"
+          args:
+            - {kind: var, type: integer, decl: 10, name: "X"}
+            - {kind: var, type: integer, decl: 11, name: "Y"}
+        - kind: call
+          loc: 294/1
+          proc: 69
+          name: "ZET"
+          args:
+            - {kind: var, type: integer, decl: 10, name: "X"}
+            - {kind: var, type: integer, decl: 11, name: "Y"}
+        - kind: if
+          loc: 295/1
+          condition:
+            kind: unary
+            type: boolean
+            op: not
+            operand: {kind: var, type: boolean, decl: 17, name: "KLAAR"}
+          then:
+            kind: goto
+            loc: 296/1
+            target: {kind: label_ref, type: none, label: 84, name: "MENS"}
+        - kind: labeled
+          loc: 297/1
+          label: 86
+          name: "LKLAAR"
+          stmt:
+            kind: call
+            loc: 297/1
+            proc: 23
+            name: "NLCR"
+            args: []
+        - kind: if
+          loc: 298/1
+          condition:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 14, name: "KLEUR"}
+            right: {kind: int_const, type: integer, value: 0}
+          then:
+            kind: io
+            loc: 299/1
+            op: write
+            params:
+              - {kind: int_const, type: integer, value: 54}
+              - {kind: string_const, type: string, value: "(16H U HEBT GEWONNEN)"}
+            items: []
+          else:
+            kind: io
+            loc: 301/1
+            op: write
+            params:
+              - {kind: int_const, type: integer, value: 54}
+              - {kind: string_const, type: string, value: "(16H IK HEB GEWONNEN)"}
+            items: []

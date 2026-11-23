@@ -1,0 +1,215 @@
+externals: []
+block:
+  kind: block
+  loc: 5/1
+  decls:
+    - {kind: var, name: "A", id: 1, type: boolean}
+    - {kind: var, name: "B", id: 2, type: boolean}
+    - {kind: var, name: "I", id: 3, type: integer}
+  body:
+    - kind: assign
+      loc: 5/1
+      targets:
+        - {kind: var, decl: 1, name: "A"}
+      value: {kind: bool_const, type: boolean, value: true}
+    - kind: assign
+      loc: 5/2
+      targets:
+        - {kind: var, decl: 2, name: "B"}
+      value: {kind: bool_const, type: boolean, value: false}
+    - kind: io
+      loc: 6/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: and
+            left: {kind: var, type: boolean, decl: 1, name: "A"}
+            right: {kind: var, type: boolean, decl: 2, name: "B"}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: or
+            left: {kind: var, type: boolean, decl: 1, name: "A"}
+            right: {kind: var, type: boolean, decl: 2, name: "B"}
+        - kind: item
+          expr:
+            kind: unary
+            type: boolean
+            op: not
+            operand: {kind: var, type: boolean, decl: 1, name: "A"}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: impl
+            left: {kind: var, type: boolean, decl: 1, name: "A"}
+            right: {kind: var, type: boolean, decl: 2, name: "B"}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: equiv
+            left: {kind: var, type: boolean, decl: 1, name: "A"}
+            right: {kind: var, type: boolean, decl: 2, name: "B"}
+    - kind: io
+      loc: 7/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: or
+            left:
+              kind: unary
+              type: boolean
+              op: not
+              operand: {kind: var, type: boolean, decl: 1, name: "A"}
+            right:
+              kind: binary
+              type: boolean
+              op: and
+              left: {kind: var, type: boolean, decl: 2, name: "B"}
+              right: {kind: var, type: boolean, decl: 1, name: "A"}
+        - kind: item
+          expr:
+            kind: unary
+            type: boolean
+            op: not
+            operand:
+              kind: binary
+              type: boolean
+              op: or
+              left: {kind: var, type: boolean, decl: 1, name: "A"}
+              right: {kind: var, type: boolean, decl: 2, name: "B"}
+    - kind: assign
+      loc: 8/1
+      targets:
+        - {kind: var, decl: 3, name: "I"}
+      value: {kind: int_const, type: integer, value: 5}
+    - kind: io
+      loc: 9/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: lt
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 6}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: le
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: ne
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: ge
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 6}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: gt
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 4}
+    - kind: io
+      loc: 10/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: lt
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 6}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: gt
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 6}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: ne
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+    - kind: io
+      loc: 11/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: lt
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 6}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: gt
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 6}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: ge
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 5}
+        - kind: item
+          expr:
+            kind: binary
+            type: boolean
+            op: le
+            left: {kind: var, type: integer, decl: 3, name: "I"}
+            right: {kind: int_const, type: integer, value: 4}

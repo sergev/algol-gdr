@@ -1,0 +1,13 @@
+externals: []
+block:
+  kind: block
+  loc: 2/1
+  decls: []
+  body:
+    - kind: io
+      loc: 2/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: string_const, type: string, value: "HELLO, WORLD!"}

@@ -1,0 +1,316 @@
+externals: []
+block:
+  kind: block
+  loc: 1/2
+  decls:
+    - {kind: var, name: "J", id: 13, type: integer}
+    - {kind: var, name: "U", id: 14, type: real}
+    - {kind: var, name: "V", id: 15, type: real}
+    - kind: procedure
+      name: "F"
+      id: 1
+      type: real
+      formals:
+        - {name: "X", id: 2, spec: simple, type: real, by_value: true}
+      body:
+        kind: assign
+        loc: 4/1
+        targets:
+          - {kind: var, decl: 1, name: "F"}
+        value:
+          kind: cond
+          type: real
+          condition:
+            kind: binary
+            type: boolean
+            op: lt
+            left: {kind: var, type: real, decl: 2, name: "X"}
+            right: {kind: real_const, type: real, value: 1.0}
+          then: {kind: real_const, type: real, value: 1.0}
+          else:
+            kind: binary
+            type: real
+            op: mul
+            left: {kind: var, type: real, decl: 2, name: "X"}
+            right:
+              kind: call
+              type: real
+              proc: 1
+              name: "F"
+              args:
+                - kind: binary
+                  type: real
+                  op: sub
+                  left: {kind: var, type: real, decl: 2, name: "X"}
+                  right: {kind: real_const, type: real, value: 1.0}
+    - kind: procedure
+      name: "SUM"
+      id: 3
+      type: integer
+      formals:
+        - {name: "I", id: 4, spec: simple, type: integer, by_value: false}
+        - {name: "A", id: 5, spec: simple, type: integer, by_value: true}
+        - {name: "B", id: 6, spec: simple, type: integer, by_value: true}
+        - {name: "T", id: 7, spec: simple, type: integer, by_value: false}
+      body:
+        kind: block
+        loc: 7/4
+        decls:
+          - {kind: var, name: "S", id: 8, type: integer}
+        body:
+          - kind: assign
+            loc: 7/4
+            targets:
+              - {kind: var, decl: 8, name: "S"}
+            value: {kind: int_const, type: integer, value: 0}
+          - kind: for
+            loc: 8/1
+            control: {kind: var, decl: 4, name: "I"}
+            elements:
+              - kind: step_until
+                init: {kind: var, type: integer, decl: 5, name: "A"}
+                step: {kind: int_const, type: integer, value: 1}
+                until: {kind: var, type: integer, decl: 6, name: "B"}
+            body:
+              kind: assign
+              loc: 8/2
+              targets:
+                - {kind: var, decl: 8, name: "S"}
+              value:
+                kind: binary
+                type: integer
+                op: add
+                left: {kind: var, type: integer, decl: 8, name: "S"}
+                right: {kind: var, type: integer, decl: 7, name: "T"}
+          - kind: assign
+            loc: 9/1
+            targets:
+              - {kind: var, decl: 3, name: "SUM"}
+            value: {kind: var, type: integer, decl: 8, name: "S"}
+    - kind: procedure
+      name: "SWAP"
+      id: 9
+      type: none
+      formals:
+        - {name: "P", id: 10, spec: simple, type: real, by_value: false}
+        - {name: "Q", id: 11, spec: simple, type: real, by_value: false}
+      body:
+        kind: block
+        loc: 12/4
+        decls:
+          - {kind: var, name: "T", id: 12, type: real}
+        body:
+          - kind: assign
+            loc: 12/4
+            targets:
+              - {kind: var, decl: 12, name: "T"}
+            value: {kind: var, type: real, decl: 10, name: "P"}
+          - kind: assign
+            loc: 12/5
+            targets:
+              - {kind: var, decl: 10, name: "P"}
+            value: {kind: var, type: real, decl: 11, name: "Q"}
+          - kind: assign
+            loc: 12/6
+            targets:
+              - {kind: var, decl: 11, name: "Q"}
+            value: {kind: var, type: real, decl: 12, name: "T"}
+    - kind: arrays
+      type: integer
+      arrays:
+        - {name: "C", id: 16}
+      bounds:
+        - lower: {kind: int_const, type: integer, value: 1}
+          upper: {kind: int_const, type: integer, value: 3}
+  body:
+    - kind: assign
+      loc: 15/1
+      targets:
+        - {kind: var, decl: 14, name: "U"}
+      value: {kind: real_const, type: real, value: 1.5}
+    - kind: assign
+      loc: 15/2
+      targets:
+        - {kind: var, decl: 15, name: "V"}
+      value:
+        kind: unary
+        type: real
+        op: neg
+        operand: {kind: real_const, type: real, value: 0.0022499999999965326}
+    - kind: call
+      loc: 16/1
+      proc: 9
+      name: "SWAP"
+      args:
+        - {kind: var, type: real, decl: 14, name: "U"}
+        - {kind: var, type: real, decl: 15, name: "V"}
+    - kind: io
+      loc: 17/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: real, decl: 14, name: "U"}
+        - kind: item
+          expr: {kind: var, type: real, decl: 15, name: "V"}
+        - kind: item
+          expr:
+            kind: call
+            type: real
+            proc: 1
+            name: "F"
+            args:
+              - {kind: real_const, type: real, value: 5.0}
+        - kind: item
+          expr:
+            kind: call
+            type: integer
+            proc: 3
+            name: "SUM"
+            args:
+              - {kind: var, type: integer, decl: 13, name: "J"}
+              - {kind: int_const, type: integer, value: 1}
+              - {kind: int_const, type: integer, value: 10}
+              - kind: binary
+                type: integer
+                op: mul
+                left: {kind: var, type: integer, decl: 13, name: "J"}
+                right: {kind: var, type: integer, decl: 13, name: "J"}
+    - kind: io
+      loc: 18/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: sqrt
+            args:
+              - {kind: real_const, type: real, value: 2.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: sin
+            args:
+              - {kind: real_const, type: real, value: 1.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: cos
+            args:
+              - {kind: real_const, type: real, value: 1.0}
+    - kind: io
+      loc: 19/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: arctan
+            args:
+              - {kind: real_const, type: real, value: 1.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: ln
+            args:
+              - {kind: real_const, type: real, value: 10.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: exp
+            args:
+              - {kind: real_const, type: real, value: 1.0}
+    - kind: io
+      loc: 20/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: abs
+            args:
+              - kind: unary
+                type: integer
+                op: neg
+                operand: {kind: int_const, type: integer, value: 3}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: sign
+            args:
+              - kind: unary
+                type: real
+                op: neg
+                operand: {kind: real_const, type: real, value: 2.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: entier
+            args:
+              - {kind: real_const, type: real, value: 3.7000000000007276}
+    - kind: assign
+      loc: 21/1
+      targets:
+        - kind: element
+          array: 16
+          name: "C"
+          subscripts:
+            - {kind: int_const, type: integer, value: 2}
+      value:
+        kind: std_func
+        type: integer
+        func: entier
+        args:
+          - kind: binary
+            type: real
+            op: div
+            left:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: int_const, type: integer, value: 7}
+            right:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: int_const, type: integer, value: 2}
+    - kind: io
+      loc: 21/2
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: element
+            type: integer
+            array: 16
+            name: "C"
+            subscripts:
+              - {kind: int_const, type: integer, value: 2}
+        - kind: item
+          expr:
+            kind: binary
+            type: real
+            op: div
+            left:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: int_const, type: integer, value: 7}
+            right:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: int_const, type: integer, value: 2}

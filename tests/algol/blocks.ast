@@ -1,0 +1,55 @@
+externals: []
+block:
+  kind: block
+  loc: 4/1
+  decls:
+    - {kind: var, name: "X", id: 1, type: integer}
+    - {kind: var, name: "X", id: 2, type: integer}
+    - {kind: var, name: "X", id: 3, type: real}
+  body:
+    - kind: assign
+      loc: 4/1
+      targets:
+        - {kind: var, decl: 1, name: "X"}
+      value: {kind: int_const, type: integer, value: 1}
+    - kind: assign
+      loc: 6/1
+      targets:
+        - {kind: var, decl: 2, name: "X"}
+      value: {kind: int_const, type: integer, value: 2}
+    - kind: assign
+      loc: 8/1
+      targets:
+        - {kind: var, decl: 3, name: "X"}
+      value: {kind: real_const, type: real, value: 3.5}
+    - kind: io
+      loc: 9/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: real, decl: 3, name: "X"}
+    - kind: io
+      loc: 11/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 2, name: "X"}
+    - kind: assign
+      loc: 14/1
+      targets:
+        - {kind: var, decl: 1, name: "X"}
+      value:
+        kind: binary
+        type: integer
+        op: add
+        left: {kind: var, type: integer, decl: 1, name: "X"}
+        right: {kind: int_const, type: integer, value: 10}
+    - kind: io
+      loc: 16/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr: {kind: var, type: integer, decl: 1, name: "X"}

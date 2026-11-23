@@ -1,0 +1,121 @@
+externals: []
+block:
+  kind: block
+  loc: 3/1
+  decls: []
+  body:
+    - kind: io
+      loc: 3/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: abs
+            args:
+              - kind: unary
+                type: integer
+                op: neg
+                operand: {kind: int_const, type: integer, value: 2}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: abs
+            args:
+              - {kind: real_const, type: real, value: 2.5}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: sign
+            args:
+              - kind: unary
+                type: integer
+                op: neg
+                operand: {kind: int_const, type: integer, value: 3}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: sign
+            args:
+              - {kind: int_const, type: integer, value: 0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: sign
+            args:
+              - {kind: real_const, type: real, value: 0.5}
+    - kind: io
+      loc: 4/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: sqrt
+            args:
+              - {kind: real_const, type: real, value: 16.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: sin
+            args:
+              - {kind: real_const, type: real, value: 0.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: cos
+            args:
+              - {kind: real_const, type: real, value: 0.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: arctan
+            args:
+              - {kind: real_const, type: real, value: 0.0}
+    - kind: io
+      loc: 5/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: exp
+            args:
+              - {kind: real_const, type: real, value: 0.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: real
+            func: ln
+            args:
+              - {kind: real_const, type: real, value: 1.0}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: entier
+            args:
+              - {kind: real_const, type: real, value: 2.5}
+        - kind: item
+          expr:
+            kind: std_func
+            type: integer
+            func: entier
+            args:
+              - kind: unary
+                type: real
+                op: neg
+                operand: {kind: real_const, type: real, value: 2.5}

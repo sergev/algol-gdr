@@ -34,6 +34,7 @@ algc [options...] file.alg
 | `--list` | Listing of the program; otherwise errors only |
 | `--check` | Run-time checks (like `*CHECK`) |
 | `--stop-after=N` | Print the stream of pass N (1-2) and stop |
+| `--dump-ast` | Print the AST in YAML |
 
 The source is the original notation in UTF-8: keywords in quotes (`'BEGIN'`), strings in
 `''…''`, `'EOP'` at the end; only columns 1-72 of a line count. The operators `× ↑ ≥ ≤ ≠ ¬

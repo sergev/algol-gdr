@@ -1,0 +1,107 @@
+externals: []
+block:
+  kind: block
+  loc: 2/1
+  decls:
+    - kind: procedure
+      name: "A"
+      id: 1
+      type: real
+      formals:
+        - {name: "K", id: 2, spec: simple, type: integer, by_value: true}
+        - {name: "X1", id: 3, spec: simple, type: real, by_value: false}
+        - {name: "X2", id: 4, spec: simple, type: real, by_value: false}
+        - {name: "X3", id: 5, spec: simple, type: real, by_value: false}
+        - {name: "X4", id: 6, spec: simple, type: real, by_value: false}
+        - {name: "X5", id: 7, spec: simple, type: real, by_value: false}
+      body:
+        kind: block
+        loc: 11/1
+        decls:
+          - kind: procedure
+            name: "B"
+            id: 8
+            type: real
+            formals: []
+            body:
+              kind: compound
+              loc: 8/1
+              body:
+                - kind: assign
+                  loc: 8/1
+                  targets:
+                    - {kind: var, decl: 2, name: "K"}
+                  value:
+                    kind: binary
+                    type: integer
+                    op: sub
+                    left: {kind: var, type: integer, decl: 2, name: "K"}
+                    right: {kind: int_const, type: integer, value: 1}
+                - kind: assign
+                  loc: 9/1
+                  targets:
+                    - {kind: var, decl: 8, name: "B"}
+                    - {kind: var, decl: 1, name: "A"}
+                  value:
+                    kind: call
+                    type: real
+                    proc: 1
+                    name: "A"
+                    args:
+                      - {kind: var, type: integer, decl: 2, name: "K"}
+                      - {kind: var, type: real, decl: 8, name: "B"}
+                      - {kind: var, type: real, decl: 3, name: "X1"}
+                      - {kind: var, type: real, decl: 4, name: "X2"}
+                      - {kind: var, type: real, decl: 5, name: "X3"}
+                      - {kind: var, type: real, decl: 6, name: "X4"}
+        body:
+          - kind: assign
+            loc: 11/1
+            targets:
+              - {kind: var, decl: 1, name: "A"}
+            value:
+              kind: cond
+              type: real
+              condition:
+                kind: binary
+                type: boolean
+                op: le
+                left: {kind: var, type: integer, decl: 2, name: "K"}
+                right: {kind: int_const, type: integer, value: 0}
+              then:
+                kind: binary
+                type: real
+                op: add
+                left: {kind: var, type: real, decl: 6, name: "X4"}
+                right: {kind: var, type: real, decl: 7, name: "X5"}
+              else:
+                kind: call
+                type: real
+                proc: 8
+                name: "B"
+                args: []
+  body:
+    - kind: io
+      loc: 14/1
+      op: print
+      params: []
+      items:
+        - kind: item
+          expr:
+            kind: call
+            type: real
+            proc: 1
+            name: "A"
+            args:
+              - {kind: int_const, type: integer, value: 10}
+              - {kind: real_const, type: real, value: 1.0}
+              - kind: unary
+                type: real
+                op: neg
+                operand: {kind: real_const, type: real, value: 1.0}
+              - kind: unary
+                type: real
+                op: neg
+                operand: {kind: real_const, type: real, value: 1.0}
+              - {kind: real_const, type: real, value: 1.0}
+              - {kind: real_const, type: real, value: 0.0}
