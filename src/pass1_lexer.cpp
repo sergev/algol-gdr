@@ -48,6 +48,46 @@ Word to_integer(Word a)
 
 } // namespace
 
+//
+// The symbol of a Unicode operator that dubna encodes where the original
+// lexer has none (ERROR 01): ∧ ∨ ⊃ ¬ ≡ ≤ ≥ as the one-character symbols at
+// 021, 020, 022, 023, 024, 031, 032; × as *, ↑ as **. 0 for other codes.
+//
+unsigned Pass1::unicode_operator(unsigned c)
+{
+    unsigned like = 0;
+    switch (c) {
+    case '&': // ∧
+        like = 021;
+        break;
+    case 036: // ∨
+        like = 020;
+        break;
+    case 034: // ⊃
+        like = 022;
+        break;
+    case 037: // ¬
+        like = 023;
+        break;
+    case 035: // ≡
+        like = 024;
+        break;
+    case 016: // ≤
+        like = 031;
+        break;
+    case 017: // ≥
+        like = 032;
+        break;
+    case 006: // ×
+        return 015;
+    case 026: // ↑
+        return 017;
+    default:
+        return 0;
+    }
+    return (chclass(like) & 077400017) >> 17;
+}
+
 Word Pass1::chclass(unsigned c)
 {
     return tables::chclass.words[c & 0177];
@@ -267,7 +307,11 @@ L0712:
     case 011: // a one-character symbol
         a >>= 17;
         goto L1012;
-    case 012:
+    case 012: // ERROR 01, except for the Unicode operators (an extension)
+        if (unsigned op = unicode_operator(m11)) {
+            a = op;
+            goto L1012;
+        }
         error(1);
     case 013: // ',', or ';' after '.,' at the end of a number
         if (!ws_[D_SEMI]) {

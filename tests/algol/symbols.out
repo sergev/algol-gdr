@@ -1,0 +1,12 @@
+*NAME SYMBOLS
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/BPRI   E 01647                A/R*ISO  E 02017                PRINT8     02176
+         A/STOP     01447                A/SPRI   E 01656                STOP*      02052                SYSBACK*   02357
+         A/START  E 01453                A/LPRI   E 01673                EXIT     E 02053                CBOБOДHO   02367
+         A/DRUCK    01527                A/NLINE  E 01737                A/ARRD/K   02101
+         A/IPRI   E 01561                A/NPAGE  E 01741                A/ARRD/V E 02104
+         A/RPRI   E 01613                A/I*ISO  E 02014                STOPFLG* C 02175
+≠
+ A∧B∨C⊃D¬E≡F⩽G⩾H×I↑J°K‘L≠M⏨N°           139

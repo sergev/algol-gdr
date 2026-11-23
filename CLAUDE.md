@@ -89,6 +89,7 @@ is punched; `dubna -r` fixes the date and makes output deterministic; `dubna` wr
 
 Original input is upper/lower case with keywords in quotes (`'BEGIN'`, `'EOP'` ends the program,
 strings in `''…''` or `'('…')'`), word operators like `'LE'`, `'AND'`, `'POWER'`. Lines are
-cards: only columns 1–72 count. The exponent sign is `⏨` (`dubna` turns `@` into `°`).
-UTF-8 operator symbols our compiler should accept: `×` (or `*`), `÷`, `↑`, `≥`, `≤`, `≠`, `¬`,
-`∧`, `∨`, `⊃`, `≡`, `⏨` (or `@`).
+cards: only columns 1–72 count. The exponent sign is `⏨` (`@` is a letter, printed `°`).
+Cards are encoded as `dubna` does; UTF-8 operator symbols our compiler also accepts (where the
+original gives ERROR 01): `×`, `↑`, `≥`, `≤`, `≠`, `¬`, `∧`, `∨`, `⊃`, `≡` (`÷` reads as `≥`,
+as in the original).

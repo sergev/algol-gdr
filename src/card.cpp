@@ -78,14 +78,6 @@ unsigned utf8_next(const std::string &s, size_t &i)
 
 unsigned char unicode_to_koi7(unsigned u)
 {
-    switch (u) {
-    case '@': // exponent
-        return 027;
-    case 0xac: // ¬
-        return 023;
-    case 0xd7: // ×
-        return '*';
-    }
     if (u < 0x100)
         return tab0[u];
     if (u >= 0x410 && u < 0x450)
@@ -121,21 +113,21 @@ unsigned char unicode_to_koi7(unsigned u)
     case 0x2191: // ↑
         return 026;
     case 0x2227: // ∧
-        return 021;
+        return '&';
     case 0x2228: // ∨
-        return 020;
+        return 036;
     case 0x2260: // ≠
         return 030;
     case 0x2261: // ≡
-        return 024;
+        return 035;
     case 0x2264: // ≤
     case 0x2a7d: // ⩽
-        return 031;
+        return 016;
     case 0x2265: // ≥
     case 0x2a7e: // ⩾
-        return 032;
+        return 017;
     case 0x2283: // ⊃
-        return 022;
+        return 034;
     case 0x23e8: // ⏨
         return 027;
     case 0x25c7:
@@ -151,10 +143,6 @@ std::string line_to_koi7(const std::string &line)
         unsigned u = utf8_next(line, i);
         if (u == '\n' || u == '\r')
             break;
-        if (u == 0x2191) {
-            out += "**";
-            continue;
-        }
         unsigned char c = unicode_to_koi7(u);
         if (c)
             out += char(c);

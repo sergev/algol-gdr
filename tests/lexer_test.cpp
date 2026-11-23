@@ -72,3 +72,23 @@ static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
 }
 
 INSTANTIATE_TEST_SUITE_P(algol, Lexer, ::testing::ValuesIn(cases()), param_name);
+
+// The Unicode operators (an extension: the original gives ERROR 01) are the
+// symbols of their word forms.
+TEST(Lexer, unicode_operators)
+{
+    auto symbols = [](const std::string &text) {
+        Context ctx;
+        ctx.source = "'BEGIN' " + text + "\n'END'\n'EOP'\n";
+        Pass1 lexer(ctx);
+        std::vector<unsigned> codes;
+        do {
+            lexer.lex();
+            codes.push_back(lexer.symbol());
+        } while (lexer.symbol() != 037);
+        return codes;
+    };
+    EXPECT_EQ(symbols("¬A ∨ B ∧ C ⊃ D ≡ E ≤ F ≥ G ≠ H × I ↑ J"),
+              symbols("'NOT'A 'OR' B 'AND' C 'IMPL' D 'EQUIV' E\n"
+                      "'LE' F 'GE' G 'NE' H * I 'POWER' J"));
+}

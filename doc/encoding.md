@@ -60,10 +60,14 @@ Limits found:
 
 ## Our compiler
 
-`src/card.cpp` turns each source line into a card as `dubna` does (80 KOI-7 characters,
-blank-padded, six per word, like 02010… after `READ*`), with the Unicode symbols below mapped
-to the codes the lexer expects: `∨ ∧ ⊃ ¬ ≡` → 020–024, `≠ ≤ ≥` → 030–032, `⏨` and `@` → 027,
-`×` → `*`, `↑` → `**`. Other characters `dubna` does not know are dropped, as there.
+`src/card.cpp` turns each source line into a card exactly as `dubna` does (80 KOI-7
+characters, blank-padded, six per word, like 02010… after `READ*`; characters `dubna` does
+not know are dropped). Strings, comments and the listing are then those of the original:
+`''A∧B''` prints `A∧B`, and `@` is the letter 0100 (printed `°`), not an exponent.
+
+The lexer (`Pass1::unicode_operator`) takes the codes `dubna` gives `∧ ∨ ⊃ ¬ ≡ ≤ ≥ × ↑`
+(`&`, 036, 034, 037, 035, 016, 017, 006, 026) as those operators, only where the original
+gives `ERROR 01 SYMBOL`: programs the original accepts are compiled the same.
 
 Only columns 1–72 count, as in the original. To produce the same object code as the original, the
 reader maps every form to the same internal symbol:
@@ -75,7 +79,7 @@ reader maps every form to the same internal symbol:
 | ≤ ≥ ≠ | `'LE'`, `'NOTGREATER'`, `≤` · `'GE'`, `'NOTLESS'`, `≥` · `'NE'`, `'NOTEQUAL'`, `≠` |
 | < > = | `<`, `'LT'`, `'LESS'` · `>`, `'GT'`, `'GREATER'` · `=`, `'EQ'`, `'EQUAL'` |
 | logical | `'NOT'` `¬` · `'AND'` `∧` · `'OR'` `∨` · `'IMPL'` `⊃` · `'EQUIV'` `≡` |
-| exponent | `⏨`, `@` |
+| exponent | `⏨` |
 | quote | `'` and `′` (the listing form) |
 
 Open questions:
