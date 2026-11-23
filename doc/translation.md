@@ -14,7 +14,8 @@ C++ under the tests.
   returns its address. `--hook ADDR` calls `m.on_entry` there. `--native ADDR` makes the
   code return ADDR when it gets there (by a jump, a call or falling through), so that
   `Machine::run` calls the C++ routine registered at ADDR, which returns the address to go
-  on at.
+  on at. The words of a `--replaced FIRST-LAST` range are not translated: reaching any of
+  them leaves the code, so it must be a native, or the pass stops with an error.
 - `scripts/gen-passes` regenerates `src/passN_gen.cpp` (passes 3, 4) and
   `src/shared_gen.cpp` (the shared code alone, for pass 2). Each pass gets its own copy of the
   shared code it calls: the driver's print routine 01644–01735, the streams 27114–27244,
@@ -57,8 +58,8 @@ still the machine's memory (copied from and back to the `Context`), and it reads
 its streams through the original stream module (27114–27244), so pages, drums and registers
 come out exactly; the driver's print 01644 is the original too.
 
-Routines of the passes rewritten in C++ (`--native` in `scripts/gen-passes` for the translated
-passes), each working on the machine's memory and leaving its registers as the original does:
+Routines of the passes rewritten in C++ (`--native` or `--replaced` in `scripts/gen-passes` for
+the translated passes), each working on the machine's memory and leaving its registers as the original does:
 
 | Pass | Address | Routine |
 |---|---|---|
@@ -80,11 +81,14 @@ passes), each working on the machine's memory and leaving its registers as the o
 | 2 | 20445–20565 | I/O statements, string slices |
 | 2 | 20571–21342 | calls, arguments, thunks, VALUE, standard and non-ALGOL procedures |
 
+| 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
+| 3 | 22162–22231 | `start`, `next_item`, `copy_item`, `fold` (src/pass3.cpp): the main loop, 146 and 026/064 |
+| 3 | 22716 | `intern_constant` |
+| 3 | 23343 | `eop` |
+
 Natives write memory through `Machine::store`, which drops stores to address 0 as the
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep
 reading as zero.
-| 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
-| 3 | 22716 | `intern_constant` (src/pass3.cpp) |
 
 A native may run a translated routine with `Machine::call(addr, reg, ret)`: as a VJM through
 `reg` at `ret`−1 would, so the registers and the cells the routine saves them in come out as

@@ -566,6 +566,7 @@ what pass 4 reads with and without `*CHECK` (test3, proc, for, and scratch progr
 3. **Adjacent procedure declarations.** A `146` followed only by line markers and then
    `145` is deleted, so one jump skips several procedure bodies (proc.alg: 19 UJ with
    `*CHECK`, 13 without).
+   - Line markers (051) after a `146` are dropped in either case.
 4. **Array accesses linear in the control variable of a FOR loop.**
    - Each `A[c*I+d]` gets an index register R, loaded before the loop with the address of
      `A[start]`.
@@ -587,15 +588,16 @@ subscript computation. An access through a stepped register has no subscript lef
 
 | Address | Role |
 |---|---|
-| 22162 | init; R1 = 5 − procedure depth |
-| 22167 | main loop: read an item and dispatch (146, 075, 055, 042/062, 026/064, else copy) |
-| 22214 | fold a constant |
+| 22162 | init: pushes the return address, 02000 from 02001, skips the first item; M1 = 5 − procedure depth (C++) |
+| 22167 | main loop: read an item and dispatch: 146, 075 (EOP), 055 (FOR), 042/062 (M1 −1/+1), 026/064, else copy (C++) |
+| 22203 | after a 146: drop line markers, drop the 146 before a 145 (C++) |
+| 22214 | fold a constant: the item after 026/064 is a constant (023) → negated (AVX) or made real (A+X 0) and interned; returns through M11 (C++) |
 | 22232 | FOR, first scan: classify each item (3-bit table at 22264); give up on statements it cannot handle |
 | 22327, 22352 | set up the rewrite; rewrite scan (handler table 22365, jumps at 22407) |
 | 22365 | rewrite scan classes: 6 bits per code (word code>>3, bits 6·(code&7)); class c jumps through word 22407+c/2 (left half if c even). E.g. 0130–0134 → 23115, 024/0163 (labels) → 22507 |
 | 22716 | intern a constant (C++): search slots n+1…01634 (n = the free slot at 02003) for an equal word, else take slot n and move 02003 down; A = 02032 = `slot<<12 \| 023`, plus 0200 for a negative value; returns through M12 |
 | 23231 | end of FOR: emit the preamble, the loop and the increments |
-| 23343 | EOP |
+| 23343 | EOP: written, then a 0; bit 1306 into 02001, then 02001 = 4000040262011777; return to the driver (C++) |
 
 **Constants table.** Index i is at 02144+i. It grows downward from index 1624 (03770); 1625–
 1633 are the fixed constants (1631 = 2, 1632 = 1, 1633 = 0). No error messages: when it

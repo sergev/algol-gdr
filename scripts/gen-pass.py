@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """gen-pass.py - translate code of overlay ALGOL into C++, one call per instruction.
 
-    gen-pass.py [--tape MONSYS9] [--hook ADDR]... [--native ADDR]... NAME FIRST-LAST...
+    gen-pass.py [--tape MONSYS9] [--hook ADDR]... [--native ADDR]... [--replaced FIRST-LAST]...
+                NAME FIRST-LAST...
 
 Emits `unsigned NAME_code(Machine &m, unsigned pc)`, which runs the words of the
 octal ranges from address pc and returns the address of the first jump out of them.
@@ -9,7 +10,8 @@ Every word is translated, data included; jumps go to labels, computed ones throu
 switch. A --hook address calls m.on_entry when the code reaches it. Semantics of
 the instructions: src/machine.h. Reaching a --native address (by a jump, a
 call or falling through) returns it, for Machine::run to call the C++ routine there.
-A computed jump to m.stop returns it (the end of Machine::call).
+A computed jump to m.stop returns it (the end of Machine::call). The words of a
+--replaced range (routines in C++) are left out: reaching them returns the address.
 """
 import argparse
 import importlib.util
@@ -52,6 +54,7 @@ def main():
     ap.add_argument('--tape', default=os.path.join(here, '../../os-dubna/monsys/monsys.9'))
     ap.add_argument('--hook', action='append', default=[])
     ap.add_argument('--native', action='append', default=[])
+    ap.add_argument('--replaced', action='append', default=[])
     ap.add_argument('name')
     ap.add_argument('ranges', nargs='+')
     args = ap.parse_args()
@@ -65,7 +68,9 @@ def main():
         img = gt.ovl2bin(f.read())
 
     ranges = [tuple(int(x, 8) for x in r.split('-')) for r in args.ranges]
-    words = sorted({a for lo, hi in ranges for a in range(lo, hi + 1)})
+    replaced = [tuple(int(x, 8) for x in r.split('-')) for r in args.replaced]
+    gone = {a for lo, hi in replaced for a in range(lo, hi + 1)}
+    words = sorted({a for lo, hi in ranges for a in range(lo, hi + 1)} - gone)
     inside = set(words)
     hooks = {int(h, 8) for h in args.hook}
     natives = {int(h, 8) for h in args.native}
@@ -146,6 +151,8 @@ def main():
     print(f'// {args.name}: {" ".join(args.ranges)}')
     if natives:
         print(f'// natives: {" ".join(f"{a:05o}" for a in sorted(natives))}')
+    if replaced:
+        print(f'// replaced: {" ".join(args.replaced)}')
     print('// clang-format off')
     print('#include <stdexcept>')
     print()

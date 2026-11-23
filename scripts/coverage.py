@@ -9,7 +9,7 @@ code never run: ranges of words, each with the label before it in the Madlen
 source (os-dubna/algol). Code is what algol.sym/.tsym mark C, and whatever ran,
 but not a word of six printable characters (message texts are marked C too).
 A word run in one half only is listed with --all. Routines replaced by C++
-(the natives of src/passN_gen.cpp) are not counted.
+(the replaced ranges and natives of src/*_gen.cpp) are not counted.
 """
 import argparse
 import glob
@@ -105,10 +105,14 @@ def main():
     code = {a for a in code_words(args.asm) if not is_text(word(a))} | {a for a, _ in run}
     names = labels(args.asm)
     natives = set()
-    for path in glob.glob(os.path.join(root, 'src/pass*_gen.cpp')):
+    for path in glob.glob(os.path.join(root, 'src/*_gen.cpp')):
         for line in open(path):
             if line.startswith('// natives:'):
                 natives.update(int(a, 8) for a in line.split()[2:])
+            if line.startswith('// replaced:'):
+                for r in line.split()[2:]:
+                    lo, hi = (int(x, 8) for x in r.split('-'))
+                    code -= set(range(lo, hi + 1))
     for a in natives:
         # the routine: up to the next label that is not a local loop (crude)
         b = a
