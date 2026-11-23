@@ -129,8 +129,28 @@ every subscript is checked by `algol_check_index`.
 ## Output
 
 PRINT calls `algol_print_integer`, `algol_print_real`, `algol_print_boolean`,
-`algol_print_string`, `algol_newline`, `algol_newpage`: `printf` on `stdout`, formats in
-todo2.md (E13).
+`algol_print_string`, `algol_newline`, `algol_newpage`: `printf` on `stdout`, no line buffer
+of its own.
+
+| Item | Format | Example |
+|---|---|---|
+| integer | `"%14" PRId64 " "` | `             -1 ` |
+| real | `"% .11e   "` | ` 1.00000000000e+00   ` |
+| Boolean | `"%-6s"` | `true  `, `false ` |
+| string | as is | |
+| `NEWLINE`, `NEWPAGE` | `'\n'`, `'\f'` | |
+
+The fields are the original's (15, 20 and 6 columns), but there is no carriage-control
+column and no wrapping at column 126. At exit a last `'\n'` is written when the output does
+not end with one.
+
+**Tests.** `run_test` compares the output with `NAME.out` from `dubna` by tokens (see
+tests/run_test.cpp). `NAME.native.out` replaces it where the output really differs:
+
+| Program | Why |
+|---|---|
+| hello, hello_algol | the original prints upper case only |
+| symbols | the original's printer shows `≤ ≥ @` as `⩽ ⩾ °` |
 
 ## Names
 
