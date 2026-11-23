@@ -2,11 +2,11 @@
 // Lexer of pass 1: AG15414 and the character reader AG16225, translated label
 // by label. Labels *nnnnB are offsets in os-dubna/algol/ag14504.asm.
 //
-#include "pass1.h"
 #include <cstdio>
 #include <ostream>
 
 #include "listing.h"
+#include "pass1.h"
 #include "tables.h"
 
 namespace {
@@ -383,7 +383,7 @@ L1113:
     }
     if (m4_ == 0377) {
         common();
-        return;
+        goto L1440;
     }
     if (m4_ == 0177)
         goto L1427;
@@ -697,8 +697,206 @@ L1641: // *1641B: the end of a number
     ws_[D_SYM] = a | 024;
 }
 
-// *1155B: a 'COMMON' declaration, read by the lexer itself.
+//
+// *1155B: 'COMMON' /BLOCK/ NAME, NAME(D1,D2,D3), ...; read by the lexer
+// itself. Fills the table at 27245, three words per entry: the name, then
+// D-list pointer << 36 | slot << 24 and the size (for a block: its length).
+//
+namespace {
+constexpr unsigned COMTAB = 027245;
+constexpr Word REAL3      = 04114000000000000; // 3.0
+constexpr Word C0_3       = 03751463146314631; // 0.3
+constexpr Word C0_9       = 04016314631463146; // 0.9
+constexpr Word D_MASK     = 07777000000000000;
+
+// ASN with the address n.
+Word asn(Word a, unsigned n)
+{
+    int k = int(n & 0177) - 64;
+    if (k >= 48 || k <= -48)
+        return 0;
+    return k >= 0 ? a >> k : (a << -k) & MASK48;
+}
+} // namespace
+
+Word &Pass1::cell(unsigned addr)
+{
+    if (addr < 016111 || addr > 016132)
+        throw NotImplemented("'COMMON': store into the code");
+    return cells_[addr - 016111];
+}
+
+// The next character at bit 40 - K of w (K in 16131), K += 8.
+void Pass1::common_pack(Word &w, unsigned c)
+{
+    w |= asn(Word(c), 030 + (cell(016131) & R15));
+    cell(016131) = arx(cell(016131), 010);
+}
+
+// *1366B: the first free name slot from the hash of the name, not used by
+// an entry of the table.
+unsigned Pass1::common_slot(Word name)
+{
+    unsigned m4 = ((name >> 40) & 037) << 4 | ((name >> 32) & 017);
+    for (;;) {
+        while (ws_[(NAMES + m4) & R15] != 0)
+            m4 = (m4 + 1) & R15;
+        cell(016111) = Word(m4) << 24;
+        unsigned m11 = 0;
+        for (;; m11 += 3) {
+            if (ws_[(COMTAB + m11) & R15] == 0) {
+                cell(016111) = 0;
+                return m4;
+            }
+            if (((ws_[(COMTAB + 1 + m11) & R15] & 0000077770000000) ^ cell(016111)) == 0)
+                break;
+        }
+        m4 = (m4 + 1) & R15;
+    }
+}
+
+// *1330B: the message n, then ERROR 05.
+void Pass1::common_error(unsigned n)
+{
+    Arith x(Word(n) | INT0, rau_);
+    x.mul(REAL3);
+    x.add(C0_3);
+    rau_  = 3;
+    x.rau = rau_;
+    x.add(INT0);
+    unsigned addr = 016045 + unsigned(x.acc & R15);
+    Word words[3];
+    for (unsigned i = 0; i < 3; i++)
+        words[i] = tables::commsg.at(addr + i);
+    print_line(rtrim(listing_text(words, 0, 18)));
+    m6_ = (m6_ + 1) & R15;
+    error(5);
+}
+
 void Pass1::common()
 {
-    throw NotImplemented("'COMMON' is not implemented yet");
+    unsigned c;
+    do
+        c = nextch();
+    while (c == ' ');
+    if (c != '/')
+        common_error(0);
+
+    // *1161B: the name of the block, up to 6 characters.
+    while ((c = nextch()) != '/') {
+        common_pack(ws_[(COMTAB + cell(016125)) & R15], ws_[D_CHAR]);
+        if (cell(016131) == 070) {
+            cell(016131) = 0;
+            common_error(1);
+        }
+    }
+
+    // *1174B
+    unsigned idx            = cell(016125) & R15;
+    unsigned m4             = common_slot(ws_[(COMTAB + idx) & R15]);
+    ws_[(NAMES + m4) & R15] = ws_[(COMTAB + idx) & R15];
+    dpush(Word(m4) | 06402000000000000);
+    cell(016132) = Word(m3_) << 36;
+    cell(016127) = cell(016125);
+    cell(016125) = arx(cell(016125), 3);
+    if (cell(016125) == 0377)
+        common_error(2);
+
+    // *1207B: a variable.
+L1207:
+    cell(016131) = 0;
+    cell(016111) = 0;
+L1211:
+    nextch();
+L1212:
+    if (ws_[D_CHAR] == ',' || ws_[D_CHAR] == ';')
+        goto L1230;
+    if (ws_[D_CHAR] == '.') {
+        if (nextch() != ',')
+            common_error(3);
+        ws_[D_CHAR] = ';';
+        goto L1230;
+    }
+    common_pack(cell(016111), ws_[D_CHAR]);
+    if (nextch() != '(')
+        goto L1212;
+L1230:
+    ws_[(COMTAB + cell(016125)) & R15] = cell(016111);
+    cell(016125)                       = arx(cell(016125), 3);
+    if (cell(016125) == 0377)
+        common_error(2);
+    m4                            = common_slot(cell(016111));
+    idx                           = cell(016125) & R15;
+    ws_[(COMTAB - 2 + idx) & R15] = asn(Word(m4), 050) | cell(016132);
+    ws_[(COMTAB - 1 + idx) & R15] = 1;
+    cell(016132)                  = arx(cell(016132), D_MASK) & D_MASK;
+    cell(016131)                  = 0;
+    cell(016127)                  = arx(cell(016127), Word(1) << 24);
+    switch (ws_[D_CHAR]) {
+    case '(':
+        break;
+    case ',':
+        goto L1211;
+    case ';':
+        goto L1412;
+    default:
+        common_error(3);
+    }
+
+    // *1255B: the bounds, decimal digits; the size is their product.
+    cell(016111) = cell(016112) = cell(016113) = REAL1;
+    do {
+        cell(016130) = 0;
+        while ((c = nextch()) != ',' && c != ')')
+            cell(016130) = asn((ws_[D_CHAR] & 017) | cell(016130), 074);
+        cell(016126) = REAL1;
+        cell(016124) = 0;
+        for (;;) {
+            Word a = asn(cell(016130), 0104);
+            if (a == 0)
+                break;
+            cell(016130) = a;
+            Arith x((a & 017) | INT0, rau_);
+            x.mul(cell(016126));
+            x.add(cell(016124));
+            cell(016124) = x.acc;
+            Arith p(cell(016126), rau_);
+            p.mul(REAL10);
+            cell(016126) = p.acc;
+        }
+        cell(016111 + (cell(016115) & R15)) = cell(016124);
+        cell(016115)                        = arx(cell(016115), 1);
+    } while (ws_[D_CHAR] != ')');
+    {
+        Arith x(cell(016111), rau_);
+        x.mul(cell(016112));
+        x.mul(cell(016113));
+        x.sub(C0_9);
+        rau_  = 3;
+        x.rau = rau_;
+        x.add(INT0);
+        rau_         = 6;
+        cell(016124) = x.acc;
+        Word &size   = ws_[(COMTAB - 1 + idx) & R15];
+        size         = arx(x.acc & R15, size);
+        cell(016127) = arx(asn(cell(016124), 050), cell(016127));
+    }
+    cell(016131) = 0;
+    cell(016115) = 0;
+    c            = nextch();
+    if (c == ',')
+        goto L1207;
+    if (c != ';') {
+        if (c != '.')
+            common_error(5);
+        if (nextch() != ',')
+            common_error(6);
+    }
+
+    // *1412B: the length of the block.
+L1412:
+    cell(016131)                                   = 0;
+    ws_[(COMTAB + 1 + (cell(016127) & R15)) & R15] = asn(cell(016127), 0130);
+    cell(016115)                                   = 0;
+    cell(016127)                                   = 0;
 }

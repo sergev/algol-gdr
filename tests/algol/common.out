@@ -1,0 +1,13 @@
+*NAME COMMON
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/DRUCK    01337                A/NPAGE  E 01551                STOPFLG* C 02005
+         A/STOP     01116                A/IPRI   E 01371                A/I*ISO  E 01624                PRINT8*    02006
+         A/START  E 01122                A/RPRI   E 01423                A/R*ISO  E 01627                A/ERROR    02054
+         A/COMMON   01176                A/BPRI   E 01457                STOP*      01662                PRINT8     02130
+         *ABC*    C 01304                A/SPRI   E 01466                EXIT     E 01663                SYSBACK*   02311
+         *DATA*   C 01325                A/LPRI   E 01503                A/ARRD/K   01711                CBOБOДHO   02321
+         *S*      C 01336                A/NLINE  E 01547                A/ARRD/V E 01714
+≠
+  1.00000000000+00    2.00000000000+00                3              4  5.00000000000+00   TRUE

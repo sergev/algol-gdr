@@ -68,12 +68,14 @@ TEST(stdarray, layout_all)
         // Long-name references point into the long-name rows.
         for (unsigned k = 0; k < lay.sym_len; k++) {
             auto s = Symbol::decode(obj.table_row(lay, lay.head_len + k));
-            if (s.type == SYM_EXT_LONG) {
+            if (s.type == SYM_EXT_LONG || s.type == SYM_COMMON_LONG) {
                 unsigned row = s.ref - 04000;
                 EXPECT_GE(row, lay.head_len + lay.sym_len);
                 EXPECT_LT(row, lay.head_len + lay.sym_len + lay.long_len);
             } else {
-                EXPECT_TRUE(s.type == SYM_EXT_SHORT || s.type == SYM_ABS) << std::oct << s.type;
+                EXPECT_TRUE(s.type == SYM_EXT_SHORT || s.type == SYM_COMMON_SHORT ||
+                            s.type == SYM_ABS)
+                    << std::oct << s.type;
             }
         }
     }

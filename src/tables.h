@@ -36,7 +36,7 @@ struct InitWord {
 extern const InitWord workspace_init[];
 extern const size_t workspace_init_size;
 
-extern const Table symattr, warnings, chclass, syntext, errclass, p2msg, p2disp, p3class, p3mask,
+extern const Table symattr, warnings, commsg, chclass, syntext, errclass, p2msg, p2disp, p3class, p3mask,
     p3rewr, p3jump, p3regs, template_, p4disp, linetab, isotext, rtnames, summary;
 
 } // namespace tables

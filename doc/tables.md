@@ -67,6 +67,7 @@ addresses in comments.
 | Address | Module | Contents |
 |---|---|---|
 | 15146–15413 | G14504 | symbol attribute table: for each symbol code, the dispatch indexes per syntactic context (masks 017000000, 03600, 0740000, 030000); then the M7 constants of pass 1 |
+| 16045–16071 | G14504 | the seven `'COMMON'` error messages, 3 words each (`HET KOCOЙ ЧEPTЫ`, `ИMЯ COMMON > 6 CИM`, …) |
 | 16514–16713 | G14504 | character class table, 128 words indexed by the 8-bit character: dispatch offset in the low 4 bits; for single-character symbols the code in bits 24–18 |
 | 17106–17165 | G14504 | pieces of the syntax-error texts: `STATEMENT`, `DECLARATION`, ` OVERFLOW`, `EXPRESSION`, … |
 | 17166–17202 | G14504 | error class table: class of error n = `(word[17166 + (n>>3)] >> 6·(n&7)) & 077` |

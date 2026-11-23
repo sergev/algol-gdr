@@ -25,9 +25,10 @@ static std::string row_name(const StdArray &obj, const Layout &lay, unsigned row
         return text_to_utf8(obj.table_row(lay, row));
 
     auto sym = Symbol::decode(obj.table_row(lay, row));
-    if (sym.type == SYM_EXT_LONG && sym.ref >= 04000 && sym.ref - 04000 < nrows)
+    if ((sym.type == SYM_EXT_LONG || sym.type == SYM_COMMON_LONG) && sym.ref >= 04000 &&
+        sym.ref - 04000 < nrows)
         return text_to_utf8(obj.table_row(lay, sym.ref - 04000));
-    if (sym.type == SYM_EXT_SHORT)
+    if (sym.type == SYM_EXT_SHORT || sym.type == SYM_COMMON_SHORT)
         return text_to_utf8(Word(sym.ref) << 24);
     if (sym.type == SYM_ABS)
         return "=" + octal(sym.addr, 5);
@@ -104,6 +105,8 @@ void dump_stdarray(const StdArray &obj, std::ostream &out)
             auto sym = Symbol::decode(w);
             out << "type " << octal(sym.type, 3) << " addr " << octal(sym.addr, 5) << "  "
                 << row_name(obj, lay, row);
+            if (sym.type == SYM_COMMON_SHORT || sym.type == SYM_COMMON_LONG)
+                out << "  common, " << sym.addr << " words";
         } else {
             out << text_to_utf8(w);
         }

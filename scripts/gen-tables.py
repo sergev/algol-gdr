@@ -17,6 +17,7 @@ OVERLAY = (0o070 * 1024 + 0o1100) * 6  # zone, word of the RLE stream
 TABLES = [
     ('symattr', 0o15146, 0o15413, False, 'pass 1: symbol attributes, then its M7 constants'),
     ('warnings', 0o16506, 0o16513, True, "pass 1: 'WARNING SYMBOL AFTER END', 'HET ′EOP′ !'"),
+    ('commsg', 0o16045, 0o16071, True, "pass 1: 'COMMON' error messages, 3 words each"),
     ('chclass', 0o16514, 0o16713, False, 'pass 1: character classes, by 8-bit code'),
     ('syntext', 0o17106, 0o17165, True, 'pass 1: pieces of the syntax error texts'),
     ('errclass', 0o17166, 0o17202, False, 'pass 1: error classes, 6 bits per error'),

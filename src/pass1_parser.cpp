@@ -1625,7 +1625,8 @@ void Pass1::parse()
             a = attr(m4_) & 0170;
             if (!a)
                 goto L15011;
-            m1 = (a >> 3) & R15;
+            m1   = (a >> 3) & R15;
+            rau_ = 026;
             if (int(m1) - int(S(1) & R15) < 0)
                 goto L15011;
             push(D0());
@@ -1639,7 +1640,8 @@ void Pass1::parse()
             goto L15016;
         L15032: // *0326B: a unary operator
             push(a);
-            m8 = 031;
+            m8   = 031;
+            rau_ = 026;
             if (int(m1) - int(S(2) & R15) < 0)
                 goto L17015;
             goto L15024;
@@ -1681,6 +1683,7 @@ void Pass1::parse()
             a |= pop();
             a |= pop();
             a -= K(015333);
+            rau_ = 2;
         L15072: // *0366B
             emit(a);
             goto L15015;
@@ -1718,6 +1721,7 @@ void Pass1::parse()
         L17015:
             if (++ctx_.flgex == 30)
                 goto L17076;
+            rau_ = 6;
             print_error(m8);
             if (D0() == 051 || D0() == 037)
                 goto L17056;

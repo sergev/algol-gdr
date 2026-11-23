@@ -209,6 +209,17 @@ sector to drum 27 zone 34. (V)
   - A keyword is a name word followed by `7760 0000 0000 00cc`. `cc` = 0177 is `'COMMENT'`,
     allowed only after `;` or `'BEGIN'` (otherwise ERROR 06). `cc` = 0377 is `'COMMON'`.
   - Standard names (`PRINT`, `SIN`) have no code word: they are plain identifiers.
+- **`'COMMON'`** (`*1155B`) is read by the lexer itself: `'COMMON' /BLOCK/ V1, V2(D1),
+  V3(D1,D2,D3);` (or `.,`), one block per statement, up to 3 decimal bounds per variable.
+  Each entry of the table at 27245 has 3 words: the name; D-list pointer << 36 | name slot
+  << 24; the size (`D1·D2·D3`). For the block the second word is its length. The block name
+  goes into the name table and the D-list (`06402… | slot`); a variable gets the first free
+  slot of its hash not taken by another entry, where its declaration will be interned. Errors
+  print one of 7 messages (3 words at 16045 + 3n: `HET KOCOЙ ЧEPTЫ`, `ИMЯ COMMON > 6 CИM`, …)
+  and then ERROR 05. The declarations of the variables must follow the statement in the same
+  order, or pass 2 prints `ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA X`. The block becomes
+  the object symbol `*BLOCK*` of type 0670/0470; the variables are bound to it at run time by
+  `A/COMMON`.
 - **Text after END.** It is skipped up to `;`, END, ELSE or EOP. A non-letter in it prints
   `WARNING SYMBOL AFTER END` once.
 - **Numbers.**

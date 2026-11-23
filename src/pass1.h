@@ -86,11 +86,13 @@ private:
     unsigned pool_sectors_{}; // sectors of the string pool written to drum
 
     // Index registers of the original where they carry state.
-    unsigned m4_{};     // symbol code
-    unsigned m5_{};     // card word, -11…0
-    unsigned m6_{};     // character in the word, -6…-1; 0: past the end
-    unsigned rau_{ 2 }; // mode of the arithmetic unit
-    unsigned m3_{};     // D-list pointer
+    unsigned m4_{};        // symbol code
+    unsigned m5_{};        // card word, -11…0
+    unsigned m6_{};        // character in the word, -6…-1; 0: past the end
+    unsigned rau_{ 2 };    // mode of the arithmetic unit
+    unsigned m3_{ 05753 }; // D-list pointer, set by AG13666
+
+    Word cells_[022]{}; // 16111-16132: cells of the 'COMMON' reader in the code
 
     std::vector<Word> stk_; // the stack of M17
     Word emit_item_{};      // 15144
@@ -114,7 +116,11 @@ private:
     void store_string_word();
     void pool_put(Word w);
     [[noreturn]] void error(unsigned n);
-    [[noreturn]] static void common();
+    void common();
+    [[noreturn]] void common_error(unsigned n);
+    unsigned common_slot(Word name);
+    Word &cell(unsigned addr);
+    void common_pack(Word &w, unsigned c);
     static Word chclass(unsigned c);
 };
 

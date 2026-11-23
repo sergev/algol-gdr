@@ -2,6 +2,8 @@
 // The listing of pass 1: the banner, the cards and the messages of pass 1,
 // as in NAME.lst up to the messages of the later passes.
 //
+#include "listing.h"
+
 #include <gtest/gtest.h>
 
 #include <fstream>
@@ -10,13 +12,27 @@
 #include "golden.h"
 #include "passes.h"
 #include "source.h"
+#include "tables.h"
+
+// A message of 'COMMON': three words at 16045 + 3n.
+static bool common_message(const std::string &line)
+{
+    for (unsigned n = 0; n < 7; n++) {
+        Word w[3];
+        for (unsigned i = 0; i < 3; i++)
+            w[i] = tables::commsg.at(016045 + 3 * n + i);
+        if (line == rtrim(listing_text(w, 0, 18)))
+            return true;
+    }
+    return false;
+}
 
 static bool pass1_line(const std::string &line)
 {
-    if (line.empty())
+    if (line.empty() || common_message(line))
         return true;
-    for (const char *p : { "ERROR ", "HET ", "↑EOP↑", "WARNING ", "30 ERRORS", "A L G O L",
-                           "    (7.01.82)" })
+    for (const char *p :
+         { "ERROR ", "HET ", "↑EOP↑", "WARNING ", "30 ERRORS", "A L G O L", "    (7.01.82)" })
         if (line.rfind(p, 0) == 0)
             return true;
     // A card: columns 73-80, then the line number and a dot; or its second half.

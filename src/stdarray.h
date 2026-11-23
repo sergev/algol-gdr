@@ -19,9 +19,11 @@ constexpr unsigned HEADER_LEN     = 10;
 constexpr unsigned CARD_MARK      = 077761;
 
 // Symbol types used by Algol-GDR.
-constexpr unsigned SYM_ABS       = 0400;
-constexpr unsigned SYM_EXT_SHORT = 0430;
-constexpr unsigned SYM_EXT_LONG  = 0630;
+constexpr unsigned SYM_ABS          = 0400;
+constexpr unsigned SYM_EXT_SHORT    = 0430;
+constexpr unsigned SYM_EXT_LONG     = 0630;
+constexpr unsigned SYM_COMMON_SHORT = 0470; // 'COMMON' block, address = its length
+constexpr unsigned SYM_COMMON_LONG  = 0670;
 
 struct StdArrayError : std::runtime_error {
     using std::runtime_error::runtime_error;
