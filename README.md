@@ -21,7 +21,7 @@ make            # build/src/algc
 make test       # unit tests and the test programs in tests/algol
 ```
 
-Needs CMake and a C++20 compiler.
+Needs CMake, a C++20 compiler and clang (to compile the generated LLVM IR).
 
 ## Usage
 

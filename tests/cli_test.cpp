@@ -81,6 +81,15 @@ TEST(cli, outputs)
     EXPECT_NE(r.output.find("running"), std::string::npos);
 }
 
+// An executable, linked with libalgol.a.
+TEST(cli, executable)
+{
+    const std::string exe = BUILD_DIR "/cli_empty";
+    auto r = run_command(compiler + " -o " + exe + " " TEST_DIR "/algol/empty.alg && " + exe);
+    EXPECT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_EQ(r.output, "");
+}
+
 // The intermediate .ll stays with --save-temps.
 TEST(cli, save_temps)
 {

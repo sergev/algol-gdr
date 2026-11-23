@@ -25,6 +25,6 @@ target_compile_definitions(unit_tests PRIVATE
     TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     BUILD_DIR="${CMAKE_BINARY_DIR}"
 )
-add_dependencies(unit_tests algc)
+add_dependencies(unit_tests algc algolrt)
 gtest_discover_tests(unit_tests PROPERTIES TIMEOUT 120)
 

@@ -21,10 +21,6 @@ runs.
 
 ### Driver and runtime
 
-- **E9** Runtime skeleton `runtime/` → `libalgol.a`, built by CMake for the host, installed
-  to `lib/`. Unlike `blang`, it uses libc and libm (math functions and number formatting);
-  linked with `-lalgol -lm`. The compiler finds it next to itself (build tree) or under the
-  install prefix. `main` calls the program's entry `algol_main`.
 - **E10** IR emitter (`ir.cpp`): a small text builder for functions, blocks, SSA names,
   types, globals, string constants. Hello, World end to end: `PRINT` of a string,
   `run_test` compiling natively and comparing with `.out`.

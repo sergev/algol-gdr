@@ -35,6 +35,9 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   `syntax.h` (the syntax tree), `checker.*` (scopes and types: the AST), `ast.*` (the AST
   after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages), `listing.*`
   (the printout).
+- `runtime/` — the run-time library `libalgol.a` (C, uses libc and libm): `main` calls the
+  program's `algol_main`; printing, errors. algc finds it in `../runtime` or `../lib` from
+  itself (or `$ALGC_RUNTIME`).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.out` run output under `dubna` (frozen); and ours, which
   `ALGC_UPDATE_GOLDENS=1` rewrites: `.lst` listings (`algc --list`), `.ast` the AST, `.err` the messages; side files

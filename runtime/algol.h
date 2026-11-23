@@ -1,0 +1,21 @@
+//
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
+// The run-time library of algc: what the generated code calls. See
+// doc/codegen.md for the data representation.
+//
+#ifndef ALGOL_RUNTIME_H
+#define ALGOL_RUNTIME_H
+
+#include <stdint.h>
+
+// The program, made by algc.
+void algol_main(void);
+
+// Errors at run time: a message on stderr, exit status 1.
+_Noreturn void algol_error(const char *fmt, ...);
+
+// The end of the program: the print line flushed.
+_Noreturn void algol_stop(void);
+
+#endif
