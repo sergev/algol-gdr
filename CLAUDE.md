@@ -65,7 +65,8 @@ Milestones (from README.md):
    files (standard arrays) and run them on the `dubna` simulator.
 2. Replace the backend: emit LLVM IR and invoke external `clang` to link a native executable
    (done).
-3. Extend the parser to full Algol-60 and develop a full runtime library.
+3. Extend the parser to full Algol-60 and develop a full runtime library (plan:
+   [todo3.md](todo3.md)).
 4. Compile and run all programs from x1-algol-compiler/examples.
 
 Detailed plan: [Roadmap.md](Roadmap.md).
