@@ -23,15 +23,31 @@ reference for the native runs.
 
 ### Tree
 
-- **E7.1** Front end without BESM-6 addresses: passes 1 and 2 on real data structures —
-  declarations as objects in a scope tree, the name table as a symbol table with scopes,
-  constants and strings in their own tables — instead of D-list addresses, name slots,
-  the cells at 02000…/04000…/016111… and the continuation addresses of pass 2. Stream
-  operands become indexes into these tables, so `.s1`/`.s2` give way to the `.ast` goldens;
-  `.lst` must not change, `.sym` prints by name. The size limits of the original (hash
-  table, constant page, D-list) go. Blocks without arrays get their own `Block` nodes (the
-  stream has no items for them, so `ast_builder` merges their declarations into the
-  enclosing block), and declarations get their source positions.
+A new front end replaces passes 1 and 2 (E7.1a–d): a lexer, a parser to a syntax tree and a
+checker that builds the AST, on real data structures (a scope tree of declarations,
+constants and strings as values) instead of D-list addresses, name slots, the cells at
+02000…/04000…/016111… and the continuation addresses of pass 2. The old passes stay as
+the reference until the new front end matches every golden, then go. `.lst` must not
+change, errors included; pass 2 runs after syntax errors too, so the checker works on a
+tree with the holes left by error recovery. The size limits of the original (hash table,
+constant page, D-list, string pool) go.
+
+- **E7.1a** Lexer (`lexer.{h,cpp}`): tokens with their line from the cards (columns 1–72);
+  the card listing; the lexical errors and messages of today; 'COMMENT', the text after
+  END, strings, octal constants, numbers as host values (int64, double), 'COMMON' read
+  as one token with its block. A test compares it with the old lexer token by token on all
+  programs.
+- **E7.1b** Parser (`parser.cpp`) to a syntax tree (`syntax.h`): names unresolved, the
+  statement positions as the markers count them, error nodes where recovery skipped;
+  syntax errors, recovery, the 30-error limit and the listing as pass 1. A test checks the
+  listings of all programs up to the pass-2 messages.
+- **E7.1c** Checker (`checker.cpp`): scopes, declarations, types, conversions, the pass-2
+  messages in the original's order with their positions; it builds the AST. Every
+  `.lst` must match. Blocks without arrays get their own `Block` nodes and declarations
+  their positions: the `.ast` goldens change only there (diff reviewed).
+- **E7.1d** Switch over: `algc` on the new front end; passes 1–2, `Tables`, `Symbols`,
+  the stream items, `ast_builder` and the `.s1`/`.s2`/`.lex`/`.sym` goldens go; docs
+  updated (doc/passes.md and doc/tables.md become history of the original).
 - **E7.2** UTF-8 throughout: no more ISO (KOI-7) or TEXT encoding inside the compiler, and
   no forced uppercase. Source, names, strings and messages stay UTF-8; keywords are
   recognized and printed in lowercase; user identifiers keep their spelling as written.
