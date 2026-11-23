@@ -1,93 +1,94 @@
 # Milestone 1 — C++ rewrite, BESM-6 object output
 
-Goal (from [Roadmap.md](Roadmap.md)): our compiler produces, from each program in
-`tests/algol/`, the same object (`.std`) as the original. Done when `compile_test` and
-`run_test` pass for every program, with none skipped.
+Goal (from [Roadmap.md](Roadmap.md)): from each program in `tests/algol/`, our compiler
+produces the same object (`.std`) and listing as the original, in readable C++.
 
-What we know about the original is in `doc/`:
-- [passes.md](doc/passes.md): the six passes, their streams and data;
-- [tables.md](doc/tables.md): the tables;
-- [runtime-abi.md](doc/runtime-abi.md): the run-time calls and code patterns;
-- [stdarray.md](doc/stdarray.md): the object format;
-- [encoding.md](doc/encoding.md): the input.
+**Where we are.** The whole compiler runs and `compile_test`/`run_test` pass for every
+program. Passes 1, 5, 6 are C++; passes 2–4 run as the original's code translated by
+`scripts/gen-pass.py` ([doc/translation.md](doc/translation.md)). What we know about the
+original is in `doc/` ([passes.md](doc/passes.md), [tables.md](doc/tables.md),
+[runtime-abi.md](doc/runtime-abi.md), [stdarray.md](doc/stdarray.md),
+[encoding.md](doc/encoding.md)).
 
-## Approach
-
-**A faithful rewrite, pass by pass (A7.1).** Each pass of the original becomes one C++
-module with the same algorithm and the same intermediate stream, so we can compare outputs
-pass by pass. The drum, the pages and the backward writing are not reproduced, because they
-only work around memory limits. Kept exactly is everything that reaches the object: the order
-of constants, the slot numbers where they matter, frame offsets, register choice, symbol rows.
-
-| Module | Original | Contents |
-|---|---|---|
-| `src/item.h` | — | `Item` (code 7 bits, attribute 5 bits, value 12 bits ↔ 24-bit half-word); `Stream` = `std::vector<Item>` |
-| `src/workspace.*` | 02000–05777 | the shared tables as 48-bit words at their original addresses: name/constant table (02144–03777), string pool, D-list, standard identifiers |
-| `src/tables.*` | data of the image | keyword table, character classes, symbol attributes, error classes, messages, run-time names, pass-2/4 dispatch tables, code templates; **generated from the overlay image**, not typed by hand |
-| `src/listing.*` | ASMPRINT, 01644, G27733, G30001 | the listing: numbered lines, page header, formatted lines |
-| `src/pass1_lexer.*`, `src/pass1_parser.*` | G14504 (lexer), G13666 + G14504 | cards → Stream 1, tables, syntax errors |
-| `src/pass2.*` | G17223 | Stream 1 (backward) → Stream 2, semantic errors |
-| `src/pass3.*` | G22162 | Stream 2 → Stream 3 (skipped with `--check`) |
-| `src/pass4.*` | G23523 | Stream 3 → instruction half-words + pseudo-items |
-| `src/pass5.*` | G26260 | addresses, symbol rows, line table |
-| `src/pass6.*` | G26666, G30257 | `StdArray` and the summary line |
-
-**Hybrid by pass (decided after B2.2).** Pass 1 is translated by hand, like passes 5 and 6.
-Passes 2–4 are first generated from the overlay image by a translator (one C++ statement per
-instruction, a dispatch for computed jumps), so the whole pipeline works early; their
-routines are then replaced one by one with hand-written C++, the tests guarding each step.
-
-**Checking each pass on its own (A7.2).** Capture the stream the original writes at the end
-of each pass (`dubna -d m` traces of the stream helpers' writes; the prototype is the passes
-3–4 analysis script) and store it as expected output, like `.std`. Each C++ pass can then be
-developed and tested with the original's input stream, in any order:
-- pass 1 by its output stream and the `.lst` listing up to the line table;
-- passes 2–5 by their output streams;
-- pass 6 by the `.std` file.
-
-Data that is not in the stream can be compared by dumping memory at the pass boundary:
-- the name/constant table and the D-list after pass 1;
-- the array records after pass 2;
-- the symbols and labels after pass 5.
+**How the rest is done.** A translated pass is replaced routine by routine: a hand-written
+routine is registered as a native of the `Machine` at its original address and works on the
+machine's memory, so the translated code around it keeps working. When no translated code
+of a pass is left, its data moves from `Machine` memory to `Context` (the workspace, streams
+as vectors), and `passN_gen.cpp` is deleted. The guards at every step: `Pass.stream`, the
+pass's `PassNMem` test, `ListingTest`, `Compile.object`, `Run.output`. Each task ends with
+its routines documented in `doc/passes.md` (V where verified).
 
 ## Tasks
 
-### B3. Pass 2
+- **C1** Coverage of the translated passes: count the halves run by the test programs
+  (`Machine::trace` or a counter per address), and print per pass the routines, and the
+  addresses inside them, never run. Script or test target; result summarized in
+  doc/translation.md.
+- **C2** Natives inside a translated pass: `gen-pass.py --native ADDR` makes every jump and
+  call to ADDR go through the dispatch, so that a native registered there runs instead;
+  natives return through the register the callers use. Prove it by replacing one small
+  routine of pass 3 (constant interning, 22716).
 
-Pass 2 runs as the translated code of the original (`src/pass2_gen.cpp`,
-[doc/translation.md](doc/translation.md)); its stream, memory and messages match for every
-program. Replace it with hand-written C++, routine by routine, keeping `Pass.stream/*_s2`,
-`Pass2Mem` and `ListingTest` green:
-- **B3.1** Scopes and identifier binding; `TWICE DECLARED`, `IS NOT DECLARED`.
-- **B3.2** Type checking by recursive descent over the reversed stream; the messages in
-  reverse order with `NEXT STATEMENT IS l/s`.
-- **B3.3** The output stream; array records; `* * INCORRECT ALGOL PROGRAM * *`.
-- Decode the rest of the pass-2 output codes along the way (an open point in passes.md).
+### Pass 2 (G17223)
 
-### B4. Pass 3
+- **C3** Test programs for what C1 shows unrun in pass 2 (each message, 'COMMON'
+  consistency, I/O statement checks, actual-formal checks, switches, own variables), with
+  goldens.
+- **C4** Pass 2 start and end: saving the names to drum 26 zone 0, the first scan over the
+  'COMMON' table and the D-list, linking array descriptors to the records at 04000,
+  `* * INCORRECT ALGOL PROGRAM * *`.
+- **C5** Messages: the formatter G27733 and G30001 as C++ (texts with arguments, names from
+  the saved page, `NEXT STATEMENT IS l/s`), used by pass 2 through natives.
+- **C6** Scopes: block open and close over the reversed stream, identifier binding and the
+  shadowed entries, `TWICE DECLARED`, `IS NOT DECLARED`, `ILLEGAL USE`.
+- **C7** Type checking of expressions: the dispatch by code (21720), types and kinds in M5/M6,
+  int→real conversion items, `TYPE ERROR IN CONNECTION WITH …`.
+- **C8** Statements: assignment and left parts, IF, FOR, GOTO and switches, `NO ASSIGNMENT
+  TO`.
+- **C9** Procedures: declarations and formal parameters, calls and actual-formal
+  correspondence, value parameters, 'CODE'/'ALGOL' externals, standard procedures and I/O
+  statements (`PRINT`, `LENGTH`, …).
+- **C10** Pass 2 fully native: data in `Context`, streams as vectors, drop `pass2_gen.cpp`;
+  `Pass2Mem` compares the workspace without the stream pages. Decode the pass-2 output codes
+  completely in passes.md.
 
-Pass 3 runs as translated code (`src/pass3_gen.cpp`); replace it under `Pass.stream/*_s3`:
-- **B4.1** Constant folding, merging of procedure jumps.
-- **B4.2** Strength reduction of subscripts in FOR loops: register choice, preamble,
-  increments.
+### Pass 3 (G22162)
 
-### B5. Pass 4 (the largest pass; many handlers still unknown)
+- **C11** Test programs for what C1 shows unrun in pass 3 (FOR loops with several arrays,
+  nested loops, steps of both signs, loops it gives up on).
+- **C12** The copy loop and the simple rewrites: constant folding of unary minus and int→real,
+  adjacent procedure declarations, EOP.
+- **C13** FOR loops, first scan: the classification table 22264, when a loop is given up.
+- **C14** FOR loops, rewrite: register choice (23154), subscripts linear in the control
+  variable, the preamble, the increments, inner loops (`167 … 166`); drop `pass3_gen.cpp`.
 
-Pass 4 runs as translated code (`src/pass4_gen.cpp`); replace it under `Pass.stream/*_s4`:
-- **B5.1** The template interpreter and the dispatch by item code (generated tables).
-- **B5.2** Handlers group by group, each tested by stream 4 on the feature programs: arithmetic
-  and constants, assignment, booleans, IF/goto/labels, FOR, blocks and frames, arrays,
-  procedures and parameters, switches, I/O and strings, `'CODE'`/`'ALGOL'` externals.
-- **B5.3** `--check`: the `A/SUBCH` calls; expected outputs for a `*check` variant of the
-  array programs.
+### Pass 4 (G23523)
 
-### B7. Pass 6 and integration
+- **C15** Test programs for what C1 shows unrun in pass 4, and a `*check` variant of the array
+  programs (expected outputs with `A/SUBCH`); a `--check` option for the `*CHECK` card, apart
+  from `--setftn`.
+- **C16** The frame of pass 4: init (names from drum 26 zone 0, prologue), reading and the
+  dispatch by code (26056), emitting half-words and pseudo-items (23655), EOP.
+- **C17** The template interpreter (23712, 23734, templates at 25747) and the operand stack.
+- **C18** Arithmetic, constants and assignment.
+- **C19** Booleans, relations, IF, GOTO, labels and switches.
+- **C20** Blocks and storage: frame offsets, block entry (25525), own variables.
+- **C21** Arrays: declarations and bounds, subscripts (24324), the `A/SUBCH` call in check
+  mode, the access forms made by pass 3 (`162`–`165`).
+- **C22** FOR loops, including the loops rewritten by pass 3.
+- **C23** Procedures: declarations, parameters by value and by name, calls, function results,
+  procedures as parameters.
+- **C24** I/O, strings, external names (the table at 27245, G30034), 'CODE'/'ALGOL'
+  procedures, 'COMMON'; then pass 4 fully native, drop `pass4_gen.cpp`.
 
-- **B7.3** `--full`: the object listing of `A/PRINTM` (its modules are not analysed yet; do
-  this last, or move it to a later milestone).
+### Cleanup
 
-## Order
-
-With the captured streams and `pass_test`, each pass can be written and tested on its own.
-The whole compiler runs (passes 2–4 as translated code): `compile_test` and `run_test`
-pass for every program. Suggested order: B3, B4, B5, B7.3 last.
+- **C25** The translator: remove `machine.*`, `translated.*` and the shared translated code if
+  nothing uses them, or keep `gen-pass.py` and `trace-diff.py` documented as tools. Remove
+  the stream-page parts of the `.mem` checks that no longer apply.
+- **C26** Pass 1 parser as readable functions instead of the labels and the explicit stack of
+  the original, under the same tests.
+- **C27** Listing details not covered yet: a left cell over 64 characters, a right cell over
+  63 (dubna wraps), characters that print as nothing; test programs for them.
+- **C28** `--full`: the object listing of the sub-overlay `A/PRINTM` (30355…, modules not
+  analysed yet); or move it to a later milestone.
