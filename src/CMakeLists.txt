@@ -16,6 +16,7 @@ add_library(algol STATIC
     printm.cpp
     source.cpp
     stdarray.cpp
+    tables.cpp
     tables_data.cpp
     version.cpp
     workspace.cpp

@@ -36,3 +36,15 @@ TEST(tables, contents)
     EXPECT_EQ(p3regs.at(023154), 01200u); // R5
     EXPECT_THROW(p3regs.at(023164), std::out_of_range);
 }
+
+TEST(tables, iso)
+{
+    EXPECT_EQ(iso_word("HELLO,"), 02204251423047454u);
+    EXPECT_EQ(iso_word("′**′"), 01162505211600000u);
+    // A format of pass 2 with its escapes, as at 021676 up to its zero byte.
+    auto words = iso_words("IDENTIFIER ′\200′ IS NOT DECLARED\202");
+    ASSERT_EQ(words.size(), 6u);
+    for (unsigned i = 0; i < 5; i++)
+        EXPECT_EQ(words[i], image[021676 + i - image_base]) << i;
+    EXPECT_EQ(words[5], image[021703 - image_base] & 07777770000000000u);
+}

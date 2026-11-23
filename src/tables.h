@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <span>
 #include <stdexcept>
+#include <string_view>
+#include <vector>
 
 #include "stdarray.h"
 
@@ -40,6 +42,12 @@ extern const size_t image_size;
 
 extern const InitWord workspace_init[];
 extern const size_t workspace_init_size;
+
+// UTF-8 text in ISO (KOI-7) words, 6 characters per word, the last padded
+// with zero bytes. A byte 0200-0277 alone (not UTF-8) is copied as is: an
+// argument escape of the formats (G27733).
+std::vector<Word> iso_words(std::string_view text);
+Word iso_word(std::string_view text); // at most 6 characters
 
 extern const Table symattr, warnings, commsg, chclass, syntext, errclass, p2msg, p2disp, p3class, p3mask,
     p3rewr, p3jump, p3regs, template_, p4disp, linetab, isotext, rtnames, summary;
