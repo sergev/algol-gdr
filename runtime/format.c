@@ -575,10 +575,14 @@ void algol_fread_begin(int64_t unit, const char *format)
     next_record();
 }
 
-void algol_decode_begin(const char *format, const char *string)
+// The first count characters of string, or all of it when shorter.
+void algol_decode_begin(const char *format, const char *string, int64_t count)
 {
+    string = string ? string : "";
+    if (count < algol_string_length(string))
+        string = algol_string_slice(string, 1, count < 0 ? 0 : count);
     file   = NULL;
-    source = string ? string : "";
+    source = string;
     start(format);
     next_record();
 }

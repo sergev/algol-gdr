@@ -1759,9 +1759,8 @@ private:
             ir::Value n      = expr(*s.params.at(0));
             ir::Value format = expr(*s.params.at(1));
             ir::Value text   = expr(*s.params.at(2));
-            text             = runtime("ptr", "algol_string_slice", { text, ir::i64(1), n });
             io_mode_         = IoMode::FREAD;
-            runtime("void", "algol_decode_begin", { format, text });
+            runtime("void", "algol_decode_begin", { format, text, n });
             io_items(s.items);
             runtime("void", "algol_fread_end", {});
             return;

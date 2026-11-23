@@ -16,7 +16,7 @@ _begin _integer i, n; _real x; _string s; _boolean b; _integer _array a[1:3];
 
     _encode (12, ''(I4, A5)'', s) 77, ''abc'';
     PRINT(NEWLINE, s, ''|'');
-    _decode (4, ''(I4)'', s) i;
+    _decode (40, ''(I4)'', s) i;
     PRINT(i);
 
     _comment Without a point the last d digits are the fraction;

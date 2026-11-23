@@ -37,7 +37,7 @@ void algol_format_end(void);
 void algol_encode_begin(const char *format);
 char *algol_encode_end(int64_t count);
 void algol_fread_begin(int64_t unit, const char *format);
-void algol_decode_begin(const char *format, const char *string);
+void algol_decode_begin(const char *format, const char *string, int64_t count);
 void algol_fread_end(void);
 int64_t algol_fread_integer(void);
 double algol_fread_real(void);
