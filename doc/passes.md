@@ -593,8 +593,19 @@ subscript computation. An access through a stepped register has no subscript lef
 | 22203 | after a 146: drop line markers, drop the 146 before a 145 (C++) |
 | 22214 | fold a constant: the item after 026/064 is a constant (023) → negated (AVX) or made real (A+X 0) and interned; returns through M11 (C++) |
 | 22232 | FOR, first scan (C++): copies the loop, classifying each item (3-bit table at 22264, below); gives up (the rest is copied by the main loop) on an item of class 3, a FOR whose control variable's descriptor word is 0, more than 046 left parts, or a control variable assigned in the body. Else the assigned variables get bit 0000040000000000 in their descriptors, and the rewrite starts over from the FOR (02013 = 02001 at the FOR; when the loop crossed a page, 02042 ≠ 0, the page is closed with a 0 and the FOR's page read again) |
-| 22327, 22352 | set up the rewrite; rewrite scan (handler table 22365, jumps at 22407) |
-| 22365 | rewrite scan classes: 6 bits per code (word code>>3, bits 6·(code&7)); class c jumps through word 22407+c/2 (left half if c even). E.g. 0130–0134 → 23115, 024/0163 (labels) → 22507 |
+| 22327 | set up the rewrite (C++): page 10000 to drum 26 zone 3, the lists: preamble from 02454, body loads from 02702, increments from 02120 |
+| 22347, 22351, 22352 | rewrite scan (C++): read, parse (push M12), classify (6 bits per code at 22365); class 0 is written, others go on the value stack (M4, from 02144) and to a handler through the table at 22407 (per word: even class, odd class) |
+| 22441… | 034: initial value (D30, or D32 = c<<12\|045 for a constant), step (D24, D18 its value), until (D35) |
+| 22551, 22570, 22572 | operands: variable (the control variable is linear), string, constant (linear, c = its value when an integer) |
+| 22522, 22541, 22664–22666, 23351, 23417 | operators: any binary, unary; integer + − × of linear operands (constants folded and interned); integer negation |
+| 22607 | array element: one subscript stepped by the loop and the rest constant → a register (23051–23072 for the body, 23164–23230 for the preamble; registers from the table at 23154, taken from both ends) |
+| 22747 | write the value stack |
+| 22757 | move the items of an operand to a list |
+| 22771 | an operand done: a register load (0160) in the body list unless nonlinear or in an IF |
+| 23017 | find an operand's items in a list |
+| 23073, 23115, 23123 | IF, compare-and-jump, end of IF (D33: depth) |
+| 23231 | end of the loop: write the body list, the preamble (0167 … 0166), the loop again from 02013, the increments, the 052; flags into the control variable's descriptor; restore page 10000 |
+| 22365 | rewrite scan classes (C++ above): 6 bits per code (word code>>3, bits 6·(code&7)); class c jumps through word 22407+c/2 (left half if c even). E.g. 0130–0134 → 23115, 024/0163 (labels) → 22507 |
 | 22716 | intern a constant (C++): search slots n+1…01634 (n = the free slot at 02003) for an equal word, else take slot n and move 02003 down; A = 02032 = `slot<<12 \| 023`, plus 0200 for a negative value; returns through M12 |
 | 23231 | end of FOR: emit the preamble, the loop and the increments |
 | 23343 | EOP: written, then a 0; bit 1306 into 02001, then 02001 = 4000040262011777; return to the driver (C++) |

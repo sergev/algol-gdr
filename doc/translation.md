@@ -51,11 +51,11 @@ Native routines:
   texts and its state cells 01736–01740 match the original).
 - **`*70`**: drum pages and sectors into `Workspace::drum`.
 
-**Pass 2 is C++** (src/pass2.cpp): it runs on a `Machine` with `shared_code` only, so every
-address of 17223–22161 it reaches is a native; the parser's framework (read, write helpers,
-subtree parse, dispatch through the high halves of 21720, return) is native too. Its data is
-still the machine's memory (copied from and back to the `Context`), and it reads and writes
-its streams through the original stream module (27114–27244), so pages, drums and registers
+**Passes 2 and 3 are C++** (src/pass2.cpp, src/pass3.cpp): it runs on a `Machine` with `shared_code` only, so every
+address of 17223–23522 they reach is a native; the parser's framework (read, write helpers,
+subtree parse, dispatch through the high halves of 21720, return) is native too. Their data is
+still the machine's memory (copied from and back to the `Context`), and they read and write
+their streams through the original stream module (27114–27244), so pages, drums and registers
 come out exactly; the driver's print 01644 is the original too.
 
 Routines of the passes rewritten in C++ (`--native` or `--replaced` in `scripts/gen-passes` for
@@ -83,6 +83,7 @@ the translated passes), each working on the machine's memory and leaving its reg
 
 | 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
 | 3 | 22162–22326 | `start`, `next_item`, `copy_item`, `fold`, `for_scan` (src/pass3.cpp): the main loop, 146, 026/064, FOR's first scan |
+| 3 | 22327–23426 | the rewrite of a FOR loop: a native per entry (`register_rewrite`) |
 | 3 | 22716 | `intern_constant` |
 | 3 | 23343 | `eop` |
 
@@ -124,12 +125,12 @@ exactly (pass 1's scratch cells, the result cell of 30001) show up as difference
 compiles every test program with it and lists per pass the code words never run, each with
 the label before it in the Madlen source (code: the C ranges of `algol.sym`/`.tsym` without
 the words of six printable characters, which are message texts, plus whatever ran). With the
-41 programs of tests/algol:
+41 programs of tests/algol, before passes 2 and 3 were rewritten:
 
 | Pass | Halves of code run | Unrun |
 |---|---|---|
 | 2 | 1999 of 2340 (85%) | 20 pieces of 1–6 words: entries of jump tables by type and kind, short branches |
-| 3 | 1044 of 1162 (89%) | |
+| 3 | 1172 of 1252 (93%), after for2 | only data |
 | 4 | 1952 of 2142 (91%) | |
 | shared | 279 of 350 (79%) | 27137 (backward write of a word), 27165, 27220, 01653 (no listing) |
 

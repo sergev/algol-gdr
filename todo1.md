@@ -4,8 +4,9 @@ Goal (from [Roadmap.md](Roadmap.md)): from each program in `tests/algol/`, our c
 produces the same object (`.std`) and listing as the original, in readable C++.
 
 **Where we are.** The whole compiler runs and `compile_test`/`run_test` pass for every
-program. Passes 1, 5, 6 are C++; passes 2–4 run as the original's code translated by
-`scripts/gen-pass.py` ([doc/translation.md](doc/translation.md)). What we know about the
+program. Passes 1, 5, 6 are C++; passes 2 and 3 are C++ on a `Machine` (their data still in
+its memory, streams through the original stream module); pass 4 runs as the original's code
+translated by `scripts/gen-pass.py` ([doc/translation.md](doc/translation.md)). What we know about the
 original is in `doc/` ([passes.md](doc/passes.md), [tables.md](doc/tables.md),
 [runtime-abi.md](doc/runtime-abi.md), [stdarray.md](doc/stdarray.md),
 [encoding.md](doc/encoding.md)).
@@ -15,15 +16,10 @@ routine is registered as a native of the `Machine` at its original address and w
 machine's memory, so the translated code around it keeps working. When no translated code
 of a pass is left, its data moves from `Machine` memory to `Context` (the workspace, streams
 as vectors), and `passN_gen.cpp` is deleted. The guards at every step: `Pass.stream`, the
-pass's `PassNMem` test, `ListingTest`, `Compile.object`, `Run.output`. Each task ends with
+`PassMem` test of the pass, `ListingTest`, `Compile.object`, `Run.output`. Each task ends with
 its routines documented in `doc/passes.md` (V where verified).
 
 ## Tasks
-
-### Pass 3 (G22162)
-
-- **C14** FOR loops, rewrite: register choice (23154), subscripts linear in the control
-  variable, the preamble, the increments, inner loops (`167 … 166`); drop `pass3_gen.cpp`.
 
 ### Pass 4 (G23523)
 
