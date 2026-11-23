@@ -63,11 +63,18 @@ constexpr unsigned PARSE_READ   = 017446; // *0223B: the subtree of the item rea
 constexpr unsigned EMIT_A       = 017364; // *0141B: item A, through M13
 constexpr unsigned OPS          = 020142; // + - * /: real code <<24, integer code <<30, text
 constexpr unsigned STRING_PLUS  = 022137; // the item of + on strings
+constexpr unsigned OPS_TEXT     = 020146; // '+', '-', '*', '/'
 constexpr unsigned INDEX_TEXT   = 022121; // INDEX
 constexpr unsigned SUBSCRIPT    = 020003; // *0560B
 constexpr unsigned NEXT_SUB     = 020020; // *0575B
 constexpr unsigned INDEX_DONE   = 020041; // *0616B
 constexpr unsigned ARITH_LEFT   = 020110; // *0665B
+constexpr unsigned POWER_TEXT   = 022065; // '**'
+constexpr unsigned BOOL_TEXT    = 020352; // BOOLEAN OP., 2 words
+constexpr unsigned REL_TEXT     = 020422; // RELATION, 2 words
+constexpr unsigned REL_MIXED    = 020400; // by relation code: the code for an integer and a real
+constexpr unsigned NUMERIC      = 020317; // by type: nonzero for real and integer
+constexpr unsigned ONE          = 01632;  // the slot of the constant 1
 constexpr unsigned NOT_DECLARED = 017311; // text, name at +010
 constexpr unsigned WRONG_ORDER  = 017322; // text, name at +010
 constexpr unsigned INCORRECT    = 022051; // text up to 022056
@@ -925,6 +932,305 @@ unsigned index_done(Machine &m)
     return subscript_done(m);
 }
 
+//
+// Code 017, **: unary + and - before the exponent are dropped and counted.
+// An integer constant exponent 1..63: the item c<<12 ^ 0152 (real base),
+// 0153 (integer), negative as 1 / x**c; on an octal base 0352 with 64+c or
+// 64-c. Otherwise by the types: 0147 real**real, 0150 real**int, 0151
+// int**int constant, int**int as 0150 after 064, 0350, 0347 for octal.
+//
+unsigned power_item(Machine &m)
+{
+    auto at = [&](unsigned k) -> Word & { return m.mem[(m.M[Machine::SP] - k) & 077777]; };
+    m.acc   = 0;
+    m.push(0); // [M15-2]: the constant exponent
+    m.push(0); // [M15-1]: its sign
+    for (;;) {
+        m.call(READ, 13, 020224);
+        m.set_m(14, m.M[1] - 024);
+        if (m.M[1] == 046)
+            continue;
+        if (m.M[1] != 047)
+            break;
+        m.acc = at(1) ^ 1;
+        at(1) = m.acc;
+    }
+    auto finish = [&] {
+        m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+        m.set_m(13, RETURN_SUB);
+        return EMIT_M14;
+    };
+    auto error = [&] {
+        m.acc = m.mem[POWER_TEXT];
+        m.set_m(8, 020254);
+        type_error(m);
+        return finish();
+    };
+    if (m.M[1] == 024) {
+        m.acc = m.mem[NAMES + m.M[3]];
+        at(2) = m.acc;
+        m.set_m(14, unsigned(m.acc));
+        bool small = false;
+        if (m.M[14]) {
+            m.arith(7, 02713, 005);
+            small = !m.uza();
+        }
+        if (small) {
+            m.call(PARSE, 12, 020270);
+            m.set_m(14, m.M[5] == 2 ? 0153 : 0152);
+            if (m.M[5] == 5) {
+                m.rau         = 003;
+                m.acc         = at(1);
+                bool negative = m.acc;
+                m.acc         = at(2);
+                m.arith(7, 02713, negative ? 006 : 004);
+                m.set_m(14, 0352);
+                m.call(EMIT_SHIFTED, 13, 020300);
+                m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+                return RETURN_SUB;
+            }
+            if (m.M[5] != 1 && m.M[5] != 2)
+                return error();
+            m.acc = at(1);
+            if (m.acc) {
+                bool integer = m.M[5] == 2;
+                m.set_m(5, m.M[5] - 2);
+                if (integer) {
+                    m.set_m(14, 064);
+                    m.call(EMIT_M14, 13, 020306);
+                }
+                m.set_m(5, 1);
+                m.set_m(4, ONE);
+                m.set_m(14, 023);
+                m.call(EMIT_M4, 13, 020310);
+                m.set_m(14, 064);
+                m.call(EMIT_M14, 13, 020311);
+                m.set_m(14, 016);
+                m.call(EMIT_M14, 13, 020312);
+                m.set_m(14, 0152);
+            }
+            m.acc = at(2);
+            m.call(EMIT_SHIFTED, 13, 020314);
+            m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+            return RETURN_SUB;
+        }
+    }
+    m.call(PARSE_READ, 12, 020231);
+    m.push(m.M[5]);
+    m.acc = at(2);
+    if (m.acc) {
+        m.set_m(5, m.M[5] - 1);
+        m.set_m(14, m.M[5] ? 026 : 047);
+        m.call(EMIT_M14, 13, 020236);
+    }
+    m.call(PARSE_READ, 12, 020237);
+    m.acc = (Word(m.M[5]) << 3) | at(1);
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    m.set_m(13, unsigned(m.acc));
+    switch (m.acc) {
+    case 011:
+        m.set_m(14, 0147);
+        break;
+    case 012:
+        m.set_m(14, 0150);
+        break;
+    case 052:
+        m.set_m(14, 0350);
+        break;
+    case 051:
+        m.set_m(14, 0347);
+        break;
+    case 022:
+        m.set_m(14, 0151);
+        m.acc = at(2);
+        if (!m.acc) {
+            m.set_m(14, 064);
+            m.call(EMIT_M14, 13, 020253);
+            m.set_m(14, 0150);
+            m.set_m(5, 1);
+        }
+        break;
+    case 021:
+        m.set_m(14, 064);
+        m.call(EMIT_M14, 13, 020262);
+        m.set_m(14, 0147);
+        m.set_m(5, 1);
+        break;
+    default:
+        return error();
+    }
+    return finish();
+}
+
+// *1121B: TYPE ERROR IN CONNECTION WITH BOOLEAN OP. (the code popped).
+unsigned bool_error(Machine &m)
+{
+    m.set_m(8, RETURN_SUB);
+    m.acc = m.mem[BOOL_TEXT];
+    m.stx(0, ARGS);
+    m.mem[ARGS + 1] = m.mem[BOOL_TEXT + 1];
+    m.acc           = m.mem[ARGS + 1];
+    return type_error_args(m);
+}
+
+//
+// *1110B: a boolean operator (its code pushed) on operands of type M5:
+// boolean as is; octal OR as is, AND and NOT as 0200 + the code; else TYPE
+// ERROR.
+//
+unsigned bool_result(Machine &m)
+{
+    m.set_m(13, RETURN_SUB);
+    m.set_m(14, m.M[5]);
+    m.xta(Machine::SP, 0);
+    if (m.M[5] == 3)
+        return EMIT_A;
+    if (m.M[5] == 5) {
+        unsigned code = m.acc & 077777;
+        if (code == 2)
+            return EMIT_A;
+        m.acc |= 0200;
+        if (code == 3 || code == 4)
+            return EMIT_A;
+    }
+    m.push(m.acc);
+    return bool_error(m);
+}
+
+// Codes 001-003, 043: IMPL OR AND EQUIV.
+unsigned bool_item(Machine &m)
+{
+    m.push(m.M[1]);
+    m.call(PARSE, 12, 020327);
+    m.push(m.M[5]);
+    m.call(PARSE_READ, 12, 020331);
+    m.xta(Machine::SP, 0);
+    m.set_m(13, 020332);
+    type_pair(m);
+    if (m.M[14])
+        return bool_error(m);
+    return bool_result(m);
+}
+
+// Code 004: NOT.
+unsigned not_item(Machine &m)
+{
+    m.push(m.M[1]);
+    m.call(PARSE, 12, 020333);
+    return bool_result(m);
+}
+
+//
+// Codes 005-012: relations. Operands of one type, real, integer or string;
+// octal ones only for = and ≠; an integer and a real: = ≠ as 0105, 0106.
+// Strings: the item (code-4)<<12 ^ 0157. The result is boolean.
+//
+unsigned relation_item(Machine &m)
+{
+    m.push(m.M[1]);
+    m.call(PARSE, 12, 020356);
+    m.push(m.M[5]);
+    bool ok = false;
+    switch (m.M[5]) {
+    case 1:
+    case 2:
+    case 4:
+        ok = true;
+        break;
+    case 0:
+    case 3:
+        break;
+    case 5: {
+        unsigned code = m.mem[(m.M[Machine::SP] - 2) & 077777] & 077777;
+        m.set_m(14, code);
+        ok = code == 011 || code == 012;
+        break;
+    }
+    default:
+        return 020360 + m.M[5];
+    }
+    bool error = !ok;
+    m.call(PARSE_READ, 12, ok ? 020372 : 020413);
+    if (ok) {
+        m.xta(Machine::SP, 0);
+        m.set_m(13, 020373);
+        type_pair(m);
+        switch (m.M[14]) {
+        case 0:
+            m.xta(Machine::SP, 0);
+            break;
+        case 1:
+        case 2:
+            m.wtc(Machine::SP, 0);
+            m.xta(0, REL_MIXED);
+            break;
+        case 3:
+            m.xta(Machine::SP, 0);
+            error = true;
+            break;
+        default:
+            return 020374 + m.M[14];
+        }
+    } else {
+        m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+    }
+    if (error) {
+        m.mem[ARGS + 1] = m.mem[REL_TEXT + 1];
+        m.acc           = m.mem[REL_TEXT];
+        m.set_m(8, 020402);
+        type_error(m);
+    }
+    m.set_m(5, m.M[5] - 4);
+    if (!m.M[5]) {
+        m.arx(7, 02706);
+        m.set_m(14, 0157);
+        m.set_m(5, 3);
+        m.set_m(13, RETURN_SUB);
+        return EMIT_SHIFTED;
+    }
+    m.set_m(5, 3);
+    m.set_m(13, RETURN_SUB);
+    return EMIT_A;
+}
+
+// Code 046: unary +, on a number only.
+unsigned uplus_item(Machine &m)
+{
+    m.call(PARSE, 12, 020425);
+    m.acc = m.mem[NUMERIC + m.M[5]];
+    m.set_logical();
+    if (m.acc)
+        return RETURN_SUB;
+    m.acc = m.mem[OPS_TEXT];
+    m.set_m(8, RETURN_SUB);
+    return type_error(m);
+}
+
+// Code 047: unary -, on a number: 047 real, 026 integer.
+unsigned uminus_item(Machine &m)
+{
+    m.call(PARSE, 12, 020431);
+    m.acc = m.mem[NUMERIC + m.M[5]];
+    m.set_logical();
+    if (!m.acc) {
+        m.acc = m.mem[OPS_TEXT + 1];
+        m.set_m(8, RETURN_SUB);
+        return type_error(m);
+    }
+    m.set_m(14, 047);
+    switch (m.M[5]) {
+    case 1:
+        break;
+    case 2:
+        m.set_m(14, 026);
+        break;
+    default:
+        return 020434 + m.M[5];
+    }
+    m.set_m(13, RETURN_SUB);
+    return EMIT_M14;
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -1108,6 +1414,12 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[020067] = index_type;
     pass.m.natives[020101] = subscript_count;
     pass.m.natives[020110] = arith_left;
+    pass.m.natives[020221] = power_item;
+    pass.m.natives[020325] = bool_item;
+    pass.m.natives[020350] = not_item;
+    pass.m.natives[020354] = relation_item;
+    pass.m.natives[020424] = uplus_item;
+    pass.m.natives[020430] = uminus_item;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
