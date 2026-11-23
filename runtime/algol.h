@@ -122,5 +122,8 @@ void algol_x1_absfixt(int64_t n, int64_t m, double x);
 double algol_x1_read(void);
 int64_t algol_x1_resym(void);
 int64_t algol_x1_xeen(int64_t mask);
+double algol_x1_random(void);
+void algol_x1_setrandom(double seed);
+double algol_x1_timeofday(void);
 
 #endif

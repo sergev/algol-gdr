@@ -71,6 +71,7 @@ const std::vector<std::string> programs = {
     "a60/publication",
     "a60/revised_report",
     "a60/units",
+    "x1/helpers",
     "x1/input",
     "x1/output",
 };

@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "algol.h"
@@ -438,4 +440,36 @@ int64_t algol_x1_xeen(int64_t mask)
         }
     }
     return switches & mask;
+}
+
+// RANDOM: SplitMix64, 53 bits in [0, 1); SETRANDOM seeds it with the bits of
+// a real.
+static uint64_t random_state = 0x853c49e6748fea9bULL;
+
+double algol_x1_random(void)
+{
+    uint64_t z = (random_state += 0x9e3779b97f4a7c15ULL);
+    z          = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    z          = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+    z ^= z >> 31;
+    return (double)(z >> 11) * 0x1.0p-53;
+}
+
+void algol_x1_setrandom(double seed)
+{
+    memcpy(&random_state, &seed, sizeof(random_state));
+}
+
+// TIMEOFDAY: local seconds since midnight; $ALGC_TIMEOFDAY instead when set.
+double algol_x1_timeofday(void)
+{
+    const char *env = getenv("ALGC_TIMEOFDAY");
+    if (env)
+        return strtod(env, NULL);
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    time_t clock = tv.tv_sec;
+    struct tm tm;
+    localtime_r(&clock, &tm);
+    return (tm.tm_hour * 60.0 + tm.tm_min) * 60.0 + tm.tm_sec + tv.tv_usec * 1e-6;
 }

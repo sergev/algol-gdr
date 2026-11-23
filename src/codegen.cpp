@@ -606,11 +606,16 @@ private:
             return runtime("i64", "algol_x1_resym", {});
         case StdFunc::XEEN:
             return runtime("i64", "algol_x1_xeen", { expr(*f.args.at(0)) });
-        case StdFunc::EVEN:
+        case StdFunc::EVEN: {
+            ir::Value odd = fn_->binop("and", expr(*f.args.at(0)), ir::i64(1));
+            return fn_->select(fn_->icmp("ne", odd, ir::i64(0)), ir::i64(-1), ir::i64(1));
+        }
         case StdFunc::RANDOM:
+            return runtime("double", "algol_x1_random", {});
         case StdFunc::TIMEOFDAY:
+            return runtime("double", "algol_x1_timeofday", {});
         case StdFunc::SUM:
-            unsupported(std::string("'") + to_string(f.func) + "'");
+            return sum(f.args);
         default:
             break;
         }
@@ -655,6 +660,39 @@ private:
             unsupported(std::string("'") + to_string(f.func) + "'");
         }
         throw std::logic_error("bad function");
+    }
+
+    // SUM(i, a, b, x) of the X1 library, inline: i := a; while i ≤ b add x,
+    // i := i + 1; b once.
+    ir::Value sum(const ExprList &args)
+    {
+        auto counter = [&]() {
+            const Expr &e = *args.at(0);
+            if (auto el = std::get_if<expr::Element>(&e.node))
+                return element_cell(el->array, el->subscripts);
+            return var_cell(std::get<expr::Var>(e.node).decl);
+        };
+        ir::Value first = expr(*args.at(1));
+        ir::Value last  = expr(*args.at(2));
+        ir::Value acc   = temp(1);
+        store(Type::REAL, ir::real(0), acc);
+        Cell c = counter();
+        store(c, convert(first, Type::INTEGER, c.type));
+        auto *test = fn_->new_block("sum.test");
+        auto *body = fn_->new_block("sum.body");
+        auto *done = fn_->new_block("sum.end");
+        fn_->br(test);
+        fn_->set_block(test);
+        c = counter();
+        fn_->cond_br(fn_->icmp("sle", load(c), last), body, done);
+        fn_->set_block(body);
+        ir::Value x = expr(*args.at(3));
+        store(Type::REAL, fn_->binop("fadd", load(Type::REAL, acc), x), acc);
+        c = counter();
+        store(c, fn_->binop("add", load(c), ir::i64(1)));
+        fn_->br(test);
+        fn_->set_block(done);
+        return load(Type::REAL, acc);
     }
 
     // An arithmetic operation; with --check, integer overflow, division by
@@ -1775,6 +1813,9 @@ private:
             runtime("void", name, { n, m, arg(2) });
             return;
         }
+        case StdProc::SETRANDOM:
+            runtime("void", "algol_x1_setrandom", { arg(0) });
+            return;
         default:
             unsupported(std::string("'") + to_string(p.proc) + "'");
         }

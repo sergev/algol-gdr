@@ -7,7 +7,7 @@ purpose is listed with the reason.
 
 **Where we are.** Every example passes the front end as it is (`ast_test` x1_examples):
 the X1 procedures are standard identifiers, `print` is X1's in the publication form, `read`
-in an expression is X1's (doc/ast.asdl). The output and input procedures run (runtime/x1.c); the helpers do not yet.
+in an expression is X1's (doc/ast.asdl). The whole X1 library runs (runtime/x1.c, doc/codegen.md); `tests/x1/` checks it against `x1sim`.
 
 **Reference.** The behaviour to match is `x1sim`'s, not the X8 manual's where they differ.
 Its sources are in `x1-algol-compiler/`:
@@ -23,19 +23,6 @@ Its sources are in `x1-algol-compiler/`:
 green.
 
 ## Tasks
-
-### Runtime (`runtime/x1.c`)
-
-- **G4** The helpers:
-  - `SUM(i, a, b, x)` is Jensen's device, generated inline as the loop of
-    `library/sum.a60`: `i := a`, then while `i ≤ b`, add `x` and step `i`; `b` is
-    evaluated once.
-  - `EVEN(n)`.
-  - `RANDOM` gives a real in [0, 1), and `SETRANDOM(x)` seeds it. The generator is
-    documented and seedable, but needn't match `x1sim`'s.
-  - `TIMEOFDAY` gives local seconds since midnight, with microseconds.
-
-  Tests.
 
 ### Running the examples
 

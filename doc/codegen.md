@@ -274,6 +274,11 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
   input stops the program. `RESYM` is `algol_x1_resym`, the X1 code of the next symbol,
   255 at the end. `XEEN (mask)` is `algol_x1_xeen`: a line of binary digits, read at the
   first call.
+- `SUM (i, a, b, x)` is inline, the loop of the X1 library's `sum.a60`: `i := a`; while
+  `i ≤ b` (b evaluated once) add `x` and step `i`. `EVEN (n)` is inline. `RANDOM` is
+  `algol_x1_random` (SplitMix64, not x1sim's generator), seeded by `SETRANDOM (x)` with the
+  bits of `x`; `TIMEOFDAY` is `algol_x1_timeofday`, local seconds since midnight, or
+  `$ALGC_TIMEOFDAY` when set.
 
 ## Names
 

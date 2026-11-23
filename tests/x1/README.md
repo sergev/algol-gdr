@@ -6,6 +6,7 @@ Programs in the publication form for the library of the Electrologica X1, as
 
 | Program | What |
 |---|---|
+| helpers | `SUM` (nested, empty, its bound once, an element as counter), `EVEN`, `RANDOM` and `SETRANDOM` (repeatable, in [0, 1)), `TIMEOFDAY` (in a day) |
 | input | `read`, `RESYM`, `XEEN` (`input.in`) |
 | output | `PRINTTEXT`, `PRSYM`, `SPACE`, `TAB`, `NLCR`, `print`, `FIXT`, `ABSFIXT`, `FLOT`: their corner cases |
 
