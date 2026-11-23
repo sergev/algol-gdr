@@ -22,9 +22,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 2 (G17223)
 
-- **C9** Procedures: declarations and formal parameters, `NO ASSIGNMENT TO`, calls and
-  actual-formal correspondence, value parameters, 'CODE'/'ALGOL' externals, standard
-  procedures and I/O statements (`PRINT`, `LENGTH`, …), string slices (050).
 - **C10** Pass 2 fully native: data in `Context`, streams as vectors, drop `pass2_gen.cpp`;
   `Pass2Mem` compares the workspace without the stream pages. Decode the pass-2 output codes
   completely in passes.md.

@@ -68,6 +68,13 @@ the machine's memory and leaving its registers as the original does:
 | 2 | 21366, 21461 | conditional expressions, IF |
 | 2 | 17543–17601, 21466–21617 | FOR |
 | 2 | 21637, 20162–20200, 21206, 17533 | SWITCH, array segments, copied items, syntax-error marker |
+| 2 | 17544–17574 | procedure declarations, NO ASSIGNMENT TO |
+| 2 | 20445–20565 | I/O statements, string slices |
+| 2 | 20571–21342 | calls, arguments, thunks, VALUE, standard and non-ALGOL procedures |
+
+Natives write memory through `Machine::store`, which drops stores to address 0 as the
+machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep
+reading as zero.
 | 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
 | 3 | 22716 | `intern_constant` (src/pass3.cpp) |
 

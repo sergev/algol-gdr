@@ -411,6 +411,28 @@ A block header has bit 48 set, and its low 12 bits give the end address.
     with arrays gets bit 16 and an item 0102 once. Constant bounds (upper below 256, lower
     below 64) make an array record `bounds<<24 | item` at 04000…, linked at the end.
   - A syntax-error marker (044) skips items up to the next statement marker.
+- **Procedures (V).**
+  - A procedure (042, read after its body 062) closes its scope; a function whose result
+    was never assigned (bit 17 of the word after its descriptor) gets NO ASSIGNMENT TO. A
+    procedure declared in the outermost block skips the jump around it (0146 … 0145).
+  - VALUE (061): each value formal loses bit 48 and is written with its item (0154 for a
+    real); labels and strings are not allowed (ILLEGAL VALUE PARAMETER). 0127 … 0155.
+  - A call (020) checks the number of arguments (a formal procedure takes it from its
+    first call) and writes 020 p. Arguments are read last to first, M9 walking the
+    formals: to a formal by name an expression is parsed against the formal's type, then
+    0120; otherwise it is classified by its last item: an identifier (0112 variable, 0115
+    array, 0113 procedure, 0114 label or formal), a constant (0111), a string (0156), an
+    expression as a thunk (0116 … 0117, a level down in 02022). The table at 21075 (row by
+    actual kind, a 4-bit field by formal kind) says which marks pass between them and when
+    the dimensions or parameter counts must agree: else NO ACTUAL-FORMAL CORRESPONDENCE.
+    0110 ends the call.
+  - Non-ALGOL procedures: standard ones by their number (PRINT, LENGTH, the functions of
+    one number, and two others whose arguments become left parts); 'CODE' ones write
+    0126 (065 typed) with p and n, then each argument through 21122 (0122 variable, 0123
+    array, 0125 expression, 0124 element, 066 string; 074 for strings), 0121 at the end. A
+    label argument: LABEL AS ARGUMENT OF NON-ALGOL CALL.
+  - I/O statements (063–074, 0100–0103) and string slices (050) check their arguments'
+    types (ILLEGAL ARGUMENT OF I/O STATEMENT, ILLEGAL INPUT OF).
   - Subscripts: the item `a<<12 | n<<7 | c` first, then for each subscript (read last to
     first) a constant below 2048 as `045 c`, `i+c`, `i−c` (c below 2048, 64) as i then
     `030 c` (−c mod 4096), else the expression and `030 0`. A real subscript gets 063 (to

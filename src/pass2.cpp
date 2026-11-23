@@ -2630,6 +2630,8 @@ unsigned correspond(Machine &m)
         m.acc  = formal | NOT_ASSIGNABLE;
         formal = m.acc;
         return value();
+    case 010: // past the table: the code after it
+        return mismatch(m);
     default:
         return 020714 + m.M[14];
     }
