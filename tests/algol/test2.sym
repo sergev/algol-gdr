@@ -1,0 +1,63 @@
+root 05724
+  block 05725 program arrays
+    05726 C integer array local 1
+    05727 V real simple local
+    05730 U real simple local
+    05731 J integer simple local
+    05732 SWAP none procedure local 2
+    procedure 05733 SWAP
+      block 05734
+        05735 T real simple local
+      05736 Q real simple name
+      05737 P real simple name
+    05740 SUM integer procedure local 4
+    procedure 05741 SUM
+      block 05742
+        for 05743
+        05744 S integer simple local
+      05745 T integer simple name
+      05746 B integer simple value
+      05747 A integer simple value
+      05750 I integer simple name
+    05751 F real procedure local 1
+    procedure 05752 F
+      05753 X real simple value
+  05754 ASSIGN none procedure standard
+  05755 ATOS none procedure standard
+  05756 LENGTH integer procedure standard
+  05757 STOA none procedure standard
+  05760 SIN real procedure standard 1
+  05761 COS real procedure standard 1
+  05762 SQRT real procedure standard 1
+  05763 LN real procedure standard 1
+  05764 ARCTAN real procedure standard 1
+  05765 EXP real procedure standard 1
+  05766 ABS real procedure standard 1
+  05767 SIGN integer procedure standard 1
+  05770 ENTIER integer procedure standard 1
+  05771 PRINT none procedure standard
+  05772 READ none procedure standard
+  05773 STOP none procedure standard
+  05774 NEWLIN none procedure standard
+  05775 NEWPAG none procedure standard
+  05776 LOAD none procedure standard
+  05777 LOADGO none procedure standard
+const 1611 6400000000000002 2 2
+const 1612 6400000000000007 7 7
+const 1613 4116631463146315 4 3.7
+const 1614 4212000000000000 10 10
+const 1615 4110000000000000 2 2
+const 1616 6400000000000012 10 10
+const 1617 4152000000000000 5 5
+const 1620 3411156457065176 0 0.00225
+const 1621 4054000000000000 2 1.5
+const 1622 6400000000000003 3 3
+const 1623 4050000000000000 1 1
+const 1624 0000000000000000 0 0
+const 1625 0020000000000000 0 -5.42101086243e-20
+const 1626 6400000000000064 52 52
+const 1627 6400000000000063 51 51
+const 1630 6400000000000062 50 50
+const 1631 6400000000000002 2 2
+const 1632 6400000000000001 1 1
+const 1633 6400000000000000 0 0

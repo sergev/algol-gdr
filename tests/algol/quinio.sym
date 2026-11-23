@@ -1,0 +1,172 @@
+root 05562
+  block 05563 program arrays
+    block 05564 arrays
+      05565 LKLAAR none label local
+      05566 MACH none label local
+      05567 MENS none label local
+      for 05570
+        for 05571
+      05572 SEL integer procedure local
+      procedure 05573 SEL
+        block 05574
+          for 05575
+            block 05576
+              05577 B integer simple local
+              05600 A integer simple local
+          for 05601
+          05602 M integer simple local
+          05603 W integer simple local
+          05604 WSL integer simple local
+          05605 J integer simple local
+          05606 K integer simple local
+          05607 V integer simple local
+      05610 PRINTZ none procedure local 2
+      procedure 05611 PRINTZ
+        05612 Y integer simple value
+        05613 X integer simple value
+      05614 ZET none procedure local 2
+      procedure 05615 ZET
+        05616 Y integer simple value
+        05617 X integer simple value
+      05620 CORR none procedure local 2
+      procedure 05621 CORR
+        block 05622
+          05623 UIT none label local
+          for 05624
+            05625 NOR none label local
+            for 05626
+              05627 NXT none label local
+              for 05630
+                for 05631
+              for 05632
+                for 05633
+              for 05634
+                for 05635
+              for 05636
+            for 05637
+            05640 WIN none label local
+            for 05641
+              for 05642
+              for 05643
+            for 05644
+            for 05645
+          05646 ZDZ integer simple local
+          05647 YDY integer simple local
+          05650 XDX integer simple local
+          05651 W integer simple local
+          05652 D integer simple local
+          05653 T integer simple local
+          05654 B integer simple local
+          05655 J integer simple local
+          05656 K integer simple local
+          05657 Q integer simple local
+          05660 MAX integer simple local
+          05661 MIN integer simple local
+          05662 DY integer simple local
+          05663 DX integer simple local
+          05664 Y integer simple local
+          05665 X integer simple local
+        05666 Y0 integer simple value
+        05667 X0 integer simple value
+      05670 AVNL integer array local 2
+      05671 BORD integer array local 2
+      05672 AY integer array local 1
+      05673 AX integer array local 1
+      05674 WT integer array local 2
+      05675 TEMPO integer array local 2
+      05676 RVAL integer array local 2
+      05677 RVRY integer array local 3
+      05700 RLANG integer array local 3
+      05701 RNUM integer array local 3
+    05702 MAXIM boolean procedure local 2
+    procedure 05703 MAXIM
+      05704 P integer simple value
+      05705 X integer simple name
+    05706 MINIM boolean procedure local 2
+    procedure 05707 MINIM
+      05710 P integer simple value
+      05711 X integer simple name
+    05712 SUM integer procedure local 4
+    procedure 05713 SUM
+      block 05714
+        for 05715
+        05716 T real simple local
+      05717 D real simple name
+      05720 C integer simple value
+      05721 B integer simple value
+      05722 A integer simple name
+    05723 NLCR none procedure local
+    procedure 05724 NLCR
+    05725 DIV integer procedure local 2
+    procedure 05726 DIV
+      05727 B integer simple value
+      05730 A integer simple value
+    05731 Z integer array local 1
+    05732 DP integer array local 2
+    05733 KLAAR boolean simple local
+    05734 KM integer simple local
+    05735 ZNR integer simple local
+    05736 KLEUR integer simple local
+    05737 WM integer simple local
+    05740 SW integer simple local
+    05741 Y integer simple local
+    05742 X integer simple local
+    05743 VNL integer simple local
+    05744 NT integer simple local
+    05745 TN integer simple local
+    05746 AV integer simple local
+    05747 J integer simple local
+    05750 K integer simple local
+  05751 DRAW none procedure code
+  05752 AVAILA integer procedure code
+  05753 XEEN integer procedure code
+  05754 ASSIGN none procedure standard
+  05755 ATOS none procedure standard
+  05756 LENGTH integer procedure standard
+  05757 STOA none procedure standard
+  05760 SIN real procedure standard 1
+  05761 COS real procedure standard 1
+  05762 SQRT real procedure standard 1
+  05763 LN real procedure standard 1
+  05764 ARCTAN real procedure standard 1
+  05765 EXP real procedure standard 1
+  05766 ABS real procedure standard 1
+  05767 SIGN integer procedure standard 1
+  05770 ENTIER integer procedure standard 1
+  05771 PRINT none procedure standard
+  05772 READ none procedure standard
+  05773 STOP none procedure standard
+  05774 NEWLIN none procedure standard
+  05775 NEWPAG none procedure standard
+  05776 LOAD none procedure standard
+  05777 LOADGO none procedure standard
+const 1603 0000000000000000 0 0
+const 1604 0000000000000001 0 4.93038065763e-32
+const 1605 6400000000000066 54 54
+const 1606 6400000000000037 31 31
+const 1607 6400000000000040 32 32
+const 1610 6400000000001740 992 992
+const 1611 6400000200000000 33554432 33554432
+const 1612 4156000000000000 7 7
+const 1613 4110000000000000 2 2
+const 1614 6400000000000005 5 5
+const 1615 6400000000000003 3 3
+const 1616 6400000000000004 4 4
+const 1617 6400000000000023 19 19
+const 1620 6400000000000044 36 36
+const 1621 6400000000001750 1000 1000
+const 1622 6400000000000066 54 54
+const 1623 6400000000000006 6 6
+const 1624 0000000000000000 0 0
+const 1625 0020000000000000 0 -5.42101086243e-20
+const 1626 6400000000000064 52 52
+const 1627 6400000000000063 51 51
+const 1630 6400000000000062 50 50
+const 1631 6400000000000002 2 2
+const 1632 6400000000000001 1 1
+const 1633 6400000000000000 0 0
+string 1634 "(/)"
+string 1635 "(13HFIELD SIZE = I2/23HO - HUMAN, X - COMPUTER)"
+string 1645 "(11H IK GEEF OP)"
+string 1650 "(16H U HEBT GEWONNEN)"
+string 1654 "(16H IK HEB GEWONNEN)"

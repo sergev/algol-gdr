@@ -204,6 +204,27 @@ sector to drum 27 zone 34. (V)
 - Arrays: REAL ARRAY `2021 0000…`, with the dimensions in the info field.
 - A VALUE formal adds 04000 to the top 12 bits.
 
+### D-list structure (V)
+
+The D-list is a stack growing down, so a scope's words lie above its header word:
+- A **header** word (no bit 47) opens a scope `h+1 … end−1`, `end` in its low 12 bits; it is
+  pushed when the scope ends, so its address is below everything in it:
+  - a block: bit 48 when it has arrays or 'COMMON' variables;
+  - a procedure (bit 45): its descriptor is the word just below the head; the formals are
+    the last `count` words of the scope (the first formal at `end−1`), the declarations of
+    its body below them;
+  - a FOR statement (bit 46): the labels of its body.
+- A scan of a scope (pass 2, 17455) takes the descriptors and skips a nested scope by
+  jumping to the end in its header.
+- The program's outer block is one of these scopes; M3 after pass 1 is the word below it,
+  where pass 2 opens the scope of everything up to 06000: the 'CODE' procedures and
+  'COMMON' block names declared before the program, and the standard identifiers.
+- A formal is `DESCRIPTOR | BIT46` until the VALUE list turns it into `BY_VALUE`; a simple
+  specification adds bit 48. Simple variables carry `BY_VALUE | SIMPLE`, arrays their
+  dimensions and procedures their formals at bits 20–16.
+- Pass 2 changes these words (bindings in bits 33–21, marks), so `Context::dlist` keeps the
+  D-list as pass 1 leaves it, and `Symbols` (src/symbols.h) decodes it.
+
 ### Card input and characters (V)
 
 - **Reading.** The monitor's `READ*` reads each card into 02010… in 8-bit ISO (KOI-7). The

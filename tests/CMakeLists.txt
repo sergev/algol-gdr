@@ -21,6 +21,7 @@ add_executable(unit_tests EXCLUDE_FROM_ALL
     passmem_test.cpp
     pass_test.cpp
     source_test.cpp
+    symbols_test.cpp
     util.cpp
     version_test.cpp
     workspace_test.cpp

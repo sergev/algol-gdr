@@ -25,9 +25,6 @@ reference for the native runs.
 
 ### Front end data
 
-- **E4** Typed view of the front-end tables: the name table, descriptors (D-list words),
-  constants, strings and 'COMMON' entries decoded into structs (`symbols.h`), read from the
-  workspace after pass 2. Unit tests on the goldens' `.mem`.
 - **E5** Move pass 1 and pass 2 off `Workspace` onto those structs and drop `Workspace`
   (Roadmap: one-page streams, the hash table, the 1K constant page go with it). The stream
   operands stay slot numbers and D-list indexes, so `.s1`/`.s2` still compare. Then drop

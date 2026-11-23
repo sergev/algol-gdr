@@ -8,6 +8,7 @@ add_library(algol STATIC
     pass2.cpp
     passes.cpp
     source.cpp
+    symbols.cpp
     version.cpp
     workspace.cpp
 )

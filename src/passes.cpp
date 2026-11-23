@@ -24,7 +24,13 @@ Stream run_pass(int n, Context &ctx, const Stream &input)
             ctx.listing->print("A L G O L - Г Д P");
             ctx.listing->print("    (7.01.82)");
         }
-        return Pass1(ctx).run();
+        {
+            Stream out = Pass1(ctx).run();
+            ctx.dlist.clear();
+            for (unsigned a = 04400; a < 06000; a++)
+                ctx.dlist.push_back(ctx.ws[a]);
+            return out;
+        }
     case 2:
         return pass2(ctx, input);
     default:

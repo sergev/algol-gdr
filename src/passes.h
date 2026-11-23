@@ -28,6 +28,7 @@ struct Context {
     // What the original keeps on its scratch drums.
     std::vector<Word> saved_names; // drum 26 zone 0: page 02000-03777 as pass 2 starts
     std::vector<Word> strings;     // drum 27 zones 34..: the string pool (pass 1)
+    std::vector<Word> dlist;       // 04400-05777 as pass 1 leaves it
 
     // Index registers M3-M6 that pass 1 leaves for pass 2 (M3 the outer block).
     std::array<unsigned, 16> regs{};

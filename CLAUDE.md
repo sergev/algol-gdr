@@ -27,11 +27,11 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `workspace.*` (its shared data as words), `word.h` (48-bit word).
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards, ISO text words), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*` (scopes, type checks), `listing.*` (printer characters, one-column printout), `item.*` (pass stream items), `passes.*` (pass interface, `Context`, driver), `workspace.*` (its shared data as words), `symbols.*` (the tables decoded after pass 2), `word.h` (48-bit word).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.lst` listings (the original's from the banner on, without the line
   table and summary of passes 5–6; made now by `algc --list --check`),
-  `.out` run output under `dubna`, `.s1`/`.s2`/`.mem`/`.lex` pass streams; side files
+  `.out` run output under `dubna`, `.s1`/`.s2`/`.mem`/`.lex` pass streams, `.sym` the decoded tables (ours: `ALGC_UPDATE_GOLDENS=1` rewrites them); side files
   `.pre` (`*check`), `.in` (input of the run), `.run` (the extra `dubna` cards of the run:
   libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`). The goldens
   from `dubna` are frozen: the tools that made them are on the `besm6` branch.
