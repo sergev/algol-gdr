@@ -11,17 +11,20 @@ constexpr unsigned READ_CURSOR  = 02000;
 constexpr unsigned WRITE_CURSOR = 02001;
 constexpr unsigned FREE_CONST   = 02003; // the lowest constant slot
 constexpr unsigned DLIST_TOP    = 02004; // M3 at the start
-constexpr unsigned POSITION =
-    02011; // 6 words from 21670: "PROGR/END", the position before any marker
-constexpr unsigned BLOCK_DLIST = 02022; // M3<<12
-constexpr unsigned FREE_SAVED  = 02025;
-constexpr unsigned DLIST_TOP2  = 02026;
-constexpr unsigned ARRAYS_END  = 02032; // end of the array records at 04000
-constexpr unsigned NAMES       = 02144; // slot i at NAMES + i
-constexpr unsigned ARRAYS      = 04000;
-constexpr unsigned DLIST_END   = 06000;
-constexpr unsigned COMMON      = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
-constexpr unsigned FLGEX       = 00702;
+constexpr unsigned ARGS         = 02007; // data of the messages: the name, 0, the position
+constexpr unsigned POSITION     = 02011; // 6 words: "PROGR/END" before any marker
+constexpr unsigned LINE_TEXT    = 02015; // of POSITION: the line number
+constexpr unsigned STMT_TEXT    = 02016; // the statement on the line
+constexpr unsigned BLOCK_DLIST  = 02022; // M3<<12
+constexpr unsigned FREE_SAVED   = 02025;
+constexpr unsigned DLIST_TOP2   = 02026;
+constexpr unsigned REPORTED     = 02027; // a message in this subtree
+constexpr unsigned ARRAYS_END   = 02032; // end of the array records at 04000
+constexpr unsigned NAMES        = 02144; // slot i at NAMES + i
+constexpr unsigned ARRAYS       = 04000;
+constexpr unsigned DLIST_END    = 06000;
+constexpr unsigned COMMON       = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
+constexpr unsigned FLGEX        = 00702;
 
 // Routines and data of the translated pass.
 constexpr unsigned READ_BACK    = 027143; // the previous item, in A
@@ -32,6 +35,12 @@ constexpr unsigned EMIT_M14     = 017370; // *0145B: item M14, through M13
 constexpr unsigned MAIN_LOOP    = 017352; // *0127B, with M13 = *0217B
 constexpr unsigned NEXT_ITEM    = 017442; // *0217B
 constexpr unsigned SAVE_NAMES   = 017436; // *70 info: page 02000 to drum 26 zone 0
+constexpr unsigned SWAP_OUT     = 0214;   // M7+: page 02000 to drum 26 zone 1
+constexpr unsigned NAMES_IN     = 0215;   // the names from drum 26 zone 0
+constexpr unsigned SWAP_IN      = 0216;   // page 02000 from drum 26 zone 1
+constexpr unsigned ITOA         = 030001; // A = six characters of the number in A
+constexpr unsigned EMIT_MARKER  = 017363; // *0140B: item 02006, through M13
+constexpr unsigned AFTER_STMT   = 017450; // *0225B
 constexpr unsigned NOT_DECLARED = 017311; // text, name at +010
 constexpr unsigned WRONG_ORDER  = 017322; // text, name at +010
 constexpr unsigned INCORRECT    = 022051; // text up to 022056
@@ -76,6 +85,76 @@ void common_message(Machine &m, unsigned text, Word name)
     m.call(PRINT, 13, 017304);
     m.sti(0, 13);
     m.sti(0, 8);
+}
+
+//
+// *0205B, after a message: the first one in a subtree sets FLGEX* and
+// REPORTED. Returns through M8.
+//
+unsigned after_message(Machine &m)
+{
+    m.set_m(4, 0);
+    m.set_m(5, 0);
+    m.acc = m.mem[REPORTED];
+    m.rmr = m.acc;
+    if (!m.acc) {
+        m.acc           = 1;
+        m.mem[FLGEX]    = 1;
+        m.mem[REPORTED] = 1;
+    }
+    m.set_logical();
+    return m.M[8];
+}
+
+//
+// *0203B: the message of the format in M13, with the data at ARGS.
+//
+unsigned message(Machine &m)
+{
+    m.push(m.acc);
+    m.acc = m.M[13];
+    m.set_m(14, ARGS);
+    m.push(m.acc);
+    m.acc = ARGS;
+    m.call(FORMAT, 13, 017430);
+    return after_message(m);
+}
+
+//
+// *0175B: the message of the format in M13 about the name of slot M3, read
+// from the names saved on drum 26 zone 0.
+//
+unsigned message_name(Machine &m)
+{
+    m.extracode(070, 7, SWAP_OUT);
+    m.extracode(070, 7, NAMES_IN);
+    m.acc = m.mem[NAMES + m.M[3]];
+    m.push(m.acc);
+    m.extracode(070, 7, SWAP_IN);
+    m.xta(Machine::SP, 0);
+    m.mem[ARGS]     = m.acc;
+    m.acc           = 0;
+    m.mem[ARGS + 1] = 0;
+    return message(m);
+}
+
+//
+// *0312B, at a statement marker: the position text "line/ s" from M3 and M2,
+// then the marker is written. Goes on at the main loop.
+//
+unsigned set_position(Machine &m)
+{
+    m.acc = m.M[3];
+    m.call(ITOA, 13, 017536);
+    m.asn(0, 64 - 16);
+    m.mem[LINE_TEXT] = m.acc;
+    m.acc            = m.M[2];
+    m.call(ITOA, 13, 017540);
+    m.asn(0, 64 - 32);
+    m.mem[STMT_TEXT] = m.acc;
+    m.call(EMIT_MARKER, 13, 017542);
+    m.set_m(13, AFTER_STMT);
+    return MAIN_LOOP;
 }
 
 //
@@ -190,6 +269,10 @@ Stream pass2(Context &ctx, const Stream &input)
     TranslatedPass pass(ctx, pass2_code);
     pass.m.natives[017223] = start;
     pass.m.natives[022027] = finish;
+    pass.m.natives[017420] = message_name;
+    pass.m.natives[017426] = message;
+    pass.m.natives[017430] = after_message;
+    pass.m.natives[017535] = set_position;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);

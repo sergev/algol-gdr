@@ -383,7 +383,14 @@ A block header has bit 48 set, and its low 12 bits give the end address.
 Pass 2 prints its messages as it processes the stream from end to start, so they come out in
 reverse order.
 - **Position.** `NEXT STATEMENT IS l/s` is the last statement marker (051) read. Reading
-  backwards, that is the start of the statement after the error.
+  backwards, that is the start of the statement after the error. At each marker (17535) the
+  line (M3) and the statement (M2) go through G30001 into 02015 (<<16) and 02016 (<<32) of
+  the position text at 02011, which reads `PROGR/END` before the first marker.
+- **Printing.** The data of every message is at 02007: the name, a zero word, the position
+  text. 17420 prints the format in M13 about the name of slot M3, fetched from the names
+  saved on drum 26 zone 0 (page 02000 goes to zone 1 meanwhile); 17426 prints without
+  fetching. Then 17430: M4 = M5 = 0, and the first message of a subtree sets `FLGEX*` = 1 and
+  the flag 02027, which keeps the others of the subtree quiet. Return through M8.
 - **Expansion.** The texts are ISO bytes; a byte 0200+k inserts argument k. G27733 expands
   and prints them.
 
@@ -416,9 +423,11 @@ STATEMENT IS 304/ 2` with a bogus line number (not investigated).
 ## G30001 — integer to text (V)
 
 - Call: `VJM 30001`, number in A.
-- Result: 6 ISO characters, right-justified with leading spaces, the last 6 decimal digits
-  (in C, `"%6u"` of `(n & 06777777) % 1000000`).
-- Clobbers M14 and cells 025–027.
+- Result: 6 ISO characters, right-justified with leading spaces: `"%6u"` of
+  `n & 06777777` below a million. It divides by 10^5 … 1 in floating point; each digit is
+  the quotient & 017 XOR `0`, so above a million the first "digit" is wrong.
+- Clobbers M14 (the fill character, blank or `0`) and cells 025–027 (the remainder, the
+  divisor, the text without the `0` of the last digit).
 
 ## Pass 3: G22162 — optimizer (V unless noted)
 
@@ -624,7 +633,10 @@ drum 27 zones 33 (04000–05777 as pass 5 left it) and 34 (strings).
 
 ## G27733 — formatted line (V)
 
-- Call: push the format address, push the data address, `VJM`.
+- Call: the format address on the stack, the data address in A, `VJM` through M13. It pops
+  the format and the word under it, and returns the data address in A.
+- Builds the line in a 22-word frame on the stack, saving M12, M3, M4, M1, M2, M13 under it,
+  and prints it through 01644 with indent 1.
 - Format bytes: 001–0177 a literal character; 0200+n inserts data word n (an ISO string of
   up to 6 characters, ending with a zero byte); 000 ends the format.
 - Prints through `A01644`.

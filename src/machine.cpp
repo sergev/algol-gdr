@@ -85,7 +85,9 @@ unsigned Machine::run(Code code, unsigned pc)
 {
     code_ = code;
     for (;;) {
-        pc      = code(*this, pc);
+        pc = code(*this, pc);
+        if (pc == stop)
+            return pc;
         auto it = natives.find(pc);
         if (it == natives.end())
             return pc;

@@ -16,6 +16,95 @@ constexpr unsigned DATED    = 01730;  // the header with the date is printed
 constexpr unsigned ASMPRINT = 012000; // a row: first and last word on the stack, indent in A;
                                       // returns the word under them in A
 constexpr unsigned CURSOR_W = 02001;
+constexpr unsigned PRINT    = 01644; // text first..last on the stack, indent in A
+constexpr unsigned FORMAT   = 027733;
+constexpr unsigned ITOA     = 030001;
+constexpr unsigned ITOA_TXT = 00027; // the text of G30001
+
+// Bytes of a format from the word at addr: 0200+k inserts the text of data
+// word k (a format itself), 0 ends it.
+void expand(const Machine &m, unsigned addr, unsigned data, std::vector<unsigned> &out)
+{
+    for (;; addr++)
+        for (int shift = 40; shift >= 0; shift -= 8) {
+            unsigned c = (m.mem[addr & 077777] >> shift) & 0377;
+            if (!c)
+                return;
+            if (c & 0200)
+                expand(m, data + c - 0200, data, out);
+            else
+                out.push_back(c);
+        }
+}
+
+//
+// G27733: print a line, indent 1: the format at [M15-1], with the data at A.
+// Builds it on the stack as the original, saves and restores M1-M4, M12,
+// M13, pops the format and the word under it; A = the data address.
+//
+unsigned format_line(Machine &m)
+{
+    unsigned format = m.mem[(m.M[Machine::SP] - 1) & 077777] & 077777;
+    unsigned data   = m.acc & 077777;
+    for (unsigned r : { 12u, 3u, 4u, 1u, 2u, 13u }) {
+        m.push(m.acc);
+        m.acc = m.M[r];
+    }
+    m.push(m.acc);
+    unsigned frame = m.M[Machine::SP];
+    std::vector<unsigned> chars;
+    expand(m, format, data, chars);
+    unsigned last = frame + chars.size() / 6;
+    for (unsigned a = frame; a <= last; a++)
+        m.mem[a] = 0;
+    for (size_t i = 0; i < chars.size(); i++)
+        m.mem[frame + i / 6] |= Word(chars[i]) << (40 - 8 * (i % 6));
+    m.set_m(Machine::SP, frame + 026);
+    m.push(0);
+    m.push(frame);
+    m.push(last);
+    m.set_m(14, 1);
+    m.acc = 1;
+    m.call(PRINT, 13, 027747);
+    m.set_m(Machine::SP, frame);
+    m.xta(Machine::SP, 0);
+    for (unsigned r : { 13u, 2u, 1u, 4u, 3u, 12u })
+        m.sti(0, r);
+    m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+    return m.M[13];
+}
+
+//
+// G30001: A = six ISO characters of the number in A, decimal, leading zeros
+// blank: "%6u" of (n & 06777777) % 1000000 below a million (above it the
+// first digit is the quotient & 017). Leaves the fill character in M14 and the
+// text without the last '0' in cell 027; its float cells 025, 026 are not kept
+// (nothing else reads them).
+//
+unsigned itoa6(Machine &m)
+{
+    unsigned rest = unsigned(m.acc & 06777777);
+    Word text     = m.mem[ITOA_TXT];
+    unsigned fill = 040;
+    for (unsigned d = 100000; d; d /= 10) {
+        unsigned q = rest / d;
+        rest -= q * d;
+        unsigned digit = q & 017;
+        unsigned c     = fill;
+        if (digit) {
+            fill = 060;
+            c    = 060 ^ digit;
+        }
+        text = ((text << 8) ^ c) & WORD_MASK;
+    }
+    m.mem[ITOA_TXT] = text;
+    m.set_m(14, fill);
+    m.acc = text | 060;
+    m.rmr = 0;
+    m.rau = 002;
+    m.set_logical();
+    return m.M[13];
+}
 
 } // namespace
 
@@ -32,6 +121,8 @@ TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), co
     m.mem[REGIM]     = (ctx.options.setftn_one ? 04000000000000000 : 0) |
                    (ctx.options.setftn_long ? 02000000000000000 : 0);
     m.mem[DATED]        = ctx.options.no_listing ? 0 : 06000000000000000;
+    m.natives[FORMAT]   = format_line;
+    m.natives[ITOA]     = itoa6;
     m.natives[ASMPRINT] = [this](Machine &mm) {
         mm.M[Machine::SP] = (mm.M[Machine::SP] - 1) & 077777;
         unsigned last     = mm.mem[mm.M[Machine::SP]] & 077777;

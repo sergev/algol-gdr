@@ -7,7 +7,8 @@
 set -e
 cd "$(dirname "$(realpath "$0")")/.."
 shared="01644-01735 27114-27244 27733-30000 30001-30033"
-hooks="--hook 27114 --hook 27126 --hook 27137"
-scripts/gen-pass.py $hooks --native 17223 --native 22027 pass2 17223-22161 $shared > src/pass2_gen.cpp
+hooks="--hook 27114 --hook 27126 --hook 27137 --native 27733 --native 30001"
+scripts/gen-pass.py $hooks --native 17223 --native 22027 --native 17420 --native 17426 \
+    --native 17430 --native 17535 pass2 17223-22161 $shared > src/pass2_gen.cpp
 scripts/gen-pass.py $hooks --native 22716 pass3 22162-23522 $shared > src/pass3_gen.cpp
 scripts/gen-pass.py $hooks pass4 23523-26257 $shared 30034-30117 > src/pass4_gen.cpp
