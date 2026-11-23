@@ -189,16 +189,16 @@ const char *to_string(Sym s)
     return names[int(s)];
 }
 
-std::string Token::key() const
+std::string name_key(const std::string &name)
 {
     // The first 6 characters, UTF-8.
     size_t i = 0;
-    for (int n = 0; n < 6 && i < text.size(); n++) {
+    for (int n = 0; n < 6 && i < name.size(); n++) {
         i++;
-        while (i < text.size() && (text[i] & 0xc0) == 0x80)
+        while (i < name.size() && (name[i] & 0xc0) == 0x80)
             i++;
     }
-    return text.substr(0, i);
+    return name.substr(0, i);
 }
 
 Lexer::Lexer(const std::string &source, Diagnostics &diag,

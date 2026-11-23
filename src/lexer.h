@@ -95,6 +95,9 @@ enum class Sym {
     END_OF_FILE, // no more cards
 };
 
+// A name counts by its first 6 characters: its key.
+std::string name_key(const std::string &name);
+
 // Text of a symbol, for messages: 'BEGIN', ':=', identifier, …
 const char *to_string(Sym s);
 
@@ -117,8 +120,7 @@ struct Token {
     uint64_t bits{};  // BITS_CONST
     std::shared_ptr<CommonBlock> common;
 
-    // An identifier counts by its first 6 characters.
-    std::string key() const;
+    std::string key() const { return name_key(text); }
 };
 
 //

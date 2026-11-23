@@ -1,0 +1,5 @@
+err_common.alg:2: error: 'COMMON': '/' expected
+err_common.alg:4: error: 'COMMON': ',' or ';' expected
+err_common.alg:5: error: 'COMMON': ',' or ';' expected
+err_common.alg:6: error: 'COMMON': ',' or ';' expected
+err_common.alg:8: error: Expected a statement, found 'REAL'

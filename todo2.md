@@ -36,10 +36,6 @@ and go on at the next statement). The listing (`--list`) of a correct program st
 is; error messages are no longer in it. Goldens `.err` hold the messages of the error
 programs.
 
-- **E7.1b** Parser (`parser.cpp`) to a syntax tree (`syntax.h`): names unresolved, the
-  statement positions (line, statement on the line), syntax errors with recovery at the
-  next statement. Tests: the listing of every correct program; `.err` for the error
-  programs (syntax part).
 - **E7.1c** Checker (`checker.cpp`): scopes, declarations, types, conversions, the
   semantic errors; it builds the AST. Every correct program gives its `.ast` but for real
   blocks (blocks without arrays get their own `Block` nodes) and declaration positions

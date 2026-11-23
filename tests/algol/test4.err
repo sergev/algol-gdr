@@ -1,0 +1,3 @@
+test4.alg:4: error: Expected an expression, found ';'
+test4.alg:6: error: Expected an expression, found 'UNTIL'
+test4.alg:10: error: Expected 'EOP' after the program, found 'END'

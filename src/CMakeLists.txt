@@ -10,6 +10,7 @@ add_library(algol STATIC
     pass1_lexer.cpp
     pass1_parser.cpp
     pass2.cpp
+    parser.cpp
     passes.cpp
     source.cpp
     symbols.cpp
