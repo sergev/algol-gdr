@@ -1,31 +1,31 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' ARRAYS: ONE AND TWO DIMENSIONS,
+     1.     _begin
+     2.         _comment ARRAYS: ONE AND TWO DIMENSIONS,
      3.             CONSTANT AND DYNAMIC BOUNDS;
-     4.         'INTEGER' I, J, N;
-     5.         'REAL' 'ARRAY' A[1:5];
-     6.         'INTEGER' 'ARRAY' B[0:2, -1:1];
-     7.         'BOOLEAN' 'ARRAY' F[1:2];
-     8.         'FOR' I := 1 'STEP' 1 'UNTIL' 5 'DO' A[I] := I / 2;
+     4.         _integer I, J, N;
+     5.         _real _array A[1:5];
+     6.         _integer _array B[0:2, -1:1];
+     7.         _boolean _array F[1:2];
+     8.         _for I := 1 _step 1 _until 5 _do A[I] := I / 2;
      9.         PRINT(A[1], A[5]);
-    10.         'FOR' I := 0 'STEP' 1 'UNTIL' 2 'DO'
-    11.             'FOR' J := -1 'STEP' 1 'UNTIL' 1 'DO'
+    10.         _for I := 0 _step 1 _until 2 _do
+    11.             _for J := -1 _step 1 _until 1 _do
     12.                 B[I, J] := 10 * I + J;
     13.         PRINT(B[0, -1], B[2, 1], B[1, 0]);
-    14.         F[1] := 'TRUE'; F[2] := 'NOT' F[1];
+    14.         F[1] := _true; F[2] := _not F[1];
     15.         PRINT(F[1], F[2]);
     16.         N := 4;
-    17.         'BEGIN'
-    18.             'ARRAY' C[1:N, 1:N + 1];
-    19.             'INTEGER' 'ARRAY' D[N:2 * N];
-    20.             'FOR' I := 1 'STEP' 1 'UNTIL' N 'DO'
-    21.                 'FOR' J := 1 'STEP' 1 'UNTIL' N + 1 'DO'
+    17.         _begin
+    18.             _array C[1:N, 1:N + 1];
+    19.             _integer _array D[N:2 * N];
+    20.             _for I := 1 _step 1 _until N _do
+    21.                 _for J := 1 _step 1 _until N + 1 _do
     22.                     C[I, J] := I * J;
     23.             D[2 * N] := N;
     24.             PRINT(C[N, N + 1], D[8])
-    25.         'END'
-    26.     'END'
-    27.     'EOP'
+    25.         _end
+    26.     _end
+    27.     _eop
 

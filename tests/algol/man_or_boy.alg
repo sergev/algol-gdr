@@ -1,15 +1,15 @@
-'begin'
-    'real' 'procedure' a(k, x1, x2, x3, x4, x5);
-    'value' k; 'integer' k;
-    'real' x1, x2, x3, x4, x5;
-    'begin'
-        'real' 'procedure' b;
-        'begin'
+_begin
+    _real _procedure a(k, x1, x2, x3, x4, x5);
+    _value k; _integer k;
+    _real x1, x2, x3, x4, x5;
+    _begin
+        _real _procedure b;
+        _begin
             k := k - 1;
             b := a := a(k, b, x1, x2, x3, x4);
-        'end';
-        a := 'if' k 'le' 0 'then' x4 + x5
-                           'else' b;
-    'end';
+        _end;
+        a := _if k _le 0 _then x4 + x5
+                           _else b;
+    _end;
     print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0));
-'end' 'eop'
+_end _eop

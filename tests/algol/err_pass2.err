@@ -10,9 +10,9 @@ err_pass2.alg:27: error: Illegal left part of an assignment
 err_pass2.alg:28: error: Cannot assign to 'IA'
 err_pass2.alg:29: error: Illegal use of 'LENGTH'
 err_pass2.alg:30: error: Left parts of different types
-err_pass2.alg:31: error: Type error in an element of 'for': boolean instead of integer
-err_pass2.alg:32: error: The variable of 'for' must be a simple integer or real variable
-err_pass2.alg:33: error: A label is expected in 'goto'
+err_pass2.alg:31: error: Type error in an element of _for: boolean instead of integer
+err_pass2.alg:32: error: The variable of _for must be a simple integer or real variable
+err_pass2.alg:33: error: A label is expected in _goto
 err_pass2.alg:34: error: Procedure 'P0' has no value
 err_pass2.alg:35: error: Type error in '+': boolean and integer
 err_pass2.alg:36: error: Type error in '+': boolean and integer

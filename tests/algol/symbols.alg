@@ -1,8 +1,8 @@
-'BEGIN' 'COMMENT' SYMBOLS IN COMMENTS AND STRINGS;
-  'INTEGER' I;
+_begin _comment SYMBOLS IN COMMENTS AND STRINGS;
+  _integer I;
   PRINT(''A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N'');
   I := 1;
-  'COMMENT' ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
+  _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
   I := 2;
   I := 3;
   I := 4;
@@ -71,7 +71,7 @@
   I := 67;
   I := 68;
   I := 69;
-  'COMMENT' ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
+  _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
   I := 70;
   I := 71;
   I := 72;
@@ -139,10 +139,10 @@
   I := 134;
   I := 135;
   I := 136;
-  'COMMENT' ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
+  _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
   I := 137;
   I := 138;
   I := 139;
   PRINT(''@'', I)
-'END'
-'EOP'
+_end
+_eop

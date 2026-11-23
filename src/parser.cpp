@@ -245,7 +245,7 @@ void Parser::report(int line, const std::string &message)
 void Parser::fail(const std::string &message)
 {
     if (tok_.sym == Sym::END_OF_FILE) {
-        report(tok_.line, "Unexpected end of the file, 'eop' is missing");
+        report(tok_.line, "Unexpected end of the file, _eop is missing");
         throw Stop{};
     }
     if (tok_.sym != Sym::ERROR)
@@ -310,8 +310,8 @@ void Parser::skip_declaration()
 }
 
 //
-// The program: 'code': and 'algol': lists of procedures before it, then a
-// block or compound statement, or a procedure; then 'eop'.
+// The program: _code: and _algol: lists of procedures before it, then a
+// block or compound statement, or a procedure; then _eop.
 //
 Program Parser::program()
 {
@@ -320,9 +320,9 @@ Program Parser::program()
         advance();
         head(p);
         if (tok_.sym == Sym::END_OF_FILE)
-            report(tok_.line, "Unexpected end of the file, 'eop' is missing");
+            report(tok_.line, "Unexpected end of the file, _eop is missing");
         else if (tok_.sym != Sym::EOP)
-            report(tok_.line, "Expected 'eop' after the program, found " + found());
+            report(tok_.line, "Expected _eop after the program, found " + found());
     } catch (const Stop &) {
     }
     return p;
@@ -360,7 +360,7 @@ void Parser::head(Program &p)
             if (tok_.sym != Sym::IDENT)
                 fail("Expected the program, found " + found());
             if (!kind)
-                fail("Expected 'code': or 'algol': before external procedures");
+                fail("Expected _code: or _algol: before external procedures");
             for (;;) {
                 p.externals.push_back(External{ ident(), type, *kind });
                 if (!accept(Sym::COMMA))
@@ -409,7 +409,7 @@ StmtPtr Parser::unlabeled(ast::SrcLoc loc)
     case Sym::IDENT:
         return assignment_or_call(loc);
     case Sym::OWN:
-        fail("'own' is not supported");
+        fail("_own is not supported");
     default:
         if (is_io(tok_.sym))
             return io(loc);
@@ -419,7 +419,7 @@ StmtPtr Parser::unlabeled(ast::SrcLoc loc)
     }
 }
 
-// 'begin' [declarations;] statements 'end': a block or compound statement.
+// _begin [declarations;] statements _end: a block or compound statement.
 StmtPtr Parser::compound(ast::SrcLoc loc)
 {
     advance();
@@ -432,7 +432,7 @@ StmtPtr Parser::compound(ast::SrcLoc loc)
     return new_stmt(loc, stmt::Compound{ statements() });
 }
 
-// Statements separated by ';', then 'end'.
+// Statements separated by ';', then _end.
 StmtList Parser::statements()
 {
     StmtList list;
@@ -443,10 +443,10 @@ StmtList Parser::statements()
         if (accept(Sym::END))
             return list;
         if (tok_.sym == Sym::EOP || tok_.sym == Sym::END_OF_FILE) {
-            report(tok_.line, "Missing 'end'");
+            report(tok_.line, "Missing _end");
             return list;
         }
-        report(tok_.line, "Expected ';' or 'end', found " + found());
+        report(tok_.line, "Expected ';' or _end, found " + found());
         // The statement before is incomplete: not checked.
         if (!std::holds_alternative<stmt::Labeled>(list.back()->node))
             list.back()->node = stmt::Error{};
@@ -529,7 +529,7 @@ DeclPtr Parser::declaration()
     return new_decl(line, std::move(v));
 }
 
-// 'array' segments: names [bounds] (or with '(' ')'), separated by ','.
+// _array segments: names [bounds] (or with '(' ')'), separated by ','.
 DeclPtr Parser::arrays(ast::Type type)
 {
     int line = tok_.line;
@@ -583,7 +583,7 @@ DeclPtr Parser::switch_decl()
 }
 
 //
-// 'procedure' name [(formals)]; ['value' names;] specifications body. Every
+// _procedure name [(formals)]; [_value names;] specifications body. Every
 // formal is specified once.
 //
 DeclPtr Parser::procedure(ast::Type type)
@@ -660,7 +660,7 @@ DeclPtr Parser::procedure(ast::Type type)
     return new_decl(line, std::move(p));
 }
 
-// 'if' b 'then' s ['else' s]: no IF right after THEN, no ELSE after a FOR.
+// _if b _then s [_else s]: no IF right after THEN, no ELSE after a FOR.
 StmtPtr Parser::if_stmt(ast::SrcLoc loc)
 {
     advance();
@@ -668,19 +668,19 @@ StmtPtr Parser::if_stmt(ast::SrcLoc loc)
     s.condition = expression(0);
     expect(Sym::THEN);
     if (tok_.sym == Sym::IF)
-        fail("A conditional statement after 'then' must be in 'begin' 'end'");
+        fail("A conditional statement after _then must be in _begin _end");
     bool is_for = tok_.sym == Sym::FOR;
     s.then_stmt = statement();
     if (tok_.sym == Sym::ELSE) {
         if (is_for)
-            fail("A 'for' statement before 'else' must be in 'begin' 'end'");
+            fail("A _for statement before _else must be in _begin _end");
         advance();
         s.else_stmt = statement();
     }
     return new_stmt(loc, std::move(s));
 }
 
-// 'for' v := elements 'do' s
+// _for v := elements _do s
 StmtPtr Parser::for_stmt(ast::SrcLoc loc)
 {
     advance();
@@ -693,7 +693,7 @@ StmtPtr Parser::for_stmt(ast::SrcLoc loc)
     return new_stmt(loc, std::move(s));
 }
 
-// e, e 'step' e 'until' e, e 'while' b, …
+// e, e _step e _until e, e _while b, …
 std::vector<ForElement> Parser::for_list()
 {
     std::vector<ForElement> list;
@@ -742,7 +742,7 @@ StmtPtr Parser::assignment_or_call(ast::SrcLoc loc)
 }
 
 //
-// 'print' (e, …) items; and the like: the parameters in parentheses, or
+// _print (e, …) items; and the like: the parameters in parentheses, or
 // one expression and ','; then the list, up to the end of the statement.
 //
 StmtPtr Parser::io(ast::SrcLoc loc)
@@ -767,7 +767,7 @@ StmtPtr Parser::io(ast::SrcLoc loc)
     return new_stmt(loc, std::move(s));
 }
 
-// An expression, or 'for' v := elements 'do' item.
+// An expression, or _for v := elements _do item.
 IoItem Parser::io_item()
 {
     IoItem item;

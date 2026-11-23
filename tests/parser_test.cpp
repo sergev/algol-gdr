@@ -23,7 +23,7 @@ TEST(Parser, precedence)
 {
     std::ostringstream err;
     Diagnostics diag("x.alg", err);
-    auto p = parse("'BEGIN' X := A + B * C ** D 'END' 'EOP'", diag);
+    auto p = parse("_begin X := A + B * C ** D _end _eop", diag);
     ASSERT_EQ(err.str(), "");
     auto &c = std::get<syn::stmt::Compound>(p.body->node);
     auto &a = std::get<syn::stmt::Assign>(c.body[0]->node);
@@ -36,21 +36,21 @@ TEST(Parser, precedence)
 
 TEST(Parser, recovery)
 {
-    EXPECT_EQ(messages("'BEGIN' X := (1; Y := 2 + ; Z := 3\n'END' 'EOP'"),
+    EXPECT_EQ(messages("_begin X := (1; Y := 2 + ; Z := 3\n_end _eop"),
               "x.alg:1: error: Expected ')', found ';'\n"
               "x.alg:1: error: Expected an expression, found ';'\n");
-    EXPECT_EQ(messages("'BEGIN' 'INTEGER' X 'END' 'EOP'"),
-              "x.alg:1: error: Expected ';', found 'end'\n");
-    EXPECT_EQ(messages("'BEGIN' X := 1;"),
-              "x.alg:1: error: Missing 'end'\n"
-              "x.alg:1: error: Unexpected end of the file, 'eop' "
+    EXPECT_EQ(messages("_begin _integer X _end _eop"),
+              "x.alg:1: error: Expected ';', found _end\n");
+    EXPECT_EQ(messages("_begin X := 1;"),
+              "x.alg:1: error: Missing _end\n"
+              "x.alg:1: error: Unexpected end of the file, _eop "
               "is missing\n");
 }
 
 TEST(Parser, procedure_heading)
 {
-    EXPECT_EQ(messages("'BEGIN' 'PROCEDURE' P(A, B); 'VALUE' C; 'REAL' A, A; X := 1;\n"
-                       "P(1, 2) 'END' 'EOP'"),
+    EXPECT_EQ(messages("_begin _procedure P(A, B); _value C; _real A, A; X := 1;\n"
+                       "P(1, 2) _end _eop"),
               "x.alg:1: error: 'C' is not a formal parameter of 'P'\n"
               "x.alg:1: error: Formal parameter 'A' is specified twice\n"
               "x.alg:1: error: Formal parameter 'B' is not specified\n");

@@ -1,4 +1,4 @@
-'begin'
+_begin
     print(''Hello, World!'');
-'end'
-'eop'
+_end
+_eop

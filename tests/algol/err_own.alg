@@ -1,7 +1,7 @@
-'BEGIN'
-    'COMMENT' OWN IS NOT SUPPORTED: ERROR 34;
-    'OWN' 'INTEGER' N;
+_begin
+    _comment OWN IS NOT SUPPORTED: ERROR 34;
+    _own _integer N;
     N := 1;
     PRINT(N)
-'END'
-'EOP'
+_end
+_eop

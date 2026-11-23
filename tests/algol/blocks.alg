@@ -1,18 +1,18 @@
-'BEGIN'
-    'COMMENT' NESTED BLOCKS AND SCOPES;
-    'INTEGER' X;
+_begin
+    _comment NESTED BLOCKS AND SCOPES;
+    _integer X;
     X := 1;
-    'BEGIN' 'INTEGER' X;
+    _begin _integer X;
         X := 2;
-        'BEGIN' 'REAL' X;
+        _begin _real X;
             X := 3.5;
             PRINT(X)
-        'END';
+        _end;
         PRINT(X)
-    'END';
-    'BEGIN'
+    _end;
+    _begin
         X := X + 10
-    'END';
+    _end;
     PRINT(X)
-'END'
-'EOP'
+_end
+_eop

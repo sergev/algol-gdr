@@ -23,7 +23,7 @@ enum class Sym {
     REAL_CONST,
     BITS_CONST, // an octal constant 'ddd'
     STRING_CONST,
-    COMMON, // 'common' /block/ elements; — a whole declaration
+    COMMON, // _common /block/ elements; — a whole declaration
 
     // Operators.
     PLUS,
@@ -95,7 +95,7 @@ enum class Sym {
     END_OF_FILE, // no more lines
 };
 
-// Text of a symbol, for messages: 'begin', ':=', identifier, …
+// Text of a symbol, for messages: '_begin', ':=', identifier, …
 const char *to_string(Sym s);
 
 struct CommonBlock {
@@ -120,9 +120,10 @@ struct Token {
 
 //
 // The lexer: symbols from the UTF-8 lines of the source ('′' is a quote).
-// Blanks and line ends are ignored outside strings. Keywords are in quotes,
-// in any case; names keep their spelling and case. Lexical errors are
-// reported and give an ERROR symbol; it goes on after them.
+// Keywords are '_' and a word, in any case: _begin; a blank ends them.
+// Elsewhere outside strings blanks and line ends are ignored, also inside
+// names and numbers. Names keep their spelling and case. Lexical errors are reported
+// and give an ERROR symbol; it goes on after them.
 //
 class Lexer {
 public:
@@ -157,12 +158,13 @@ private:
     char32_t advance();
     void step() { col_++; }
     void skip_line() { col_ = text_.size(); }
-    std::string word(); // letters and digits from ch_
+    std::string word(bool raw);
 
     Token make(Sym s) const;
     Token error(const std::string &message);
     Token scan();
-    Token name_or_keyword(bool quoted);
+    Token name();
+    Token keyword_symbol();
     Token string();
     Token octal();
     Token number(bool point); // point: after a leading '.'

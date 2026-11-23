@@ -1,19 +1,19 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'begin'
-     2.         'real' 'procedure' a(k, x1, x2, x3, x4, x5);
-     3.         'value' k; 'integer' k;
-     4.         'real' x1, x2, x3, x4, x5;
-     5.         'begin'
-     6.             'real' 'procedure' b;
-     7.             'begin'
+     1.     _begin
+     2.         _real _procedure a(k, x1, x2, x3, x4, x5);
+     3.         _value k; _integer k;
+     4.         _real x1, x2, x3, x4, x5;
+     5.         _begin
+     6.             _real _procedure b;
+     7.             _begin
      8.                 k := k - 1;
      9.                 b := a := a(k, b, x1, x2, x3, x4);
-    10.             'end';
-    11.             a := 'if' k 'le' 0 'then' x4 + x5
-    12.                                'else' b;
-    13.         'end';
+    10.             _end;
+    11.             a := _if k _le 0 _then x4 + x5
+    12.                                _else b;
+    13.         _end;
     14.         print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0));
-    15.     'end' 'eop'
+    15.     _end _eop
 

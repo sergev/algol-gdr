@@ -1,21 +1,21 @@
-'code':'real'rndm;
-'algol':BOZP;
-'algol':YBYB;
-'begin'
-    'real' 'array' a[1 : 10];
-    'integer' i;
+_code:_real rndm;
+_algol:BOZP;
+_algol:YBYB;
+_begin
+    _real _array a[1 : 10];
+    _integer i;
 
-    'for' i := 1 'step' 1 'until' 10 'do'
+    _for i := 1 _step 1 _until 10 _do
         a[i] := rndm(-1);
 
-    'print'(''(10f7.3)'') a;
+    _print(''(10f7.3)'') a;
 
-    'comment' Расположение элементов вектора по возрастанию;
+    _comment Расположение элементов вектора по возрастанию;
     BOZP(a, 10);
-    'print'(''(10f7.3)'') a;
+    _print(''(10f7.3)'') a;
 
-    'comment' Расположение элементов вектора по убыванию;
+    _comment Расположение элементов вектора по убыванию;
     YBYB(a, 10);
-    'print'(''(10f7.3)'') a;
-'end'
-'eop'
+    _print(''(10f7.3)'') a;
+_end
+_eop

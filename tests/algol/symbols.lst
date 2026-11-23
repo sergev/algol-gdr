@@ -1,11 +1,11 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN' 'COMMENT' SYMBOLS IN COMMENTS AND STRINGS;
-     2.       'INTEGER' I;
+     1.     _begin _comment SYMBOLS IN COMMENTS AND STRINGS;
+     2.       _integer I;
      3.       PRINT(''A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N'');
      4.       I := 1;
-     5.       'COMMENT' ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
+     5.       _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
      6.       I := 2;
      7.       I := 3;
      8.       I := 4;
@@ -74,7 +74,7 @@ A L G O L - Г Д P
     71.       I := 67;
     72.       I := 68;
     73.       I := 69;
-    74.       'COMMENT' ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
+    74.       _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
     75.       I := 70;
     76.       I := 71;
     77.       I := 72;
@@ -142,11 +142,11 @@ A L G O L - Г Д P
    139.       I := 134;
    140.       I := 135;
    141.       I := 136;
-   142.       'COMMENT' ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
+   142.       _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
    143.       I := 137;
    144.       I := 138;
    145.       I := 139;
    146.       PRINT(''@'', I)
-   147.     'END'
-   148.     'EOP'
+   147.     _end
+   148.     _eop
 

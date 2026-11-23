@@ -1,20 +1,20 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' PROCEDURES, REALS, RECURSION, NAME AND VALUE PARAMETERS;
-     3.         'REAL' 'PROCEDURE' F(X); 'VALUE' X; 'REAL' X;
-     4.             F := 'IF' X < 1.0 'THEN' 1.0 'ELSE' X * F(X - 1.0);
-     5.         'INTEGER' 'PROCEDURE' SUM(I, A, B, T); 'VALUE' A, B;
-     6.             'INTEGER' I, A, B, T;
-     7.         'BEGIN' 'INTEGER' S; S := 0;
-     8.             'FOR' I := A 'STEP' 1 'UNTIL' B 'DO' S := S + T;
+     1.     _begin
+     2.         _comment PROCEDURES, REALS, RECURSION, NAME AND VALUE PARAMETERS;
+     3.         _real _procedure F(X); _value X; _real X;
+     4.             F := _if X < 1.0 _then 1.0 _else X * F(X - 1.0);
+     5.         _integer _procedure SUM(I, A, B, T); _value A, B;
+     6.             _integer I, A, B, T;
+     7.         _begin _integer S; S := 0;
+     8.             _for I := A _step 1 _until B _do S := S + T;
      9.             SUM := S
-    10.         'END';
-    11.         'PROCEDURE' SWAP(P, Q); 'REAL' P, Q;
-    12.         'BEGIN' 'REAL' T; T := P; P := Q; Q := T 'END';
-    13.         'INTEGER' J; 'REAL' U, V;
-    14.         'INTEGER' 'ARRAY' C[1:3];
+    10.         _end;
+    11.         _procedure SWAP(P, Q); _real P, Q;
+    12.         _begin _real T; T := P; P := Q; Q := T _end;
+    13.         _integer J; _real U, V;
+    14.         _integer _array C[1:3];
     15.         U := 1.5; V := -0.00225;
     16.         SWAP(U, V);
     17.         PRINT(U, V, F(5.0), SUM(J, 1, 10, J*J));
@@ -22,6 +22,6 @@ A L G O L - Г Д P
     19.         PRINT(ARCTAN(1.0), LN(10.0), EXP(1.0));
     20.         PRINT(ABS(-3), SIGN(-2.0), ENTIER(3.7));
     21.         C[2] := ENTIER(7 / 2); PRINT(C[2], 7 / 2)
-    22.     'END'
-    23.     'EOP'
+    22.     _end
+    23.     _eop
 

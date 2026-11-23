@@ -257,7 +257,7 @@ Program Checker::program(const syn::Program &p)
 
 //
 // A block: the bounds of its arrays in the enclosing scope, then its names,
-// then the switches, the procedures, the 'common' blocks and the statements.
+// then the switches, the procedures, the _common blocks and the statements.
 //
 Checker::Decls Checker::ptrs(const syn::DeclList &list)
 {
@@ -504,7 +504,7 @@ void Checker::procedure_body(const syn::decl::Procedure &p, int index, decl::Pro
     scopes_.pop_back();
 }
 
-// 'common' /block/: its elements are variables or arrays of this block.
+// _common /block/: its elements are variables or arrays of this block.
 DeclPtr Checker::common(int line, const CommonBlock &block)
 {
     decl::Common c;
@@ -512,12 +512,12 @@ DeclPtr Checker::common(int line, const CommonBlock &block)
     for (const auto &e : block.elements) {
         auto it = scopes_.back().names.find(e.name);
         if (it == scopes_.back().names.end()) {
-            error(line, "'common' element " + quoted(e.name) + " is not declared in its block");
+            error(line, "_common element " + quoted(e.name) + " is not declared in its block");
             continue;
         }
         const Symbol &s = sym(it->second);
         if (s.kind != Kind::SIMPLE && s.kind != Kind::ARRAY) {
-            error(line, "'common' element " + quoted(e.name) + " is not a variable or an array");
+            error(line, "_common element " + quoted(e.name) + " is not a variable or an array");
             continue;
         }
         c.elements.push_back(CommonElement{ e.name, s.id, e.size });
@@ -566,10 +566,10 @@ StmtPtr Checker::statement(const syn::Stmt &s)
             } else if constexpr (std::is_same_v<T, syn::stmt::Assign>) {
                 return assignment(loc, x);
             } else if constexpr (std::is_same_v<T, syn::stmt::Goto>) {
-                return make_stmt(loc, stmt::Goto{ designational(*x.target, "'goto'") });
+                return make_stmt(loc, stmt::Goto{ designational(*x.target, "_goto") });
             } else if constexpr (std::is_same_v<T, syn::stmt::If>) {
                 stmt::If i;
-                i.condition = boolean(*x.condition, "the condition of 'if'");
+                i.condition = boolean(*x.condition, "the condition of _if");
                 i.then_stmt = statement(*x.then_stmt);
                 if (x.else_stmt)
                     i.else_stmt = statement(*x.else_stmt);
@@ -665,7 +665,7 @@ StmtPtr Checker::for_stmt(SrcLoc loc, const syn::stmt::For &f)
     if (i < 0) {
         named(f.var.name, f.var.line, false);
     } else if (sym(i).kind != Kind::SIMPLE || !numeric(sym(i).type)) {
-        error(f.var.line, "The variable of 'for' must be a simple integer or real variable");
+        error(f.var.line, "The variable of _for must be a simple integer or real variable");
     } else {
         t = sym(i).type;
     }
@@ -679,7 +679,7 @@ std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement>
                                               int line)
 {
     std::vector<ForElement> out;
-    const std::string what = "an element of 'for'";
+    const std::string what = "an element of _for";
     for (const auto &e : list) {
         switch (e.kind) {
         case syn::ForElement::VALUE:
@@ -692,7 +692,7 @@ std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement>
             break;
         case syn::ForElement::WHILE:
             out.push_back(for_elem::While{ convert(expr(*e.value), t, line, what),
-                                           boolean(*e.step, "the condition of 'while'") });
+                                           boolean(*e.step, "the condition of _while") });
             break;
         }
     }
@@ -825,7 +825,7 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
     }
 }
 
-// 'print', 'write' and the other I/O statements.
+// _print, _write and the other I/O statements.
 StmtPtr Checker::io_stmt(SrcLoc loc, const syn::stmt::Io &io)
 {
     static const std::map<Sym, IoOp> ops = {
@@ -901,7 +901,7 @@ ExprPtr Checker::boolean(const syn::Expr &e, const std::string &what)
 ExprPtr Checker::designational(const syn::Expr &e, const std::string &what)
 {
     if (auto c = std::get_if<syn::expr::If>(&e.node)) {
-        ExprPtr cond = boolean(*c->condition, "the condition of 'if'");
+        ExprPtr cond = boolean(*c->condition, "the condition of _if");
         ExprPtr a    = designational(*c->then_expr, what);
         ExprPtr b    = designational(*c->else_expr, what);
         return make_expr(Type::NONE, expr::Cond{ std::move(cond), std::move(a), std::move(b) });
@@ -955,7 +955,7 @@ ExprPtr Checker::expr(const syn::Expr &e)
                     return a;
                 if (x.op == Sym::NOT) {
                     if (a->type != Type::BOOLEAN && a->type != Type::BITS) {
-                        error(line, "Type error in 'not': " + std::string(to_string(a->type)));
+                        error(line, "Type error in _not: " + std::string(to_string(a->type)));
                         return bad();
                     }
                     Type t = a->type;
@@ -973,7 +973,7 @@ ExprPtr Checker::expr(const syn::Expr &e)
             } else if constexpr (std::is_same_v<T, syn::expr::Binary>) {
                 return binary(x, line);
             } else {
-                ExprPtr c = boolean(*x.condition, "the condition of 'if'");
+                ExprPtr c = boolean(*x.condition, "the condition of _if");
                 ExprPtr a = expr(*x.then_expr);
                 ExprPtr b = expr(*x.else_expr);
                 if (a->type == Type::NONE || b->type == Type::NONE) {

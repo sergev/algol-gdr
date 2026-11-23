@@ -1,21 +1,21 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' SWITCH DECLARATIONS AND DESIGNATIONAL EXPRESSIONS;
-     3.         'INTEGER' I;
-     4.         'SWITCH' S := A, B, 'IF' I > 2 'THEN' C 'ELSE' A;
+     1.     _begin
+     2.         _comment SWITCH DECLARATIONS AND DESIGNATIONAL EXPRESSIONS;
+     3.         _integer I;
+     4.         _switch S := A, B, _if I > 2 _then C _else A;
      5.         I := 0;
      6.     NEXT:
      7.         I := I + 1;
-     8.         'IF' I > 3 'THEN' 'GOTO' DONE;
-     9.         'GOTO' S[I];
-    10.     A:  PRINT(1); 'GOTO' NEXT;
-    11.     B:  PRINT(2); 'GOTO' NEXT;
-    12.     C:  PRINT(3); 'GOTO' NEXT;
+     8.         _if I > 3 _then _goto DONE;
+     9.         _goto S[I];
+    10.     A:  PRINT(1); _goto NEXT;
+    11.     B:  PRINT(2); _goto NEXT;
+    12.     C:  PRINT(3); _goto NEXT;
     13.     DONE:
-    14.         'GOTO' 'IF' I = 4 'THEN' E 'ELSE' S[1];
+    14.         _goto _if I = 4 _then E _else S[1];
     15.     E:  PRINT(I)
-    16.     'END'
-    17.     'EOP'
+    16.     _end
+    17.     _eop
 

@@ -1,12 +1,12 @@
-'BEGIN'
-    'COMMENT' TYPE ERRORS;
-    'INTEGER' I;
-    'REAL' X;
-    'BOOLEAN' B;
-    I := 'TRUE';
+_begin
+    _comment TYPE ERRORS;
+    _integer I;
+    _real X;
+    _boolean B;
+    I := _true;
     B := 1;
     X := B + 1;
-    'IF' X 'THEN' I := 0;
-    B := I 'AND' B;
-'END'
-'EOP'
+    _if X _then I := 0;
+    B := I _and B;
+_end
+_eop

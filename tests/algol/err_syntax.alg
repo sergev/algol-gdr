@@ -1,10 +1,10 @@
-'BEGIN'
-    'COMMENT' SYNTAX ERRORS;
-    'INTEGER' I;
+_begin
+    _comment SYNTAX ERRORS;
+    _integer I;
     I := (1 + 2;
     I := 1 + * 2;
-    'IF' I 'DO' I := 0;
-    'FOR' I := 1 'UNTIL' 2 'DO' ;
+    _if I _do I := 0;
+    _for I := 1 _until 2 _do ;
     I = 1;
-'END'
-'EOP'
+_end
+_eop

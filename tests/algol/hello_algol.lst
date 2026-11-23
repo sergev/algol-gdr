@@ -1,8 +1,8 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'begin'
+     1.     _begin
      2.         print(''Hello, Algol!'');
-     3.     'end'
-     4.     'eop'
+     3.     _end
+     4.     _eop
 

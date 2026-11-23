@@ -1,12 +1,12 @@
-'COMMENT' A COMMENT BEFORE THE PROGRAM;
-'BEGIN'
-    'COMMENT' A COMMENT IN A BLOCK, WITH 'BEGIN' AND 'END' INSIDE;
-    'INTEGER' I;
+_comment A COMMENT BEFORE THE PROGRAM;
+_begin
+    _comment A COMMENT IN A BLOCK, WITH _begin AND _end INSIDE;
+    _integer I;
     I := 1;
-    'BEGIN'
+    _begin
         I := 2
-    'END' THIS TEXT AFTER END IS A COMMENT;
+    _end THIS TEXT AFTER END IS A COMMENT;
     ;;
-    PRINT(I); 'COMMENT' AFTER A STATEMENT;
-'END'
-'EOP'
+    PRINT(I); _comment AFTER A STATEMENT;
+_end
+_eop

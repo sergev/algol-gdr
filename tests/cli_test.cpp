@@ -68,7 +68,7 @@ TEST(cli, missing_file)
 TEST(cli, invalid_utf8)
 {
     const std::string path = BUILD_DIR "/invalid_utf8.alg";
-    std::ofstream(path) << "'BEGIN'\n'END'\xff\n'EOP'\n";
+    std::ofstream(path) << "_begin\n_end\xff\n_eop\n";
     auto r = run_command(compiler + " " + path);
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_NE(r.output.find(":2: invalid UTF-8"), std::string::npos);

@@ -1,27 +1,27 @@
-'BEGIN'
-    'COMMENT' LABELS, GOTO, JUMP OUT OF A BLOCK AND A PROCEDURE;
-    'INTEGER' I;
-    'PROCEDURE' P(N); 'VALUE' N; 'INTEGER' N;
-    'BEGIN'
-        'IF' N > 2 'THEN' 'GOTO' OUT;
+_begin
+    _comment LABELS, GOTO, JUMP OUT OF A BLOCK AND A PROCEDURE;
+    _integer I;
+    _procedure P(N); _value N; _integer N;
+    _begin
+        _if N > 2 _then _goto OUT;
         PRINT(N)
-    'END';
+    _end;
     I := 0;
 AGAIN:
     I := I + 1;
-    'IF' I < 3 'THEN' 'GOTO' AGAIN;
+    _if I < 3 _then _goto AGAIN;
     PRINT(I);
-    'BEGIN' 'INTEGER' K;
+    _begin _integer K;
         K := 5;
-        'GOTO' L1;
+        _goto L1;
         PRINT(-1);
     L1: PRINT(K);
-        'GOTO' L2
-    'END';
+        _goto L2
+    _end;
     PRINT(-2);
 L2: P(1); P(2); P(3);
     PRINT(-3);
 OUT:
     PRINT(999)
-'END'
-'EOP'
+_end
+_eop

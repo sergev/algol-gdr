@@ -18,7 +18,7 @@ module AST {
     -- the statement markers 051), as in "NEXT STATEMENT IS l/s".
     SrcLoc = (int line, int stmt)
 
-    -- 'CODE' and 'ALGOL' procedures declared before the program, then its
+    -- _code and _algol procedures declared before the program, then its
     -- outer block.
     Program = (External* externals, Stmt block)
 
@@ -26,7 +26,7 @@ module AST {
     ExternalKind = Code | Algol
 
     Type = Integer | Real | Boolean | String
-         | Bits     -- 'BITS': octal words, 48 bits
+         | Bits     -- _bits: octal words, 48 bits
          | None     -- a procedure without a value
 
     -- Declarations of a block, or of the body of a procedure.
@@ -36,7 +36,7 @@ module AST {
          | Switch(identifier name, int id, Expr* elements)              -- 0146 0142/0144 … 0143
          | Label(identifier name, int id)
          | Procedure(identifier name, int id, Type type, Formal* formals, Stmt body)
-         -- 'COMMON' /name/ elements: they are declared in the same block, in this
+         -- _common /name/ elements: they are declared in the same block, in this
          -- order; a variable is an array [1:1]
          | Common(identifier name, CommonElement* elements)
          attributes(SrcLoc loc)
@@ -83,7 +83,7 @@ module AST {
     StdProc = Stop | Load | LoadGo | Assign | Atos | Stoa
 
     -- I/O statements. The standard PRINT and READ are Print and Read;
-    -- the keywords 'PRINT' and 'WRITE' are Write.
+    -- the keywords _print and _write are Write.
     -- The params come before the list:
     --   Print, Punch: none;
     --   Read, Write: a unit and optionally a second one;

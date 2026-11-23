@@ -1,14 +1,14 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' UNDECLARED AND TWICE DECLARED IDENTIFIERS;
-     3.         'INTEGER' I, I;
-     4.         'REAL' X;
+     1.     _begin
+     2.         _comment UNDECLARED AND TWICE DECLARED IDENTIFIERS;
+     3.         _integer I, I;
+     4.         _real X;
      5.         X := Y;
      6.         Z[1] := 0;
      7.         P(X);
-     8.         'GOTO' NOWHERE;
-     9.     'END'
-    10.     'EOP'
+     8.         _goto NOWHERE;
+     9.     _end
+    10.     _eop
 

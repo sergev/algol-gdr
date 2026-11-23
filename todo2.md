@@ -71,8 +71,8 @@ to a NUL-terminated UTF-8 array.
   designational expressions, labels as parameters. Test switch.
 - **E21** Strings: relations, concatenation, slices, `LENGTH`, string parameters. Test
   strings, quine, quinio (with `.in`).
-- **E22** 'COMMON' blocks as named global structs shared between compilation units;
-  'CODE' procedures as external C functions with pointer arguments (C calling convention,
+- **E22** _common blocks as named global structs shared between compilation units;
+  _code procedures as external C functions with pointer arguments (C calling convention,
   documented). Test common; externals compiles and links against a C stub.
 
 ### Targets and finish

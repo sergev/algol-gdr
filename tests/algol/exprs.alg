@@ -1,32 +1,32 @@
-'COMMENT' FOR LIST ELEMENTS, CONDITIONAL AND POWER EXPRESSIONS;
-'BEGIN' 'INTEGER' I; 'REAL' X; 'BOOLEAN' B;
-  'INTEGER' 'ARRAY' IA[1:3]; 'REAL' 'ARRAY' RA[1:3];
-  'BOOLEAN' 'ARRAY' BA[1:3];
-  'SWITCH' S := L, M;
-  'INTEGER' 'PROCEDURE' IP(N); 'VALUE' N; 'INTEGER' N; IP := N;
-  'REAL' 'PROCEDURE' RP; RP := 1;
-  'BOOLEAN' 'PROCEDURE' BP; BP := 'TRUE';
-  'PROCEDURE' P0; ;
-  'PROCEDURE' PP(A1, A2, A3, A4, A5, A6, A7, A8);
-    'VALUE' A1; 'INTEGER' A1; 'REAL' A2; 'BOOLEAN' A3; 'ARRAY' A4;
-    'LABEL' A5; 'PROCEDURE' A6; 'STRING' A7; 'SWITCH' A8;
-  'BEGIN' A2 := A1 'END';
+_comment FOR LIST ELEMENTS, CONDITIONAL AND POWER EXPRESSIONS;
+_begin _integer I; _real X; _boolean B;
+  _integer _array IA[1:3]; _real _array RA[1:3];
+  _boolean _array BA[1:3];
+  _switch S := L, M;
+  _integer _procedure IP(N); _value N; _integer N; IP := N;
+  _real _procedure RP; RP := 1;
+  _boolean _procedure BP; BP := _true;
+  _procedure P0; ;
+  _procedure PP(A1, A2, A3, A4, A5, A6, A7, A8);
+    _value A1; _integer A1; _real A2; _boolean A3; _array A4;
+    _label A5; _procedure A6; _string A7; _switch A8;
+  _begin A2 := A1 _end;
 L: I := 1;
 M: X := 1;
-  I := 1; X := 2; B := 'TRUE';
+  I := 1; X := 2; B := _true;
   IA[1] := 1; IA[2] := 2; IA[3] := 3;
   I := IA[X]; PRINT(I);
-  I := 'IF' B 'THEN' I 'ELSE' X; PRINT(I);
-  B := X 'LT' 1; PRINT(B);
-  B := X 'EQUAL' 1; PRINT(B);
-  X := 2 'POWER' I; PRINT(X);
-  X := 2 'POWER' IP(1); PRINT(X);
+  I := _if B _then I _else X; PRINT(I);
+  B := X _lt 1; PRINT(B);
+  B := X _equal 1; PRINT(B);
+  X := 2 _power I; PRINT(X);
+  X := 2 _power IP(1); PRINT(X);
   PRINT(IA);
-  'FOR' I := I 'STEP' 1 'UNTIL' 2 'DO' X := 1; PRINT(I);
-  'FOR' I := X 'STEP' 1 'UNTIL' 2 'DO' X := 1; PRINT(I);
-  'FOR' I := IA[1] 'STEP' 1 'UNTIL' 2 'DO' X := 1; PRINT(I);
-  'FOR' I := RP 'STEP' 1 'UNTIL' 2 'DO' X := 1; PRINT(I);
-  'FOR' I := 1.5 'STEP' 1 'UNTIL' 2 'DO' X := 1; PRINT(I);
-  'FOR' I := -I 'STEP' 1 'UNTIL' 2 'DO' X := 1; PRINT(I)
-'END'
-'EOP'
+  _for I := I _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := X _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := IA[1] _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := RP _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := 1.5 _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := -I _step 1 _until 2 _do X := 1; PRINT(I)
+_end
+_eop

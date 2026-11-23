@@ -1,22 +1,22 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' NESTED BLOCKS AND SCOPES;
-     3.         'INTEGER' X;
+     1.     _begin
+     2.         _comment NESTED BLOCKS AND SCOPES;
+     3.         _integer X;
      4.         X := 1;
-     5.         'BEGIN' 'INTEGER' X;
+     5.         _begin _integer X;
      6.             X := 2;
-     7.             'BEGIN' 'REAL' X;
+     7.             _begin _real X;
      8.                 X := 3.5;
      9.                 PRINT(X)
-    10.             'END';
+    10.             _end;
     11.             PRINT(X)
-    12.         'END';
-    13.         'BEGIN'
+    12.         _end;
+    13.         _begin
     14.             X := X + 10
-    15.         'END';
+    15.         _end;
     16.         PRINT(X)
-    17.     'END'
-    18.     'EOP'
+    17.     _end
+    18.     _eop
 

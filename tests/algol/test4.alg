@@ -1,11 +1,11 @@
-'BEGIN'
-    'COMMENT' ERRORS FOR THE DIAGNOSTICS;
-    'INTEGER' I, I; 'REAL' X;
+_begin
+    _comment ERRORS FOR THE DIAGNOSTICS;
+    _integer I, I; _real X;
     X := Y + ;
-    'IF' I 'THEN' 'GOTO' NOWHERE;
-    'FOR' I := 1 'STEP' 'UNTIL' 10 'DO' ;
+    _if I _then _goto NOWHERE;
+    _for I := 1 _step _until 10 _do ;
     A[1] := 2;
-    I := 'TRUE' + 1.5;
-    'BEGIN' 'END' 'END'
-'END'
-'EOP'
+    I := _true + 1.5;
+    _begin _end _end
+_end
+_eop

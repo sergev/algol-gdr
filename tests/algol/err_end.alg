@@ -1,8 +1,8 @@
-'BEGIN'
-    'COMMENT' MISSING END, EXPONENT OVERFLOW;
-    'REAL' X;
+_begin
+    _comment MISSING END, EXPONENT OVERFLOW;
+    _real X;
     X := 1.0⏨20;
-    'BEGIN'
+    _begin
         X := 0
-'END'
-'EOP'
+_end
+_eop

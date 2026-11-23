@@ -1,6 +1,6 @@
-'BEGIN'
-    'COMMENT' MORE THAN 30 ERRORS;
-    'INTEGER' I;
+_begin
+    _comment MORE THAN 30 ERRORS;
+    _integer I;
     I := (1;
     I := (1;
     I := (1;
@@ -33,5 +33,5 @@
     I := (1;
     I := (1;
     I := (1;
-'END'
-'EOP'
+_end
+_eop

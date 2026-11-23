@@ -35,11 +35,11 @@ algc [options...] file.alg
 | `--check` | Run-time checks (like `*CHECK`) |
 | `--dump-ast` | Print the AST in YAML |
 
-The source is the original notation in UTF-8: keywords in quotes, in any case (`'begin'`,
-`'BEGIN'`), strings in `''…''`, `'eop'` at the end. Identifiers may have any length and
-are case-sensitive; letters may be Latin, Greek or Cyrillic. The operators `× ↑ ≥ ≤ ≠ ¬ ∧
-∨ ⊃ ≡` may be used for their word forms, and `⏨` is the exponent sign. The listing shows
-the source lines as written, numbered.
+The source is UTF-8. Keywords are written with a leading underscore, in any case (`_begin`,
+`_BEGIN`; the original had them in quotes, `'BEGIN'`), strings in `''…''`, `_eop` at the end.
+Identifiers may have any length and are case-sensitive; letters may be Latin, Greek or
+Cyrillic. The operators `× ↑ ≥ ≤ ≠ ¬ ∧ ∨ ⊃ ≡` may be used for their word forms, and `⏨` is the
+exponent sign. The listing shows the source lines as written, numbered.
 
 For now the compiler only checks the program: code generation is being moved to LLVM.
 

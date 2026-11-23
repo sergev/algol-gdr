@@ -1,20 +1,20 @@
-'COMMENT' MIXED RELATIONS, BY-NAME FOR ELEMENTS, AN ELEMENT OF A
+_comment MIXED RELATIONS, BY-NAME FOR ELEMENTS, AN ELEMENT OF A
   DYNAMIC ARRAY AS A PARAMETER BY NAME;
-'BEGIN' 'INTEGER' I, J, N; 'REAL' X; 'BOOLEAN' B;
-  'PROCEDURE' Q(Z); 'REAL' Z; Z := Z + 1;
-  'PROCEDURE' R(V, W); 'INTEGER' V, W;
-  'BEGIN' 'FOR' V := W 'DO' PRINT(V);
-    'FOR' V := W 'STEP' W 'UNTIL' 3 * W 'DO' PRINT(V)
-  'END';
+_begin _integer I, J, N; _real X; _boolean B;
+  _procedure Q(Z); _real Z; Z := Z + 1;
+  _procedure R(V, W); _integer V, W;
+  _begin _for V := W _do PRINT(V);
+    _for V := W _step W _until 3 * W _do PRINT(V)
+  _end;
   I := 1; J := 2; X := 1.5; N := 3;
-  B := I 'NOTEQUAL' X; PRINT(B);
-  B := J 'NOTEQUAL' 2.0; PRINT(B);
-  'IF' I 'GE' X 'THEN' PRINT(1) 'ELSE' PRINT(2);
-  'IF' J 'GE' X 'THEN' PRINT(3) 'ELSE' PRINT(4);
-  'IF' I 'NOTEQUAL' X 'THEN' PRINT(5) 'ELSE' PRINT(6);
+  B := I _notequal X; PRINT(B);
+  B := J _notequal 2.0; PRINT(B);
+  _if I _ge X _then PRINT(1) _else PRINT(2);
+  _if J _ge X _then PRINT(3) _else PRINT(4);
+  _if I _notequal X _then PRINT(5) _else PRINT(6);
   R(I, J);
-  'BEGIN' 'ARRAY' A[1:N];
+  _begin _array A[1:N];
     A[1] := 7; Q(A[1]); PRINT(A[1])
-  'END'
-'END'
-'EOP'
+  _end
+_end
+_eop

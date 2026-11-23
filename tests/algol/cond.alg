@@ -1,14 +1,14 @@
-'BEGIN'
-    'COMMENT' CONDITIONAL STATEMENTS AND EXPRESSIONS;
-    'INTEGER' I, J;
-    'FOR' I := 1 'STEP' 1 'UNTIL' 4 'DO'
-    'BEGIN'
-        'IF' I = 1 'THEN' PRINT(100)
-        'ELSE' 'IF' I = 2 'THEN' PRINT(200)
-        'ELSE' PRINT(300);
-        'IF' I > 2 'THEN' PRINT(I);
-        J := 'IF' I < 3 'THEN' I * 10 'ELSE' -I;
-        PRINT(J, 'IF' I = 4 'THEN' 1.5 'ELSE' 2.5)
-    'END'
-'END'
-'EOP'
+_begin
+    _comment CONDITIONAL STATEMENTS AND EXPRESSIONS;
+    _integer I, J;
+    _for I := 1 _step 1 _until 4 _do
+    _begin
+        _if I = 1 _then PRINT(100)
+        _else _if I = 2 _then PRINT(200)
+        _else PRINT(300);
+        _if I > 2 _then PRINT(I);
+        J := _if I < 3 _then I * 10 _else -I;
+        PRINT(J, _if I = 4 _then 1.5 _else 2.5)
+    _end
+_end
+_eop

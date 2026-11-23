@@ -1,19 +1,19 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'COMMENT' THE PRIMES FROM 2 TO 100: THE SIEVE OF ERATOSTHENES;
-     2.     'BEGIN'
-     3.         'BOOLEAN' 'ARRAY' PRIME [2:100];
-     4.         'INTEGER' N, K;
-     5.         'FOR' N:=2 'STEP' 1 'UNTIL' 100 'DO'
-     6.             PRIME [N] := 'TRUE';
-     7.         'FOR' N:=2 'STEP' 1 'UNTIL' 100 'DO'
-     8.             'IF' PRIME[N] 'THEN'
-     9.                 'FOR' K:=N+N 'STEP' N 'UNTIL' 100 'DO'
-    10.                     PRIME [K] := 'FALSE';
-    11.         'FOR' N:=2 'STEP' 1 'UNTIL' 100 'DO'
-    12.             'IF' PRIME[N] 'THEN'
+     1.     _comment THE PRIMES FROM 2 TO 100: THE SIEVE OF ERATOSTHENES;
+     2.     _begin
+     3.         _boolean _array PRIME [2:100];
+     4.         _integer N, K;
+     5.         _for N:=2 _step 1 _until 100 _do
+     6.             PRIME [N] := _true;
+     7.         _for N:=2 _step 1 _until 100 _do
+     8.             _if PRIME[N] _then
+     9.                 _for K:=N+N _step N _until 100 _do
+    10.                     PRIME [K] := _false;
+    11.         _for N:=2 _step 1 _until 100 _do
+    12.             _if PRIME[N] _then
     13.                 PRINT (N);
-    14.     'END'
-    15.     'EOP'
+    14.     _end
+    15.     _eop
 

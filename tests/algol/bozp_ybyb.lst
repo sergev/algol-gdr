@@ -1,25 +1,25 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'code':'real'rndm;
-     2.     'algol':BOZP;
-     3.     'algol':YBYB;
-     4.     'begin'
-     5.         'real' 'array' a[1 : 10];
-     6.         'integer' i;
+     1.     _code:_real rndm;
+     2.     _algol:BOZP;
+     3.     _algol:YBYB;
+     4.     _begin
+     5.         _real _array a[1 : 10];
+     6.         _integer i;
      7.
-     8.         'for' i := 1 'step' 1 'until' 10 'do'
+     8.         _for i := 1 _step 1 _until 10 _do
      9.             a[i] := rndm(-1);
     10.
-    11.         'print'(''(10f7.3)'') a;
+    11.         _print(''(10f7.3)'') a;
     12.
-    13.         'comment' Расположение элементов вектора по возрастанию;
+    13.         _comment Расположение элементов вектора по возрастанию;
     14.         BOZP(a, 10);
-    15.         'print'(''(10f7.3)'') a;
+    15.         _print(''(10f7.3)'') a;
     16.
-    17.         'comment' Расположение элементов вектора по убыванию;
+    17.         _comment Расположение элементов вектора по убыванию;
     18.         YBYB(a, 10);
-    19.         'print'(''(10f7.3)'') a;
-    20.     'end'
-    21.     'eop'
+    19.         _print(''(10f7.3)'') a;
+    20.     _end
+    21.     _eop
 

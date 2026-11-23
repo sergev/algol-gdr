@@ -1,24 +1,24 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'COMMENT' MIXED RELATIONS, BY-NAME FOR ELEMENTS, AN ELEMENT OF A
+     1.     _comment MIXED RELATIONS, BY-NAME FOR ELEMENTS, AN ELEMENT OF A
      2.       DYNAMIC ARRAY AS A PARAMETER BY NAME;
-     3.     'BEGIN' 'INTEGER' I, J, N; 'REAL' X; 'BOOLEAN' B;
-     4.       'PROCEDURE' Q(Z); 'REAL' Z; Z := Z + 1;
-     5.       'PROCEDURE' R(V, W); 'INTEGER' V, W;
-     6.       'BEGIN' 'FOR' V := W 'DO' PRINT(V);
-     7.         'FOR' V := W 'STEP' W 'UNTIL' 3 * W 'DO' PRINT(V)
-     8.       'END';
+     3.     _begin _integer I, J, N; _real X; _boolean B;
+     4.       _procedure Q(Z); _real Z; Z := Z + 1;
+     5.       _procedure R(V, W); _integer V, W;
+     6.       _begin _for V := W _do PRINT(V);
+     7.         _for V := W _step W _until 3 * W _do PRINT(V)
+     8.       _end;
      9.       I := 1; J := 2; X := 1.5; N := 3;
-    10.       B := I 'NOTEQUAL' X; PRINT(B);
-    11.       B := J 'NOTEQUAL' 2.0; PRINT(B);
-    12.       'IF' I 'GE' X 'THEN' PRINT(1) 'ELSE' PRINT(2);
-    13.       'IF' J 'GE' X 'THEN' PRINT(3) 'ELSE' PRINT(4);
-    14.       'IF' I 'NOTEQUAL' X 'THEN' PRINT(5) 'ELSE' PRINT(6);
+    10.       B := I _notequal X; PRINT(B);
+    11.       B := J _notequal 2.0; PRINT(B);
+    12.       _if I _ge X _then PRINT(1) _else PRINT(2);
+    13.       _if J _ge X _then PRINT(3) _else PRINT(4);
+    14.       _if I _notequal X _then PRINT(5) _else PRINT(6);
     15.       R(I, J);
-    16.       'BEGIN' 'ARRAY' A[1:N];
+    16.       _begin _array A[1:N];
     17.         A[1] := 7; Q(A[1]); PRINT(A[1])
-    18.       'END'
-    19.     'END'
-    20.     'EOP'
+    18.       _end
+    19.     _end
+    20.     _eop
 

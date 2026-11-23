@@ -1,16 +1,16 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' OUTPUT: PRINT OF NUMBERS, BOOLEANS AND STRINGS, NEW LINES;
+     1.     _begin
+     2.         _comment OUTPUT: PRINT OF NUMBERS, BOOLEANS AND STRINGS, NEW LINES;
      3.         PRINT(0, 1, -1, 123456789);
      4.         PRINT(0.0, 1.0, -1.0, 3.1415926, 1.0⏨18, 1.0⏨-18);
-     5.         PRINT('TRUE', 'FALSE');
+     5.         PRINT(_true, _false);
      6.         PRINT(''STRING ONE'', '('STRING TWO')');
      7.         PRINT(NEWLINE, ''AFTER NEWLINE'');
      8.         PRINT(1, NEWLINE, 2);
      9.         PRINT(NEWPAGE);
     10.         PRINT(''LAST'')
-    11.     'END'
-    12.     'EOP'
+    11.     _end
+    12.     _eop
 

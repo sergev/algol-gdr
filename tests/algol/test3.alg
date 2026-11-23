@@ -1,24 +1,24 @@
-'BEGIN'
-    'COMMENT' SWITCHES, GOTO, BOOLEANS, WHILE, BLOCKS, ARRAYS, STRINGS;
-    'SWITCH' S := L1, L2, L3;
-    'INTEGER' I, K; 'BOOLEAN' B, C;
-    'ARRAY' A[0:4, -1:1];
-    'PROCEDURE' P(N, M); 'VALUE' N; 'INTEGER' N; 'ARRAY' M;
+_begin
+    _comment SWITCHES, GOTO, BOOLEANS, WHILE, BLOCKS, ARRAYS, STRINGS;
+    _switch S := L1, L2, L3;
+    _integer I, K; _boolean B, C;
+    _array A[0:4, -1:1];
+    _procedure P(N, M); _value N; _integer N; _array M;
         M[N, 0] := N + 0.5;
     I := 1;
-L0: 'GOTO' S[I];
-L1: I := I + 1; 'GOTO' L0;
-L2: I := I + 1; 'GOTO' L0;
-L3: B := I = 3 'AND' 'NOT' (I > 5) 'OR' 'FALSE';
-    C := B 'IMPL' 'TRUE' 'EQUIV' 'NOT' B;
+L0: _goto S[I];
+L1: I := I + 1; _goto L0;
+L2: I := I + 1; _goto L0;
+L3: B := I = 3 _and _not (I > 5) _or _false;
+    C := B _impl _true _equiv _not B;
     K := 0;
-    'FOR' I := 1, 2, 5 'STEP' 2 'UNTIL' 9 'DO' K := K + 1;
-    'BEGIN' 'INTEGER' 'ARRAY' X[1:K];
-        'FOR' I := 1 'STEP' 1 'UNTIL' K 'DO' X[I] := I * I;
+    _for I := 1, 2, 5 _step 2 _until 9 _do K := K + 1;
+    _begin _integer _array X[1:K];
+        _for I := 1 _step 1 _until K _do X[I] := I * I;
         PRINT(X[K])
-    'END';
-    'FOR' I := 0 'STEP' 1 'UNTIL' 4 'DO' P(I, A);
+    _end;
+    _for I := 0 _step 1 _until 4 _do P(I, A);
     PRINT(A[4, 0], B, C, K);
     PRINT('('HELLO FROM ALGOL')')
-'END'
-'EOP'
+_end
+_eop

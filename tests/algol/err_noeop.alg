@@ -1,5 +1,5 @@
-'BEGIN'
-    'COMMENT' NO EOP AT THE END;
-    'INTEGER' I;
+_begin
+    _comment NO EOP AT THE END;
+    _integer I;
     I := 1
-'END'
+_end

@@ -59,7 +59,7 @@ static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
 
 INSTANTIATE_TEST_SUITE_P(algol, AstGolden, ::testing::ValuesIn(program_names()), param_name);
 
-// 'BEGIN' 'REAL' X; L: X := 1; PRINT(''A'', X) 'END'
+// _begin _real X; L: X := 1; PRINT(''A'', X) _end
 TEST(Ast, print)
 {
     Program p;
@@ -146,24 +146,24 @@ static std::string check_messages(const std::string &text)
 
 TEST(Checker, messages)
 {
-    EXPECT_EQ(check_messages("'BEGIN' 'INTEGER' I; 'BOOLEAN' B;\n"
-                             "I := B; J := 1; 'GOTO' I\n'END' 'EOP'"),
+    EXPECT_EQ(check_messages("_begin _integer I; _boolean B;\n"
+                             "I := B; J := 1; _goto I\n_end _eop"),
               "x.alg:2: error: Type error in the value of ':=': boolean instead of integer\n"
               "x.alg:2: error: Undeclared identifier 'J'\n"
-              "x.alg:2: error: A label is expected in 'goto'\n");
-    EXPECT_EQ(check_messages("'BEGIN' 'REAL' 'PROCEDURE' F; ; F 'END' 'EOP'"),
+              "x.alg:2: error: A label is expected in _goto\n");
+    EXPECT_EQ(check_messages("_begin _real _procedure F; ; F _end _eop"),
               "x.alg:1: error: Function 'F' does not assign its result\n");
-    EXPECT_EQ(check_messages("'BEGIN' 'PROCEDURE' P(X); 'INTEGER' X; X := 1;\n"
-                             "'REAL' Y; P(Y); P(Y + 1) 'END' 'EOP'"),
+    EXPECT_EQ(check_messages("_begin _procedure P(X); _integer X; X := 1;\n"
+                             "_real Y; P(Y); P(Y + 1) _end _eop"),
               "x.alg:2: error: Argument 1 of 'P' does not match formal parameter 'X'\n");
 }
 
 TEST(Checker, names)
 {
     // Names count in full and by case; standard ones in any case.
-    EXPECT_EQ(check_messages("'begin' 'integer' counter1, counter2, Counter1;\n"
+    EXPECT_EQ(check_messages("_begin _integer counter1, counter2, Counter1;\n"
                              "counter1 := counter2 := Counter1 := 1; COUNTER1 := sqrt(4);\n"
-                             "Print(counter1) 'end' 'eop'"),
+                             "Print(counter1) _end _eop"),
               "x.alg:2: error: Undeclared identifier 'COUNTER1'\n");
 }
 
@@ -171,9 +171,9 @@ TEST(Checker, scopes_and_conversions)
 {
     std::ostringstream err, out;
     Diagnostics diag("x.alg", err);
-    auto program = check(parse("'BEGIN' 'REAL' X; 'INTEGER' I;\n"
-                               "L: X := I + 1; 'BEGIN' 'INTEGER' X; X := 2.5 'END';\n"
-                               "'GOTO' L 'END' 'EOP'",
+    auto program = check(parse("_begin _real X; _integer I;\n"
+                               "L: X := I + 1; _begin _integer X; X := 2.5 _end;\n"
+                               "_goto L _end _eop",
                                diag),
                          diag);
     ASSERT_EQ(err.str(), "");

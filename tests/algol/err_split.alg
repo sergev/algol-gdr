@@ -1,7 +1,7 @@
-'COMMENT' MESSAGES OF PASS 2 LONGER THAN 10 WORDS, IN THE RIGHT COLUMN;
-'BEGIN' 'INTEGER' I;
-  'PROCEDURE' PROCNAME(ABCDEF, GHIJKL);
-  'VALUE' ABCDEF; 'INTEGER' ABCDEF; 'REAL' 'ARRAY' GHIJKL;
+_comment MESSAGES OF PASS 2 LONGER THAN 10 WORDS, IN THE RIGHT COLUMN;
+_begin _integer I;
+  _procedure PROCNAME(ABCDEF, GHIJKL);
+  _value ABCDEF; _integer ABCDEF; _real _array GHIJKL;
   I := ABCDEF;
     I := 1;
     I := 2;
@@ -43,7 +43,7 @@
     I := 38;
     I := 39;
     I := 40;
-    PROCNAME(1, 'TRUE');
+    PROCNAME(1, _true);
     IDENTIFIERLONG := 1;
     I := 1;
     I := 2;
@@ -85,8 +85,8 @@
     I := 38;
     I := 39;
     I := 40;
-    PROCNAME(1, 'TRUE');
+    PROCNAME(1, _true);
     IDENTIFIERLONG := 1;
     PRINT(I)
-'END'
-'EOP'
+_end
+_eop

@@ -1,6 +1,6 @@
-'BEGIN'
-    'COMMENT' A LISTING OF THREE PAGES IN TWO COLUMNS;
-    'INTEGER' S;
+_begin
+    _comment A LISTING OF THREE PAGES IN TWO COLUMNS;
+    _integer S;
     S := 0;
     S := S + 1;
     S := S + 2;
@@ -283,5 +283,5 @@
     S := S + 279;
     S := S + 280;
     PRINT(S)
-'END'
-'EOP'
+_end
+_eop

@@ -1,14 +1,14 @@
-'BEGIN'
-    'COMMENT' 'COMMON' BLOCKS: SCALARS AND ARRAYS OF ONE TO THREE
+_begin
+    _comment _common BLOCKS: SCALARS AND ARRAYS OF ONE TO THREE
         DIMENSIONS, EXPORTED AS *ABC*, *DATA* AND *S*;
-    'COMMON' /ABC/ X, Y(10), Z(2,3);
-    'REAL' X; 'ARRAY' Y[1:10]; 'INTEGER' 'ARRAY' Z[1:2,1:3];
-    'COMMON' /DATA/ N, T(2, 2, 2).,
-    'INTEGER' N; 'ARRAY' T[1:2, 1:2, 1:2];
-    'COMMON' /S/ W;
-    'BOOLEAN' W;
+    _common /ABC/ X, Y(10), Z(2,3);
+    _real X; _array Y[1:10]; _integer _array Z[1:2,1:3];
+    _common /DATA/ N, T(2, 2, 2).,
+    _integer N; _array T[1:2, 1:2, 1:2];
+    _common /S/ W;
+    _boolean W;
     X := 1; Y[1] := 2; Z[2,3] := 3;
-    N := 4; T[2, 2, 2] := 5; W := 'TRUE';
+    N := 4; T[2, 2, 2] := 5; W := _true;
     PRINT(X, Y[1], Z[2,3], N, T[2, 2, 2], W);
-'END'
-'EOP'
+_end
+_eop

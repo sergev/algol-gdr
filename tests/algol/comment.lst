@@ -1,16 +1,16 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'COMMENT' A COMMENT BEFORE THE PROGRAM;
-     2.     'BEGIN'
-     3.         'COMMENT' A COMMENT IN A BLOCK, WITH 'BEGIN' AND 'END' INSIDE;
-     4.         'INTEGER' I;
+     1.     _comment A COMMENT BEFORE THE PROGRAM;
+     2.     _begin
+     3.         _comment A COMMENT IN A BLOCK, WITH _begin AND _end INSIDE;
+     4.         _integer I;
      5.         I := 1;
-     6.         'BEGIN'
+     6.         _begin
      7.             I := 2
-     8.         'END' THIS TEXT AFTER END IS A COMMENT;
+     8.         _end THIS TEXT AFTER END IS A COMMENT;
      9.         ;;
-    10.         PRINT(I); 'COMMENT' AFTER A STATEMENT;
-    11.     'END'
-    12.     'EOP'
+    10.         PRINT(I); _comment AFTER A STATEMENT;
+    11.     _end
+    12.     _eop
 

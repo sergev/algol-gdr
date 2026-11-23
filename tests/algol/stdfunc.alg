@@ -1,7 +1,7 @@
-'BEGIN'
-    'COMMENT' STANDARD FUNCTIONS;
+_begin
+    _comment STANDARD FUNCTIONS;
     PRINT(ABS(-2), ABS(2.5), SIGN(-3), SIGN(0), SIGN(0.5));
     PRINT(SQRT(16.0), SIN(0.0), COS(0.0), ARCTAN(0.0));
     PRINT(EXP(0.0), LN(1.0), ENTIER(2.5), ENTIER(-2.5));
-'END'
-'EOP'
+_end
+_eop

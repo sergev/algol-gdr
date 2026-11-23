@@ -94,7 +94,7 @@ Sym single(char32_t c)
     }
 }
 
-// Keywords, in lower case; 'comment' is ERROR, the lexer skips it.
+// Keywords, in lower case, without '_'; _comment is ERROR, the lexer skips it.
 const std::map<std::string, Sym> &keywords()
 {
     static const std::map<std::string, Sym> table = {
@@ -182,37 +182,37 @@ const char *to_string(Sym s)
     static const char *const names[] = {
         "identifier",    "integer constant",
         "real constant", "octal constant",
-        "string",        "'common'",
+        "string",        "_common",
         "'+'",           "'-'",
         "'*'",           "'/'",
         "'**'",          "'<'",
         "'<='",          "'='",
         "'!='",          "'>='",
-        "'>'",           "'not'",
-        "'and'",         "'or'",
-        "'impl'",        "'equiv'",
+        "'>'",           "_not",
+        "_and",          "_or",
+        "_impl",         "_equiv",
         "'('",           "')'",
         "'['",           "']'",
         "','",           "':'",
         "';'",           "':='",
-        "'goto'",        "'if'",
-        "'then'",        "'else'",
-        "'for'",         "'do'",
-        "'step'",        "'until'",
-        "'while'",       "'begin'",
-        "'end'",         "'own'",
-        "'boolean'",     "'integer'",
-        "'real'",        "'string'",
-        "'bits'",        "'array'",
-        "'switch'",      "'procedure'",
-        "'label'",       "'value'",
-        "'true'",        "'false'",
-        "'algol'",       "'code'",
-        "'read'",        "'print'",
-        "'punch'",       "'write'",
-        "'decode'",      "'encode'",
-        "'rewind'",      "'backspace'",
-        "'endfile'",     "'eop'",
+        "_goto",         "_if",
+        "_then",         "_else",
+        "_for",          "_do",
+        "_step",         "_until",
+        "_while",        "_begin",
+        "_end",          "_own",
+        "_boolean",      "_integer",
+        "_real",         "_string",
+        "_bits",         "_array",
+        "_switch",       "_procedure",
+        "_label",        "_value",
+        "_true",         "_false",
+        "_algol",        "_code",
+        "_read",         "_print",
+        "_punch",        "_write",
+        "_decode",       "_encode",
+        "_rewind",       "_backspace",
+        "_endfile",      "_eop",
         "error",         "end of file",
     };
     static_assert(sizeof(names) / sizeof(names[0]) == size_t(Sym::END_OF_FILE) + 1);
@@ -303,16 +303,25 @@ Token Lexer::scan()
     if (after_end_)
         return after_end();
     if (is_letter(c))
-        return name_or_keyword(false);
+        return name();
     if (is_digit(c) || c == TEN)
         return number(false);
     switch (c) {
+    case '_':
+        step();
+        if (!is_letter(ch_ = text_[col_]))
+            return error("Illegal character '_'");
+        return keyword_symbol();
     case QUOTE:
         c = advance();
         if (c == QUOTE)
             return string();
-        if (is_letter(c))
-            return name_or_keyword(true);
+        if (is_letter(c)) {
+            std::string w = word(true);
+            if (text_[col_] == QUOTE)
+                step();
+            return error("Write a keyword as _" + w + ", not in quotes");
+        }
         if (is_digit(c))
             return octal();
         if (c == '(' && advance() == QUOTE)
@@ -363,31 +372,34 @@ Token Lexer::scan()
     }
 }
 
-std::string Lexer::word()
+// Letters and digits from ch_; blanks inside are skipped, unless raw.
+std::string Lexer::word(bool raw)
 {
     std::string w;
+    skip_blanks_ = !raw;
     for (char32_t c = ch_; is_letter(c) || is_digit(c); c = advance())
         append_utf8(w, c);
+    skip_blanks_ = true;
     return w;
 }
 
-// A name of letters and digits; in quotes, a keyword.
-Token Lexer::name_or_keyword(bool quoted)
+Token Lexer::name()
 {
-    int start        = line_;
-    std::string name = word();
-    if (!quoted) {
-        Token t = make(Sym::IDENT);
-        t.line  = start;
-        t.text  = name;
-        return t;
-    }
-    if (ch_ != QUOTE)
-        return error("Missing closing quote of '" + name + "'");
-    step();
-    const Sym *sym = keyword(name);
+    int start = line_;
+    Token t   = make(Sym::IDENT);
+    t.text    = word(false);
+    t.line    = start;
+    return t;
+}
+
+// A keyword: _ and letters and digits, in any case, up to a blank.
+Token Lexer::keyword_symbol()
+{
+    int start      = line_;
+    std::string kw = word(true);
+    const Sym *sym = keyword(kw);
     if (!sym)
-        return error("Unknown keyword '" + name + "'");
+        return error("Unknown keyword _" + kw);
     switch (*sym) {
     case Sym::ERROR:
         comment();
@@ -405,11 +417,11 @@ Token Lexer::name_or_keyword(bool quoted)
     return t;
 }
 
-// 'comment' … ';' (or '.,').
+// _comment … ';' (or '.,').
 void Lexer::comment()
 {
     if (last_ != Sym::SEMICOLON && last_ != Sym::BEGIN)
-        diag_.error(line_, "'comment' must follow ';' or 'begin'");
+        diag_.error(line_, "_comment must follow ';' or _begin");
     char32_t c = fetch();
     for (;;) {
         if (c == ';')
@@ -425,7 +437,7 @@ void Lexer::comment()
     step();
 }
 
-// The text after 'end', up to ';', 'end', 'else' or 'eop'. Letters and digits
+// The text after _end, up to ';', _end, _else or _eop. Letters and digits
 // are a comment; anything else gets a warning.
 Token Lexer::after_end()
 {
@@ -440,28 +452,24 @@ Token Lexer::after_end()
         } else if (is_letter(c) || is_digit(c)) {
             c = advance();
             continue;
-        } else if (c == QUOTE) {
-            c = advance();
-            if (is_letter(c)) {
-                int start      = line_;
-                std::string kw = word();
-                c              = ch_;
-                if (c == QUOTE) {
-                    const Sym *sym = keyword(kw);
-                    if (sym && (*sym == Sym::END || *sym == Sym::ELSE || *sym == Sym::EOP)) {
-                        step();
-                        warned_ = false;
-                        if (*sym != Sym::END)
-                            after_end_ = false;
-                        Token t = make(*sym);
-                        t.line  = start;
-                        return t;
-                    }
-                }
+        } else if (c == '_' && is_letter(text_[col_ + 1])) {
+            step();
+            ch_            = text_[col_];
+            int start      = line_;
+            const Sym *sym = keyword(word(true));
+            if (sym && (*sym == Sym::END || *sym == Sym::ELSE || *sym == Sym::EOP)) {
+                warned_ = false;
+                if (*sym != Sym::END)
+                    after_end_ = false;
+                Token t = make(*sym);
+                t.line  = start;
+                return t;
             }
+            c = fetch();
+            continue;
         }
         if (!warned_) {
-            diag_.warning(line_, "Text after 'end' is skipped up to ';', 'end', 'else' or 'eop'");
+            diag_.warning(line_, "Text after _end is skipped up to ';', _end, _else or _eop");
             warned_ = true;
         }
         if (c == ';')
@@ -625,7 +633,7 @@ Token Lexer::number(bool point)
 }
 
 //
-// 'common' /block/ name, name(d1, d2, d3), … ; read here as one symbol.
+// _common /block/ name, name(d1, d2, d3), … ; read here as one symbol.
 //
 Token Lexer::common()
 {
@@ -634,7 +642,7 @@ Token Lexer::common()
         while (ch_ != ';')
             advance();
         step();
-        Token t = error("'common': " + message);
+        Token t = error("_common: " + message);
         t.line  = start;
         return t;
     };
@@ -642,13 +650,11 @@ Token Lexer::common()
     char32_t c = fetch();
     if (c != '/')
         return bad("'/' expected");
-    std::string name;
     while ((c = advance()) != '/') {
         if (c == ';')
             return bad("'/' expected after the block name");
-        append_utf8(name, c);
+        append_utf8(block->name, c);
     }
-    block->name = name;
     for (;;) {
         CommonBlock::Element e;
         c = advance();

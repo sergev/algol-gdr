@@ -1,11 +1,11 @@
-'COMMENT' CALLS OF 'CODE' PROCEDURES, READ AND LOAD, A LOOP THAT
+_comment CALLS OF _code PROCEDURES, READ AND LOAD, A LOOP THAT
     NEVER ENDS;
-'CODE': CP;
-'BEGIN' 'INTEGER' I; 'REAL' X;
-  'INTEGER' 'ARRAY' IA[1:3];
+_code: CP;
+_begin _integer I; _real X;
+  _integer _array IA[1:3];
   CP(IA[1]); CP(IA); CP(CP); CP(''S''+''T'');
   READ(I); READ(IA[1]); READ(IA); READ(LENGTH);
   LOAD(I);
-  'FOR' I := 1 'STEP' 1 'UNTIL' I 'DO' X := 1
-'END'
-'EOP'
+  _for I := 1 _step 1 _until I _do X := 1
+_end
+_eop

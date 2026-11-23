@@ -1,3 +1,3 @@
-'BEGIN'
-'END'
-'EOP'
+_begin
+_end
+_eop

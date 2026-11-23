@@ -1,7 +1,7 @@
-err_common.alg:2: error: 'common': '/' expected
-err_common.alg:4: error: 'common': ',' or ';' expected
-err_common.alg:5: error: 'common': ',' or ';' expected
-err_common.alg:6: error: 'common': ',' or ';' expected
-err_common.alg:8: error: Expected a statement, found 'real'
+err_common.alg:2: error: _common: '/' expected
+err_common.alg:4: error: _common: ',' or ';' expected
+err_common.alg:5: error: _common: ',' or ';' expected
+err_common.alg:6: error: _common: ',' or ';' expected
+err_common.alg:8: error: Expected a statement, found _real
 err_common.alg:7: error: Undeclared identifier 'W'
 err_common.alg:9: error: Undeclared identifier 'X'

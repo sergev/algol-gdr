@@ -84,11 +84,14 @@ Detailed plan: [Roadmap.md](Roadmap.md).
 
 ## Source language
 
-UTF-8 text. Keywords in quotes, in any case (`'begin'`, `'EOP'` ends the program; `′` is a
-quote too), strings in `''…''` or `'('…')'` (`'ddd'` inside: a character by its octal code
-point), word operators like `'le'`, `'and'`, `'power'`. Messages and the AST give keywords in
-lower case. Identifiers: Latin, Greek or Cyrillic letters and digits, any length, case-sensitive,
-kept as written; standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column
-limit. The exponent sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧`
-(or `&`), `∨`, `⊃`, `≡`. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case
-only, names by their first 6 characters.
+UTF-8 text. Keywords are `_` and a word, in any case (`_begin`, `_eop` ends the program); a
+blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in `''…''`
+or `'('…')'` (`'ddd'` inside: a character by its octal code point; `′` is a quote too), octal
+constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give
+keywords in lower case, messages as `_begin`. Blanks are ignored inside names and numbers
+(`noun phrase` is `nounphrase`). The original wrote keywords in quotes: `'BEGIN'`. Identifiers:
+Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as written;
+standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column limit. The exponent
+sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
+`≡`. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
+first 6 characters.

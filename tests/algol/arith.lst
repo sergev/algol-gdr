@@ -1,18 +1,18 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'BEGIN'
-     2.         'COMMENT' INTEGER AND REAL ARITHMETIC, PRECEDENCE, POWER;
-     3.         'INTEGER' I, J, K;
-     4.         'REAL' X, Y;
+     1.     _begin
+     2.         _comment INTEGER AND REAL ARITHMETIC, PRECEDENCE, POWER;
+     3.         _integer I, J, K;
+     4.         _real X, Y;
      5.         I := 7; J := 3;
      6.         PRINT(I + J, I - J, I * J, I / J);
      7.         PRINT(I + J * 2, (I + J) * 2, -I + J, I - J - 1);
-     8.         PRINT(I 'POWER' 2, 2 'POWER' 10, 2.0 'POWER' (-1));
+     8.         PRINT(I _power 2, 2 _power 10, 2.0 _power (-1));
      9.         X := 1.5; Y := -0.25;
     10.         PRINT(X + Y, X * Y, X / Y, X - Y);
     11.         K := X + 0.6;
     12.         PRINT(K, X + I, 1.0⏨3, 2.5⏨-2);
-    13.     'END'
-    14.     'EOP'
+    13.     _end
+    14.     _eop
 

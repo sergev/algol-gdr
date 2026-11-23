@@ -1,10 +1,10 @@
 A L G O L - Г Д P
     (7.01.82)
 
-     1.     'code':'real'rndm;
-     2.     'code':terin;
-     3.     'begin'
-     4.         'comment' From: github.com/cwi-software-archive/Algol60
+     1.     _code:_real rndm;
+     2.     _code:terin;
+     3.     _begin
+     4.         _comment From: github.com/cwi-software-archive/Algol60
      5.         Jungle Generator prints random sentences in English as a demo.
      6.         Author: C.H.A. Koster, Mathematical Centre.
      7.         Date: 1964 or earlier.
@@ -14,267 +14,267 @@ A L G O L - Г Д P
     11.         The program refers to "the world famous X8 computer".
     12.         The X8 may be of later date than the original program.;
     13.
-    14.         'real' rr;
-    15.         'integer' input;
+    14.         _real rr;
+    15.         _integer input;
     16.
-    17.         'real' 'procedure' R;
-    18.         'begin'
+    17.         _real _procedure R;
+    18.         _begin
     19.             R := rr := rndm(-1)
-    20.         'end';
+    20.         _end;
     21.
-    22.         'procedure' P(u);
-    23.             'string' u;
+    22.         _procedure P(u);
+    23.             _string u;
     24.         print(u);
     25.
-    26.         'procedure' sentence;
-    27.         'begin'
+    26.         _procedure sentence;
+    27.         _begin
     28.             subject;
     29.             predicate;
-    30.             'if' R < .2 'then'
+    30.             _if R < .2 _then
     31.                 nextsentence
-    32.         'end';
+    32.         _end;
     33.
-    34.         'procedure' nextsentence;
-    35.         'begin'
+    34.         _procedure nextsentence;
+    35.         _begin
     36.             connective;
     37.             sentence
-    38.         'end';
+    38.         _end;
     39.
-    40.         'procedure' connective;
-    41.             'if' R <.3 'then'
+    40.         _procedure connective;
+    41.             _if R <.3 _then
     42.                 P('' and'')
-    43.             'else' 'if' rr < .55 'then'
+    43.             _else _if rr < .55 _then
     44.                 P('' but'')
-    45.             'else' 'if' rr <.8 'then'
+    45.             _else _if rr <.8 _then
     46.                 P('' because'')
-    47.             'else'
+    47.             _else
     48.                 P('' though'');
     49.
-    50.         'procedure' subject;
-    51.             'if' R < .8 'then'
+    50.         _procedure subject;
+    51.             _if R < .8 _then
     52.                 subst
-    53.             'else'
+    53.             _else
     54.                 subname;
     55.
-    56.         'procedure' subst;
-    57.         'begin'
+    56.         _procedure subst;
+    57.         _begin
     58.             article;
     59.             noun phrase;
-    60.             'if' R < .2 'then'
+    60.             _if R < .2 _then
     61.                 property
-    62.         'end';
+    62.         _end;
     63.
-    64.         'procedure' property;
-    65.             'if' R <.25 'then'
+    64.         _procedure property;
+    65.             _if R <.25 _then
     66.                 P('' with blue eyes'')
-    67.             'else' 'if' rr < .5 'then'
+    67.             _else _if rr < .5 _then
     68.                 P('' in a mink coat'')
-    69.             'else'
-    70.                 'begin'
+    69.             _else
+    70.                 _begin
     71.                     P('' from'');
-    72.                     'if' R < .25 'then'
+    72.                     _if R < .25 _then
     73.                         P('' Australia'')
-    74.                     'else' 'if' rr < .5 'then'
+    74.                     _else _if rr < .5 _then
     75.                         P('' Switserland'')
-    76.                     'else' 'if' rr <.75 'then'
+    76.                     _else _if rr <.75 _then
     77.                         P('' Siberia'')
-    78.                     'else'
+    78.                     _else
     79.                         P('' Cleveland (Ohio)'')
-    80.                 'end';
+    80.                 _end;
     81.
-    82.         'procedure' noun phrase;
-    83.             'if' R < .25 'then'
-    84.                 'begin'
+    82.         _procedure noun phrase;
+    83.             _if R < .25 _then
+    84.                 _begin
     85.                     adje;
     86.                     noun phrase
-    87.                 'end'
-    88.             'else'
+    87.                 _end
+    88.             _else
     89.                 nounpart;
     90.
-    91.         'procedure' nounpart;
-    92.             'if' R < .25 'then'
-    93.                 'begin'
+    91.         _procedure nounpart;
+    92.             _if R < .25 _then
+    93.                 _begin
     94.                     noun;
     95.                     relsentence
-    96.                 'end'
-    97.             'else'
+    96.                 _end
+    97.             _else
     98.                 noun;
     99.
-   100.         'procedure' predicate;
-   101.             'if' R < .2 'then'
-   102.                 'begin'
+   100.         _procedure predicate;
+   101.             _if R < .2 _then
+   102.                 _begin
    103.                     modifier;
    104.                     modpredicate
-   105.                 'end'
-   106.             'else' 'if' rr < .5 'then'
+   105.                 _end
+   106.             _else _if rr < .5 _then
    107.                 quality
-   108.             'else'
+   108.             _else
    109.                 modpredicate;
    110.
-   111.         'procedure' modpredicate;
-   112.         'begin'
+   111.         _procedure modpredicate;
+   112.         _begin
    113.             verb;
    114.             object
-   115.         'end';
+   115.         _end;
    116.
-   117.         'procedure' relsentence;
-   118.         'begin'
+   117.         _procedure relsentence;
+   118.         _begin
    119.             P('', that'');
-   120.             'if' R < .4 'then'
-   121.                 'begin'
+   120.             _if R < .4 _then
+   121.                 _begin
    122.                     subject;
    123.                     verb
-   124.                 'end'
-   125.             'else' 'if' rr < .6 'then'
+   124.                 _end
+   125.             _else _if rr < .6 _then
    126.                 quality
-   127.             'else'
+   127.             _else
    128.                 predicate
-   129.         'end';
+   129.         _end;
    130.
-   131.         'procedure' object;
-   132.             'if' R < .8 'then'
+   131.         _procedure object;
+   132.             _if R < .8 _then
    133.                 subst
-   134.             'else'
+   134.             _else
    135.                 objname;
    136.
-   137.         'procedure' quality;
-   138.         'begin'
-   139.                 'if' R < .45 'then'
+   137.         _procedure quality;
+   138.         _begin
+   139.                 _if R < .45 _then
    140.                     P('' was'')
-   141.                 'else'
+   141.                 _else
    142.                     P('' is'');
-   143.                 'if' R < .4 'then'
+   143.                 _if R < .4 _then
    144.                     adje
-   145.                 'else'
+   145.                 _else
    146.                     object
-   147.         'end';
+   147.         _end;
    148.
-   149.         'procedure' adje;
-   150.             'if' R < .2 'then'
-   151.                 'begin'
+   149.         _procedure adje;
+   150.             _if R < .2 _then
+   151.                 _begin
    152.                     adverb;
    153.                     adjective
-   154.                 'end'
-   155.             'else'
+   154.                 _end
+   155.             _else
    156.                 adjective;
    157.
-   158.         'procedure' subname;
-   159.             'if' R < .2 'then'
+   158.         _procedure subname;
+   159.             _if R < .2 _then
    160.                 P('' he'')
-   161.             'else' 'if' rr < .4 'then'
+   161.             _else _if rr < .4 _then
    162.                 P('' Jim'')
-   163.             'else' 'if' rr < .6 'then'
+   163.             _else _if rr < .6 _then
    164.                 P('' Mary'')
-   165.             'else' 'if' rr < .8 'then'
+   165.             _else _if rr < .8 _then
    166.                 P('' she'')
-   167.             'else' 'if' rr < .9 'then'
+   167.             _else _if rr < .9 _then
    168.                 P('' David Livingstone'')
-   169.             'else'
+   169.             _else
    170.                 P('' the world Famous X8 Computer'');
    171.
-   172.         'procedure' objname;
-   173.             'if' R < .2 'then'
+   172.         _procedure objname;
+   173.             _if R < .2 _then
    174.                 P('' him'')
-   175.             'else' 'if' rr < .4 'then'
+   175.             _else _if rr < .4 _then
    176.                 P('' Jim'')
-   177.             'else' 'if' rr < .6 'then'
+   177.             _else _if rr < .6 _then
    178.                 P('' Mary'')
-   179.             'else' 'if' rr < .8 'then'
+   179.             _else _if rr < .8 _then
    180.                 P('' her'')
-   181.             'else' 'if' rr < .95 'then'
+   181.             _else _if rr < .95 _then
    182.                 P('' David Livingstone'')
-   183.             'else'
+   183.             _else
    184.                 P('' a computer'');
    185.
-   186.         'procedure' modifier;
-   187.             'if' R < .33 'then'
+   186.         _procedure modifier;
+   187.             _if R < .33 _then
    188.                 P('' always'')
-   189.             'else' 'if' rr < .67 'then'
+   189.             _else _if rr < .67 _then
    190.                 P('' often'')
-   191.             'else'
+   191.             _else
    192.                 P('' never'');
    193.
-   194.         'procedure' article;
-   195.             'if' R < .35 'then'
+   194.         _procedure article;
+   195.             _if R < .35 _then
    196.                 P('' a'')
-   197.             'else' 'if' rr < .75 'then'
+   197.             _else _if rr < .75 _then
    198.                 P('' the'')
-   199.             'else' 'if' rr < .87 'then'
+   199.             _else _if rr < .87 _then
    200.                 P('' this'')
-   201.             'else'
+   201.             _else
    202.                 P('' that'');
    203.
-   204.         'procedure' noun;
-   205.             'if' R < .17 'then'
+   204.         _procedure noun;
+   205.             _if R < .17 _then
    206.                 P('' boy'')
-   207.             'else' 'if' rr < .33 'then'
+   207.             _else _if rr < .33 _then
    208.                 P('' tree'')
-   209.             'else' 'if' rr < .5 'then'
+   209.             _else _if rr < .5 _then
    210.                 P('' girl'')
-   211.             'else' 'if' rr < .67 'then'
+   211.             _else _if rr < .67 _then
    212.                 P('' bear'')
-   213.             'else' 'if' rr < .83 'then'
+   213.             _else _if rr < .83 _then
    214.                 P('' hunter'')
-   215.             'else'
+   215.             _else
    216.                 P('' lamb'');
    217.
-   218.         'procedure' adjective;
-   219.             'if' R < .2 'then'
+   218.         _procedure adjective;
+   219.             _if R < .2 _then
    220.                 P('' little'')
-   221.             'else' 'if' rr < .4 'then'
+   221.             _else _if rr < .4 _then
    222.                 P('' nice'')
-   223.             'else' 'if' rr < .6 'then'
+   223.             _else _if rr < .6 _then
    224.                 P('' big'')
-   225.             'else' 'if' rr < .8 'then'
+   225.             _else _if rr < .8 _then
    226.                 P('' green'')
-   227.             'else'
+   227.             _else
    228.                 P('' bad'');
    229.
-   230.         'procedure' adverb;
-   231.             'if' R < .4 'then'
+   230.         _procedure adverb;
+   231.             _if R < .4 _then
    232.                 P('' very'')
-   233.             'else' 'if' rr < .6 'then'
+   233.             _else _if rr < .6 _then
    234.                 P('' extraordinarily'')
-   235.             'else'
+   235.             _else
    236.                 P('' rather'');
    237.
-   238.         'procedure' verb;
-   239.             'if' R < .45 'then'
-   240.                 'begin'
-   241.                     'if' R < .2 'then'
+   238.         _procedure verb;
+   239.             _if R < .45 _then
+   240.                 _begin
+   241.                     _if R < .2 _then
    242.                         P('' saw'')
-   243.                     'else' 'if' rr < .4 'then'
+   243.                     _else _if rr < .4 _then
    244.                         P('' liked'')
-   245.                     'else' 'if' rr < .6 'then'
+   245.                     _else _if rr < .6 _then
    246.                         P('' dreamt about'')
-   247.                     'else' 'if' rr < .7 'then'
+   247.                     _else _if rr < .7 _then
    248.                         P('' smelled'')
-   249.                     'else' 'if' rr < .8 'then'
+   249.                     _else _if rr < .8 _then
    250.                         P('' ate'')
-   251.                     'else'
+   251.                     _else
    252.                         P('' had'')
-   253.                 'end'
-   254.             'else'
-   255.                 'begin'
-   256.                     'if' R < .2 'then'
+   253.                 _end
+   254.             _else
+   255.                 _begin
+   256.                     _if R < .2 _then
    257.                         P('' sees'')
-   258.                     'else' 'if' rr < .4 'then'
+   258.                     _else _if rr < .4 _then
    259.                         P('' likes'')
-   260.                     'else' 'if' rr < .6 'then'
+   260.                     _else _if rr < .6 _then
    261.                         P('' dreams about'')
-   262.                     'else' 'if' rr < .7 'then'
+   262.                     _else _if rr < .7 _then
    263.                         P('' eats'')
-   264.                     'else' 'if' rr < .8 'then'
+   264.                     _else _if rr < .8 _then
    265.                         P('' smells'')
-   266.                     'else'
+   266.                     _else
    267.                         P('' has'')
-   268.                 'end';
+   268.                 _end;
    269.     NZ:
    270.         sentence;
    271.         print(newline);
    272.
    273.         terin(input, 1);
-   274.         'goto' NZ
-   275.     'end'
-   276.     'eop'
+   274.         _goto NZ
+   275.     _end
+   276.     _eop
 

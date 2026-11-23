@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// The lexer: numbers, strings, keywords, comments, 'common', errors.
+// The lexer: numbers, strings, keywords, comments, _common, errors.
 //
 #include "lexer.h"
 
@@ -43,8 +43,8 @@ std::vector<Sym> syms(const std::string &text)
 
 TEST(Lexer, numbers)
 {
-    // Blanks do not separate symbols.
-    auto t = tokens("1 2, 1.5, .25, 1⏨3, ⏨-2, 3.,'EOP'");
+    // Blanks do not separate digits.
+    auto t = tokens("1 2, 1.5, .25, 1⏨3, ⏨-2, 3.,_eop");
     ASSERT_EQ(t.size(), 13u);
     EXPECT_EQ(t[0].sym, Sym::INTEGER_CONST);
     EXPECT_EQ(t[0].ival, 12);
@@ -59,7 +59,7 @@ TEST(Lexer, numbers)
 
 TEST(Lexer, strings)
 {
-    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750'''\n'EOP'");
+    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750'''\n_eop");
     ASSERT_EQ(t.size(), 4u);
     EXPECT_EQ(t[0].text, "A b");
     EXPECT_EQ(t[1].text, "Ж");
@@ -72,37 +72,44 @@ TEST(Lexer, strings)
 
 TEST(Lexer, keywords_and_names)
 {
-    EXPECT_EQ(syms("'BEGIN' 'INTEGER' ALPHA1; 'END' 'EOP'"),
+    EXPECT_EQ(syms("_begin _integer ALPHA1; _end _eop"),
               (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::SEMICOLON, Sym::END,
                                  Sym::EOP }));
-    EXPECT_EQ(syms("'begin' 'Integer' x 'end' 'eop'"),
+    EXPECT_EQ(syms("_begin _Integer x _END _eop"),
               (std::vector<Sym>{ Sym::BEGIN, Sym::INTEGER, Sym::IDENT, Sym::END, Sym::EOP }));
-    auto t = tokens("AbcDefGhij, Счёт1 'EOP'");
+    // A blank ends a keyword, not a name; '_' starts a keyword.
+    auto k = tokens("_real_array noun phrase[1:2]_eop");
+    ASSERT_EQ(k.size(), 9u);
+    EXPECT_EQ(k[0].sym, Sym::REAL);
+    EXPECT_EQ(k[1].sym, Sym::ARRAY);
+    EXPECT_EQ(k[2].text, "nounphrase");
+    EXPECT_EQ(k[8].sym, Sym::EOP);
+    auto t = tokens("AbcDefGhij, Счёт1 _eop");
     EXPECT_EQ(t[0].text, "AbcDefGhij");
     EXPECT_EQ(t[2].text, "Счёт1");
     EXPECT_EQ(
-        syms("A := B ** C (/ D /) 'LE' 'NOTEQUAL' 'EOP'"),
+        syms("A := B ** C (/ D /) _le _notequal _eop"),
         (std::vector<Sym>{ Sym::IDENT, Sym::ASSIGN, Sym::IDENT, Sym::POWER, Sym::IDENT,
                            Sym::LBRACKET, Sym::IDENT, Sym::RBRACKET, Sym::LE, Sym::NE, Sym::EOP }));
-    EXPECT_EQ(syms("¬A ∨ B ∧ C ⊃ D ≡ E ≤ F ≥ G ≠ H × I ↑ J 'EOP'"),
-              syms("'NOT'A 'OR' B 'AND' C 'IMPL' D 'EQUIV' E\n"
-                   "'LE' F 'GE' G 'NE' H * I 'POWER' J 'EOP'"));
+    EXPECT_EQ(syms("¬A ∨ B ∧ C ⊃ D ≡ E ≤ F ≥ G ≠ H × I ↑ J _eop"),
+              syms("_not A _or B _and C _impl D _equiv E\n"
+                   "_le F _ge G _ne H * I _power J _eop"));
 }
 
 TEST(Lexer, comment_and_after_end)
 {
-    const std::string text = "'BEGIN' 'COMMENT' ANY TEXT; X 'END' OF IT; 'END' + 'EOP'";
+    const std::string text = "_begin _comment ANY TEXT; X _end OF IT; _end + _eop";
     std::string messages;
     tokens(text, &messages);
     EXPECT_EQ(syms(text), (std::vector<Sym>{ Sym::BEGIN, Sym::IDENT, Sym::END, Sym::SEMICOLON,
                                              Sym::END, Sym::EOP }));
     EXPECT_EQ(messages,
-              "x.alg:1: warning: Text after 'end' is skipped up to ';', 'end', 'else' or 'eop'\n");
+              "x.alg:1: warning: Text after _end is skipped up to ';', _end, _else or _eop\n");
 }
 
 TEST(Lexer, common)
 {
-    auto t = tokens("'COMMON' /ABC/ X, Y(10), Z(2,3); 'EOP'");
+    auto t = tokens("_common /ABC/ X, Y(10), Z(2,3); _eop");
     ASSERT_EQ(t[0].sym, Sym::COMMON);
     const CommonBlock &b = *t[0].common;
     EXPECT_EQ(b.name, "ABC");
@@ -117,10 +124,11 @@ TEST(Lexer, common)
 TEST(Lexer, errors)
 {
     std::string messages;
-    auto t = tokens("A % 'FOO' 1.X\n''S'9'' 'EOP'", &messages);
+    auto t = tokens("A % _foo 'begin' 1.X\n''S'9'' _eop", &messages);
     EXPECT_EQ(messages,
               "x.alg:1: error: Illegal character '%'\n"
-              "x.alg:1: error: Unknown keyword 'FOO'\n"
+              "x.alg:1: error: Unknown keyword _foo\n"
+              "x.alg:1: error: Write a keyword as _begin, not in quotes\n"
               "x.alg:1: error: Malformed number\n"
               "x.alg:2: error: Bad character code in a string\n");
     EXPECT_EQ(t.back().sym, Sym::END_OF_FILE);
