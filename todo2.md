@@ -31,6 +31,14 @@ reference for the native runs.
 - **E7** Build the AST from the pass-2 stream (`ast_builder.cpp`), a stack machine over the
   postfix items. A `--dump-ast` option prints it; goldens `.ast` for all programs.
 
+- **E7.1** Front end without BESM-6 addresses: passes 1 and 2 on real data structures —
+  declarations as objects in a scope tree, the name table as a symbol table with scopes,
+  constants and strings in their own tables — instead of D-list addresses, name slots,
+  the cells at 02000…/04000…/016111… and the continuation addresses of pass 2. Stream
+  operands become indexes into these tables, so `.s1`/`.s2` give way to the `.ast` goldens;
+  `.lst` must not change, `.sym` prints by name. The size limits of the original (hash
+  table, constant page, D-list) go.
+
 ### Driver and runtime
 
 - **E8** Command line as `blang`: default output is an executable (`file` for `file.alg`);
