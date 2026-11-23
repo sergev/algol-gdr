@@ -1,4 +1,5 @@
 add_library(algolrt STATIC
+    arith.c
     main.c
     print.c
 )

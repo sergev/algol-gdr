@@ -146,10 +146,11 @@ Value Function::select(const Value &c, const Value &a, const Value &b)
     return { a.type, t };
 }
 
-Value Function::stack_alloc(const std::string &type, int64_t count, int align)
+Value Function::stack_alloc(const std::string &type, int64_t count, int align,
+                            const std::string &label)
 {
     // Allocas go to the entry block, so that loops do not grow the stack.
-    std::string t    = tmp();
+    std::string t    = label.empty() ? tmp() : "%" + label;
     std::string line = t + " = alloca " + type + ", i64 " + std::to_string(count) + ", align " +
                        std::to_string(align);
     auto &entry = blocks_.front()->lines_;

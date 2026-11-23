@@ -25,10 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E12** Expressions and assignment: constants, simple variables (locals as `alloca`,
-  globals of the outer block), arithmetic with integer/real conversion, `/` and `**` (the
-  runtime's `A/RHOCHI`, `A/IHOCHI`, `POWER` rules), relations, Boolean operators,
-  conditional expressions, multiple left parts, real-to-integer rounding (`A/RTOI`).
 - **E13** PRINT with `printf` on `stdout`, no line buffer of our own: integer `"%14" PRId64 " "`
   (15 columns as the original, wider for big values), real `"% .11e   "` (C's `e` kept:
   ` 1.00000000000e+00   `), boolean `"%-6s"` in lower case (`true  `, `false `), string as

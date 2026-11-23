@@ -19,6 +19,18 @@ _Noreturn void algol_error(const char *fmt, ...);
 _Noreturn void algol_stop(void);
 
 // PRINT.
+void algol_print_integer(int64_t v);
+void algol_print_real(double v);
+void algol_print_boolean(_Bool v);
+void algol_print_bits(int64_t v);
 void algol_print_string(const char *s);
+void algol_newline(void);
+void algol_newpage(void);
+
+// Exponentiation.
+int64_t algol_ipow(int64_t base, int64_t exp);
+double algol_rpow(double base, int64_t exp);
+double algol_power(double x, double y);
+int64_t algol_bits_shift(int64_t bits, int64_t n);
 
 #endif
