@@ -82,32 +82,59 @@ constexpr unsigned BOUNDS       = 02031;  // constant bounds of an array segment
 constexpr unsigned BOUND_LOOP   = 020176; // *0753B
 constexpr unsigned SET_POSITION = 017535; // *0312B
 constexpr unsigned DECL_END     = 017553; // *0330B
-constexpr unsigned NO_ASSIGNMENT = 017563; // format
-constexpr unsigned SLICE_CODE    = 022125; // 050
-constexpr unsigned STRING_DESC   = 022134; // a string's descriptor under STRING_MASK
-constexpr unsigned STRING_MASK   = 022111;
-constexpr unsigned IO_ARG        = 021122; // an argument of an I/O statement, through M12
-constexpr unsigned IO_ERROR      = 020437; // format: ILLEGAL ARGUMENT OF I/O STATEMENT
-constexpr unsigned BAD_INPUT     = 020502; // format: ILLEGAL INPUT OF
-constexpr unsigned IO_ITEMS      = 022126; // items of I/O statements: +0, +2, +4
-constexpr unsigned IO_073        = 022145;
-constexpr unsigned IO_101        = 022112;
-constexpr unsigned ELEMENTS      = 02024;  // the elements of the FOR list
-constexpr unsigned STEP_KIND     = 02023;  // the last item of a STEP element: 0137, 0140, 034
-constexpr unsigned FOR_ELEMENT   = 021466; // *2243B: through M11
-constexpr unsigned AFTER_STEP    = 021600; // *2355B
-constexpr unsigned EMIT_ITEM     = 017363; // *0140B: the item read, through M13
-constexpr unsigned ASSIGN_TEXT   = 022110; // ':='
-constexpr unsigned LEFT_PART     = 017702; // *0457B
-constexpr unsigned AFTER_LEFT    = 017720; // *0475B
-constexpr unsigned NEXT_LEFT     = 017736; // *0513B
-constexpr unsigned LEFT_COUNT    = 017737; // *0514B
-constexpr unsigned BAD_LEFT      = 017757; // format: ILLEGAL LEFT PART OR INPUT ELEMENT
-constexpr unsigned NOT_DECLARED  = 017311; // text, name at +010
-constexpr unsigned WRONG_ORDER   = 017322; // text, name at +010
-constexpr unsigned INCORRECT     = 022051; // text up to 022056
-constexpr unsigned SCRATCH       = 017333; // *0110B
-constexpr unsigned POSITION_SRC  = 021670;
+constexpr unsigned NO_ASSIGNMENT     = 017563; // format
+constexpr unsigned SLICE_CODE        = 022125; // 050
+constexpr unsigned STRING_DESC       = 022134; // a string's descriptor under STRING_MASK
+constexpr unsigned STRING_MASK       = 022111;
+constexpr unsigned IO_ARG            = 021122; // an argument of an I/O statement, through M12
+constexpr unsigned IO_ERROR          = 020437; // format: ILLEGAL ARGUMENT OF I/O STATEMENT
+constexpr unsigned BAD_INPUT         = 020502; // format: ILLEGAL INPUT OF
+constexpr unsigned IO_ITEMS          = 022126; // items of I/O statements: +0, +2, +4
+constexpr unsigned IO_073            = 022145;
+constexpr unsigned IO_101            = 022112;
+constexpr unsigned ARGS2             = 02017;  // the second name of NO ACTUAL-FORMAL CORRESPONDENCE
+constexpr unsigned NO_CORRESPONDENCE = 020743; // format
+constexpr unsigned CORRESPONDENCE    = 021075; // by actual kind: 4-bit fields by formal kind
+constexpr unsigned LOOKUP            = 017377;
+constexpr unsigned CALL_HEAD         = 020625;
+constexpr unsigned ACTUAL_DONE       = 020643;
+constexpr unsigned ACTUAL_EMIT       = 020700;
+constexpr unsigned ACTUAL_IDENT      = 021013;
+constexpr unsigned THUNK_BODY        = 021062;
+constexpr unsigned THUNK_DESIGNATOR  = 021074;
+constexpr unsigned DESIGNATOR_THUNK  = 021071;
+constexpr unsigned CODE_CALL         = 021110;
+constexpr unsigned CODE_CALL_ARGS    = 021112;
+constexpr unsigned ARG_DESIGNATOR    = 021134;
+constexpr unsigned ARG_EXPRESSION    = 021140;
+constexpr unsigned ARG_LABEL         = 021145;
+constexpr unsigned ARG_RETURN        = 021150;
+constexpr unsigned ARG_COUNT         = 021151;
+constexpr unsigned LABEL_ARG         = 021154; // format: LABEL AS ARGUMENT OF NON-ALGOL CALL
+constexpr unsigned ARG_IDENT         = 021163;
+constexpr unsigned BAD_VALUE         = 021232; // format: ILLEGAL VALUE PARAMETER
+constexpr unsigned STD_END           = 021257;
+constexpr unsigned BAD_LENGTH        = 021267; // format: ILLEGAL ARGUMENT OF LENGTH
+constexpr unsigned BAD_PRINT         = 021306; // format: ILLEGAL ARGUMENT OF PRINT
+constexpr unsigned PRINT_COUNT       = 021324;
+constexpr unsigned READ_NEXT         = 021341;
+constexpr unsigned READ_COUNT        = 021342;
+constexpr unsigned ELEMENTS          = 02024;  // the elements of the FOR list
+constexpr unsigned STEP_KIND         = 02023;  // the last item of a STEP element: 0137, 0140, 034
+constexpr unsigned FOR_ELEMENT       = 021466; // *2243B: through M11
+constexpr unsigned AFTER_STEP        = 021600; // *2355B
+constexpr unsigned EMIT_ITEM         = 017363; // *0140B: the item read, through M13
+constexpr unsigned ASSIGN_TEXT       = 022110; // ':='
+constexpr unsigned LEFT_PART         = 017702; // *0457B
+constexpr unsigned AFTER_LEFT        = 017720; // *0475B
+constexpr unsigned NEXT_LEFT         = 017736; // *0513B
+constexpr unsigned LEFT_COUNT        = 017737; // *0514B
+constexpr unsigned BAD_LEFT          = 017757; // format: ILLEGAL LEFT PART OR INPUT ELEMENT
+constexpr unsigned NOT_DECLARED      = 017311; // text, name at +010
+constexpr unsigned WRONG_ORDER       = 017322; // text, name at +010
+constexpr unsigned INCORRECT         = 022051; // text up to 022056
+constexpr unsigned SCRATCH           = 017333; // *0110B
+constexpr unsigned POSITION_SRC      = 021670;
 
 constexpr Word HEADER         = 0'4000'0000'0000'0000; // D-list: a block header
 constexpr Word DESCRIPTOR     = 0'2000'0000'0000'0000;
@@ -123,6 +150,7 @@ constexpr Word RESULT_SET     = 0200000; // in a function's word after it: assig
 constexpr Word MANTISSA       = 0'0017'7777'7777'7777;
 constexpr Word HAS_ARRAYS     = 0100000;               // a block header: arrays declared
 constexpr Word FUNCTION       = 0'0360'0000'0000'0000; // a procedure's type
+constexpr Word VALUE_FORMAL   = 0'1000'0000'0000'0000;
 constexpr Word IN_COMMON_CLR  = 0'7770'0777'7777'7777;
 constexpr Word IN_COMMON      = 0'0001'0000'0000'0000;
 constexpr Word DIMENSIONS     = 0'0000'0000'0070'0000;
@@ -147,9 +175,9 @@ unsigned slot_of(Word w)
 // 01644, saving M8 and M13 as the original does.
 void common_message(Machine &m, unsigned text, Word name)
 {
-    m.mem[text + 010] = name;
-    m.mem[FLGEX]      = cyclic_add(m.mem[FLGEX], 1);
-    m.acc             = m.mem[FLGEX];
+    m.store((text + 010) & 077777, name);
+    m.store(FLGEX, cyclic_add(m.mem[FLGEX], 1));
+    m.acc = m.mem[FLGEX];
     m.push(m.acc);
     m.push(m.M[8]);
     m.push(m.M[13]);
@@ -174,9 +202,9 @@ unsigned after_message(Machine &m)
     m.acc = m.mem[REPORTED];
     m.rmr = m.acc;
     if (!m.acc) {
-        m.acc           = 1;
-        m.mem[FLGEX]    = 1;
-        m.mem[REPORTED] = 1;
+        m.acc = 1;
+        m.store(FLGEX, 1);
+        m.store(REPORTED, 1);
     }
     m.set_logical();
     return m.M[8];
@@ -208,9 +236,9 @@ unsigned message_name(Machine &m)
     m.push(m.acc);
     m.extracode(070, 7, SWAP_IN);
     m.xta(Machine::SP, 0);
-    m.mem[ARGS]     = m.acc;
-    m.acc           = 0;
-    m.mem[ARGS + 1] = 0;
+    m.store(ARGS, m.acc);
+    m.acc = 0;
+    m.store(ARGS + 1, 0);
     return message(m);
 }
 
@@ -279,8 +307,8 @@ unsigned lookup(Machine &m)
     m.set_logical();
     m.set_m(4, unsigned(m.acc));
     if (!m.M[4]) {
-        m.acc                 = 1;
-        m.mem[NAMES + m.M[3]] = 1;
+        m.acc = 1;
+        m.store((NAMES + m.M[3]) & 077777, 1);
         m.set_m(13, UNDECLARED);
         return message_name(m);
     }
@@ -310,7 +338,7 @@ unsigned lookup(Machine &m)
 unsigned open_scope(Machine &m)
 {
     m.acc &= 07777;
-    m.mem[BLOCK_END] = m.acc;
+    m.store(BLOCK_END, m.acc);
     for (;;) {
         m.set_m(11, m.M[11] + 1);
         for (;;) {
@@ -329,9 +357,9 @@ unsigned open_scope(Machine &m)
         m.set_m(6, unsigned(d));
         Word prev = m.mem[NAMES + m.M[6]];
         m.set_m(4, unsigned(prev));
-        m.mem[m.M[11]]        = (d & RECORD_CLR) | ((prev << 20) & WORD_MASK);
-        m.mem[NAMES + m.M[6]] = m.M[11];
-        m.acc                 = m.M[3];
+        m.store((m.M[11]) & 077777, (d & RECORD_CLR) | ((prev << 20) & WORD_MASK));
+        m.store((NAMES + m.M[6]) & 077777, m.M[11]);
+        m.acc = m.M[3];
         m.set_m(13, 017470);
         inside(m);
         m.rmr = m.acc;
@@ -361,7 +389,7 @@ unsigned close_scope(Machine &m)
 {
     m.acc = m.mem[BLOCK];
     m.set_m(11, unsigned(m.acc));
-    m.mem[BLOCK_END] = m.mem[m.M[11]] & 07777;
+    m.store(BLOCK_END, m.mem[m.M[11]] & 07777);
     for (;;) {
         m.set_m(11, m.M[11] + 1);
         for (;;) {
@@ -378,8 +406,8 @@ unsigned close_scope(Machine &m)
         }
         Word d = m.mem[m.M[11]];
         m.set_m(6, unsigned(d));
-        m.acc                 = (d >> 20) & 07777;
-        m.mem[NAMES + m.M[6]] = m.acc;
+        m.acc = (d >> 20) & 07777;
+        m.store((NAMES + m.M[6]) & 077777, m.acc);
     }
 }
 
@@ -392,16 +420,16 @@ unsigned close_scope(Machine &m)
 unsigned end_item(Machine &m)
 {
     m.push(m.mem[BLOCK]);
-    m.acc        = m.M[3];
-    m.mem[BLOCK] = m.acc;
-    m.acc        = m.mem[m.M[3]];
-    m.rau        = 010;
-    m.rmr        = m.acc;
+    m.acc = m.M[3];
+    m.store(BLOCK, m.acc);
+    m.acc = m.mem[m.M[3]];
+    m.rau = 010;
+    m.rmr = m.acc;
     if (m.acc & BIT48) {
         m.push(m.mem[DLIST_TOP]);
-        m.acc            = m.M[3];
-        m.mem[DLIST_TOP] = m.acc;
-        m.acc            = m.mem[(m.M[Machine::SP] - 1) & 077777];
+        m.acc = m.M[3];
+        m.store(DLIST_TOP, m.acc);
+        m.acc = m.mem[(m.M[Machine::SP] - 1) & 077777];
         m.set_logical();
         m.set_m(14, m.M[1]);
         m.call(EMIT_SHIFTED, 13, 017515);
@@ -426,15 +454,15 @@ unsigned begin_item(Machine &m)
     m.xta(Machine::SP, 0);
     m.rmr = m.acc;
     if (m.acc) {
-        m.mem[DLIST_TOP] = m.acc;
-        m.acc            = m.mem[BLOCK];
+        m.store(DLIST_TOP, m.acc);
+        m.acc = m.mem[BLOCK];
         m.set_m(14, m.M[1]);
         m.call(EMIT_SHIFTED, 13, 017525);
     }
     m.set_m(12, 017526);
     close_scope(m);
     m.xta(Machine::SP, 0);
-    m.mem[BLOCK] = m.acc;
+    m.store(BLOCK, m.acc);
     m.set_m(13, AFTER_STMT);
     return MAIN_LOOP;
 }
@@ -481,7 +509,7 @@ unsigned proc_operand(Machine &m)
         return m.M[13];
     m.acc ^= BIT39;
     m.set_logical();
-    m.mem[m.M[4]] = m.acc;
+    m.store((m.M[4]) & 077777, m.acc);
     return m.M[13];
 }
 
@@ -544,8 +572,8 @@ unsigned identifier(Machine &m)
         inside(m);
         m.rmr = m.acc;
         if (!m.acc) {
-            m.acc         = m.mem[m.M[4]] | BIT48;
-            m.mem[m.M[4]] = m.acc;
+            m.acc = m.mem[m.M[4]] | BIT48;
+            m.store((m.M[4]) & 077777, m.acc);
         }
         m.set_m(14, 024);
         m.acc = m.M[4];
@@ -624,8 +652,8 @@ unsigned type_error_args(Machine &m)
 // *0427B: the same with the text in A; FLGEX* gets it too.
 unsigned type_error(Machine &m)
 {
-    m.mem[ARGS]  = m.acc;
-    m.mem[FLGEX] = m.acc;
+    m.store(ARGS, m.acc);
+    m.store(FLGEX, m.acc);
     return type_error_args(m);
 }
 
@@ -801,9 +829,9 @@ unsigned array_dims(Machine &m)
     m.set_logical();
     if (m.acc)
         return subscript_count(m);
-    m.acc         = (m.mem[(m.M[Machine::SP] - 1) & 077777] << 15) & WORD_MASK;
-    m.acc         = m.mem[m.M[4]] ^ m.acc;
-    m.mem[m.M[4]] = m.acc;
+    m.acc = (m.mem[(m.M[Machine::SP] - 1) & 077777] << 15) & WORD_MASK;
+    m.acc = m.mem[m.M[4]] ^ m.acc;
+    m.store((m.M[4]) & 077777, m.acc);
     return m.M[13];
 }
 
@@ -950,8 +978,8 @@ unsigned subscript_done(Machine &m)
     m.acc       = m.mem[at];
     m.rau       = 003;
     m.arith(7, 02646, 005);
-    m.mem[at] = m.acc;
-    m.rau     = 007;
+    m.store((at) & 077777, m.acc);
+    m.rau = 007;
     if (m.acc)
         return NEXT_SUB;
     m.xta(Machine::SP, 0);
@@ -1110,8 +1138,8 @@ unsigned bool_error(Machine &m)
     m.set_m(8, RETURN_SUB);
     m.acc = m.mem[BOOL_TEXT];
     m.stx(0, ARGS);
-    m.mem[ARGS + 1] = m.mem[BOOL_TEXT + 1];
-    m.acc           = m.mem[ARGS + 1];
+    m.store(ARGS + 1, m.mem[BOOL_TEXT + 1]);
+    m.acc = m.mem[ARGS + 1];
     return type_error_args(m);
 }
 
@@ -1217,8 +1245,8 @@ unsigned relation_item(Machine &m)
         m.set_m(Machine::SP, m.M[Machine::SP] - 2);
     }
     if (error) {
-        m.mem[ARGS + 1] = m.mem[REL_TEXT + 1];
-        m.acc           = m.mem[REL_TEXT];
+        m.store(ARGS + 1, m.mem[REL_TEXT + 1]);
+        m.acc = m.mem[REL_TEXT];
         m.set_m(8, 020402);
         type_error(m);
     }
@@ -1289,13 +1317,13 @@ unsigned left_count(Machine &m)
     unsigned at = (m.M[Machine::SP] - 3) & 077777;
     m.acc       = m.mem[at];
     m.arx(7, 02717);
-    m.mem[at] = m.acc;
+    m.store((at) & 077777, m.acc);
     if (m.uza()) {
         m.set_m(Machine::SP, m.M[Machine::SP] - 5);
         return m.mem[m.M[Machine::SP]] & 077777;
     }
-    m.acc                                  = 0;
-    m.mem[(m.M[Machine::SP] - 1) & 077777] = 0;
+    m.acc = 0;
+    m.store((m.M[Machine::SP] - 1) & 077777, 0);
     m.set_logical();
     return LEFT_PART;
 }
@@ -1325,9 +1353,9 @@ unsigned after_left(Machine &m)
         return emit_left(m);
     case 2:
     case 3:
-        m.acc                        = m.mem[(m.M[4] + 1) & 077777] | RESULT_SET;
-        m.mem[(m.M[4] + 1) & 077777] = m.acc;
-        m.rau                        = 003;
+        m.acc = m.mem[(m.M[4] + 1) & 077777] | RESULT_SET;
+        m.store((m.M[4] + 1) & 077777, m.acc);
+        m.rau = 003;
         m.set_m(8, NEXT_LEFT);
         m.acc = m.M[4];
         m.arith(0, BLOCK, 005);
@@ -1341,8 +1369,8 @@ unsigned after_left(Machine &m)
         m.set_m(14, 0100);
         return emit_left(m);
     case 5:
-        m.acc         = m.mem[m.M[4]] | ASSIGNED;
-        m.mem[m.M[4]] = m.acc;
+        m.acc = m.mem[m.M[4]] | ASSIGNED;
+        m.store((m.M[4]) & 077777, m.acc);
         m.acc &= NOT_ASSIGNABLE;
         m.set_logical();
         m.set_m(8, NEXT_LEFT);
@@ -1430,8 +1458,8 @@ unsigned assign_item(Machine &m)
 // *2221B: TYPE ERROR IN CONNECTION WITH RELATION. Returns through M8.
 unsigned relation_error(Machine &m)
 {
-    m.mem[ARGS + 1] = m.mem[REL_TEXT + 1];
-    m.acc           = m.mem[REL_TEXT];
+    m.store(ARGS + 1, m.mem[REL_TEXT + 1]);
+    m.acc = m.mem[REL_TEXT];
     return type_error(m);
 }
 
@@ -1579,8 +1607,8 @@ unsigned cond_expr_item(Machine &m)
         m.call(EMIT_A, 13, 021403);
         break;
     case 2:
-        m.acc                                  = 1;
-        m.mem[(m.M[Machine::SP] - 1) & 077777] = 1;
+        m.acc = 1;
+        m.store((m.M[Machine::SP] - 1) & 077777, 1);
         m.set_m(14, 064);
         m.acc = 064;
         m.set_logical();
@@ -1704,7 +1732,7 @@ unsigned count_element(Machine &m)
 {
     m.acc = m.mem[ELEMENTS];
     m.arx(7, 02646);
-    m.mem[ELEMENTS] = m.acc;
+    m.store(ELEMENTS, m.acc);
     return DISPATCH;
 }
 
@@ -1712,8 +1740,8 @@ unsigned count_element(Machine &m)
 unsigned for_end_item(Machine &m)
 {
     m.push(m.mem[BLOCK]);
-    m.acc        = m.M[3];
-    m.mem[BLOCK] = m.acc;
+    m.acc = m.M[3];
+    m.store(BLOCK, m.acc);
     m.set_m(12, 017603);
     open_scope_at(m);
     m.call(EMIT_ITEM, 13, 017604);
@@ -1730,8 +1758,8 @@ unsigned do_item(Machine &m)
     m.call(READ, 13, 021527);
     m.push(m.M[4]);
     m.push(m.M[5]);
-    m.mem[ELEMENTS] = 0;
-    m.acc           = m.mem[NUMERIC + m.M[5]];
+    m.store(ELEMENTS, 0);
+    m.acc = m.mem[NUMERIC + m.M[5]];
     m.set_logical();
     if (m.acc)
         return DISPATCH;
@@ -1782,10 +1810,10 @@ unsigned step_item(Machine &m)
     m.acc = m.M[12];
     if (m.acc)
         m.call(EMIT_A, 13, 021552);
-    m.acc            = m.mem[021614 + (at(1) & 077777)];
-    m.mem[STEP_KIND] = m.acc;
-    m.acc            = at(1) ^ 2;
-    bool general     = m.acc;
+    m.acc = m.mem[021614 + (at(1) & 077777)];
+    m.store(STEP_KIND, m.acc);
+    m.acc        = at(1) ^ 2;
+    bool general = m.acc;
     if (!general) {
         m.set_m(1, m.M[1] - 024);
         if (m.M[1]) {
@@ -1815,18 +1843,18 @@ unsigned step_item(Machine &m)
             for_element(m);
         } else {
             m.set_m(14, 0137);
-            m.acc            = 0137;
-            m.mem[STEP_KIND] = m.acc;
+            m.acc = 0137;
+            m.store(STEP_KIND, m.acc);
             m.set_m(14, unsigned(m.mem[FREE_SAVED]));
-            m.acc            = m.mem[NAMES + m.M[12]] & MANTISSA;
-            m.mem[BLOCK_END] = m.acc;
+            m.acc = m.mem[NAMES + m.M[12]] & MANTISSA;
+            m.store(BLOCK_END, m.acc);
             for (;;) {
                 m.acc = m.mem[(NAMES + m.M[14]) & 077777];
                 if (!m.acc) {
-                    m.mem[(NAMES + m.M[14]) & 077777] = m.mem[BLOCK_END];
-                    m.acc                             = m.M[14];
+                    m.store((NAMES + m.M[14]) & 077777, m.mem[BLOCK_END]);
+                    m.acc = m.M[14];
                     m.arx(7, 02717);
-                    m.mem[FREE_CONST] = m.acc;
+                    m.store(FREE_CONST, m.acc);
                     break;
                 }
                 if (m.acc == m.mem[BLOCK_END])
@@ -1875,13 +1903,13 @@ unsigned control_item(Machine &m)
         m.acc = m.mem[m.M[4]] & NOT_ASSIGNABLE;
         if (m.acc)
             return illegal_use(m);
-        m.acc         = m.mem[m.M[4]] | ASSIGNED;
-        m.mem[m.M[4]] = m.acc;
+        m.acc = m.mem[m.M[4]] | ASSIGNED;
+        m.store((m.M[4]) & 077777, m.acc);
         m.set_m(14, 0141);
     }
     m.call(EMIT_M4, 13, 021627);
-    m.mem[REPORTED] = 0;
-    m.acc           = 0;
+    m.store(REPORTED, 0);
+    m.acc = 0;
     m.set_m(13, DISPATCH);
     return READ;
 }
@@ -1899,7 +1927,7 @@ unsigned close_block(Machine &m)
     m.set_m(14, m.M[1]);
     m.call(EMIT_SHIFTED, 13, 017572);
     m.xta(Machine::SP, 0);
-    m.mem[BLOCK] = m.acc;
+    m.store(BLOCK, m.acc);
     m.set_m(13, m.M[10]);
     return READ;
 }
@@ -1925,8 +1953,8 @@ unsigned switch_item(Machine &m)
     m.call(EMIT_ITEM, 13, 021641);
     m.push(m.mem[DLIST_TOP]);
     m.push(m.M[2]);
-    m.acc            = 0;
-    m.mem[DLIST_TOP] = 0;
+    m.acc = 0;
+    m.store(DLIST_TOP, 0);
     m.call(READ, 13, 021644);
     for (;;) {
         if (m.M[1]) {
@@ -1943,19 +1971,19 @@ unsigned switch_item(Machine &m)
                     illegal_use(m);
                 }
             } else {
-                m.acc         = m.mem[m.M[4]] | m.mem[BIT48_WORD];
-                m.mem[m.M[4]] = m.acc;
+                m.acc = m.mem[m.M[4]] | m.mem[BIT48_WORD];
+                m.store((m.M[4]) & 077777, m.acc);
             }
-            m.acc         = m.mem[m.M[4]] | m.mem[BIT48_WORD];
-            m.mem[m.M[4]] = m.acc;
+            m.acc = m.mem[m.M[4]] | m.mem[BIT48_WORD];
+            m.store((m.M[4]) & 077777, m.acc);
             m.call(READ, 13, 021651);
             m.set_m(14, 0142);
             m.call(EMIT_M4, 13, 021652);
         }
         if (m.M[5]) {
-            m.acc           = 0;
-            m.mem[ARGS + 1] = 0;
-            m.acc           = m.mem[SWITCH_TEXT];
+            m.acc = 0;
+            m.store(ARGS + 1, 0);
+            m.acc = m.mem[SWITCH_TEXT];
             m.set_m(8, 021655);
             type_error(m);
         }
@@ -1983,23 +2011,23 @@ unsigned bounds_item(Machine &m)
     m.acc = m.mem[m.M[14]] & HAS_ARRAYS;
     m.set_logical();
     if (!m.acc) {
-        m.acc          = m.mem[m.M[14]] ^ HAS_ARRAYS;
-        m.mem[m.M[14]] = m.acc;
+        m.acc = m.mem[m.M[14]] ^ HAS_ARRAYS;
+        m.store((m.M[14]) & 077777, m.acc);
         m.set_m(14, 0102);
         m.acc = m.mem[BLOCK];
         m.call(EMIT_SHIFTED, 13, 020170);
     }
     m.call(EMIT_ITEM, 13, 020171);
     m.call(READ, 13, 020172);
-    m.acc         = m.mem[BLOCK];
-    m.mem[HIDDEN] = m.acc;
+    m.acc = m.mem[BLOCK];
+    m.store(HIDDEN, m.acc);
     m.set_m(14, m.M[1] - 024);
     if (!m.M[14]) {
         m.acc = m.mem[NAMES + m.M[3]];
         m.arith(7, 02715, 005);
         if (!m.uza()) {
-            m.acc         = m.mem[NAMES + m.M[3]];
-            m.mem[BOUNDS] = m.acc;
+            m.acc = m.mem[NAMES + m.M[3]];
+            m.store(BOUNDS, m.acc);
             m.call(PARSE_READ, 12, 020213);
             m.set_m(14, m.M[1] - 024);
             if (!m.M[14]) {
@@ -2009,14 +2037,14 @@ unsigned bounds_item(Machine &m)
                     m.acc = m.mem[NAMES + m.M[3]];
                     m.asn(0, 64 - 12);
                     m.acc |= m.mem[BOUNDS];
-                    m.mem[BOUNDS] = m.acc;
+                    m.store(BOUNDS, m.acc);
                     return BOUND_LOOP;
                 }
             }
         }
     }
-    m.acc         = 0;
-    m.mem[BOUNDS] = 0;
+    m.acc = 0;
+    m.store(BOUNDS, 0);
     return BOUND_LOOP;
 }
 
@@ -2040,8 +2068,8 @@ unsigned bound_done(Machine &m)
 //
 unsigned array_item(Machine &m)
 {
-    m.acc         = 0;
-    m.mem[HIDDEN] = 0;
+    m.acc = 0;
+    m.store(HIDDEN, 0);
     m.set_m(Machine::SP, m.M[Machine::SP] - 2);
     m.call(EMIT_ITEM, 13, 020202);
     m.acc = m.mem[BOUNDS];
@@ -2049,10 +2077,10 @@ unsigned array_item(Machine &m)
     if (m.acc) {
         m.asn(0, 64 - 24);
         m.acc |= m.mem[02006];
-        m.mem[m.mem[ARRAYS_END] & 077777] = m.acc;
-        m.acc                             = m.mem[ARRAYS_END];
+        m.store(m.mem[ARRAYS_END] & 077777, m.acc);
+        m.acc = m.mem[ARRAYS_END];
         m.arx(7, 02646);
-        m.mem[ARRAYS_END] = m.acc;
+        m.store(ARRAYS_END, m.acc);
     }
     m.set_m(13, DISPATCH);
     return READ;
@@ -2094,8 +2122,8 @@ unsigned decl_end(Machine &m)
 {
     m.acc = m.mem[DLIST_TOP];
     m.sti(0, 4);
-    m.mem[DLIST_TOP] = m.acc;
-    m.acc            = m.M[4];
+    m.store(DLIST_TOP, m.acc);
+    m.acc = m.M[4];
     if (outermost(m)) {
         m.set_m(4, m.M[4] - 1);
         m.set_m(12, RETURN_SUB);
@@ -2139,8 +2167,8 @@ unsigned procedure_item(Machine &m)
 unsigned body_end_item(Machine &m)
 {
     m.push(m.mem[DLIST_TOP]);
-    m.acc            = m.M[3];
-    m.mem[DLIST_TOP] = m.acc;
+    m.acc = m.M[3];
+    m.store(DLIST_TOP, m.acc);
     if (!outermost(m)) {
         m.set_m(14, 0146);
         m.call(EMIT_M14, 13, 017601);
@@ -2201,8 +2229,8 @@ unsigned string_element(Machine &m)
     if (!m.M[12])
         return illegal_use(m);
     m.set_m(14, 0250);
-    m.acc                                  = 0250;
-    m.mem[(m.M[Machine::SP] - 1) & 077777] = m.acc;
+    m.acc = 0250;
+    m.store((m.M[Machine::SP] - 1) & 077777, m.acc);
     return slice(m);
 }
 
@@ -2408,6 +2436,1002 @@ unsigned io_067(Machine &m)
     return io_two(m, 022073);
 }
 
+//
+// Calls. The arguments are read last to first; [M15-1] counts them, [M15-2]
+// keeps the result type. M9 walks the formals of an ALGOL procedure (0 for
+// one without a description).
+//
+
+// *1424B: the end of a call: M14 written, M5 = the result type.
+unsigned call_end(Machine &m)
+{
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    m.xta(Machine::SP, 0);
+    m.set_m(5, unsigned(m.acc));
+    m.set_m(13, RETURN_SUB);
+    return EMIT_M14;
+}
+
+// *1427B: A = the type of the formal M9 (M14: its index in TYPES).
+void formal_type(Machine &m)
+{
+    m.acc = m.mem[m.M[9]];
+    m.set_m(14, unsigned(m.acc >> 40) & 017);
+    m.acc = (m.mem[TYPES + m.M[14]] >> 4) & 017;
+    m.rmr = 0;
+    m.set_logical();
+}
+
+unsigned next_actual(Machine &m);
+
+// *1421B: one argument less, the next formal; after the last, 0110.
+unsigned actual_count(Machine &m)
+{
+    unsigned at = (m.M[Machine::SP] - 1) & 077777;
+    m.acc       = m.mem[at];
+    m.vlm(9);
+    m.arx(7, 02717);
+    m.store((at) & 077777, m.acc);
+    if (m.u1a())
+        return next_actual(m);
+    m.set_m(14, 0110);
+    return call_end(m);
+}
+
+// *1420B: 0120 after an argument.
+unsigned actual_done(Machine &m)
+{
+    m.set_m(14, 0120);
+    m.call(EMIT_M14, 13, 020644);
+    return actual_count(m);
+}
+
+//
+// *1501B: NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN the actual (its name, or
+// for an expression a word of the table at *1521B by M6) AND the formal.
+//
+unsigned mismatch(Machine &m)
+{
+    m.acc = m.mem[REPORTED];
+    m.set_logical();
+    if (m.acc)
+        return actual_count(m);
+    m.extracode(070, 7, SWAP_OUT);
+    m.extracode(070, 7, NAMES_IN);
+    m.wtc(9, 0);
+    m.xta(0, NAMES);
+    m.wtc(4, 0);
+    m.xts(0, NAMES);
+    m.push(m.acc);
+    m.extracode(070, 7, SWAP_IN);
+    m.xta(Machine::SP, 0);
+    m.stx(0, ARGS2);
+    m.store(ARGS, m.acc);
+    m.acc = 0;
+    m.store(ARGS + 1, 0);
+    m.store(ARGS2 + 1, 0);
+    m.acc = m.M[6] & m.mem[022127];
+    m.set_m(13, NO_CORRESPONDENCE);
+    m.set_m(8, 020644);
+    if (m.acc) {
+        m.set_m(6, m.M[6] + 020744);
+        m.store(ARGS2, m.mem[m.M[6]]);
+        m.store(ARGS2 + 1, m.mem[(m.M[6] + 3) & 077777]);
+        m.acc = m.mem[ARGS2 + 1];
+    }
+    return message(m);
+}
+
+// *1544B: the actual's type M5 against the formal's.
+unsigned check_types(Machine &m)
+{
+    formal_type(m);
+    m.set_m(13, 020771);
+    type_pair(m);
+    if (!m.M[14])
+        return actual_count(m);
+    return mismatch(m);
+}
+
+//
+// *1460B: an actual of kind M6 against the formal M9 (M4: the actual's
+// descriptor): the table at 21075 (row by M6, a 4-bit field by the
+// formal's kind) says which marks they exchange and whether their
+// parameters or dimensions must agree.
+//
+unsigned correspond(Machine &m)
+{
+    m.acc = m.mem[m.M[9]];
+    m.apx(7, 02723);
+    m.asn(0, 0152);
+    m.set_m(14, unsigned(m.acc));
+    m.acc = m.mem[TYPES + m.M[14]];
+    m.asn(0, 0110);
+    m.aax(7, 02721);
+    m.set_m(14, unsigned(m.acc));
+    m.acc = m.mem[(CORRESPONDENCE + m.M[6]) & 077777];
+    m.asn(14, 074);
+    m.asn(14, 074);
+    m.asn(14, 074);
+    m.aax(7, 02726);
+    m.set_m(14, unsigned(m.acc));
+    // Stores go through store(): address 0 stays zero.
+    struct Cell {
+        Machine &m;
+        unsigned a{};
+        operator Word() const { return m.mem[a]; }
+        Cell &operator=(Word w)
+        {
+            m.store(a, w);
+            return *this;
+        }
+    };
+    Cell formal{ m, m.M[9] };
+    Cell actual{ m, m.M[4] };
+    auto clear48 = [&] {
+        m.acc &= ~BIT48;
+        formal = m.acc;
+        return check_types(m);
+    };
+    auto value = [&] {
+        m.acc  = actual | BIT39;
+        actual = m.acc;
+        m.acc &= PARAMS;
+        if (m.acc)
+            return mismatch(m);
+        m.acc = formal;
+        return clear48();
+    };
+    switch (m.M[14]) {
+    case 0:
+        return check_types(m);
+    case 1: {
+        m.acc = actual ^ formal;
+        m.acc &= PARAMS;
+        if (!m.acc)
+            return check_types(m);
+        unsigned at = (m.M[Machine::SP] + 1) & 077777;
+        m.store((at) & 077777, m.acc);
+        m.acc = formal & PARAMS;
+        if (m.acc) {
+            m.acc = actual & PARAMS;
+            if (m.acc)
+                return mismatch(m);
+            m.acc  = actual ^ m.mem[at];
+            actual = m.acc;
+            return check_types(m);
+        }
+        m.acc  = formal ^ m.mem[at];
+        formal = m.acc;
+        return check_types(m);
+    }
+    case 2:
+        m.acc  = formal | BIT39;
+        formal = m.acc;
+        m.acc &= PARAMS;
+        if (!m.acc)
+            return check_types(m);
+        return mismatch(m);
+    case 3:
+        m.acc = formal;
+        return clear48();
+    case 4:
+        m.acc  = actual | ASSIGNED;
+        actual = m.acc;
+        m.acc  = formal;
+        return clear48();
+    case 5:
+        m.acc  = formal | NOT_ASSIGNABLE;
+        formal = m.acc;
+        return check_types(m);
+    case 6:
+        return value();
+    case 7:
+        m.acc  = formal | NOT_ASSIGNABLE;
+        formal = m.acc;
+        return value();
+    default:
+        return 020714 + m.M[14];
+    }
+}
+
+// *1455B: write A<<12 ^ M14 for an argument; with a formal, correspondence.
+unsigned actual_emit(Machine &m)
+{
+    m.call(EMIT_SHIFTED, 13, 020701);
+    m.call(READ, 13, 020702);
+    if (!m.M[9])
+        return actual_count(m);
+    return correspond(m);
+}
+
+//
+// *1631B: an expression argument becomes a thunk: 0116 with the counter at
+// BLOCK_DLIST (one level down) and its own DLIST_TOP; M9 and both pushed.
+// Goes on at M13.
+//
+unsigned thunk(Machine &m)
+{
+    m.push(m.M[9]);
+    m.push(m.mem[DLIST_TOP]);
+    m.acc = 0;
+    m.store(DLIST_TOP, 0);
+    m.acc = m.mem[BLOCK_DLIST];
+    m.push(m.acc);
+    m.arx(7, 02712);
+    m.store(BLOCK_DLIST, m.acc);
+    m.set_m(14, 0116);
+    m.acc = 0116 | m.mem[(m.M[Machine::SP] - 1) & 077777];
+    m.set_logical();
+    return EMIT_A;
+}
+
+// *1641B: the end of a thunk: 0117, the counter and DLIST_TOP back.
+unsigned thunk_end(Machine &m)
+{
+    m.set_m(14, 0117);
+    m.acc = 0117;
+    m.acc |= m.mem[(m.M[Machine::SP] - 1) & 077777];
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    m.call(EMIT_A, 13, 021066);
+    m.xta(Machine::SP, 0);
+    m.stx(0, DLIST_TOP);
+    m.set_m(9, unsigned(m.acc));
+    if (!m.M[9])
+        return actual_count(m);
+    return correspond(m);
+}
+
+// *1637B: the expression of a thunk.
+unsigned thunk_body(Machine &m)
+{
+    m.call(PARSE_READ, 12, 021063);
+    m.set_m(4, 0);
+    m.set_m(6, 012);
+    return thunk_end(m);
+}
+
+// *1651B: after an element or a switch designator as an argument.
+unsigned thunk_designator(Machine &m)
+{
+    m.set_m(6, 011);
+    return thunk_end(m);
+}
+
+//
+// *1617B: a procedure as an argument or declared in the outermost block:
+// its word after the descriptor gets 0100000; its formals (that word's
+// address down, count in bits 19-15) lose bit 48. Returns through M12.
+//
+unsigned proc_params(Machine &m)
+{
+    unsigned info = (m.M[4] + 1) & 077777;
+    m.acc         = m.mem[info];
+    m.set_m(13, unsigned(m.acc));
+    m.acc |= HAS_ARRAYS;
+    m.store((info) & 077777, m.acc);
+    m.acc = (m.mem[m.M[4]] >> 15) & 037;
+    m.rmr = 0;
+    m.set_logical();
+    m.set_m(14, unsigned(m.acc));
+    if (!m.acc)
+        return m.M[12];
+    do {
+        unsigned at = (m.M[13] - 1) & 077777;
+        m.acc       = m.mem[at] & ~BIT48;
+        m.store((at) & 077777, m.acc);
+        m.set_m(13, m.M[13] - 1);
+        m.set_m(14, m.M[14] - 1);
+    } while (m.M[14]);
+    m.set_m(14, 0113);
+    m.acc = m.M[4];
+    return m.M[12];
+}
+
+//
+// *1570B: an identifier as an argument (looked up): by its kind 0112
+// (variable, marked used), 0115 (array), 0113 (procedure), 0114 (label,
+// switch, formal by name).
+//
+unsigned actual_ident(Machine &m)
+{
+    m.set_m(13, 020644);
+    if (!m.M[4])
+        return READ;
+    auto plain = [&] {
+        m.acc = m.M[4];
+        return actual_emit(m);
+    };
+    auto other = [&] {
+        m.set_m(14, 0114);
+        return plain();
+    };
+    switch (m.M[6]) {
+    case 0:
+        m.set_m(14, 0112);
+        if (!m.M[5]) {
+            m.set_m(14, 0113);
+            m.acc = m.mem[m.M[4]] | m.mem[BIT48_WORD];
+            m.store((m.M[4]) & 077777, m.acc);
+        }
+        return plain();
+    case 1:
+        m.set_m(14, 0115);
+        m.acc = m.mem[m.M[4]] & VALUE_FORMAL;
+        m.set_logical();
+        if (m.acc)
+            return other();
+        if (!m.M[5])
+            m.set_m(14, 0113);
+        return plain();
+    case 2:
+        m.set_m(14, 0113);
+        m.set_m(12, ACTUAL_EMIT);
+        return proc_params(m);
+    case 3:
+        m.set_m(14, 0113);
+        return plain();
+    case 4:
+        m.set_m(14, 0113);
+        m.acc = m.mem[m.M[4]];
+        m.rau = 013;
+        if (m.u1a())
+            return plain();
+        m.set_m(8, ACTUAL_EMIT);
+        return illegal_use(m);
+    case 5:
+    case 6:
+    case 7:
+        return other();
+    default:
+        return 021015 + m.M[6];
+    }
+}
+
+// *1434B: an argument by how it ends.
+unsigned actual_kind(Machine &m)
+{
+    m.acc = (m.mem[TYPES + m.M[1]] >> 18) & 017;
+    m.rmr = 0;
+    m.set_logical();
+    m.set_m(14, unsigned(m.acc));
+    auto by_type = [&](unsigned type) {
+        m.set_m(5, type);
+        m.set_m(6, 010);
+        m.acc = m.M[3];
+        m.set_m(14, 0111);
+        return actual_emit(m);
+    };
+    switch (m.M[14]) {
+    case 0:
+        m.set_m(13, THUNK_BODY);
+        return thunk(m);
+    case 1:
+        m.set_m(13, ACTUAL_IDENT);
+        return LOOKUP;
+    case 2:
+        return by_type(2);
+    case 3:
+        return by_type(1);
+    case 4:
+        m.set_m(3, 01625);
+        return by_type(3);
+    case 5:
+        m.set_m(3, 01624);
+        return by_type(3);
+    case 6:
+        m.set_m(13, DESIGNATOR_THUNK);
+        return thunk(m);
+    case 7:
+        return by_type(5);
+    case 010:
+        m.set_m(5, 4);
+        m.acc = m.M[3];
+        m.set_m(14, 0156);
+        m.set_m(6, 012);
+        m.set_m(4, 0);
+        return actual_emit(m);
+    default:
+        return 020662 + m.M[14];
+    }
+}
+
+// *1646B: an element or a switch designator as an argument.
+unsigned designator_thunk(Machine &m)
+{
+    m.set_m(12, 0103);
+    m.set_m(13, THUNK_DESIGNATOR);
+    m.acc = m.M[13];
+    m.push(m.acc);
+    m.acc = 0;
+    m.push(0);
+    return SUBSCRIPT;
+}
+
+//
+// *1404B: the next argument. To a formal by value or without a formal it is
+// classified (actual_kind); else it is an expression of the formal's type
+// (064 when integer for real), then 0120.
+//
+unsigned next_actual(Machine &m)
+{
+    if (!m.M[9])
+        return actual_kind(m);
+    m.acc = m.mem[m.M[9]] & VALUE_FORMAL;
+    m.set_logical();
+    if (m.acc)
+        return actual_kind(m);
+    m.push(m.M[9]);
+    m.call(PARSE_READ, 12, 020633);
+    m.xta(Machine::SP, 0);
+    m.set_m(9, unsigned(m.acc));
+    m.set_m(6, 012);
+    formal_type(m);
+    m.set_m(13, 020636);
+    type_pair(m);
+    switch (m.M[14]) {
+    case 0:
+        return actual_done(m);
+    case 1:
+        m.set_m(14, 064);
+        m.call(EMIT_M14, 13, 020643);
+        return actual_done(m);
+    case 2:
+    case 3:
+        return mismatch(m);
+    default:
+        return 020636 + m.M[14];
+    }
+}
+
+// *1402B: the call's item 020 with p, then the arguments.
+unsigned call_head(Machine &m)
+{
+    m.set_m(14, 020);
+    m.call(EMIT_M4, 13, 020626);
+    m.call(READ, 13, 020627);
+    return next_actual(m);
+}
+
+//
+// Code 020, a call of p with n arguments: the number of parameters must
+// match (a procedure without them gets n). 05776 is the standard procedure
+// with an expression argument; non-ALGOL procedures go on at 21110.
+//
+unsigned call_item(Machine &m)
+{
+    m.set_m(9, 0);
+    m.set_m(13, 020572);
+    lookup(m);
+    m.push(m.M[5]);
+    m.push(m.M[2]);
+    m.acc = m.mem[REPORTED];
+    m.set_logical();
+    if (m.acc)
+        return call_head(m);
+    m.set_m(8, CALL_HEAD);
+    m.set_m(14, m.M[4] - 05776);
+    if (!m.M[14]) {
+        m.set_m(14, 057);
+        m.acc = m.M[2];
+        m.call(EMIT_SHIFTED, 13, 020611);
+        m.set_m(12, ACTUAL_DONE);
+        return PARSE;
+    }
+    switch (m.M[6]) {
+    case 2:
+        m.acc = m.mem[(m.M[4] + 1) & 077777] & 077777;
+        m.rau = 003;
+        m.arith(Machine::SP, 077777, 005);
+        m.set_m(9, unsigned(m.acc));
+        break;
+    case 4:
+        m.acc = m.mem[m.M[4]];
+        m.rau = 013;
+        if (m.uza())
+            return CODE_CALL;
+        break;
+    case 6:
+        break;
+    case 0:
+    case 1:
+    case 3:
+    case 5:
+    case 7:
+        return illegal_use(m);
+    default:
+        return 020577 + m.M[6];
+    }
+    m.acc = (m.mem[m.M[4]] >> 15) & 037;
+    m.rmr = 0;
+    m.set_logical();
+    if (m.acc) {
+        m.acc ^= m.M[2];
+        if (m.acc)
+            return illegal_use(m);
+    } else {
+        m.acc = (Word(m.M[2]) << 15) ^ m.mem[m.M[4]];
+        m.store((m.M[4]) & 077777, m.acc);
+    }
+    return call_head(m);
+}
+
+//
+// Non-ALGOL calls. Arguments go through IO_ARG (21122), which returns
+// through M12 (pushed).
+//
+
+// *1725B: return from IO_ARG.
+unsigned arg_return(Machine &m)
+{
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    return m.mem[m.M[Machine::SP]] & 077777;
+}
+
+// *1722B: a label argument (M5 = 0): LABEL AS ARGUMENT OF NON-ALGOL CALL.
+unsigned arg_label(Machine &m)
+{
+    if (!m.M[5]) {
+        m.set_m(8, ARG_RETURN);
+        m.set_m(13, LABEL_ARG);
+        m.acc = m.mem[REPORTED];
+        m.set_logical();
+        if (!m.acc)
+            return message(m);
+    }
+    return arg_return(m);
+}
+
+// *1716B: the item M14 of an argument (074 for a string).
+unsigned arg_item(Machine &m)
+{
+    m.set_m(5, m.M[5] - 4);
+    if (!m.M[5])
+        m.set_m(14, 074);
+    m.set_m(5, m.M[5] + 4);
+    m.set_m(13, ARG_LABEL);
+    return EMIT_M14;
+}
+
+// *1715B: after an expression argument: 0125.
+unsigned arg_expression(Machine &m)
+{
+    m.set_m(14, 0125);
+    return arg_item(m);
+}
+
+// *1711B: after an element or a switch designator: 0124.
+unsigned arg_designator(Machine &m)
+{
+    m.set_m(14, 0124);
+    return arg_item(m);
+}
+
+// 21122: an argument of a non-ALGOL call or an I/O statement, by how it ends.
+unsigned io_arg(Machine &m)
+{
+    m.acc = m.M[12];
+    m.xts(1, TYPES);
+    m.asn(0, 0115);
+    m.aax(7, 02654);
+    m.set_m(14, unsigned(m.acc));
+    switch (m.M[14]) {
+    case 0:
+        m.set_m(12, ARG_EXPRESSION);
+        return PARSE_READ;
+    case 1:
+        m.set_m(13, ARG_IDENT);
+        return LOOKUP;
+    case 2:
+        m.set_m(14, 066);
+        m.acc = m.M[3];
+        m.call(EMIT_SHIFTED, 13, 021136);
+        m.set_m(5, 4);
+        m.set_m(13, ARG_RETURN);
+        return READ;
+    case 3:
+        m.set_m(12, 0103);
+        m.set_m(13, ARG_DESIGNATOR);
+        m.acc = m.M[13];
+        m.push(m.acc);
+        m.acc = 0;
+        m.push(0);
+        return SUBSCRIPT;
+    default:
+        return 021126 + m.M[14];
+    }
+}
+
+// *1726B: one argument less; after the last, 0121.
+unsigned arg_count(Machine &m)
+{
+    unsigned at = (m.M[Machine::SP] - 1) & 077777;
+    m.acc       = m.mem[at];
+    m.arx(7, 02717);
+    m.store((at) & 077777, m.acc);
+    if (m.u1a()) {
+        m.set_m(12, ARG_COUNT);
+        return io_arg(m);
+    }
+    m.set_m(14, 0121);
+    return call_end(m);
+}
+
+//
+// *1740B: an identifier argument (looked up): 0122 (variable), 0123
+// (array), 022 (formal by name) with its item; a string variable,
+// procedures and others as expressions.
+//
+unsigned arg_ident(Machine &m)
+{
+    m.set_m(8, 021205);
+    auto emit = [&] {
+        m.call(EMIT_M4, 13, 021202);
+        m.set_m(13, ARG_LABEL);
+        return READ;
+    };
+    auto expression = [&] {
+        m.set_m(12, ARG_EXPRESSION);
+        return PARSE_READ;
+    };
+    m.acc = m.mem[REPORTED];
+    m.set_logical();
+    if (m.acc)
+        return emit();
+    m.acc = m.M[5] ^ m.mem[022107];
+    if (!m.acc)
+        return expression();
+    switch (m.M[6]) {
+    case 0:
+        m.set_m(14, 0122);
+        return emit();
+    case 1:
+        m.set_m(14, 0123);
+        return emit();
+    case 4:
+        m.set_m(14, 0122);
+        m.acc = m.mem[m.M[4]];
+        m.rau = 013;
+        if (m.u1a())
+            return expression();
+        m.set_m(5, 1);
+        return emit();
+    case 5:
+        m.set_m(14, 022);
+        m.call(EMIT_M4, 13, 021204);
+        m.set_m(13, ARG_DESIGNATOR);
+        return READ;
+    case 2:
+    case 3:
+    case 6:
+    case 7:
+        return expression();
+    default:
+        return 021167 + m.M[6];
+    }
+}
+
+// The end of a standard procedure's arguments: M5 back, return.
+unsigned std_end(Machine &m)
+{
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    m.xta(Machine::SP, 0);
+    m.set_m(5, unsigned(m.acc));
+    return RETURN_SUB;
+}
+
+unsigned print_arg(Machine &m);
+
+// *2101B (PRINT): one argument less.
+unsigned print_count(Machine &m)
+{
+    unsigned at = (m.M[Machine::SP] - 1) & 077777;
+    m.acc       = m.mem[at];
+    m.arx(7, 02717);
+    m.store((at) & 077777, m.acc);
+    if (m.u1a())
+        return print_arg(m);
+    return std_end(m);
+}
+
+// *2057B: a PRINT argument M4 + M5 (its type) with 071; type 0: ILLEGAL ARGUMENT OF PRINT.
+unsigned print_item(Machine &m)
+{
+    m.jam(5, 4);
+    m.set_m(14, 071);
+    m.call(EMIT_M4, 13, 021304);
+    if (!m.M[5]) {
+        m.set_m(8, PRINT_COUNT);
+        m.set_m(13, BAD_PRINT);
+        message(m);
+    }
+    return print_count(m);
+}
+
+//
+// *2052B: an argument of PRINT: an array (017 a, then 017+type), a
+// procedure (057 or 016 by its type, then 072), else an expression (010
+// + type).
+//
+unsigned print_arg(Machine &m)
+{
+    auto expression = [&] {
+        m.call(PARSE_READ, 12, 021330);
+        m.set_m(4, 010);
+        return print_item(m);
+    };
+    if (m.M[1])
+        return expression();
+    m.set_m(13, 021276);
+    lookup(m);
+    if (m.M[4]) {
+        m.acc = m.M[6] ^ 1;
+        m.set_logical();
+        if (!m.acc) {
+            m.set_m(14, 017);
+            m.call(EMIT_M4, 13, 021301);
+            m.set_m(4, 017);
+            m.call(READ, 13, 021302);
+            return print_item(m);
+        }
+        m.acc ^= 3;
+        if (m.acc)
+            return expression();
+        m.acc = (m.mem[m.M[4]] >> 32) & 7;
+        m.set_m(14, unsigned(m.acc));
+        m.set_m(14, m.M[14] - 4);
+        m.set_m(4, 057);
+        if (m.M[14]) {
+            m.set_m(14, m.M[14] - 1);
+            m.set_m(4, 016);
+            if (m.M[14]) {
+                m.set_m(8, 021322);
+                illegal_use(m);
+            }
+        }
+        m.set_m(14, 072);
+        m.call(EMIT_M4, 13, 021323);
+    }
+    m.call(READ, 13, PRINT_COUNT);
+    return print_count(m);
+}
+
+unsigned read_arg(Machine &m);
+
+// *2117B (READ-like 3): one argument less.
+unsigned read_count(Machine &m)
+{
+    unsigned at = (m.M[Machine::SP] - 1) & 077777;
+    m.acc       = m.mem[at];
+    m.arx(7, 02717);
+    m.store((at) & 077777, m.acc);
+    if (m.u1a())
+        return read_arg(m);
+    return std_end(m);
+}
+
+//
+// *2131B: an argument as the left parts of an assignment, in a frame
+// returning to M14.
+//
+unsigned as_left_part(Machine &m)
+{
+    m.acc = m.M[14];
+    m.push(m.acc);
+    m.push(m.mem[REPORTED]);
+    m.acc = 1;
+    m.push(m.acc);
+    m.push(m.M[5]);
+    m.push(m.M[5]);
+    m.acc = m.M[5];
+    return LEFT_PART;
+}
+
+// *2107B: an argument of the third standard procedure.
+unsigned read_arg(Machine &m)
+{
+    auto general = [&] {
+        m.acc = m.mem[m.M[4]] & m.mem[022101];
+        m.rau = 003;
+        m.arith(7, 02653, 005);
+        if (m.uza()) {
+            m.set_m(4, 062);
+            m.set_m(14, 072);
+            m.call(EMIT_M4, 13, READ_NEXT);
+            m.call(READ, 13, READ_COUNT);
+            return read_count(m);
+        }
+        m.set_m(4, 051);
+        m.jam(5, 4);
+        m.set_m(14, 072);
+        m.call(EMIT_M4, 13, 021353);
+        m.set_m(14, READ_COUNT);
+        return as_left_part(m);
+    };
+    m.set_m(13, m.M[1] ? 021346 : 021333);
+    lookup(m);
+    if (m.M[1])
+        return general();
+    if (!m.M[4]) {
+        m.call(READ, 13, READ_COUNT);
+        return read_count(m);
+    }
+    if (!m.M[5])
+        return general();
+    m.acc = m.M[6] ^ 1;
+    m.set_logical();
+    if (m.acc)
+        return general();
+    m.set_m(14, 017);
+    m.call(EMIT_M4, 13, 021337);
+    m.set_m(4, 072);
+    m.jam(5, 4);
+    m.set_m(14, 071);
+    m.call(EMIT_M4, 13, READ_NEXT);
+    m.call(READ, 13, READ_COUNT);
+    return read_count(m);
+}
+
+//
+// *2015B: a standard procedure (its number in bits 39-37 of A): 2 PRINT,
+// 6 LENGTH, 3 and 7 by arguments, 1 a function of one number argument
+// (071 with M4 - 05760).
+//
+unsigned std_proc(Machine &m)
+{
+    m.asn(0, 0155);
+    m.set_m(14, unsigned(m.acc));
+    unsigned number = m.M[14];
+    if (number == 2 || number == 6 || number == 3 || number == 7)
+        m.set_m(14, 0);
+    switch (number) {
+    case 2:
+        m.call(READ, 13, 021275);
+        return print_arg(m);
+    case 6:
+        m.set_m(Machine::SP, m.M[Machine::SP] - 2);
+        m.call(PARSE, 12, 021262);
+        m.set_m(5, m.M[5] - 4);
+        if (m.M[5]) {
+            m.set_m(13, BAD_LENGTH);
+            m.set_m(8, 021264);
+            message(m);
+        }
+        m.set_m(14, 071);
+        m.set_m(4, 0100);
+        m.set_m(5, 2);
+        m.set_m(13, RETURN_SUB);
+        return EMIT_M4;
+    case 3:
+        m.call(READ, 13, 021332);
+        return read_arg(m);
+    case 7:
+        m.set_m(2, m.M[2] - 2);
+        if (m.M[2])
+            return illegal_use(m);
+        m.call(PARSE, 12, 021364);
+        m.set_m(13, 021365);
+        lookup(m);
+        m.set_m(14, STD_END);
+        return as_left_part(m);
+    case 1:
+        break;
+    default:
+        m.set_m(8, CODE_CALL_ARGS);
+        m.set_m(14, m.M[14] - 1);
+        return illegal_use(m);
+    }
+    m.set_m(8, CODE_CALL_ARGS);
+    m.set_m(14, 0);
+    m.set_m(2, m.M[2] - 1);
+    if (m.M[2])
+        return illegal_use(m);
+    m.push(m.M[4]);
+    m.call(PARSE, 12, 021251);
+    m.xta(Machine::SP, 0);
+    m.set_m(4, unsigned(m.acc));
+    m.acc = m.mem[NUMERIC + m.M[5]];
+    m.set_logical();
+    if (!m.acc) {
+        m.acc = m.mem[m.M[4]];
+        m.set_m(3, unsigned(m.acc));
+        m.set_m(8, 021255);
+        illegal_use(m);
+    }
+    m.set_m(4, m.M[4] - 05760);
+    m.set_m(14, 071);
+    m.call(EMIT_M4, 13, STD_END);
+    return std_end(m);
+}
+
+//
+// 21110: a call of a non-ALGOL procedure: standard ones by their number;
+// else the item 0126 (065 for a typed one) p<<12 | n<<7, then each argument.
+//
+unsigned code_call(Machine &m)
+{
+    m.acc = m.mem[m.M[4]];
+    m.apx(7, 02656);
+    if (m.acc)
+        return std_proc(m);
+    return CODE_CALL_ARGS;
+}
+
+// *1667B: the item of a non-ALGOL call, then its arguments.
+unsigned code_call_args(Machine &m)
+{
+    m.set_m(14, m.M[5] ? 065 : 0126);
+    m.acc = m.M[14];
+    m.acc = (Word(m.M[4]) << 12) ^ (Word(m.M[2]) << 7) ^ m.M[14];
+    m.rmr = 0;
+    m.set_logical();
+    m.call(EMIT_A, 13, 021120);
+    m.call(READ, 13, 021121);
+    m.set_m(12, ARG_COUNT);
+    return io_arg(m);
+}
+
+//
+// Code 061, VALUE: each value formal loses bit 48 and is written with its
+// item; a label, string or other must not be by value (ILLEGAL VALUE
+// PARAMETER); 0155 at the end.
+//
+unsigned value_item(Machine &m)
+{
+    m.set_m(14, 0127);
+    m.call(EMIT_M14, 13, 021211);
+    for (;;) {
+        m.set_m(4, m.M[3]);
+        m.acc = m.mem[m.M[4]];
+        m.set_m(3, unsigned(m.acc));
+        m.set_m(8, 021213);
+        descriptor_types(m);
+        m.acc = m.mem[m.M[4]] & ~BIT48;
+        m.store((m.M[4]) & 077777, m.acc);
+        m.set_m(8, 021223);
+        bool bad = false;
+        switch (m.M[5]) {
+        case 0:
+            bad = true;
+            break;
+        case 1:
+            bad = m.M[6];
+            if (!bad) {
+                m.set_m(14, 0154);
+                m.call(EMIT_M4, 13, 021225);
+                goto next;
+            }
+            break;
+        case 2:
+        case 3:
+            bad = m.M[6];
+            break;
+        case 4:
+            m.set_m(13, BAD_VALUE);
+            break;
+        case 5:
+            break;
+        default:
+            return 021216 + m.M[5];
+        }
+        if (bad) {
+            m.set_m(13, BAD_VALUE);
+            message_name(m);
+        }
+        m.set_m(14, m.M[1]);
+        m.call(EMIT_M4, 13, 021225);
+    next:
+        m.call(READ, 13, 021226);
+        m.acc = m.M[1] ^ 061;
+        m.set_logical();
+        if (m.acc)
+            break;
+    }
+    m.set_m(14, 0155);
+    m.call(EMIT_M14, 13, 021231);
+    return DISPATCH;
+}
+
 // Code 026, GOTO: the designational expression after it must be a label.
 unsigned goto_item(Machine &m)
 {
@@ -2433,11 +3457,11 @@ unsigned set_position(Machine &m)
     m.acc = m.M[3];
     m.call(ITOA, 13, 017536);
     m.asn(0, 64 - 16);
-    m.mem[LINE_TEXT] = m.acc;
-    m.acc            = m.M[2];
+    m.store(LINE_TEXT, m.acc);
+    m.acc = m.M[2];
     m.call(ITOA, 13, 017540);
     m.asn(0, 64 - 32);
-    m.mem[STMT_TEXT] = m.acc;
+    m.store(STMT_TEXT, m.acc);
     m.call(EMIT_MARKER, 13, 017542);
     m.set_m(13, AFTER_STMT);
     return MAIN_LOOP;
@@ -2454,12 +3478,12 @@ unsigned start(Machine &m)
     m.set_m(5, 0);
     m.set_m(7, 017223);
     m.push(m.M[13]); // the return into the driver
-    m.mem[READ_CURSOR] = cyclic_add(m.mem[WRITE_CURSOR], 0200000);
+    m.store(READ_CURSOR, cyclic_add(m.mem[WRITE_CURSOR], 0200000));
     m.call(READ_BACK, 13, 017227);
-    m.mem[WRITE_CURSOR] = m.mem[022113];
-    m.mem[DLIST_TOP2]   = m.M[3];
-    m.mem[DLIST_TOP]    = m.M[3];
-    m.mem[BLOCK_DLIST]  = Word(m.M[3]) << 12;
+    m.store(WRITE_CURSOR, m.mem[022113]);
+    m.store(DLIST_TOP2, m.M[3]);
+    m.store(DLIST_TOP, m.M[3]);
+    m.store(BLOCK_DLIST, Word(m.M[3]) << 12);
 
     // Each element: its slot holds its name, and the declaration at D3 is its own.
     for (m.set_m(8, 0); m.mem[COMMON + m.M[8] + 1]; m.set_m(8, m.M[8] + 3)) {
@@ -2473,7 +3497,7 @@ unsigned start(Machine &m)
             continue;
         }
         m.set_m(13, unsigned(info >> 36));
-        m.mem[SCRATCH] = m.mem[m.M[13]] & 07777;
+        m.store(SCRATCH, m.mem[m.M[13]] & 07777);
         if (m.mem[SCRATCH] != slot_of(info))
             common_message(m, WRONG_ORDER, name);
     }
@@ -2483,7 +3507,7 @@ unsigned start(Machine &m)
         Word &d = m.mem[m.M[8]];
         if (d & HEADER)
             continue;
-        m.mem[SCRATCH] = d & 077777;
+        m.store(SCRATCH, d & 077777);
         for (m.set_m(13, 0); m.mem[COMMON + 1 + m.M[13]]; m.set_m(13, m.M[13] + 3)) {
             if (slot_of(m.mem[COMMON + 1 + m.M[13]]) != m.mem[SCRATCH])
                 continue;
@@ -2495,22 +3519,22 @@ unsigned start(Machine &m)
     }
     m.acc = 0;
 
-    m.mem[FREE_SAVED] = m.mem[FREE_CONST];
+    m.store(FREE_SAVED, m.mem[FREE_CONST]);
     m.set_m(14, ARRAYS);
-    m.mem[ARRAYS_END] = ARRAYS;
+    m.store(ARRAYS_END, ARRAYS);
     m.extracode(070, 0, SAVE_NAMES);
     for (m.set_m(14, unsigned(m.mem[FREE_CONST])); m.M[14];) {
         m.set_m(14, m.M[14] - 1);
-        m.mem[NAMES + m.M[14]] = 0;
+        m.store((NAMES + m.M[14]) & 077777, 0);
     }
     m.acc = 0;
     m.set_m(11, m.M[3]);
     m.set_m(14, DLIST_END);
-    m.acc         = DLIST_END;
-    m.mem[m.M[3]] = DLIST_END;
+    m.acc = DLIST_END;
+    m.store((m.M[3]) & 077777, DLIST_END);
     m.call(OPEN_SCOPE, 12, 017345);
     for (unsigned i = 0; i < 6; i++)
-        m.mem[POSITION + i] = m.mem[POSITION_SRC + i];
+        m.store((POSITION + i) & 077777, m.mem[POSITION_SRC + i]);
     m.set_m(12, 0);
     m.set_m(14, 075);
     m.call(EMIT_M14, 13, 017351);
@@ -2531,7 +3555,7 @@ unsigned finish(Machine &m)
         m.set_m(4, unsigned(rec >> 12) & 07777);
         Word link = Word(m.M[8]) << 20;
         do {
-            m.mem[m.M[4]] = (m.mem[m.M[4]] & RECORD_CLR) | link | HEADER;
+            m.store((m.M[4]) & 077777, (m.mem[m.M[4]] & RECORD_CLR) | link | HEADER);
             m.set_m(2, m.M[2] - 1);
             m.set_m(4, m.M[4] + 1);
         } while (m.M[2]);
@@ -2638,6 +3662,31 @@ Stream pass2(Context &ctx, const Stream &input)
     pass.m.natives[020536] = io_072;
     pass.m.natives[020541] = io_066;
     pass.m.natives[020542] = io_067;
+    pass.m.natives[020571] = call_item;
+    pass.m.natives[020625] = call_head;
+    pass.m.natives[020627] = next_actual;
+    pass.m.natives[020643] = actual_done;
+    pass.m.natives[020644] = actual_count;
+    pass.m.natives[020647] = call_end;
+    pass.m.natives[020700] = actual_emit;
+    pass.m.natives[021013] = actual_ident;
+    pass.m.natives[021042] = proc_params;
+    pass.m.natives[021062] = thunk_body;
+    pass.m.natives[021074] = thunk_designator;
+    pass.m.natives[021071] = designator_thunk;
+    pass.m.natives[021110] = code_call;
+    pass.m.natives[021112] = code_call_args;
+    pass.m.natives[021122] = io_arg;
+    pass.m.natives[021134] = arg_designator;
+    pass.m.natives[021140] = arg_expression;
+    pass.m.natives[021145] = arg_label;
+    pass.m.natives[021150] = arg_return;
+    pass.m.natives[021151] = arg_count;
+    pass.m.natives[021163] = arg_ident;
+    pass.m.natives[021210] = value_item;
+    pass.m.natives[021257] = std_end;
+    pass.m.natives[021324] = print_count;
+    pass.m.natives[021342] = read_count;
     // Pass 1 writes forward through 27126 from the cursor at 15403.
     pass.write_stream(input, 027126, pass.m.mem[015403]);
     return pass.run(017223, 01627);
