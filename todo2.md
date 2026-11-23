@@ -23,11 +23,6 @@ reference for the native runs.
 
 ### Cut the BESM-6 back end
 
-- **E3** Remove the `dubna` tooling: `scripts/ref-*`, `trace-*`, `capture-streams*`,
-  `disasm-overlay.py`, `dubna-filter`, `make goldens`; doc/stdarray.md, traces.md,
-  reference-toolchain.md, runtime-abi.md part B. Keep runtime-abi.md part A (what the
-  run-time routines do) as the specification of the new runtime. Update CLAUDE.md.
-
 ### Front end data
 
 - **E4** Typed view of the front-end tables: the name table, descriptors (D-list words),

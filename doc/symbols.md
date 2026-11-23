@@ -59,41 +59,6 @@ Names are at most 8 characters, the Madlen limit. Kinds: C = code, D = data.
 | 21720 | P2DISP | D | dispatch table by item code |
 | 22027 | P2END | C | link array records, finish |
 
-## Pass 3 (ag22162)
-
-| Address | Name | Kind | Role |
-|---|---|---|---|
-| 22162 | PASS3 | C | entry and main loop |
-| 22214 | FOLDC | C | fold a constant |
-| 22232 | FORSCAN | C | first scan of a FOR loop |
-| 22716 | INTERNC | C | intern a constant |
-| 23231 | FOREND | C | emit a rewritten loop |
-| 23343 | P3EOP | C | end of the pass |
-
-## Pass 4 (ag23523)
-
-| Address | Name | Kind | Role |
-|---|---|---|---|
-| 23523 | PASS4 | C | init, prologue |
-| 23655 | EMITH | C | emit an instruction half-word |
-| 23752 | P4READ | C | read and dispatch an item |
-| 24324 | SUBSCR | C | subscript address, check call |
-| 25525 | BLKENTRY | C | block entry: storage offsets, externals |
-| 25747 | TEMPLATE | D | instruction templates |
-| 26056 | P4DISP | D | dispatch table by item code |
-| 26152 | P4EOP | C | end of program code |
-
-## Passes 5 and 6 (ag26260, ag26666)
-
-| Address | Name | Kind | Role |
-|---|---|---|---|
-| 26260 | PASS5 | C | address assignment |
-| 26535 | P5EMIT | C | emit a half-word, count the code length |
-| 26544 | TOOLONG | C | `PROGRAM TOO LONG` |
-| 26552 | LINETAB | C | the line→address table |
-| 26666 | PASS6 | C | object assembly |
-| 27017 | OBJHDR | C | write the header, fill ENTRY* |
-
 ## Helpers
 
 | Address | Name | Kind | Role |

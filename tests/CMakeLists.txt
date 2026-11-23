@@ -33,6 +33,3 @@ target_compile_definitions(unit_tests PRIVATE
 add_dependencies(unit_tests algc)
 gtest_discover_tests(unit_tests PROPERTIES TIMEOUT 120)
 
-# The start memory of scripts/capture-streams.py.
-add_executable(dump-workspace dump_workspace.cpp)
-target_link_libraries(dump-workspace algol)
