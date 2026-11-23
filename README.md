@@ -5,7 +5,8 @@ ordinary program you can run on a modern computer: a PC (x86_64) or an ARM or RI
 
 It started as a revival of Algol-GDR, the Algol compiler of the Soviet BESM-6 computer.
 It reads that dialect and Algol 60 as the Revised Report defines it, also in the
-publication form with underlined keywords (`.a60` files).
+publication form with underlined keywords (`.a60` files). Programs can use the input and
+output of Algol-GDR, of the IFIP report, or of the Electrologica X1 library.
 
 ## Build
 
@@ -83,16 +84,29 @@ interpreter, the pentomino solver and others.
 | --- | --- |
 | `-o FILE` | Name of the program to make |
 | `-O2` | Make a faster program |
-| `--check` | Check array bounds while running |
+| `--check` | Check array bounds, overflow and procedure arguments while running |
 | `--syntax-only` | Only check the program for errors |
+| `-c` | Make an object file, to link with other programs |
+| `--target=TRIPLE` | Make a program for another machine, as for clang (`aarch64-linux-gnu`) |
 | `--help` | All options |
+
+## History
+
+1. The original compiler, about 12,900 lines of BESM-6 assembler reconstructed from a
+   Dubna monitor tape, rewritten in C++ with the same object code and listings (on the
+   `besm6` branch).
+2. A new front end and an LLVM backend: native programs for x86_64, arm64 and riscv64.
+3. Algol 60 of the Revised Report: call by name, `own`, switches, the full `for`,
+   separate compilation, the publication form, the IFIP input and output, run-time checks.
+4. The Electrologica X1 library: the programs of x1-algol-compiler run unchanged, with the
+   output of its X1 simulator.
 
 ## Learn more
 
-- [Roadmap.md](Roadmap.md): where the project is going.
-- [doc/deviations.md](doc/deviations.md): how `algc` differs from the Revised Report.
+- [doc/deviations.md](doc/deviations.md): how `algc` differs from the Revised Report and
+  from the X1 simulator.
 - [doc/](doc/): how the compiler works.
-- [x1-algol-compiler](https://github.com/sergev/x1-algol-compiler): Algol 60 programs this
-  compiler aims to run.
+- [x1-algol-compiler](https://github.com/sergev/x1-algol-compiler): the Algol 60 programs
+  of `tests/x1/` and the X1 simulator.
 - [dubna](https://github.com/besm6/dubna): a BESM-6 simulator, where the original compiler
   still runs.

@@ -11,7 +11,7 @@ rewrite, same objects and listings as the original; on the `besm6` branch), 2 (a
 front end and an LLVM backend: native executables for x86_64, arm64, riscv64), 3 (Algol
 60 of the Revised Report, the publication form, IFIP I/O, checks; doc/deviations.md) and 4
 (the X1 library: the x1-algol-compiler examples run as under `x1sim`) are done; no
-milestone is planned next (Roadmap.md). Plan files `todoN.md` list only the tasks left (IDs like
+milestone is planned next. Plan files `todoN.md` list only the tasks left (IDs like
 A6.3); delete a task when it is done, in the same commit.
 
 ## Commands
@@ -66,16 +66,14 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   thunks, labels, arrays, runtime names; [ir.asdl](doc/ir.asdl) — the LLVM IR subset algc
   emits, as src/ir.h builds it.
 
-Milestones (from Roadmap.md):
+Milestones (all done; the history is in README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
-   files (standard arrays) and run them on the `dubna` simulator.
+   files (standard arrays) and run them on the `dubna` simulator (done, `besm6` branch).
 2. Replace the backend: emit LLVM IR and invoke external `clang` to link a native executable
    (done).
 3. Extend the parser to full Algol-60 and develop a full runtime library (done; what
    remains different is in [doc/deviations.md](doc/deviations.md)).
 4. Compile and run all programs from x1-algol-compiler/examples (done: `tests/x1/`).
-
-Detailed plan: [Roadmap.md](Roadmap.md).
 
 ## Reference material (outside this repo)
 
