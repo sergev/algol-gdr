@@ -16,11 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F4** Parameters as the Revised Report has them: specifications optional for name
-  parameters; arrays called by value (copied, the runtime has it); an actual of another
-  numeric type for a name parameter, converted on every access and assignment; calls through
-  a formal procedure with the right conversions. Thunks carry the type of their cell
-  (doc/codegen.md updated). Tests with Jensen's device and procedures as parameters.
 - **F5** `own` variables and arrays: one storage per declaration, kept between entries of
   the block; `own` arrays with dynamic bounds allocated at the first entry (the choice
   documented in doc/deviations.md). Tests.

@@ -33,7 +33,254 @@ struct Symbol {
     int count{ -1 };          // dimensions or parameters; -1 when not known
     std::vector<int> formals; // of a procedure declared here: symbol indexes
     bool assigned{};          // a function: its result was assigned
+    bool any{};               // a formal without a specification, only passed on
 };
+
+// How a formal parameter without a specification is used in the body of
+// its procedure (inner declarations of the same name are not seen).
+class Usage {
+public:
+    explicit Usage(const std::string &name) : name_(name) {}
+
+    bool subscripted{}, switched{}, called{}, function{}, jumped{}, boolean{}, integer{}, other{};
+
+    void stmt(const syn::Stmt &s)
+    {
+        std::visit(
+            [&](const auto &x) {
+                using T = std::decay_t<decltype(x)>;
+                if constexpr (std::is_same_v<T, syn::stmt::Block>) {
+                    for (const auto &d : x.decls)
+                        decl(*d);
+                    for (const auto &b : x.body)
+                        stmt(*b);
+                } else if constexpr (std::is_same_v<T, syn::stmt::Compound>) {
+                    for (const auto &b : x.body)
+                        stmt(*b);
+                } else if constexpr (std::is_same_v<T, syn::stmt::Labeled>) {
+                    stmt(*x.stmt);
+                } else if constexpr (std::is_same_v<T, syn::stmt::Assign>) {
+                    bool b = is_boolean(*x.value);
+                    for (const auto &t : x.targets) {
+                        if (b && is_name(*t))
+                            boolean = true;
+                        operand(*t);
+                    }
+                    operand(*x.value);
+                } else if constexpr (std::is_same_v<T, syn::stmt::Goto>) {
+                    designational(*x.target);
+                } else if constexpr (std::is_same_v<T, syn::stmt::If>) {
+                    condition(*x.condition);
+                    stmt(*x.then_stmt);
+                    if (x.else_stmt)
+                        stmt(*x.else_stmt);
+                } else if constexpr (std::is_same_v<T, syn::stmt::For>) {
+                    if (x.var.name == name_)
+                        other = true;
+                    elements(x.elements);
+                    stmt(*x.body);
+                } else if constexpr (std::is_same_v<T, syn::stmt::Call>) {
+                    auto c = std::get_if<syn::expr::Call>(&x.call->node);
+                    if (is_name(*x.call) || (c && c->name == name_))
+                        called = true;
+                    if (c)
+                        for (const auto &a : c->args)
+                            expr(*a);
+                } else if constexpr (std::is_same_v<T, syn::stmt::Io>) {
+                    for (const auto &p : x.params)
+                        expr(*p);
+                    items(x.items);
+                }
+            },
+            s.node);
+    }
+
+private:
+    const std::string &name_;
+
+    bool is_name(const syn::Expr &e) const
+    {
+        auto n = std::get_if<syn::expr::Name>(&e.node);
+        return n && n->name == name_;
+    }
+
+    static bool is_boolean(const syn::Expr &e)
+    {
+        if (std::holds_alternative<syn::expr::Bool>(e.node))
+            return true;
+        if (auto u = std::get_if<syn::expr::Unary>(&e.node))
+            return u->op == Sym::NOT;
+        if (auto b = std::get_if<syn::expr::Binary>(&e.node))
+            return b->op != Sym::PLUS && b->op != Sym::MINUS && b->op != Sym::TIMES &&
+                   b->op != Sym::SLASH && b->op != Sym::INTDIV && b->op != Sym::POWER;
+        return false;
+    }
+
+    void condition(const syn::Expr &e)
+    {
+        if (is_name(e))
+            boolean = true;
+        expr(e);
+    }
+
+    void designational(const syn::Expr &e)
+    {
+        if (is_name(e)) {
+            jumped = true;
+            return;
+        }
+        if (auto x = std::get_if<syn::expr::Index>(&e.node); x && x->name == name_) {
+            switched = true;
+            for (const auto &a : x->subscripts)
+                expr(*a);
+            return;
+        }
+        if (auto c = std::get_if<syn::expr::If>(&e.node)) {
+            condition(*c->condition);
+            designational(*c->then_expr);
+            designational(*c->else_expr);
+            return;
+        }
+        expr(e);
+    }
+
+    void decl(const syn::Decl &d)
+    {
+        if (auto a = std::get_if<syn::decl::Arrays>(&d.node)) {
+            for (const auto &seg : a->segments)
+                for (const auto &b : seg.bounds) {
+                    expr(*b.lower);
+                    expr(*b.upper);
+                }
+        } else if (auto sw = std::get_if<syn::decl::Switch>(&d.node)) {
+            for (const auto &e : sw->elements)
+                designational(*e);
+        } else if (auto p = std::get_if<syn::decl::Procedure>(&d.node)) {
+            stmt(*p->body);
+        }
+    }
+
+    void elements(const std::vector<syn::ForElement> &list)
+    {
+        for (const auto &el : list) {
+            operand(*el.value);
+            if (el.kind == syn::ForElement::WHILE) {
+                condition(*el.step);
+            } else if (el.kind == syn::ForElement::STEP_UNTIL) {
+                operand(*el.step);
+                operand(*el.until);
+            }
+        }
+    }
+
+    void items(const std::vector<syn::IoItem> &list)
+    {
+        for (const auto &it : list) {
+            if (it.expr) {
+                operand(*it.expr);
+            } else {
+                elements(it.elements);
+                items(it.items);
+            }
+        }
+    }
+
+    void expr(const syn::Expr &e)
+    {
+        std::visit(
+            [&](const auto &x) {
+                using T = std::decay_t<decltype(x)>;
+                if constexpr (std::is_same_v<T, syn::expr::Name>) {
+                    // An argument alone tells nothing.
+                } else if constexpr (std::is_same_v<T, syn::expr::Index>) {
+                    if (x.name == name_)
+                        subscripted = true;
+                    for (const auto &a : x.subscripts)
+                        operand(*a);
+                } else if constexpr (std::is_same_v<T, syn::expr::Slice>) {
+                    operand(*x.first);
+                    operand(*x.last);
+                } else if constexpr (std::is_same_v<T, syn::expr::Call>) {
+                    if (x.name == name_)
+                        called = function = true;
+                    for (const auto &a : x.args)
+                        expr(*a);
+                } else if constexpr (std::is_same_v<T, syn::expr::Unary>) {
+                    if (x.op == Sym::NOT)
+                        condition(*x.operand);
+                    else
+                        operand(*x.operand);
+                } else if constexpr (std::is_same_v<T, syn::expr::Binary>) {
+                    switch (x.op) {
+                    case Sym::AND:
+                    case Sym::OR:
+                    case Sym::IMPL:
+                    case Sym::EQUIV:
+                        condition(*x.left);
+                        condition(*x.right);
+                        break;
+                    case Sym::INTDIV:
+                        if (is_name(*x.left) || is_name(*x.right))
+                            integer = true;
+                        expr(*x.left);
+                        expr(*x.right);
+                        break;
+                    default:
+                        operand(*x.left);
+                        operand(*x.right);
+                    }
+                } else if constexpr (std::is_same_v<T, syn::expr::If>) {
+                    condition(*x.condition);
+                    expr(*x.then_expr);
+                    expr(*x.else_expr);
+                }
+            },
+            e.node);
+    }
+
+    // In an arithmetic expression.
+    void operand(const syn::Expr &e)
+    {
+        if (is_name(e))
+            other = true;
+        expr(e);
+    }
+};
+
+// Whether a formal parameter has a specification.
+bool specified(const syn::decl::Procedure &p, const std::string &name)
+{
+    return std::any_of(p.specs.begin(), p.specs.end(), [&](const syn::Spec &spec) {
+        return std::any_of(spec.names.begin(), spec.names.end(),
+                           [&](const syn::Ident &id) { return id.name == name; });
+    });
+}
+
+// The kind and type of a formal without a specification, from its use: a
+// number is taken as real.
+void infer(Symbol &s, const std::string &name, const syn::Stmt &body)
+{
+    Usage u(name);
+    u.stmt(body);
+    s.kind = Kind::SIMPLE;
+    s.type = u.boolean ? Type::BOOLEAN : u.integer ? Type::INTEGER : Type::REAL;
+    if (u.called) {
+        s.kind = Kind::PROCEDURE;
+        if (!u.function)
+            s.type = Type::NONE;
+    } else if (u.subscripted) {
+        s.kind = Kind::ARRAY;
+    } else if (u.switched) {
+        s.kind = Kind::SWITCH;
+        s.type = Type::NONE;
+    } else if (u.jumped) {
+        s.kind = Kind::LABEL;
+        s.type = Type::NONE;
+    } else if (!u.boolean && !u.integer && !u.other) {
+        s.type = Type::NONE;
+        s.any  = true;
+    }
+}
 
 // The standard identifiers.
 enum class Std {
@@ -367,6 +614,8 @@ StmtPtr Checker::make_block(SrcLoc loc, const Decls &decls, const Stmts &body)
                                 }
                             }
                         }
+                        if (!specified(x, f.name))
+                            infer(fs, f.name, *x.body);
                         fs.id   = int(symbols_.size()) + 1;
                         fs.name = f.name;
                         symbols_.push_back(fs);
@@ -447,8 +696,7 @@ void Checker::procedure_body(const syn::decl::Procedure &p, int index, decl::Pro
     for (int f : symbols_[index].formals) {
         const Symbol &s = symbols_[f];
         if (s.mode == Mode::VALUE &&
-            (s.kind == Kind::LABEL || s.kind == Kind::SWITCH || s.kind == Kind::PROCEDURE ||
-             s.kind == Kind::ARRAY || s.type == Type::STRING))
+            (s.kind == Kind::SWITCH || s.kind == Kind::PROCEDURE || s.type == Type::STRING))
             error(p.name.line, "Formal parameter " + quoted(s.name) + " cannot be called by value");
         scopes_.back().names[s.name] = f;
         Formal formal;
@@ -1244,6 +1492,12 @@ ExprList Checker::arguments(int index, const syn::ExprList &args, int line)
     return out;
 }
 
+// An actual of type a for a formal of type f: numbers are converted.
+static bool compatible(Type a, Type f)
+{
+    return f == Type::NONE || a == f || (numeric(a) && numeric(f));
+}
+
 // An argument for the formal (null: not known).
 ExprPtr Checker::actual(const syn::Expr &e, const Symbol *formal, int n, const std::string &proc)
 {
@@ -1259,7 +1513,8 @@ ExprPtr Checker::actual(const syn::Expr &e, const Symbol *formal, int n, const s
         x = named(nm->name, e.line, true);
     else
         x = expr(e);
-    if (!formal || (x->type == Type::NONE && std::holds_alternative<expr::IntConst>(x->node)))
+    if (!formal || formal->any ||
+        (x->type == Type::NONE && std::holds_alternative<expr::IntConst>(x->node)))
         return x;
 
     // What the argument is.
@@ -1267,8 +1522,10 @@ ExprPtr Checker::actual(const syn::Expr &e, const Symbol *formal, int n, const s
     bool by_name = false;
     if (auto v = std::get_if<expr::Var>(&x->node)) {
         const Symbol &s = symbols_[v->decl - 1];
-        kind            = s.kind;
-        by_name         = true;
+        if (s.any)
+            return x;
+        kind    = s.kind;
+        by_name = true;
     } else if (std::holds_alternative<expr::LabelRef>(x->node) ||
                std::holds_alternative<expr::SwitchElement>(x->node) ||
                (x->type == Type::NONE && std::holds_alternative<expr::Cond>(x->node))) {
@@ -1280,25 +1537,21 @@ ExprPtr Checker::actual(const syn::Expr &e, const Symbol *formal, int n, const s
             return mismatch();
         if (by_name && kind == Kind::PROCEDURE)
             x = make_expr(x->type, expr::Call{ std::get<expr::Var>(x->node).decl, {} });
-        if (x->type == formal->type)
+        if (x->type == formal->type || formal->type == Type::NONE)
             return x;
-        // By name, a variable must be of the formal's type: it may be assigned.
+        // By name, the cell keeps its type, converted on each access.
         if (numeric(x->type) && numeric(formal->type)) {
             if (formal->mode == Mode::VALUE)
                 return convert(std::move(x), formal->type, e.line, "");
-            if (!std::holds_alternative<expr::Var>(x->node) &&
-                !std::holds_alternative<expr::Element>(x->node))
-                return x;
+            return x;
         }
         return mismatch();
     case Kind::ARRAY:
-        if (!by_name || kind != Kind::ARRAY ||
-            (formal->type != Type::NONE && x->type != formal->type))
+        if (!by_name || kind != Kind::ARRAY || !compatible(x->type, formal->type))
             return mismatch();
         return x;
     case Kind::PROCEDURE:
-        if (!by_name || kind != Kind::PROCEDURE ||
-            (formal->type != Type::NONE && x->type != formal->type))
+        if (!by_name || kind != Kind::PROCEDURE || !compatible(x->type, formal->type))
             return mismatch();
         return x;
     case Kind::LABEL:

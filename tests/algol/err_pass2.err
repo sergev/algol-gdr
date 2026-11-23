@@ -28,5 +28,4 @@ err_pass2.alg:47: error: The argument of 'SIN' must be a number
 err_pass2.alg:48: error: Type error in '-': boolean
 err_pass2.alg:49: error: 'STOP' has no arguments
 err_pass2.alg:50: error: 'ASSIGN' needs two arguments
-err_pass2.alg:51: error: Argument 2 of 'PP' does not match formal parameter 'A2'
 err_pass2.alg:52: error: Argument 5 of 'PP' does not match formal parameter 'A5'

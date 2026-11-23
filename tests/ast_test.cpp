@@ -154,7 +154,7 @@ TEST(Checker, messages)
     EXPECT_EQ(check_messages("_begin _real _procedure F; ; F _end _eop"),
               "x.alg:1: error: Function 'F' does not assign its result\n");
     EXPECT_EQ(check_messages("_begin _procedure P(X); _integer X; X := 1;\n"
-                             "_real Y; P(Y); P(Y + 1) _end _eop"),
+                             "_real Y; _boolean Z; P(Y); P(Y + 1); P(Z) _end _eop"),
               "x.alg:2: error: Argument 1 of 'P' does not match formal parameter 'X'\n");
 }
 

@@ -43,9 +43,16 @@ function are not functions of their own.
   | 3 | the result of a function procedure |
   | 4… | parameters, variables, array descriptors, temporaries of thunks |
 
-  The frame is zeroed on entry. A formal takes one slot when called by value (a simple
-  value) or when it is an array (the address of its descriptor); otherwise two, a pair:
-  the thunk of a name parameter or a label, the `{fn, sl}` of a procedure or a switch.
+  The frame is zeroed on entry. A formal takes:
+
+  | Formal | Slots |
+  |---|---|
+  | simple, by value | the value |
+  | simple or label, by name | the actual `{code, env, type}` |
+  | label, by value | the label value `{frame, index}` |
+  | array | the address of its descriptor, the type of the elements |
+  | procedure | `{fn, sl, type}`, the type of its result |
+  | switch | `{fn, frame}` |
 
 - **Access.** A variable of the function itself: its slot in the frame. A variable of an
   enclosing procedure: through the static links, one per level. A global: directly.
@@ -59,13 +66,15 @@ called without knowing its parameters:
 define internal i64 @P.<id>.<name>(ptr %sl, ptr %args)
 ```
 
-- `%sl` is the static link; `%args` points to an array of one pair `{ptr code, ptr env}`
-  per parameter (a thunk, below), or is null without parameters.
+- `%sl` is the static link; `%args` points to an array of one triple
+  `{ptr code, ptr env, i64 type}` per parameter (a thunk, below), or is null without
+  parameters.
 - The result is an `i64`: an integer as is, a real by `bitcast`, a Boolean by `zext`, a
   string by `ptrtoint`; a procedure without a type returns 0. The caller converts it back.
 - On entry the procedure evaluates each value parameter once: it calls the thunk, loads the
-  value in the formal's type and stores it in the frame. A value array is copied
-  (`algol_array_copy`). Name parameters keep their pair in two slots of the frame.
+  value, converts it to the formal's type and stores it in the frame. A value array is
+  copied (`algol_array_copy`) and keeps the type of its elements. Name parameters keep
+  their triple in the frame.
 - A call: the caller fills the pairs in its frame (an `alloca` at the entry of the
   function), finds the static link of the callee (its own frame if the callee is declared in
   it, otherwise up the static links) and calls. A formal procedure is called through the
@@ -73,14 +82,16 @@ define internal i64 @P.<id>.<name>(ptr %sl, ptr %args)
 
 ## Thunks: parameters by name
 
-Every actual parameter is a thunk, a pair `{ptr code, ptr env}`:
+Every actual parameter is a thunk with the type of its cell, `{ptr code, ptr env, i64
+type}`:
 
 ```llvm
 define internal ptr @T.<n>(ptr %env)
 ```
 
-`env` is the frame of the function where the call is (null in `algol_main`, which uses
-globals); the code returns the address of a cell:
+`env` is the frame of the function where the call is; the code returns the address of a
+cell. `type` is the `Type` of the cell as in src/ast.h (0 integer, 1 real, 2 Boolean,
+3 string, 4 bits, 5 none), of the elements for an array, of the result for a procedure.
 
 | Actual | The cell |
 |---|---|
@@ -90,13 +101,15 @@ globals); the code returns the address of a cell:
 | procedure | a temporary pair `{fn, sl}` |
 | label, designational expression | a temporary label value `{frame, index}` |
 | switch | a temporary pair `{fn, frame}` of the switch |
-| a formal parameter by name of the caller | its own pair, passed on as is |
+| a formal parameter by name of the caller | its own triple, passed on as is |
 
 The caller reads the cell right after the call, so one temporary per thunk is enough even
-in recursion. An expression is converted to the type of the formal in the thunk when the
-callee is known; through a formal procedure the value comes in the actual's own type (the
-types of its formals are not known). An assignment to an expression parameter changes only
-the temporary.
+in recursion. The cell is in the actual's own type. Where a numeric formal (a name
+parameter, an element of a formal array, the result of a formal procedure) meets a cell
+of the other numeric type, each access converts: a load by `sitofp` or rounding, a store
+back to the cell's type; the choice is a `select` on the type. So an `integer` variable
+serves a `real` formal, and calls through a formal procedure need no knowledge of its
+formals. An assignment to an expression parameter changes only the temporary.
 
 ## Labels and `goto`
 
@@ -148,7 +161,8 @@ account (see tests/algol/quinio.c).
   procedure's type in C: `int64_t` (integer), `double` (real), `bool`, `char *` (string),
   `void`. `_code: _real rndm;` is `double rndm(…)`.
 - **`_algol` procedures**, compiled separately, use the Algol convention:
-  `int64_t name(void *sl, void **args)`, with a null static link.
+  `int64_t name(void *sl, void **args)`, with a null static link; `args` holds
+  `{code, env, type}` per parameter.
 - **`_common /NAME/ …`** is a global `NAME` with common linkage, `int64_t NAME[n]`: its
   elements in order, a variable one cell, an array its elements. C or another unit sees
   the same storage under the same name.

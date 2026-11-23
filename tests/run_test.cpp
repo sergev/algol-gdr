@@ -59,6 +59,7 @@ const std::vector<std::string> programs = {
     "algol/test2",
     "algol/test3",
     "a60/intdiv",
+    "a60/parameters",
     "a60/program_form",
 };
 // clang-format on

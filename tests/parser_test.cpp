@@ -51,6 +51,7 @@ TEST(Parser, procedure_heading)
     EXPECT_EQ(messages("_begin _procedure P(A, B); _value C; _real A, A; X := 1;\n"
                        "P(1, 2) _end _eop"),
               "x.alg:1: error: 'C' is not a formal parameter of 'P'\n"
-              "x.alg:1: error: Formal parameter 'A' is specified twice\n"
-              "x.alg:1: error: Formal parameter 'B' is not specified\n");
+              "x.alg:1: error: Formal parameter 'A' is specified twice\n");
+    EXPECT_EQ(messages("_begin _procedure P(A); _value A; ; P(1) _end _eop"),
+              "x.alg:1: error: Formal parameter 'A' is called by value but not specified\n");
 }

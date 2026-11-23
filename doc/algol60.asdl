@@ -80,8 +80,8 @@ module Algol60 {
 
     CommonElement = (identifier name, int* dims)   -- no dims: a variable
 
-    -- Every formal parameter is specified once (the Revised Report allows
-    -- leaving some out).
+    -- A formal parameter is specified once at most; one called by value
+    -- must be. The checker infers the kind of the others from their use.
     Specification = (Specifier specifier, identifier* names)
     Specifier = Simple(Type type)        -- includes _string
               | Array(Type type)         -- _array alone: _real _array

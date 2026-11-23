@@ -10,6 +10,7 @@
 #include <functional>
 #include <map>
 #include <stdexcept>
+#include <tuple>
 
 #include "ir.h"
 
@@ -22,6 +23,12 @@ constexpr int SLOT_JMPBUF = 1; // the jmp_buf of a function with non-local label
 constexpr int SLOT_LABEL  = 2; // where a non-local goto goes
 constexpr int SLOT_RESULT = 3; // the value of a function
 constexpr int SLOT_HEADER = 4; // first free slot
+constexpr int ACTUAL      = 3; // words of an actual parameter: code, env, type
+
+bool numeric(Type t)
+{
+    return t == Type::INTEGER || t == Type::REAL;
+}
 
 // An Algol function: the program body or a procedure.
 struct Func {
@@ -265,17 +272,32 @@ private:
             fs.spec     = formal.spec;
             fs.by_value = formal.by_value;
             fs.slot     = pf.slots;
-            // A value: one slot; an array: its descriptor's address; a name
-            // parameter, a procedure, a switch, a label: a pair.
-            bool one = formal.spec.kind == Spec::ARRAY ||
-                       (formal.spec.kind == Spec::SIMPLE && formal.by_value);
-            pf.slots += one ? 1 : 2;
+            pf.slots += formal_slots(formal);
             symbols_[formal.id] = fs;
         }
         std::vector<const stmt::Block *> saved;
         std::swap(saved, path_);
         declare(pf, *p.body);
         std::swap(saved, path_);
+    }
+
+    // A value: one slot; an array: its descriptor's address and type; a
+    // label value; a switch {fn, frame}; a name parameter, a label by
+    // name, a procedure: the actual {code, env, type}, {fn, sl, type}.
+    static int formal_slots(const Formal &f)
+    {
+        switch (f.spec.kind) {
+        case Spec::SIMPLE:
+            return f.by_value ? 1 : ACTUAL;
+        case Spec::LABEL:
+            return f.by_value ? 2 : ACTUAL;
+        case Spec::ARRAY:
+        case Spec::SWITCH:
+            return 2;
+        case Spec::PROCEDURE:
+            return ACTUAL;
+        }
+        return ACTUAL;
     }
 
     // A _common block: its elements at their places in one global.
@@ -367,6 +389,78 @@ private:
         return fn_->call("ptr", code.ref, { env });
     }
 
+    // A cell of type t; a by-name formal's cell is in the actual's type,
+    // tag (a Type as i64), converted on access.
+    struct Cell {
+        ir::Value ptr;
+        Type type{};
+        ir::Value tag; // invalid: the cell has type t
+    };
+
+    // The cell of a variable.
+    Cell var_cell(int id)
+    {
+        const Symbol &s = symbol(id);
+        Cell c{ address(id), s.type, {} };
+        if (s.kind == Symbol::FORMAL && !s.by_value && numeric(s.type))
+            c.tag = fn_->load("i64", slot(s.owner, s.slot + 2));
+        return c;
+    }
+
+    Cell element_cell(int id, const ExprList &subscripts)
+    {
+        Cell c{ element(id, subscripts), symbol(id).type, {} };
+        if (symbol(id).kind == Symbol::FORMAL && numeric(c.type))
+            c.tag = array_tag(id);
+        return c;
+    }
+
+    // The element type of an array, as an i64.
+    ir::Value array_tag(int id)
+    {
+        const Symbol &s = symbol(id);
+        if (s.kind == Symbol::FORMAL)
+            return fn_->load("i64", slot(s.owner, s.slot + 1));
+        return ir::i64(int64_t(s.type));
+    }
+
+    ir::Value load(const Cell &c)
+    {
+        if (!c.tag.valid())
+            return load(c.type, c.ptr);
+        return from_bits(fn_->load("i64", c.ptr), c.type, c.tag);
+    }
+
+    void store(const Cell &c, const ir::Value &v)
+    {
+        if (!c.tag.valid())
+            return store(c.type, v, c.ptr);
+        if (c.type == Type::REAL) {
+            ir::Value as_int = round(v);
+            ir::Value bits   = fn_->cast("bitcast", v, "i64");
+            ir::Value is_int = fn_->icmp("eq", c.tag, ir::i64(int64_t(Type::INTEGER)));
+            fn_->store(fn_->select(is_int, as_int, bits), c.ptr);
+        } else {
+            ir::Value bits    = fn_->cast("bitcast", fn_->cast("sitofp", v, "double"), "i64");
+            ir::Value is_real = fn_->icmp("eq", c.tag, ir::i64(int64_t(Type::REAL)));
+            fn_->store(fn_->select(is_real, bits, v), c.ptr);
+        }
+    }
+
+    // The value of type t from the bits of a value of type tag.
+    ir::Value from_bits(const ir::Value &bits, Type t, const ir::Value &tag)
+    {
+        if (t == Type::REAL) {
+            ir::Value from_int = fn_->cast("sitofp", bits, "double");
+            ir::Value same     = fn_->cast("bitcast", bits, "double");
+            ir::Value is_int   = fn_->icmp("eq", tag, ir::i64(int64_t(Type::INTEGER)));
+            return fn_->select(is_int, from_int, same);
+        }
+        ir::Value from_real = round(fn_->cast("bitcast", bits, "double"));
+        ir::Value is_real   = fn_->icmp("eq", tag, ir::i64(int64_t(Type::REAL)));
+        return fn_->select(is_real, from_real, bits);
+    }
+
     ir::Value load(Type t, const ir::Value &ptr)
     {
         ir::Value v = fn_->load(mem_type(t), ptr);
@@ -433,11 +527,11 @@ private:
                 } else if constexpr (std::is_same_v<T, expr::StringConst>) {
                     return module_.string(n.value);
                 } else if constexpr (std::is_same_v<T, expr::Var>) {
-                    return load(e.type, address(n.decl));
+                    return load(var_cell(n.decl));
                 } else if constexpr (std::is_same_v<T, expr::Element>) {
-                    return load(e.type, element(n.array, n.subscripts));
+                    return load(element_cell(n.array, n.subscripts));
                 } else if constexpr (std::is_same_v<T, expr::Call>) {
-                    return from_result(call(n.proc, n.args), e.type);
+                    return call_value(n.proc, n.args, e.type);
                 } else if constexpr (std::is_same_v<T, expr::StdFunc>) {
                     return std_func(n);
                 } else if constexpr (std::is_same_v<T, expr::StringElement>) {
@@ -913,7 +1007,7 @@ private:
         if (ref || var) {
             // A formal label.
             const Symbol &s = symbol(ref ? ref->label : var->decl);
-            ir::Value cell  = call_thunk(slot(s.owner, s.slot));
+            ir::Value cell = s.by_value ? slot(s.owner, s.slot) : call_thunk(slot(s.owner, s.slot));
             return { fn_->load("ptr", cell), fn_->load("i64", fn_->gep("ptr", cell, ir::i64(1))) };
         }
         if (auto se = std::get_if<expr::SwitchElement>(&e.node)) {
@@ -1027,8 +1121,8 @@ private:
         auto *done       = fn_->new_block("for.end");
         std::vector<std::pair<int64_t, const ir::Block *>> back;
         auto set = [&](const Expr &e) {
-            auto [ptr, t] = left_part(control);
-            store(t, convert(expr(e), e.type, t), ptr);
+            Cell c = left_part(control);
+            store(c, convert(expr(e), e.type, c.type));
         };
         auto enter = [&](int64_t k) {
             fn_->store(ir::i64(k), state);
@@ -1067,7 +1161,7 @@ private:
                                          el.until->type == Type::REAL
                                              ? Type::REAL
                                              : Type::INTEGER;
-                        ir::Value v    = convert(load(vt, left_part(control).first), vt, t);
+                        ir::Value v    = convert(load(left_part(control)), vt, t);
                         ir::Value b    = convert(expr(*el.step), el.step->type, t);
                         ir::Value c    = convert(expr(*el.until), el.until->type, t);
                         bool real      = t == Type::REAL;
@@ -1086,13 +1180,14 @@ private:
                         fn_->set_block(go);
                         enter(k);
                         // V := V + B
-                        auto [ptr, ct] = left_part(control);
-                        Type st       = ct == Type::REAL || el.step->type == Type::REAL ? Type::REAL
-                                                                                        : Type::INTEGER;
-                        ir::Value sum = fn_->binop(st == Type::REAL ? "fadd" : "add",
-                                                   convert(load(ct, ptr), ct, st),
-                                                   convert(expr(*el.step), el.step->type, st));
-                        store(ct, convert(sum, st, ct), ptr);
+                        Cell cv = left_part(control);
+                        Type ct = cv.type;
+                        Type st = ct == Type::REAL || el.step->type == Type::REAL ? Type::REAL
+                                                                                  : Type::INTEGER;
+                        ir::Value sum =
+                            fn_->binop(st == Type::REAL ? "fadd" : "add", convert(load(cv), ct, st),
+                                       convert(expr(*el.step), el.step->type, st));
+                        store(cv, convert(sum, st, ct));
                         fn_->br(test);
                         fn_->set_block(next);
                     }
@@ -1137,15 +1232,17 @@ private:
         for (size_t k = 0; k < p.formals.size(); k++) {
             const Formal &formal = p.formals[k];
             const Symbol &s      = symbol(formal.id);
-            ir::Value pair       = fn_->gep("ptr", args, ir::i64(int64_t(2 * k)));
-            ir::Value cell       = slot(&f, s.slot);
+            ir::Value pair       = fn_->gep("ptr", args, ir::i64(int64_t(ACTUAL * k)));
+            ir::Value dest       = slot(&f, s.slot);
+            ir::Value tag        = fn_->load("i64", fn_->gep("ptr", pair, ir::i64(2)));
             switch (formal.spec.kind) {
             case Spec::SIMPLE:
                 if (formal.by_value) {
-                    ir::Value v = fn_->load(mem_type(formal.spec.type), call_thunk(pair));
-                    fn_->store(v, cell);
+                    Type t = formal.spec.type;
+                    Cell c{ call_thunk(pair), t, numeric(t) ? tag : ir::Value{} };
+                    store(t, load(c), dest);
                 } else {
-                    copy_pair(pair, cell);
+                    copy_words(pair, dest, ACTUAL);
                 }
                 break;
             case Spec::ARRAY: {
@@ -1153,15 +1250,22 @@ private:
                 if (formal.by_value)
                     desc = runtime("ptr", "algol_array_copy",
                                    { desc, fn_->load("i64", fn_->gep("i64", desc, ir::i64(2))) });
-                fn_->store(desc, cell);
+                fn_->store(desc, dest);
+                fn_->store(tag, fn_->gep("i64", dest, ir::i64(1)));
                 break;
             }
             case Spec::PROCEDURE:
+                copy_words(call_thunk(pair), dest, 2);
+                fn_->store(tag, fn_->gep("i64", dest, ir::i64(2)));
+                break;
             case Spec::SWITCH:
-                copy_pair(call_thunk(pair), cell);
+                copy_words(call_thunk(pair), dest, 2);
                 break;
             case Spec::LABEL:
-                copy_pair(pair, cell);
+                if (formal.by_value)
+                    copy_words(call_thunk(pair), dest, 2);
+                else
+                    copy_words(pair, dest, ACTUAL);
                 break;
             }
         }
@@ -1180,11 +1284,11 @@ private:
         finish(f);
     }
 
-    void copy_pair(const ir::Value &from, const ir::Value &to)
+    void copy_words(const ir::Value &from, const ir::Value &to, int n)
     {
-        fn_->store(fn_->load("ptr", from), to);
-        fn_->store(fn_->load("ptr", fn_->gep("ptr", from, ir::i64(1))),
-                   fn_->gep("ptr", to, ir::i64(1)));
+        for (int k = 0; k < n; k++)
+            fn_->store(fn_->load("i64", fn_->gep("i64", from, ir::i64(k))),
+                       fn_->gep("i64", to, ir::i64(k)));
     }
 
     // A value as the i64 result of a procedure, and back.
@@ -1222,18 +1326,15 @@ private:
         const Symbol &s = symbol(id);
         if (s.kind == Symbol::EXTERNAL && s.by_value)
             return c_call(s, args);
-        const std::vector<Formal> *formals = nullptr;
-        if (s.kind == Symbol::PROC)
-            formals = &s.func->proc->formals;
         ir::Value list = ir::null();
         if (!args.empty()) {
-            list = fn_->stack_alloc("ptr", int64_t(2 * args.size()));
+            list = fn_->stack_alloc("ptr", int64_t(ACTUAL * args.size()));
             for (size_t k = 0; k < args.size(); k++) {
-                const Formal *formal = formals && k < formals->size() ? &(*formals)[k] : nullptr;
-                auto [code, env]     = thunk(*args[k], formal);
-                ir::Value pair       = fn_->gep("ptr", list, ir::i64(int64_t(2 * k)));
+                auto [code, env, tag] = thunk(*args[k]);
+                ir::Value pair        = fn_->gep("ptr", list, ir::i64(int64_t(ACTUAL * k)));
                 fn_->store(code, pair);
                 fn_->store(env, fn_->gep("ptr", pair, ir::i64(1)));
+                fn_->store(tag, fn_->gep("ptr", pair, ir::i64(2)));
             }
         }
         if (s.kind == Symbol::PROC)
@@ -1250,6 +1351,17 @@ private:
             return fn_->call("i64", code.ref, { sl, list });
         }
         unsupported("This call");
+    }
+
+    // The value of a function call; through a formal procedure the result
+    // is in the actual procedure's type.
+    ir::Value call_value(int id, const ExprList &args, Type t)
+    {
+        const Symbol &s = symbol(id);
+        ir::Value r     = call(id, args);
+        if (s.kind == Symbol::FORMAL && numeric(t))
+            return from_bits(r, t, fn_->load("i64", slot(s.owner, s.slot + 2)));
+        return from_result(r, t);
     }
 
     // A _code procedure: a C function with the address of each argument
@@ -1287,9 +1399,9 @@ private:
     // Thunks: an actual parameter as {code, env}, the code giving the
     // address of its cell (doc/codegen.md).
     //
-    std::pair<ir::Value, ir::Value> thunk(const Expr &e, const Formal *formal)
+    std::tuple<ir::Value, ir::Value, ir::Value> thunk(const Expr &e)
     {
-        // A name parameter passed on: its own pair.
+        // A name parameter passed on: its own actual.
         auto v   = std::get_if<expr::Var>(&e.node);
         auto ref = std::get_if<expr::LabelRef>(&e.node);
         if (v || ref) {
@@ -1298,9 +1410,11 @@ private:
                 (s.spec.kind == Spec::SIMPLE || s.spec.kind == Spec::LABEL)) {
                 ir::Value pair = slot(s.owner, s.slot);
                 return { fn_->load("ptr", pair),
-                         fn_->load("ptr", fn_->gep("ptr", pair, ir::i64(1))) };
+                         fn_->load("ptr", fn_->gep("ptr", pair, ir::i64(1))),
+                         fn_->load("i64", fn_->gep("ptr", pair, ir::i64(2))) };
             }
         }
+        ir::Value tag    = thunk_tag(e);
         std::string name = "T." + std::to_string(thunks_++);
         auto &tf         = module_.function(name, "ptr", { "ptr" }, "", "internal");
 
@@ -1311,14 +1425,30 @@ private:
         active_.clear();
         fn_    = &tf;
         frame_ = tf.param(0);
-        fn_->ret(thunk_cell(e, formal));
+        fn_->ret(thunk_cell(e));
         fn_     = saved_fn;
         frame_  = saved_frame;
         active_ = std::move(saved_active);
-        return { { "ptr", ir::global_name(name) }, frame_ };
+        return { { "ptr", ir::global_name(name) }, frame_, tag };
     }
 
-    ir::Value thunk_cell(const Expr &e, const Formal *formal)
+    // The type of the cell of an actual parameter, as an i64.
+    ir::Value thunk_tag(const Expr &e)
+    {
+        if (auto v = std::get_if<expr::Var>(&e.node)) {
+            const Symbol &s = symbol(v->decl);
+            if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::ARRAY)
+                return array_tag(v->decl);
+            if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::PROCEDURE)
+                return fn_->load("i64", slot(s.owner, s.slot + 2));
+            return ir::i64(int64_t(s.type));
+        }
+        if (auto el = std::get_if<expr::Element>(&e.node))
+            return array_tag(el->array);
+        return ir::i64(int64_t(e.type));
+    }
+
+    ir::Value thunk_cell(const Expr &e)
     {
         auto var = std::get_if<expr::Var>(&e.node);
         if (var) {
@@ -1356,17 +1486,9 @@ private:
             fn_->store(index, fn_->gep("ptr", cell, ir::i64(1)));
             return cell;
         }
-        // An expression: its value in a temporary, in the formal's type.
-        Type t      = formal && formal->spec.kind == Spec::SIMPLE && formal->spec.type != Type::NONE
-                          ? formal->spec.type
-                          : e.type;
-        ir::Value v = expr(e);
-        if (t != e.type && (t == Type::REAL || t == Type::INTEGER))
-            v = convert(v, e.type, t);
-        else
-            t = e.type;
+        // An expression: its value in a temporary, in its own type.
         ir::Value cell = temp(1);
-        store(t, v, cell);
+        store(e.type, expr(e), cell);
         return cell;
     }
 
@@ -1381,20 +1503,20 @@ private:
     // The left parts first, from left to right, then the value.
     void assign(const stmt::Assign &a)
     {
-        std::vector<std::pair<ir::Value, Type>> targets(a.targets.size());
+        std::vector<Cell> targets(a.targets.size());
         std::transform(a.targets.begin(), a.targets.end(), targets.begin(),
                        [this](const LeftPart &lp) { return left_part(lp); });
         ir::Value v = expr(*a.value);
-        for (const auto &[ptr, t] : targets)
-            store(t, convert(v, a.value->type, t), ptr);
+        for (const auto &c : targets)
+            store(c, convert(v, a.value->type, c.type));
     }
 
-    std::pair<ir::Value, Type> left_part(const LeftPart &lp)
+    Cell left_part(const LeftPart &lp)
     {
         if (auto v = std::get_if<left::Var>(&lp))
-            return { address(v->decl), symbol(v->decl).type };
+            return var_cell(v->decl);
         const auto &el = std::get<left::Element>(lp);
-        return { element(el.array, el.subscripts), symbol(el.array).type };
+        return element_cell(el.array, el.subscripts);
     }
 
     // PRINT, _write with a format, READ.
@@ -1461,7 +1583,7 @@ private:
                     (symbol(var->decl).kind == Symbol::FORMAL &&
                      symbol(var->decl).spec.kind == Spec::ARRAY))) {
             runtime("void", std::string(pre) + "array",
-                    { descriptor(var->decl), ir::i64(int64_t(e.type)) });
+                    { descriptor(var->decl), array_tag(var->decl) });
             return;
         }
         if (e.type == Type::NONE || e.type == Type::BITS) {
@@ -1476,14 +1598,14 @@ private:
             runtime("void", name, { expr(e) });
             return;
         }
-        ir::Value ptr;
+        Cell c;
         if (var)
-            ptr = address(var->decl);
+            c = var_cell(var->decl);
         else if (auto el = std::get_if<expr::Element>(&e.node))
-            ptr = element(el->array, el->subscripts);
+            c = element_cell(el->array, el->subscripts);
         else
             unsupported("READ of an expression");
-        store(e.type, runtime(reg_type(e.type), name, {}), ptr);
+        store(c, runtime(reg_type(e.type), name, {}));
     }
 };
 

@@ -21,11 +21,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 | Deviation | Where | Task |
 |---|---|---|
-| Every formal parameter must be specified | parser | F4 |
-| Arrays cannot be called by value | checker | F4 |
-| Labels cannot be called by value | checker | F4 |
-| An actual parameter by name that is a variable must have the formal's type (an `integer` variable for a `real` formal is an error) | checker | F4 |
-| Through a formal procedure, arguments come in the actual's type, not converted to the formals of the procedure called | code generator | F4 |
 | No `own` | parser | F5 |
 | The controlled variable of `for` must be a simple variable | parser, checker | F6 |
 | Arrays of the blocks left by a non-local `goto` (through `longjmp`) are not freed | code generator | F7 |
@@ -62,6 +57,12 @@ not deviations.
 - Operands are evaluated left to right; the subscripts of the left parts of an assignment
   before the right part.
 - After `for` ends by exhaustion the controlled variable keeps its last value.
+- A formal parameter without a specification is a procedure when it is called, an array
+  when subscripted, a switch when subscripted in a `goto`, a label when a `goto` goes to
+  it, otherwise a simple variable: Boolean when used as a condition or an operand of a
+  logical operator, integer when an operand of `÷`, real otherwise (an integer actual
+  converted on each access). One that is only passed on takes any actual.
+- An array called by value keeps the type of the actual's elements.
 - An unsigned integer as an actual parameter is a label when the formal is specified
   `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.
 - Extensions of Algol-GDR (`_string` and `_bits` variables and arrays, substrings `s[i:j]`,

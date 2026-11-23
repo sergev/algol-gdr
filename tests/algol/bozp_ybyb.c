@@ -21,10 +21,10 @@ double rndm(const double *seed)
 
 typedef void *(*Thunk)(void *env);
 
-// The cell of argument k: a pair {code, env} in args.
+// The cell of argument k: {code, env, type} in args.
 static void *cell(void **args, int k)
 {
-    return ((Thunk)args[2 * k])(args[2 * k + 1]);
+    return ((Thunk)args[3 * k])(args[3 * k + 1]);
 }
 
 static int up(const void *a, const void *b)

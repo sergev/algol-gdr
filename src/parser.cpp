@@ -610,8 +610,8 @@ DeclPtr Parser::switch_decl()
 }
 
 //
-// _procedure name [(formals)]; [_value names;] specifications body. Every
-// formal is specified once.
+// _procedure name [(formals)]; [_value names;] specifications body. A
+// formal is specified once at most; one called by value must be.
 //
 DeclPtr Parser::procedure(ast::Type type)
 {
@@ -680,9 +680,10 @@ DeclPtr Parser::procedure(ast::Type type)
         expect(Sym::SEMICOLON);
         p.specs.push_back(std::move(spec));
     }
-    for (const auto &f : p.formals)
-        if (!specified.count(f.name))
-            report(f.line, "Formal parameter '" + f.name + "' is not specified");
+    for (const auto &f : p.values)
+        if (formals.count(f.name) && !specified.count(f.name))
+            report(f.line,
+                   "Formal parameter '" + f.name + "' is called by value but not specified");
     p.body = statement();
     return new_decl(line, std::move(p));
 }
