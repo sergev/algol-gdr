@@ -25,7 +25,7 @@ ALGOL_TRACE=t.tr ./build/src/algol-gdr --stop-after=2 X.alg   # trace of a trans
 scripts/trace-diff.py DUBNA.tr t.tr   # first difference with a dubna -d ir trace
 scripts/coverage.py      # code of the translated passes no test program runs
 make test                # rebuilds unit_tests; plain make does not
-./build/src/algol-gdr [--setftn=one,long] -o X.std X.alg   # compile; listing on stdout
+./build/src/algol-gdr [--check] [--setftn=one,long] -o X.std X.alg   # compile; listing on stdout
 ./build/src/algol-gdr --dump X.std   # decode and disassemble an object
 ```
 

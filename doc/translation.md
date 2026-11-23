@@ -131,7 +131,7 @@ the words of six printable characters, which are message texts, plus whatever ra
 |---|---|---|
 | 2 | 1999 of 2340 (85%) | 20 pieces of 1–6 words: entries of jump tables by type and kind, short branches |
 | 3 | 1172 of 1252 (93%), after for2 | only data |
-| 4 | 1952 of 2142 (91%) | |
+| 4 | 1971 of 2152 (91%), after mixed | 24526–24530, 24601, 24612 (branches after non-ALGOL arguments and calls), 25330–25334 (0352: an octal base to a constant power, which pass 2 folds when the base is a constant) |
 | shared | 279 of 350 (79%) | 27137 (backward write of a word), 27165, 27220, 01653 (no listing) |
 
 Test programs for pass 2 (err_pass2, exprs, exprs2, externals, err_common2) were found by

@@ -22,6 +22,7 @@ static void print_usage(std::ostream &out)
         << "    -o FILE, --output=FILE  Object file (default stdarray.out)\n"
         << "    --full                  Full listing, with object code (like *FULL)\n"
         << "    --no-list               No listing (like *NO LIST)\n"
+        << "    --check                 Run-time checks, no optimization (like *CHECK)\n"
         << "    --setftn=one,long       Like *call setftn: one column, long lines; check mode\n"
         << "    --stop-after=N          Print the stream of pass N (1-5) and stop\n"
         << "    --dump                  Print object file (standard array) and exit\n"
@@ -31,7 +32,7 @@ static void print_usage(std::ostream &out)
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_SETFTN };
+    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_SETFTN, OPT_CHECK };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
         { "dump", no_argument, nullptr, OPT_DUMP },
         { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
         { "setftn", required_argument, nullptr, OPT_SETFTN },
+        { "check", no_argument, nullptr, OPT_CHECK },
         {},
     };
     Options opt;
@@ -75,6 +77,9 @@ int main(int argc, char *argv[])
             break;
         case OPT_DUMP:
             dump = true;
+            break;
+        case OPT_CHECK:
+            opt.check_mode = true;
             break;
         case OPT_SETFTN: {
             std::string args = optarg;

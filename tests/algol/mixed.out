@@ -1,0 +1,15 @@
+*NAME MIXED
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/PARPAR E 01272                A/BPRI   E 01457                A/ARRD/V E 01665
+         A/STOP     01141                A/PARVAL E 01301                A/SPRI   E 01466                STOP*      01756
+         A/START  E 01145                A/PAREXP E 01306                A/LPRI   E 01503                EXIT     E 01757
+         A/CALLP    01221                A/PARLAB E 01317                A/NLINE  E 01547                STOPFLG* C 02005
+         A/CALLS  E 01222                A/PARSTR E 01326                A/NPAGE  E 01551                PRINT8     02006
+         A/PROCRT E 01227                A/DRUCK    01337                A/I*ISO  E 01624                SYSBACK*   02167
+         A/PARCON E 01252                A/IPRI   E 01371                A/R*ISO  E 01627                CBOБOДHO   02177
+         A/PARVAR E 01261                A/RPRI   E 01423                A/ARRD/K   01662
+≠
+ TRUE  FALSE              2              3              5              2              2              4              6
+  8.00000000001+00

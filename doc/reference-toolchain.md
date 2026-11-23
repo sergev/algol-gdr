@@ -16,7 +16,7 @@ A program `NAME.alg` may come with:
 
 | File | Use |
 | --- | --- |
-| `NAME.pre` | control cards after `*name`, in both jobs (e.g. `*call setftn:one,long`) |
+| `NAME.pre` | control cards after `*name`, in both jobs (e.g. `*call setftn:one,long`, `*check`); our compiler takes them as `--setftn=…`, `--check` |
 | `NAME.run` | cards before `*execute` in the run job: `*library:…`, or other modules (`*ftn`, `*assem` sections) |
 | `NAME.in` | terminal input of the program, fed to `dubna` as stdin (default: empty) |
 | `NAME.norun` | the program is compiled but never run (the file says why) |
@@ -87,5 +87,6 @@ The script keeps a shadow of memory and drums from the start of pass 1 (traced w
 transfers) and checks it against every traced read, so the dumps are exact.
 
 `make goldens` runs it for every program. Pass 3 is skipped (no `.s3`) for the programs with
-a `NAME.pre`: `*call setftn` sets `CHECKFL*` (cell 0521), so they are compiled in check mode.
+a `NAME.pre`: `*call setftn` and `*check` set `CHECKFL*` (cell 0521), so they are compiled in
+check mode. `arrays_check` and `for2_check` are `arrays` and `for2` with `*check`.
 After errors in pass 1 or 2 only the streams up to that pass exist.

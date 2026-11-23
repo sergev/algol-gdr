@@ -64,6 +64,8 @@ void load_options(Options &opt, const std::string &name)
     std::ifstream in(path(name, ".pre"));
     std::string line;
     while (std::getline(in, line)) {
+        if (line == "*check")
+            opt.check_mode = true;
         if (line.rfind("*call setftn:", 0) != 0)
             continue;
         std::istringstream args(line.substr(13));

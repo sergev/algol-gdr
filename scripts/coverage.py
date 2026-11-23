@@ -74,6 +74,8 @@ def pre_options(alg):
         for line in open(pre):
             if line.startswith('*call setftn:'):
                 opts.append('--setftn=' + line[13:].strip())
+            elif line.strip() == '*check':
+                opts.append('--check')
     return opts
 
 

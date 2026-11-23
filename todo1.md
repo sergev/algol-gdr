@@ -23,9 +23,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 4 (G23523)
 
-- **C15** Test programs for what C1 shows unrun in pass 4, and a `*check` variant of the array
-  programs (expected outputs with `A/SUBCH`); a `--check` option for the `*CHECK` card, apart
-  from `--setftn`.
 - **C16** The frame of pass 4: init (names from drum 26 zone 0, prologue), reading and the
   dispatch by code (26056), emitting half-words and pseudo-items (23655), EOP.
 - **C17** The template interpreter (23712, 23734, templates at 25747) and the operand stack.
