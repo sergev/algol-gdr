@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
 static const char *opname_short[64] = {
     // clang-format off
@@ -48,4 +51,27 @@ std::string besm6_opname(unsigned opcode)
     std::transform(name.begin(), name.end(), name.begin(),
                    [](unsigned char c) { return std::toupper(c); });
     return name;
+}
+
+unsigned besm6_assemble(const std::string &text)
+{
+    std::istringstream in(text);
+    std::vector<std::string> f;
+    for (std::string w; in >> w;)
+        f.push_back(w);
+    if (f.size() < 2 || f.size() > 3)
+        throw std::invalid_argument("bad instruction: " + text);
+    unsigned reg = f.size() == 3 ? std::stoul(f[0]) : 0;
+    const std::string &name = f[f.size() - 2], &a = f.back();
+    unsigned addr           = a == "*" ? 04444 : std::stoul(a, nullptr, 8);
+    for (unsigned op = 0; op < 0400; op++) {
+        if (op >= 0100 && (op < 0200 || (op & 7)))
+            continue;
+        if (besm6_opname(op) != name)
+            continue;
+        if (op & 0200)
+            return reg << 20 | op << 12 | (addr & 077777);
+        return reg << 20 | op << 12 | (addr & 07777) | (addr >= 070000 ? 1u << 18 : 0);
+    }
+    throw std::invalid_argument("bad mnemonic: " + text);
 }

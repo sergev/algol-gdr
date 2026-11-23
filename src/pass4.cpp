@@ -3,18 +3,20 @@
 #include <array>
 #include <functional>
 #include <initializer_list>
+#include <iterator>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "arith.h"
-#include "tables.h"
+#include "besm6.h"
 
 namespace {
 
 // Cells of the workspace.
 constexpr unsigned LABELS      = 02004; // the next label number
-constexpr unsigned TEMPLATE_AT = 02007; // the template half to emit next
 constexpr unsigned EMIT_MODE   = 02022; // set by 0037.0002: the next half starts a word
 constexpr unsigned NAMES       = 06000; // the names, from drum 26 zone 0
 constexpr unsigned EXT_NAMES   = 027245; // external table: 3 words per name
@@ -25,10 +27,6 @@ constexpr unsigned DRIVER        = 01633; // the return into the driver
 constexpr unsigned MAIN_LOOP     = 023625;
 constexpr unsigned DISPATCH_NEXT = 023753;
 constexpr unsigned RESULT        = 024015; // the value is in A
-constexpr unsigned DISPATCH      = 026056; // per code: UZA handler / UJ handler
-constexpr unsigned MAIN_NAME     = 023611; // the name of the main program as TEXT
-constexpr unsigned BY_KIND       = 025151; // continuations of a FOR element by kind
-constexpr unsigned TEXT_CODES    = 030076; // six-bit codes of ISO characters, 8 per word
 
 // The machine stack, as the driver leaves it.
 constexpr unsigned STACK      = 053401;
@@ -147,13 +145,281 @@ bool unit_less(Word a, Word x)
     return u.acc & 0'0020'0000'0000'0000;
 }
 
-// A word of the overlay: templates and tables.
-Word image(unsigned addr)
+//
+// Instruction templates (in the code of G23523 and at 25747…): the halves
+// an item emits; * is the operand (address 4444), taken from the stack.
+//
+enum Template : unsigned {
+    PROGRAM_START,
+    STRING_ADDRESS,
+    STRING_ADDRESS_SAVED,
+    PUSH_ADDRESS,
+    CHECK_SUBSCRIPT,
+    INDEX,
+    CALL_FRAME,
+    CALL_FRAME_SAVED,
+    STD_FUNCTION_CALL,
+    CALL_NO_PARAMETERS,
+    CALL_PARAMETERS,
+    CALL_ON_STACK,
+    ARG_THUNK,
+    ARG_CONSTANT,
+    ARG_VARIABLE,
+    ARG_ADDRESS,
+    ARG_PROCEDURE,
+    ARG_EXPRESSION,
+    ARG_STRING,
+    PASS_ADDRESS,
+    PASS_ARRAY,
+    PASS_INDIRECT,
+    BLOCK_ARRAYS,
+    JUMP,
+    FRAME_RESET,
+    FRAME_RESET_INDIRECT,
+    PROCEDURE_ENTRY,
+    VALUE_REAL,
+    VALUE,
+    SWITCH,
+    SAVE_FRAME,
+    SIGN_TEST,
+    STEP_START,
+    LOOP_STEP,
+    LOOP_STEP_CYCLIC,
+    LOOP_STEP_INTEGER,
+    STEP_TEMPORARY,
+    STEP_IN_TEMPORARY,
+    INTEGER_ROUND,
+    STRING_SLICE,
+    STEP_REGISTER,
+    PREAMBLE_CYCLIC,
+    PREAMBLE,
+    PREAMBLE_END,
+    LOOP_CALL_3,
+    LOOP_CALL_2,
+    CALL_INDIRECT,
+    CALL,
+    NEGATE,
+    NEGATE_INTEGER,
+    NOT,
+    STORE,
+    ABS,
+    TO_REAL,
+    TO_INTEGER,
+    NOT_OCTAL,
+    PUSH,
+    LOAD,
+    ADD,
+    MULTIPLY,
+    EQUAL,
+    NOT_EQUAL,
+    OR,
+    AND_CALL,
+    EQUIV,
+    ADD_INTEGER,
+    MULTIPLY_INTEGER,
+    EQUAL_MIXED,
+    NOT_EQUAL_MIXED,
+    AND,
+    SUBTRACT,
+    SUBTRACT_FROM,
+    DIVIDE,
+    DIVIDE_INTO,
+    SIGN_FROM,
+    SIGN,
+    NOT_SIGN,
+    NOT_SIGN_FROM,
+    SUBTRACT_INTEGER,
+    SUBTRACT_FROM_INTEGER,
+    STRING_COMPARE,
+    JUMP_ZERO_FROM,
+    JUMP_ZERO,
+    JUMP_NONZERO_FROM,
+    JUMP_NONZERO,
+    LABEL,
+    PROGRAM_END,
+    TEMPLATE_COUNT
+};
+
+const char *const TEMPLATE_TEXT[] = {
+    "7 VTM *; 13 VJM 4014; 15 UTM *", // PROGRAM_START
+    "UTC *; 14 VTM 0; ITA 16", // STRING_ADDRESS
+    "UTC *; 14 VTM 0; ITS 16", // STRING_ADDRESS_SAVED
+    "ITA 14; 15 ATX 0", // PUSH_ADDRESS
+    "XTA *; 13 VJM 4114; *20 0", // CHECK_SUBSCRIPT
+    "WTC *", // INDEX
+    "ITA 17; 15 UTM 10; *20 0", // CALL_FRAME
+    "ITS 17; 15 UTM 10; *20 0", // CALL_FRAME_SAVED
+    "12 VTM *; 14 VTM 4066; 13 VJM 4010; *20 0", // STD_FUNCTION_CALL
+    "14 VTM *; 13 VJM 4007; *20 0", // CALL_NO_PARAMETERS
+    "14 VTM *; 13 VJM 4010", // CALL_PARAMETERS
+    "ATI 17; UTC *; 13 VJM 0; *20 0", // CALL_ON_STACK
+    "14 VJM 4017; UTC *", // ARG_THUNK
+    "14 VJM 4011; UTC *", // ARG_CONSTANT
+    "14 VJM 4012; UTC *", // ARG_VARIABLE
+    "14 VJM 4013; UTC *", // ARG_ADDRESS
+    "14 VJM 4015; UTC *", // ARG_PROCEDURE
+    "14 VJM 4016; *20 0", // ARG_EXPRESSION
+    "14 VJM 4027; UTC *", // ARG_STRING
+    "UTC *; 14 VTM 0; ITS 16", // PASS_ADDRESS
+    "XTS *; ASN 136", // PASS_ARRAY
+    "WTC *; 14 VTM 0; ITS 16", // PASS_INDIRECT
+    "11 VTM *; 12 VTM *; UTC *; 13 VTM 0; 14 VJM *; *20 0", // BLOCK_ARRAYS
+    "UJ *; *20 0", // JUMP
+    "UTC *; 15 VTM 0", // FRAME_RESET
+    "WTC *; 15 VTM 0", // FRAME_RESET_INDIRECT
+    "*21 *; 15 MTJ *; 15 UTM *", // PROCEDURE_ENTRY
+    "UTC *; 13 VJM 0; *20 0; A+X 0; ATX *", // VALUE_REAL
+    "UTC *; 13 VJM 0; *20 0; ATX *", // VALUE
+    "*21 *; 8 UJ *; *20 0", // SWITCH
+    "14 VTM *; ITA 16; ATX *", // SAVE_FRAME
+    "AVX *", // SIGN_TEST
+    "UJ *; *21 *; XTA *", // STEP_START
+    "A+X *; *21 *; ATX *", // LOOP_STEP
+    "ARX *; *21 *; ATX *", // LOOP_STEP_CYCLIC
+    "NTR 3; A+X *; NTR 2; *21 *; ATX *", // LOOP_STEP_INTEGER
+    "ATX *; 14 VTM *; ITA 16; ATX *; *21 *", // STEP_TEMPORARY
+    "WTC *; UJ 0; *21 *; 14 VTM *; ITS 16; ATX *; XTA *; UJ *; *21 *; 15 ATX 0", // STEP_IN_TEMPORARY
+    "NTR 3; A+X 4006; NTR 2", // INTEGER_ROUND
+    "13 VJM 4100; *20 0", // STRING_SLICE
+    "WTC *; UTM *", // STEP_REGISTER
+    "XTA *; UJ *; *21 *; XTA *; ARX *; *21 *; ATX *; X-A *; U1A *; NTR 6", // PREAMBLE_CYCLIC
+    "XTA *; UJ *; *21 *; XTA *; A+X *; *21 *; ATX *; X-A *; AVX *; U1A *; NTR 6", // PREAMBLE
+    "*21 *; 12 VTM *; 14 VTM *; 13 VJM 4115; *20 0", // PREAMBLE_END
+    "XTA *; XTS *; XTS *; 14 VTM *; 13 VJM 4117; *21 *", // LOOP_CALL_3
+    "XTA *; XTS *; 14 VTM *; 13 VJM 4116; *21 *", // LOOP_CALL_2
+    "UTC *; 13 VJM 0; *20 0", // CALL_INDIRECT
+    "13 VJM *; *20 0", // CALL
+    "AVX 4000", // NEGATE
+    "NTR 3; AVX 4000; NTR 2", // NEGATE_INTEGER
+    "14 VJM 4001; *20 0", // NOT
+    "ATX *", // STORE
+    "AMX 0", // ABS
+    "A+X 0", // TO_REAL
+    "14 VJM 4002; *20 0", // TO_INTEGER
+    "14 VJM 4120; *20 0", // NOT_OCTAL
+    "XTS *", // PUSH
+    "XTA *", // LOAD
+    "A+X *", // ADD
+    "A*X *", // MULTIPLY
+    "AEX *; 14 VJM 4001; *20 0", // EQUAL
+    "AEX *", // NOT_EQUAL
+    "AOX *", // OR
+    "XTS *; 14 VJM 4004; *20 0", // AND_CALL
+    "XTS *; 14 VJM 4005; *20 0", // EQUIV
+    "NTR 3; A+X *; NTR 2", // ADD_INTEGER
+    "A*X *; NTR 3; A+X 4006; NTR 2", // MULTIPLY_INTEGER
+    "A-X *; 14 VJM 4001; *20 0", // EQUAL_MIXED
+    "A-X *; AEX 0", // NOT_EQUAL_MIXED
+    "AAX *", // AND
+    "A-X *", // SUBTRACT
+    "X-A *", // SUBTRACT_FROM
+    "A/X *", // DIVIDE
+    "XTS *; 15 A/X 0", // DIVIDE_INTO
+    "X-A *; AAX 4000", // SIGN_FROM
+    "A-X *; AAX 4000", // SIGN
+    "A-X *; AAX 4000; AEX 4000", // NOT_SIGN
+    "X-A *; AAX 4000; AEX 4000", // NOT_SIGN_FROM
+    "NTR 3; A-X *; NTR 2", // SUBTRACT_INTEGER
+    "NTR 3; X-A *; NTR 2", // SUBTRACT_FROM_INTEGER
+    "AEX *", // STRING_COMPARE
+    "X-A *; UZA *", // JUMP_ZERO_FROM
+    "A-X *; UZA *", // JUMP_ZERO
+    "X-A *; U1A *", // JUMP_NONZERO_FROM
+    "A-X *; U1A *", // JUMP_NONZERO
+    "*21 *", // LABEL
+    "UJ 4047; *20 0; *21 *", // PROGRAM_END
+};
+static_assert(std::size(TEMPLATE_TEXT) == TEMPLATE_COUNT);
+
+// The halves of template t.
+const std::vector<unsigned> &halves(Template t)
 {
-    if (addr < tables::image_base || addr >= tables::image_base + tables::image_size)
-        throw std::runtime_error("pass 4: no overlay word at " + std::to_string(addr));
-    return tables::image[addr - tables::image_base];
+    static const auto all = [] {
+        std::vector<std::vector<unsigned>> v;
+        for (const char *text : TEMPLATE_TEXT) {
+            std::vector<unsigned> h;
+            std::stringstream parts(text);
+            for (std::string part; std::getline(parts, part, ';');)
+                h.push_back(besm6_assemble(part));
+            v.push_back(h);
+        }
+        return v;
+    }();
+    return all.at(t);
 }
+
+// An operator not commutative (24113…) and a compare-and-jump (26052…): the
+// template for A op stack (left) and the one when the right operand is in A.
+enum Pair : unsigned {
+    MINUS, // 014 real -
+    DIVIDE_PAIR, // 016 /
+    GREATER, // 010 >
+    LESS, // 005 <
+    GREATER_EQUAL, // 007 >=
+    LESS_EQUAL, // 006 <=
+    MINUS_INTEGER, // 076 integer -
+    JUMP_0133, // 0133
+    JUMP_0130, // 0130
+    JUMP_0131, // 0131
+    JUMP_0132, // 0132
+};
+
+struct TemplatePair {
+    Template left, right;
+};
+
+const TemplatePair PAIRS[] = {
+    { SUBTRACT, SUBTRACT_FROM },
+    { DIVIDE, DIVIDE_INTO },
+    { SIGN_FROM, SIGN },
+    { SIGN, SIGN_FROM },
+    { NOT_SIGN, NOT_SIGN_FROM },
+    { NOT_SIGN_FROM, NOT_SIGN },
+    { SUBTRACT_INTEGER, SUBTRACT_FROM_INTEGER },
+    { JUMP_ZERO_FROM, JUMP_ZERO },
+    { JUMP_ZERO, JUMP_ZERO_FROM },
+    { JUMP_NONZERO_FROM, JUMP_NONZERO },
+    { JUMP_NONZERO, JUMP_NONZERO_FROM },
+};
+
+// The handler of each item code (26056…, two per word).
+const unsigned HANDLERS[0200] = {
+    000000, 025335, 024052, 024053, 024023, 024107, 024111, 024110, // 000
+    024106, 024050, 024051, 024046, 024075, 024047, 024076, 024000, // 010
+    024405, 024412, 024005, 023775, 024666, 024661, 024022, 024137, // 020
+    024246, 024213, 025062, 025071, 025126, 025131, 024746, 024752, // 030
+    024616, 025023, 024711, 024055, 024252, 024244, 024260, 024021, // 040
+    025346, 024746, 025103, 024206, 024207, 025042, 025130, 024377, // 050
+    024673, 024767, 024730, 024027, 024026, 024562, 024531, 024056, // 060
+    023764, 024030, 024037, 024551, 024533, 026152, 024112, 024057, // 070
+    024221, 024226, 024655, 024311, 024646, 024060, 024061, 024010, // 100
+    024361, 024424, 024430, 024440, 024432, 024434, 024461, 024452, // 110
+    024444, 024502, 024503, 024516, 024523, 024507, 024547, 025005, // 120
+    024162, 024163, 024164, 024161, 024146, 025067, 024016, 025127, // 130
+    025125, 025064, 025020, 025010, 025012, 024755, 024761, 025326, // 140
+    025323, 025325, 025276, 025300, 024776, 024764, 024423, 025336, // 150
+    025370, 025363, 025460, 025365, 025375, 025400, 025433, 025412, // 160
+    002005, 020066, 026156, 002020, 000000, PROGRAM_END, 023734, 000000, // 170
+};
+
+// The name of the main program, as TEXT (23611).
+const Word MAIN_NAME = utf8_to_text("PROGRAM");
+
+// Where an element of a FOR list goes on, by its kind (25151…).
+const unsigned BY_KIND_NEXT[] = { 025176, 025176, 025176, 025156, 025163 };
+
+// The six-bit TEXT code of each ISO character (G30034, 30076…); the words
+// below 060 are other data of the original.
+const uint8_t TEXT_CODES[0200] = {
+    000, 000, 000, 000, 000, 000, 000, 032, 000, 000, 000, 000, 000, 000, 000, 027, // 000
+    000, 000, 000, 000, 000, 000, 000, 024, 000, 000, 000, 000, 000, 000, 000, 021, // 020
+    000, 000, 000, 000, 000, 000, 000, 016, 000, 000, 000, 000, 000, 000, 000, 013, // 040
+    020, 021, 022, 023, 024, 025, 026, 027, 030, 031, 000, 000, 000, 000, 000, 000, // 060
+    000, 041, 042, 043, 044, 045, 046, 047, 050, 051, 052, 053, 054, 055, 056, 057, // 100
+    060, 061, 062, 063, 064, 065, 066, 067, 070, 071, 072, 000, 000, 000, 000, 000, // 120
+    077, 041, 002, 003, 004, 045, 005, 006, 070, 007, 013, 053, 014, 055, 050, 057, // 140
+    034, 015, 060, 043, 064, 071, 016, 042, 032, 037, 040, 073, 074, 075, 076, 000, // 160
+};
 
 //
 // G30034: the 6 ISO characters iso as TEXT: each character c its six-bit
@@ -166,8 +432,7 @@ Word iso_text(Word iso)
     for (unsigned k = 0; k < 6; k++) {
         unsigned c = (iso >> (8 * k)) & 0377;
         if (c) {
-            Word codes = image(TEXT_CODES + (c >> 3));
-            text |= ((codes >> (6 * (c & 7))) & 077) << (12 + 6 * k);
+            text |= Word(TEXT_CODES[c & 0177]) << (12 + 6 * k);
         }
     }
     return text;
@@ -248,8 +513,7 @@ private:
 
     // Framework.
     void emit(Word half);
-    Word template_half();
-    void emit_template(unsigned t);
+    void emit_template(Template t);
     void save_acc();
     void load_value(Word d);
     void operand_done();
@@ -263,20 +527,20 @@ private:
     unsigned give(Word d);
     unsigned give_none();
     unsigned result_in_acc();
-    unsigned apply_template(unsigned t);
+    unsigned apply_template(Template t);
     unsigned string_item();
     unsigned variable_item();
     unsigned call_item();
     unsigned formal_item();
-    unsigned unary(unsigned t);
+    unsigned unary(Template t);
     unsigned unary_2();
     unsigned std_function();
     unsigned std_procedure();
-    unsigned apply(unsigned t);
+    unsigned apply(Template t);
     void left_to_acc();
-    unsigned binary(unsigned t);
+    unsigned binary(Template t);
     unsigned binary_3();
-    unsigned paired(unsigned pair, unsigned link);
+    unsigned paired(Pair pair, unsigned link);
     unsigned paired_3();
     unsigned divide_3();
     unsigned assign(Word target);
@@ -294,7 +558,7 @@ private:
     unsigned jump_ahead(Word half);
     bool comparison_operands();
     unsigned string_jump_3();
-    unsigned compare_jump(unsigned pair);
+    unsigned compare_jump(Pair pair);
     unsigned compare_jump_3();
     unsigned define_label(Word n);
     unsigned else_item();
@@ -330,7 +594,7 @@ private:
     unsigned preamble_4();
     unsigned preamble_end();
     unsigned register_load();
-    unsigned loop_template(std::initializer_list<unsigned> offsets, unsigned t, unsigned n);
+    unsigned loop_template(std::initializer_list<unsigned> offsets, Template t, unsigned n);
     void register_arrays();
 
     // FOR loops.
@@ -342,7 +606,7 @@ private:
     unsigned element_item(unsigned k);
     void store_control();
     unsigned plain_value();
-    unsigned by_kind(unsigned t, Word kind);
+    unsigned by_kind(Template t, Word kind);
     unsigned step_operand();
     unsigned until_test();
     unsigned until_value();
@@ -352,14 +616,14 @@ private:
 
     // Procedures and non-ALGOL calls.
     void pending_label();
-    unsigned call_tail(unsigned t, Word d);
-    unsigned argument(unsigned t, Word a);
+    unsigned call_tail(Template t, Word d);
+    unsigned argument(Template t, Word a);
     unsigned thunk_start();
-    unsigned value_parameter(unsigned t);
+    unsigned value_parameter(Template t);
     unsigned push_argument(Word a, unsigned passer);
     unsigned code_value(unsigned passer);
     unsigned code_call(unsigned r, Word count);
-    unsigned pass_argument(unsigned t);
+    unsigned pass_argument(Template t);
     unsigned pass_value(bool result);
     void register_procedures();
 };
@@ -442,29 +706,15 @@ void Pass4::emit(Word half)
     }
 }
 
-// 23712: the next half of the template at TEMPLATE_AT (bit 48: the right half).
-Word Pass4::template_half()
-{
-    Word at         = mem(TEMPLATE_AT);
-    Word word       = image(at & 077777);
-    Word half       = (at & BIT48) ? word & 077777777 : word >> 24;
-    mem(TEMPLATE_AT) = cyclic_add(at, BIT48);
-    return half;
-}
-
 //
-// 23734: emit the template at t, up to a zero half. A half with address
+// 23734: emit the template t (the original goes through it by 02007). A half with address
 // 4444 takes the operand from the stack: its address replaces 4444, or, for
 // an operand with bit 48, the operand + 4000000002277777 is emitted first
 // and the half keeps address 0.
 //
-void Pass4::emit_template(unsigned t)
+void Pass4::emit_template(Template t)
 {
-    mem(TEMPLATE_AT) = t;
-    for (;;) {
-        Word half = template_half();
-        if (!half)
-            return;
+    for (Word half : halves(t)) {
         if ((half & 07777) == OPERAND) {
             Word op = pop();
             if (op & BIT48) {
@@ -493,11 +743,11 @@ void Pass4::save_acc()
 void Pass4::load_value(Word d)
 {
     push(d);
-    unsigned t = 025772;
+    Template t = LOAD;
     if (acc_cell_) {
         mem(acc_cell_) = ON_STACK;
         acc_cell_      = 0;
-        t              = 025771;
+        t              = PUSH;
     }
     emit_template(t);
 }
@@ -514,7 +764,7 @@ void Pass4::operand_done()
 //
 // 23753: read an item and go to its handler: the code c (bits 7–1), the
 // attribute (12–8) and the value (24–13); the handler of code c is in the
-// left half of word DISPATCH + c/2 (c even) or the right one.
+// table HANDLERS.
 //
 unsigned Pass4::dispatch_next()
 {
@@ -522,8 +772,7 @@ unsigned Pass4::dispatch_next()
     code_     = item & 0177;
     attr_     = (item >> 7) & 037;
     value_    = (item >> 12) & 07777;
-    Word w    = image(DISPATCH + (code_ >> 1));
-    return unsigned(((code_ & 1) ? w : w >> 24) & 077777);
+    return HANDLERS[code_];
 }
 
 // 23752: dispatch the next item, returning to link (pushed).
@@ -599,13 +848,13 @@ unsigned Pass4::start()
     mem(EMIT_MODE) = 0;
     mem(02021)     = 5;
     if ((mem(list + 2) & KIND) != BIT45) {
-        mem(02005) = image(MAIN_NAME);
+        mem(02005) = MAIN_NAME;
         mem(02014) = FRAME_MAIN;
         block_entry(list);
         store(list, packed_frame(mem(02014)) ^ mem(list));
         push(mem(02014) & ADDR);
         push(number_);
-        emit_template(023612);
+        emit_template(PROGRAM_START);
     } else {
         mem(02014) = FRAME_PROC;
         mem(02006) = mem((06144 + mem(list + 1)) & 077777);
@@ -625,9 +874,9 @@ unsigned Pass4::start()
 //
 unsigned Pass4::eop()
 {
-    if (mem(02005) == image(MAIN_NAME)) {
+    if (mem(02005) == MAIN_NAME) {
         push(mem(02020));
-        emit_template(026160);
+        emit_template(PROGRAM_END);
     }
     pop();
     pop();
@@ -660,7 +909,7 @@ unsigned Pass4::result_in_acc()
 }
 
 // The template t, then the result in A.
-unsigned Pass4::apply_template(unsigned t)
+unsigned Pass4::apply_template(Template t)
 {
     emit_template(t);
     return result_in_acc();
@@ -671,9 +920,9 @@ unsigned Pass4::apply_template(unsigned t)
 unsigned Pass4::string_item()
 {
     push(constant_address());
-    unsigned t = 023771;
+    Template t = STRING_ADDRESS;
     if (acc_cell_) {
-        t              = 023773;
+        t              = STRING_ADDRESS_SAVED;
         mem(acc_cell_) = ON_STACK;
     }
     return apply_template(t);
@@ -692,7 +941,7 @@ unsigned Pass4::call_item()
     save_acc();
     Word d = mem(value_) & DESC_MASK;
     push(d);
-    return apply_template((d & ON_STACK) ? 025747 : 025751);
+    return apply_template((d & ON_STACK) ? CALL_INDIRECT : CALL);
 }
 
 // 24005: a formal by name (022): a value parameter as a variable.
@@ -705,7 +954,7 @@ unsigned Pass4::formal_item()
 }
 
 // 24041: a unary operator, template t: the operand loaded, then the template.
-unsigned Pass4::unary(unsigned t)
+unsigned Pass4::unary(Template t)
 {
     push(t);
     return operand(024043);
@@ -714,7 +963,7 @@ unsigned Pass4::unary(unsigned t)
 unsigned Pass4::unary_2()
 {
     operand_done();
-    return apply_template(pop() & 077777);
+    return apply_template(Template(pop()));
 }
 
 // 24030: a standard function n (071): 6 inline (template 25761), else the
@@ -722,7 +971,7 @@ unsigned Pass4::unary_2()
 unsigned Pass4::std_function()
 {
     if (value_ == 6)
-        return unary(025761);
+        return unary(ABS);
     value_ = (value_ + 04030) & 077777;
     push(value_);
     return operand(024034);
@@ -733,11 +982,11 @@ unsigned Pass4::std_procedure()
 {
     value_ = (value_ + 04030) & 077777;
     push(value_);
-    return apply_template(025751);
+    return apply_template(CALL);
 }
 
 // 24071: the template t, the operand on the stack; the template's word dropped.
-unsigned Pass4::apply(unsigned t)
+unsigned Pass4::apply(Template t)
 {
     emit_template(t);
     pop();
@@ -762,7 +1011,7 @@ void Pass4::left_to_acc()
 
 // 24062: a binary operator, template t: both operands; the template works
 // on A and the operand on the stack.
-unsigned Pass4::binary(unsigned t)
+unsigned Pass4::binary(Template t)
 {
     push(t);
     return operand(024064);
@@ -772,12 +1021,12 @@ unsigned Pass4::binary_3()
 {
     if (pop())
         left_to_acc();
-    return apply(top(2) & 077777);
+    return apply(Template(top(2)));
 }
 
 // 24122: an operator not commutative, pair = a word of two templates: the
 // left half for A op stack, the right one when the right operand is in A.
-unsigned Pass4::paired(unsigned pair, unsigned link)
+unsigned Pass4::paired(Pair pair, unsigned link)
 {
     push(pair);
     return operand(link);
@@ -786,9 +1035,9 @@ unsigned Pass4::paired(unsigned pair, unsigned link)
 unsigned Pass4::paired_3()
 {
     if (!pop())
-        return apply(image(top(2) & 077777) & 077777);
+        return apply(PAIRS[top(2)].right);
     left_to_acc();
-    return apply((image(top(2) & 077777) >> 24) & 077777);
+    return apply(PAIRS[top(2)].left);
 }
 
 // 24101: real division (016) with both operands on the stack: two halves
@@ -813,7 +1062,7 @@ unsigned Pass4::assign(Word target)
 // 24240: the address computed is pushed (template 24242).
 unsigned Pass4::assign_pushed()
 {
-    emit_template(024242);
+    emit_template(PUSH_ADDRESS);
     return assign(BY_NAME);
 }
 
@@ -828,7 +1077,7 @@ unsigned Pass4::assign_formal()
     if (d & BIT48)
         return assign(d);
     push(d);
-    emit_template(025747);
+    emit_template(CALL_INDIRECT);
     Word r = mem(02021);
     if (!r)
         return assign_pushed();
@@ -856,12 +1105,12 @@ unsigned Pass4::power_loop()
             break;
         top(2) = c;
         push(top(1));
-        emit_template(025774);
+        emit_template(MULTIPLY);
     }
     sp_ = (sp_ - 2) & 077777;
     if (pop())
         return result_in_acc();
-    return apply_template(025321);
+    return apply_template(INTEGER_ROUND);
 }
 
 unsigned Pass4::power_2()
@@ -918,46 +1167,46 @@ void Pass4::register_operators()
     n[024010] = [this] { return call_item(); };
     n[RESULT] = [this] { return result_in_acc(); };
     n[024016] = [this] { return give_none(); };
-    n[024021] = [this] { return unary(025753); };
-    n[024022] = [this] { return unary(025754); };
-    n[024023] = [this] { return unary(attr_ ? 025767 : 025756); };
-    n[024026] = [this] { return unary(025762); };
-    n[024027] = [this] { return unary(025763); };
+    n[024021] = [this] { return unary(NEGATE); };
+    n[024022] = [this] { return unary(NEGATE_INTEGER); };
+    n[024023] = [this] { return unary(attr_ ? NOT_OCTAL : NOT); };
+    n[024026] = [this] { return unary(TO_REAL); };
+    n[024027] = [this] { return unary(TO_INTEGER); };
     n[024030] = [this] { return std_function(); };
     n[024034] = [this] {
         operand_done();
-        return apply_template(025751);
+        return apply_template(CALL);
     };
     n[024037] = [this] { return std_procedure(); };
     n[024043] = [this] { return unary_2(); };
-    n[024046] = [this] { return binary(025773); };
-    n[024047] = [this] { return binary(025774); };
-    n[024050] = [this] { return binary(025775); };
-    n[024051] = [this] { return binary(025777); };
-    n[024052] = [this] { return binary(026000); };
-    n[024053] = [this] { return binary(attr_ ? 026016 : 026001); };
-    n[024055] = [this] { return binary(026003); };
-    n[024056] = [this] { return binary(026005); };
-    n[024057] = [this] { return binary(026007); };
-    n[024060] = [this] { return binary(026012); };
-    n[024061] = [this] { return binary(026014); };
+    n[024046] = [this] { return binary(ADD); };
+    n[024047] = [this] { return binary(MULTIPLY); };
+    n[024050] = [this] { return binary(EQUAL); };
+    n[024051] = [this] { return binary(NOT_EQUAL); };
+    n[024052] = [this] { return binary(OR); };
+    n[024053] = [this] { return binary(attr_ ? AND : AND_CALL); };
+    n[024055] = [this] { return binary(EQUIV); };
+    n[024056] = [this] { return binary(ADD_INTEGER); };
+    n[024057] = [this] { return binary(MULTIPLY_INTEGER); };
+    n[024060] = [this] { return binary(EQUAL_MIXED); };
+    n[024061] = [this] { return binary(NOT_EQUAL_MIXED); };
     n[024064] = [this] { return operand(024065); };
     n[024065] = [this] { return binary_3(); };
-    n[024075] = [this] { return paired(024113, 024124); };
-    n[024076] = [this] { return paired(024114, 024100); };
+    n[024075] = [this] { return paired(MINUS, 024124); };
+    n[024076] = [this] { return paired(DIVIDE_PAIR, 024100); };
     n[024100] = [this] { return operand(024101); };
     n[024101] = [this] { return divide_3(); };
-    n[024106] = [this] { return paired(024115, 024124); };
-    n[024107] = [this] { return paired(024116, 024124); };
-    n[024110] = [this] { return paired(024117, 024124); };
-    n[024111] = [this] { return paired(024120, 024124); };
-    n[024112] = [this] { return paired(024121, 024124); };
+    n[024106] = [this] { return paired(GREATER, 024124); };
+    n[024107] = [this] { return paired(LESS, 024124); };
+    n[024110] = [this] { return paired(GREATER_EQUAL, 024124); };
+    n[024111] = [this] { return paired(LESS_EQUAL, 024124); };
+    n[024112] = [this] { return paired(MINUS_INTEGER, 024124); };
     n[024124] = [this] { return operand(024125); };
     n[024125] = [this] { return paired_3(); };
     n[024221] = [this] { return assign(mem(value_) & DESC_MASK); };
     n[024223] = [this] {
         operand_done();
-        return apply_template(025760);
+        return apply_template(STORE);
     };
     n[024226] = [this] { return assign_formal(); };
     n[025276] = [this] { // a real ** c (0152), an octal base (0352)
@@ -985,7 +1234,7 @@ void Pass4::register_operators()
     };
     n[025343] = [this] {
         operand_done();
-        return apply_template(025751);
+        return apply_template(CALL);
     };
     n[025346] = [this] {
         push(attr_);
@@ -998,7 +1247,7 @@ void Pass4::register_operators()
     };
     n[025354] = [this] {
         operand_done();
-        return apply_template(025361);
+        return apply_template(STRING_SLICE);
     };
     n[025360] = [this] {
         operand_done();
@@ -1051,7 +1300,7 @@ unsigned Pass4::string_jump_3()
             push(d2);
         }
     }
-    emit_template(026040);
+    emit_template(STRING_COMPARE);
     acc_cell_ = 0;
     return jump_ahead(LABEL_U1A2 | mem(LABELS));
 }
@@ -1060,7 +1309,7 @@ unsigned Pass4::string_jump_3()
 // 24165: compare-and-jump (0130–0133), pair = a word of two templates (as
 // for 24122): the label pushed under the operands; the template jumps to it.
 //
-unsigned Pass4::compare_jump(unsigned pair)
+unsigned Pass4::compare_jump(Pair pair)
 {
     push(pair);
     push(mem(LABELS));
@@ -1070,9 +1319,9 @@ unsigned Pass4::compare_jump(unsigned pair)
 unsigned Pass4::compare_jump_3()
 {
     bool left  = comparison_operands();
-    Word pair  = image(top(3) & 077777);
-    unsigned t = (left ? pair >> 24 : pair) & 077777;
-    acc_cell_  = 0;
+    const auto &pair = PAIRS[top(3)];
+    Template t       = left ? pair.left : pair.right;
+    acc_cell_        = 0;
     emit_template(t);
     top(1) = new_label();
     return MAIN_LOOP;
@@ -1083,7 +1332,7 @@ unsigned Pass4::define_label(Word n)
 {
     sp_         = (sp_ - 2) & 077777;
     mem(LABELS) = n;
-    return apply_template(026051);
+    return apply_template(LABEL);
 }
 
 // 24213: ELSE (031): UJ to a new label, then the IF's label defined.
@@ -1091,7 +1340,7 @@ unsigned Pass4::else_item()
 {
     sp_ = (sp_ - 2) & 077777;
     emit(LABEL_UJ | mem(LABELS));
-    emit_template(026051);
+    emit_template(LABEL);
     push(new_label());
     return MAIN_LOOP;
 }
@@ -1100,7 +1349,7 @@ unsigned Pass4::else_item()
 unsigned Pass4::goto_label()
 {
     push(mem(value_) & DESC_MASK);
-    emit_template(024671);
+    emit_template(JUMP);
     return give_none();
 }
 
@@ -1111,7 +1360,7 @@ unsigned Pass4::switch_element()
     Word d = pop();
     if (d) {
         push(d);
-        emit_template(024360);
+        emit_template(INDEX);
     }
     emit(SWITCH_UJ | pop());
     return goto_label();
@@ -1124,7 +1373,7 @@ unsigned Pass4::switch_end()
     Word d = mem(value_) & ADDR;
     push(d);
     push(d);
-    emit_template(025040);
+    emit_template(SWITCH);
     unsigned base = (sp_ - attr_) & 077777;
     for (unsigned i = 0; i < attr_; i++) {
         emit(mem((base + i) & 077777));
@@ -1146,10 +1395,10 @@ void Pass4::register_jumps()
     n[024146] = [this] { return operand(024147); };
     n[024147] = [this] { return operand(024150); };
     n[024150] = [this] { return string_jump_3(); };
-    n[024161] = [this] { return compare_jump(026052); };
-    n[024162] = [this] { return compare_jump(026053); };
-    n[024163] = [this] { return compare_jump(026054); };
-    n[024164] = [this] { return compare_jump(026055); };
+    n[024161] = [this] { return compare_jump(JUMP_0133); };
+    n[024162] = [this] { return compare_jump(JUMP_0130); };
+    n[024163] = [this] { return compare_jump(JUMP_0131); };
+    n[024164] = [this] { return compare_jump(JUMP_0132); };
     n[024167] = [this] { return operand(024170); };
     n[024170] = [this] { return compare_jump_3(); };
     n[024206] = [this] { return define_label(top(3)); }; // the end of IF (053)
@@ -1406,7 +1655,7 @@ void Pass4::block_entry(unsigned list)
 unsigned Pass4::frame_reset(Word d)
 {
     push(unpacked(d));
-    emit_template((d & BIT48) ? 024707 : 024705);
+    emit_template((d & BIT48) ? FRAME_RESET_INDIRECT : FRAME_RESET);
     return DISPATCH_NEXT;
 }
 
@@ -1443,7 +1692,7 @@ unsigned Pass4::procedure_item()
     push(params);
     mem(02021) = cyclic_add(params, MINUS_ONE);
     push(before & ADDR);
-    emit_template(024726);
+    emit_template(PROCEDURE_ENTRY);
     mem(02023) = (mem(value_) & 0100000) ^ 0100000;
     if (Word label = (mem((value_ - 1) & 077777) >> 24) & ADDR)
         emit(label | PROC_LABEL);
@@ -1490,7 +1739,7 @@ unsigned Pass4::next_subscript()
         return 1;
     push(x);
     emit(mem(02011));
-    emit_template(024360);
+    emit_template(INDEX);
     top(1) |= mem(02011) & ON_STACK;
     return 3;
 }
@@ -1513,7 +1762,7 @@ unsigned Pass4::subscript(bool counted)
         k      = 0;
         if (x) {
             push(x);
-            emit_template(024360);
+            emit_template(INDEX);
             k = 2;
         }
     } else {
@@ -1521,7 +1770,7 @@ unsigned Pass4::subscript(bool counted)
         k = next_subscript();
     }
     for (unsigned n = (attr_ - 1) & 077777; n; n--) {
-        emit_template(024360);
+        emit_template(INDEX);
         k = next_subscript();
     }
     return k;
@@ -1565,7 +1814,7 @@ unsigned Pass4::element_store()
         if (Word r = mem(02021))
             emit(((r << 20) & WORD_MASK) | CHECK_REG);
         push(address_of(mem(value_)));
-        emit_template(024303);
+        emit_template(CHECK_SUBSCRIPT);
     }
     Word r = mem(02021);
     if (!r)
@@ -1623,7 +1872,7 @@ unsigned Pass4::register_step()
     }
     push(Word(attr_) << 20);
     push(attr_ + 020);
-    emit_template(025410);
+    emit_template(STEP_REGISTER);
     return DISPATCH_NEXT;
 }
 
@@ -1635,10 +1884,10 @@ unsigned Pass4::preamble_4()
     unsigned at = (sp_ - 4) & 077777;
     Word cv = mem(at), init = mem(at + 1), step = mem(at + 2), until = mem(at + 3);
     Word label = mem(LABELS);
-    unsigned t = 025441;
+    Template t = PREAMBLE_CYCLIC;
     push(cyclic_add(label, 2));
     if (!(loop_descriptor() & STEP_ONE)) {
-        t = 025447;
+        t = PREAMBLE;
         push(step);
     }
     for (Word w : { until, cv, label, step, cv, cyclic_add(label, 1), label, init })
@@ -1658,7 +1907,7 @@ unsigned Pass4::preamble_end()
     u.rsub(1);
     push(u.acc & 07777);
     push(cyclic_add(label, 2));
-    emit_template(025455);
+    emit_template(PREAMBLE_END);
     return DISPATCH_NEXT;
 }
 
@@ -1673,7 +1922,7 @@ unsigned Pass4::register_load()
 }
 
 // Push the words at offsets (from the top on entry), template t, drop n.
-unsigned Pass4::loop_template(std::initializer_list<unsigned> offsets, unsigned t, unsigned n)
+unsigned Pass4::loop_template(std::initializer_list<unsigned> offsets, Template t, unsigned n)
 {
     unsigned s = sp_;
     for (unsigned k : offsets)
@@ -1712,7 +1961,7 @@ void Pass4::register_arrays()
     n[024646] = [this] { // the bounds end (0104): the call (template 24651)
         top(1)    = attr_;
         acc_cell_ = 0;
-        emit_template(024651);
+        emit_template(BLOCK_ARRAYS);
         return DISPATCH_NEXT;
     };
     n[024655] = [this] { // a block with arrays (0102): its frame
@@ -1750,10 +1999,10 @@ void Pass4::register_arrays()
         read();
         return operand(025501);
     };
-    n[025501] = [this] { return loop_template({ 12, 11, 1, 2 }, 025522, 2); };
+    n[025501] = [this] { return loop_template({ 12, 11, 1, 2 }, LOOP_CALL_2, 2); };
     n[025507] = [this] { return operand(025510); };
     n[025510] = [this] { return operand(025511); };
-    n[025511] = [this] { return loop_template({ 13, 12, 2, 1, 3 }, 025516, 3); };
+    n[025511] = [this] { return loop_template({ 13, 12, 2, 1, 3 }, LOOP_CALL_3, 3); };
 }
 
 //
@@ -1852,7 +2101,7 @@ unsigned Pass4::element_item(unsigned k)
         Word a = top(7), label = top(10);
         push(a);
         push(label);
-        emit_template(025174);
+        emit_template(SAVE_FRAME);
     }
     if (top(1) == 3)
         emit(top(10) | LABEL_DEF);
@@ -1863,7 +2112,7 @@ unsigned Pass4::element_item(unsigned k)
 void Pass4::store_control()
 {
     push(top(5));
-    emit_template(025760);
+    emit_template(STORE);
 }
 
 // 25163: a plain element: stored, UJ to the body, 0211 of L.
@@ -1882,7 +2131,7 @@ unsigned Pass4::plain_value()
 }
 
 // 25206: template t, going on by kind at 25210 + kind.
-unsigned Pass4::by_kind(unsigned t, Word kind)
+unsigned Pass4::by_kind(Template t, Word kind)
 {
     count_ = kind & 077777;
     emit_template(t);
@@ -1904,7 +2153,7 @@ unsigned Pass4::step_operand()
     push(d);
     push(l0);
     push(l1);
-    return by_kind(025235, kind);
+    return by_kind(STEP_START, kind);
 }
 
 // 25222: for a step not constant the sign test (template 25227); U1A to
@@ -1913,7 +2162,7 @@ unsigned Pass4::until_test()
 {
     if (!top(3)) {
         push(top(4));
-        emit_template(025227);
+        emit_template(SIGN_TEST);
     }
     top(2) = LABEL_U1A;
     return DISPATCH_NEXT;
@@ -1926,7 +2175,7 @@ unsigned Pass4::until_value()
     if (!d)
         return operand(025231);
     push(d);
-    emit_template(026020);
+    emit_template(SUBTRACT_FROM);
     return until_test();
 }
 
@@ -1938,7 +2187,7 @@ unsigned Pass4::step_in_acc()
     Word l0 = top(10), l1 = top(9), cv = top(5);
     for (Word w : { l0, temp, l1, cv })
         push(w);
-    emit_template(025265);
+    emit_template(STEP_TEMPORARY);
     return operand(025255);
 }
 
@@ -1950,7 +2199,7 @@ unsigned Pass4::step_in_acc_2()
     top(4)    = ON_STACK;
     for (Word w : { l2, l1, cv, temp, l2, l1, temp })
         push(w);
-    return by_kind(025270, kind);
+    return by_kind(STEP_IN_TEMPORARY, kind);
 }
 
 void Pass4::register_loops()
@@ -1978,7 +2227,7 @@ void Pass4::register_loops()
     n[025130] = [this] { return element_item(4); };
     n[025131] = [this] { return element_item(3); };
     n[025147] = [this] { // the element's value: on by its kind
-        unsigned next = image(BY_KIND + top(2)) & 077777;
+        unsigned next = BY_KIND_NEXT[top(2)];
         operand_done();
         return next;
     };
@@ -2000,15 +2249,15 @@ void Pass4::register_loops()
     // 25210…25212 by kind: the increment (templates 25243, 25237, 25241),
     // then the until value.
     n[025210] = [this] {
-        loop_template({ 5, 9, 5 }, 025243, 0);
+        loop_template({ 5, 9, 5 }, LOOP_STEP_INTEGER, 0);
         return operand(025217);
     };
     n[025211] = [this] {
-        loop_template({ 5, 9, 5 }, 025237, 0);
+        loop_template({ 5, 9, 5 }, LOOP_STEP, 0);
         return operand(025217);
     };
     n[025212] = [this] {
-        loop_template({ 5, 9, 5 }, 025241, 0);
+        loop_template({ 5, 9, 5 }, LOOP_STEP_CYCLIC, 0);
         return operand(025217);
     };
     n[025217] = [this] { return until_value(); };
@@ -2016,7 +2265,7 @@ void Pass4::register_loops()
     n[025231] = [this] {
         operand_done();
         push(top(5));
-        emit_template(026017);
+        emit_template(SUBTRACT);
         return until_test();
     };
     n[025255] = [this] { return step_in_acc_2(); };
@@ -2039,14 +2288,14 @@ void Pass4::pending_label()
 
 // 24407: the call of the procedure d: template t, or 24420 for one on the
 // stack; the result in A.
-unsigned Pass4::call_tail(unsigned t, Word d)
+unsigned Pass4::call_tail(Template t, Word d)
 {
     push(d);
-    return apply_template((d & ON_STACK) ? 024420 : t);
+    return apply_template((d & ON_STACK) ? CALL_ON_STACK : t);
 }
 
 // 24426: an argument a, template t.
-unsigned Pass4::argument(unsigned t, Word a)
+unsigned Pass4::argument(Template t, Word a)
 {
     push(a);
     pending_label();
@@ -2060,14 +2309,14 @@ unsigned Pass4::thunk_start()
 {
     pending_label();
     push(((mem(02021) << 20) & WORD_MASK) | mem(LABELS));
-    emit_template(024464);
+    emit_template(ARG_THUNK);
     push(new_label());
     return MAIN_LOOP;
 }
 
 // 24767, 24776: a value parameter (061), a real one (0154): its descriptor
 // marked; the copy (template 25002, 24777) unless 02023 ≠ 0.
-unsigned Pass4::value_parameter(unsigned t)
+unsigned Pass4::value_parameter(Template t)
 {
     Word d = cyclic_add(mem(value_), 1);
     store(value_, d);
@@ -2121,7 +2370,7 @@ unsigned Pass4::code_call(unsigned r, Word count)
 }
 
 // 24567: pass the argument by template t, then the next one or the call.
-unsigned Pass4::pass_argument(unsigned t)
+unsigned Pass4::pass_argument(Template t)
 {
     emit_template(t);
     mem(02023) = cyclic_add(mem(02023), MINUS_ONE);
@@ -2130,7 +2379,7 @@ unsigned Pass4::pass_argument(unsigned t)
     if (attr_)
         return mem((arg_ + 1) & 077777) & 077777;
     push(routine_);
-    emit_template(025751);
+    emit_template(CALL);
     sp_ = args_;
     if (count_)
         emit(cyclic_add(count_, RESULT_SIZE));
@@ -2143,18 +2392,18 @@ unsigned Pass4::pass_value(bool result)
     Word c = mem(02023);
     push(result ? cyclic_add(c, MINUS_ONE) : c);
     mem(02023) = cyclic_add(c, 1);
-    return pass_argument(result ? 025771 : 024543);
+    return pass_argument(result ? PUSH : PASS_ADDRESS);
 }
 
 void Pass4::register_procedures()
 {
     auto &n   = handlers_;
     n[024361] = [this] { // a call with parameters starts (0110): the frame
-        unsigned t = 024366; // of the arguments (24370 with A saved)
+        Template t = CALL_FRAME; // of the arguments (CALL_FRAME_SAVED with A saved)
         if (acc_cell_) {
             mem(acc_cell_) = ON_STACK;
             acc_cell_      = 0;
-            t              = 024370;
+            t              = CALL_FRAME_SAVED;
         }
         mem(02017) = 0;
         emit_template(t);
@@ -2163,25 +2412,25 @@ void Pass4::register_procedures()
     n[024377] = [this] { // a standard function with an expression argument
         pending_label(); // (n<<12 | 057): routine 2n
         value_ = (2 * value_) & 077777;
-        return call_tail(024402, value_);
+        return call_tail(STD_FUNCTION_CALL, value_);
     };
     n[024405] = [this] { // the call of a procedure with parameters (020)
         pending_label();
-        return call_tail(024416, mem(value_) & DESC_MASK);
+        return call_tail(CALL_PARAMETERS, mem(value_) & DESC_MASK);
     };
     n[024412] = [this] { // … without parameters (021)
         save_acc();
-        return call_tail(024414, mem(value_) & DESC_MASK);
+        return call_tail(CALL_NO_PARAMETERS, mem(value_) & DESC_MASK);
     };
     // Arguments: a string (0156), a constant (0111), a variable (0112), a
     // label (0114), an array (0115), a procedure (0113, with 02021).
-    n[024423] = [this] { return argument(024500, constant_address()); };
-    n[024424] = [this] { return argument(024466, constant_address()); };
-    n[024430] = [this] { return argument(024470, mem(value_) & DESC_MASK); };
-    n[024432] = [this] { return argument(024472, mem(value_) & DESC_MASK); };
-    n[024434] = [this] { return argument(024472, address_of(mem(value_))); };
+    n[024423] = [this] { return argument(ARG_STRING, constant_address()); };
+    n[024424] = [this] { return argument(ARG_CONSTANT, constant_address()); };
+    n[024430] = [this] { return argument(ARG_VARIABLE, mem(value_) & DESC_MASK); };
+    n[024432] = [this] { return argument(ARG_ADDRESS, mem(value_) & DESC_MASK); };
+    n[024434] = [this] { return argument(ARG_ADDRESS, address_of(mem(value_))); };
     n[024440] = [this] {
-        return argument(024474, ((mem(02021) << 20) & WORD_MASK) | (mem(value_) & ADDR));
+        return argument(ARG_PROCEDURE, ((mem(02021) << 20) & WORD_MASK) | (mem(value_) & ADDR));
     };
     n[024444] = [this] { // an expression argument (0120): its value
         pending_label();
@@ -2191,7 +2440,7 @@ void Pass4::register_procedures()
     n[024446] = [this] {
         operand_done();
         mem(02017) = 0;
-        emit_template(024476);
+        emit_template(ARG_EXPRESSION);
         return DISPATCH_NEXT;
     };
     n[024452] = [this] { return thunk_start(); };
@@ -2205,12 +2454,12 @@ void Pass4::register_procedures()
         Word label = new_label(); // new label, pushed twice
         push(label);
         push(label);
-        emit_template(024671);
+        emit_template(JUMP);
         return DISPATCH_NEXT;
     };
     n[024761] = [this] { // its target (0145): the label defined
         mem(LABELS) = top(1);
-        emit_template(026051);
+        emit_template(LABEL);
         return DISPATCH_NEXT;
     };
     // VALUE ends (0155), starts (0127): for a procedure with value
@@ -2225,8 +2474,8 @@ void Pass4::register_procedures()
             emit(LABEL_DEF | mem(LABELS));
         return DISPATCH_NEXT;
     };
-    n[024767] = [this] { return value_parameter(025002); };
-    n[024776] = [this] { return value_parameter(024777); };
+    n[024767] = [this] { return value_parameter(VALUE); };
+    n[024776] = [this] { return value_parameter(VALUE_REAL); };
 
     // Non-ALGOL calls.
     n[024502] = [this] { // no argument count (0121)
@@ -2268,7 +2517,7 @@ void Pass4::register_procedures()
     n[024535] = [this] {
         operand_done();
         push(04111);
-        emit_template(025751);
+        emit_template(CALL);
         return code_value(024607);
     };
     n[024547] = [this] { return code_call(mem(value_) & ADDR, count_); }; // 0126
@@ -2282,15 +2531,15 @@ void Pass4::register_procedures()
     // a value.
     n[024565] = [this] {
         push(mem(arg_));
-        return pass_argument(024543);
+        return pass_argument(PASS_ADDRESS);
     };
     n[024602] = [this] {
         push(mem(arg_));
-        return pass_argument(024545);
+        return pass_argument(PASS_ARRAY);
     };
     n[024612] = [this] {
         push(mem(arg_));
-        return pass_argument(024613);
+        return pass_argument(PASS_INDIRECT);
     };
     n[024603] = [this] { return pass_value(false); };
     n[024607] = [this] { return pass_value(true); };

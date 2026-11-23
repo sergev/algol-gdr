@@ -18,4 +18,8 @@ struct Insn {
 // Madlen mnemonic, upper case.
 std::string besm6_opname(unsigned opcode);
 
+// One instruction from text: [register] mnemonic address, the address in
+// octal or * for 4444 (an operand of a pass 4 template).
+unsigned besm6_assemble(const std::string &text);
+
 #endif
