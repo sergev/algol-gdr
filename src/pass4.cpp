@@ -1345,6 +1345,485 @@ void register_jumps(Machine::Natives &n)
     n[025023] = switch_end;
 }
 
+//
+// 25525: block entry, the D-list at M2 (up to the word at its head): each
+// descriptor gets its storage offset from 02014 (the frame size), counted
+// up (or down from 02013 for some), or a number counted in M1, or for an
+// external or 'CODE' name the number of its entry in the external table
+// (its name as TEXT then in 05777-01400+M3, M3 counting). A word without
+// bit 47 links to a nested list: it is followed and the place pushed; the inner blocks are
+// entered after the list, each from the current size, the frame growing
+// to the largest. Returns through M13 (saved on the stack meanwhile).
+// The labels are those of the source.
+//
+unsigned block_entry(Machine &m)
+{
+    m.vtm(14, 04067);
+    m.ita(0, 016);
+    m.atx(0, 05777);
+    m.vtm(14, 04047);
+    m.ita(0, 016);
+    m.atx(0, 05773);
+    m.ita(0, 015);
+    m.xts(0, 02015);
+    m.its(0, 2);
+    m.xts(0, 0);
+    m.xts(2, 0);
+    m.aax(7, 02526);
+    m.atx(0, 02011);
+    m.xta(0, 0);
+    m.atx(0, 02012);
+    m.xta(2, 0);
+    m.asn(0, 0154);
+    m.aax(7, 02467);
+    m.ati(0, 016);
+    m.xta(2, 0);
+    m.ntr(0, 013);
+    switch (m.M[14]) { // the head's kind
+    case 0:
+        if (m.u1a())
+            goto L2060;
+        goto L2035;
+    case 1:
+        m.atx(0, 02012);
+        goto L2041;
+    case 2:
+        m.xta(2, 0);
+        m.asn(0, 0130);
+        [[fallthrough]];
+    default:
+        m.aax(7, 02451);
+        m.xts(2, 0);
+        m.aax(7, 02457);
+        m.atx(2, 0);
+        m.arx(0, 0);
+        if (m.uza())
+            goto L2031;
+        m.xta(0, 02014);
+        m.ati(0, 016);
+        if (m.M[14])
+            m.arx(7, 02522);
+        goto L2025;
+    }
+L2025:
+    m.xts(2, 0);
+    m.aax(7, 02516);
+    m.aex(Machine::SP, 077777);
+    m.stx(2, 0);
+    m.arx(7, 02461);
+    m.arx(Machine::SP, 0);
+    m.atx(0, 02014);
+    goto L2060;
+L2031:
+    m.ita(0, 1);
+    m.asn(0, 050);
+    m.aex(2, 0);
+    m.atx(2, 0);
+    m.utm(1, 1);
+    m.xta(0, 02014);
+    goto L2025;
+L2035:
+    m.ita(0, 2);
+    m.atx(0, 02015);
+    m.xta(0, 02014);
+    m.apx(7, 02465);
+    m.asn(0, 0105);
+    m.aex(2, 0);
+    goto L2056;
+L2041:
+    m.xta(2, 077777);
+    m.aax(7, 02447);
+    m.asn(0, 0116);
+    m.xts(0, 02014);
+    m.aax(7, 02472);
+    m.arx(7, 02523);
+    m.atx(0, 02007);
+    m.aex(Machine::SP, 0);
+    m.atx(0, 02013);
+    m.atx(0, 02014);
+    m.ita(0, 2);
+    m.atx(0, 02015);
+    m.xta(2, 0);
+    m.aax(7, 02516);
+    m.aex(0, 02007);
+    m.atx(2, 0);
+    m.xta(2, 077777);
+    m.aax(7, 02457);
+    m.atx(2, 077777);
+    m.xta(2, 0);
+    m.aax(7, 02440);
+    if (m.uza())
+        goto L2060;
+L2054: // offset: the next of the frame
+    m.xta(2, 0);
+    m.aax(7, 02516);
+    m.aex(0, 02014);
+L2056:
+    m.atx(2, 0);
+    m.xta(0, 02014);
+    m.arx(7, 02453);
+    m.atx(0, 02014);
+L2060: // the next descriptor
+    m.utm(2, 1);
+L2061:
+    m.ita(0, 2);
+    m.aex(0, 02011);
+    if (m.uza())
+        goto L2150;
+    m.xta(2, 0);
+    m.aax(7, 02474);
+    if (!m.u1a()) { // a link: follow it
+        m.ita(0, 2);
+        m.xts(2, 0);
+        m.ati(0, 2);
+        goto L2061;
+    }
+    m.xta(2, 0);
+    m.aax(7, 02462);
+    if (m.uza())
+        goto L2074;
+    m.xta(0, 02013);
+L2070: // offset counted down from 02013
+    m.arx(7, 02521);
+    m.atx(0, 02013);
+    m.xta(2, 0);
+    m.aax(7, 02516);
+    m.aex(0, 02013);
+    m.atx(2, 0);
+    goto L2060;
+L2074: // by its kind (bits 36-38)
+    m.xta(2, 0);
+    m.asn(0, 0143);
+    m.aax(7, 02504);
+    m.ati(0, 016);
+    m.xta(2, 0);
+    m.aax(7, 02102);
+    switch (m.M[14]) {
+    case 1:
+        if (m.uza())
+            goto L2137;
+        m.xta(0, 02012);
+        if (m.uza())
+            goto L2054;
+        m.xta(0, 02013);
+        goto L2070;
+    case 2:
+        if (m.uza())
+            goto L2144;
+        goto L2172;
+    case 4:
+    case 5:
+        m.xta(2, 0);
+        m.aax(7, 02452);
+        [[fallthrough]];
+    case 6:
+        if (m.uza())
+            goto L2144;
+        m.wtc(2, 0);
+        [[fallthrough]];
+    case 7:
+        break;
+    default:
+        throw std::runtime_error("pass 4: descriptor kind " + std::to_string(m.M[14]));
+    }
+    // An external name: its entry in the table, numbered from M3.
+    m.utc(0, 02000);
+    m.xta(0, 04144);
+    m.atx(7, 036);
+    m.vtm(14, 077775);
+    for (;;) {
+        m.utm(14, 3);
+        m.utc(14, EXT_NAMES + 1);
+        m.xta(0, 0);
+        if (m.uza()) {
+            m.xta(7, 036);
+            m.call(ISO_TO_TEXT, 13, 025654);
+            break;
+        }
+        m.aax(7, 02473);
+        if (m.u1a())
+            continue;
+        m.utc(14, EXT_NAMES);
+        m.xta(0, 0);
+        m.aex(7, 036);
+        if (m.u1a())
+            continue;
+        m.ita(0, 3);
+        m.asn(0, 050);
+        m.utc(14, EXT_NAMES + 1);
+        m.aox(0, 0);
+        m.utc(14, EXT_NAMES + 1);
+        m.atx(0, 0);
+        m.xta(7, 036);
+        m.call(ISO_TO_TEXT, 13, 025644);
+        m.asn(0, 0106);
+        m.aox(7, 02464);
+        m.atx(7, 036);
+        m.vtm(13, 6);
+        do {
+            m.utm(13, 077772);
+            m.xta(7, 02531);
+            m.asn(13, 0100);
+            m.aax(7, 036);
+        } while (m.uza());
+        m.xta(7, 02511);
+        m.asn(13, 0106);
+        m.aox(7, 036);
+        break;
+    }
+    m.atx(3, 076400);
+    m.xta(2, 0);
+    m.aax(7, 02516);
+    m.its(0, 3);
+    m.aex(Machine::SP, 0);
+    m.atx(2, 0);
+    m.utm(3, 1);
+    goto L2060;
+L2137:
+    m.xta(2, 0);
+    m.ntr(0, 013);
+    if (!m.u1a()) {
+        m.xta(2, 0);
+        m.aax(7, 02457);
+        m.xts(0, 02015);
+        m.asn(0, 050);
+        m.aex(Machine::SP, 0);
+        m.atx(2, 0);
+    }
+L2144: // numbered from M1
+    m.xta(2, 0);
+    m.aax(7, 02516);
+    m.its(0, 1);
+    m.aex(Machine::SP, 0);
+    m.atx(2, 0);
+    m.utm(1, 1);
+    goto L2060;
+L2172: // an array: its dope (bounds) in the frame
+    m.xta(2, 0);
+    m.ntr(0, 013);
+    if (m.u1a())
+        goto L2054;
+    m.asn(0, 0124);
+    m.aax(7, 02451);
+    m.ati(0, 010);
+    m.xta(0, 02014);
+    m.apx(7, 02465);
+    m.asn(0, 0105);
+    m.xts(2, 0);
+    m.aax(7, 02457);
+    m.aox(Machine::SP, 0);
+    m.atx(2, 0);
+    m.xta(8, 0);
+    m.asn(0, 0144);
+    m.arith(0, 02014, 006);
+    m.arith(7, 02453, 004);
+    m.arx(7, 02463);
+    m.aax(7, 02476);
+    m.xts(2, 0);
+    m.aax(7, 02516);
+    m.aox(Machine::SP, 077777);
+    m.stx(2, 0);
+    m.arx(7, 02453);
+    m.xts(8, 0);
+    m.asn(0, 0130);
+    m.aax(7, 02451);
+    m.arx(Machine::SP, 0);
+    m.aax(7, 02476);
+    m.atx(0, 02014);
+    m.aax(7, 02534);
+    if (m.uza())
+        goto L2060;
+    m.xta(8, 0);
+    m.asn(0, 0114);
+    m.aax(7, 02451);
+    m.ati(0, 2);
+    m.ati(0, 016);
+    m.xta(8, 0);
+    m.asn(0, 0107);
+    m.aax(7, 02530);
+    m.ati(0, 014);
+    m.xta(2, 0);
+    m.asn(0, 073);
+    m.aux(7, 02465);
+    m.atx(0, 02014);
+    do {
+        m.xta(7, 02515);
+        m.atx(14, 0);
+        m.utm(14, 1);
+        m.utm(12, 077777);
+    } while (m.M[12]);
+    goto L2054;
+L2150: // the list done: the inner blocks
+    m.xta(0, 02014);
+    m.stx(0, 02013);
+    for (;;) {
+        m.ati(0, 2);
+        if (!m.M[2])
+            break;
+        m.xta(0, 02013);
+        m.xts(0, 02014);
+        m.xts(0, 02013);
+        m.atx(0, 02014);
+        m.set_m(13, 025700);
+        block_entry(m);
+        m.xta(Machine::SP, 0);
+        m.ntr(0, 3);
+        m.arith(0, 02014, 005);
+        if (!m.u1a()) {
+            m.arith(0, 02014, 004);
+            m.atx(0, 02014);
+        }
+        m.xta(Machine::SP, 0);
+        m.stx(0, 02013);
+    }
+    m.xta(Machine::SP, 0);
+    m.sti(0, 2);
+    m.stx(0, 02015);
+    m.ati(0, 015);
+    m.xta(2, 0);
+    m.aax(7, 02470);
+    m.aex(7, 02452);
+    if (m.u1a())
+        return m.M[13];
+    m.xta(0, 02014);
+    m.apx(7, 02465);
+    m.asn(0, 0105);
+    m.aex(2, 0);
+    m.atx(2, 0);
+    return m.M[13];
+}
+
+// 24700: the frame reset to the block of the descriptor at M14 (template
+// 24705, or 24707 for one by a register); then the next item.
+unsigned frame_reset(Machine &m)
+{
+    m.xta(14, 0);
+    m.asn(0, 073);
+    m.aux(7, 02465);
+    m.xts(14, 0);
+    m.ntr(0, 013);
+    m.vtm(11, 024705);
+    if (!m.u1a())
+        m.vtm(11, 024707);
+    m.vtm(12, DISPATCH_NEXT);
+    return TEMPLATE;
+}
+
+// 24673: a label definition (d<<12 | 060): 0211.n; a label that may be
+// jumped to from an inner block resets the frame.
+unsigned label_item(Machine &m)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.aox(7, 0746);
+    emit_half(m, 024675);
+    m.xta(3, 0);
+    m.arx(0, 0);
+    if (m.u1a())
+        return DISPATCH_NEXT;
+    m.asn(0, 0130);
+    m.ati(0, 016);
+    return frame_reset(m);
+}
+
+// 24752: the end of a block (037): the frame of the block outside.
+unsigned block_end(Machine &m)
+{
+    m.mtj(3, 016);
+    return frame_reset(m);
+}
+
+// 24746: a line marker (051) or block begin (036): 0330.n when M2 = 1.
+unsigned line_item(Machine &m)
+{
+    m.utm(2, 077777);
+    if (m.M[2])
+        return DISPATCH_NEXT;
+    m.ita(0, 3);
+    m.aex(7, 01226);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+//
+// 24711: a procedure (042): its entry (template 24726 with the frame size
+// and the number of parameters); 02021 = parameters − 1, 02023 its kind;
+// a procedure with a label inside gets M7+1231 with it.
+//
+unsigned procedure_item(Machine &m)
+{
+    m.vtm(11, 024726);
+    m.xta(3, 0);
+    m.asn(0, 0130);
+    m.aax(7, 02526);
+    m.xts(3, 0);
+    m.asn(0, 0124);
+    m.aax(7, 02527);
+    m.atx(Machine::SP, 0);
+    m.arx(7, 02522);
+    m.atx(0, 02021);
+    m.xta(3, 077777);
+    m.aax(7, 02526);
+    m.atx(Machine::SP, 0);
+    m.set_m(12, 024720);
+    run_template(m);
+    m.xta(3, 0);
+    m.aax(7, 02437);
+    m.aex(7, 02437);
+    m.atx(0, 02023);
+    m.xta(3, 077777);
+    m.asn(0, 0130);
+    m.aax(7, 02526);
+    if (m.uza())
+        return MAIN_LOOP;
+    m.aox(7, 01231);
+    emit_half(m, MAIN_LOOP);
+    return MAIN_LOOP;
+}
+
+// 24730: the end of a procedure body (062): the return (M7+752, M7+750),
+// then 0211 of the label after it (M7+746) or M7+744.
+unsigned procedure_end(Machine &m)
+{
+    m.utm(Machine::SP, 077776);
+    m.xta(3, 0);
+    m.aax(7, 02440);
+    if (!m.uza()) {
+        m.xta(3, 0);
+        m.aax(7, 02465);
+        m.aox(7, 01165);
+        emit_half(m, 024734);
+    }
+    m.xta(3, 0);
+    m.aax(7, 02472);
+    m.atx(Machine::SP, 0);
+    m.asn(0, 0124);
+    m.stx(0, 02021);
+    m.aox(7, 0752);
+    emit_half(m, 024740);
+    m.xta(7, 0750);
+    emit_half(m, 024741);
+    m.xta(3, 077777);
+    m.asn(0, 0130);
+    m.aax(7, 02526);
+    if (m.uza())
+        m.xta(7, 0744);
+    else
+        m.aox(7, 0746);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+void register_blocks(Machine::Natives &n)
+{
+    n[024673]      = label_item;
+    n[024711]      = procedure_item;
+    n[024730]      = procedure_end;
+    n[024746]      = line_item;
+    n[024752]      = block_end;
+    n[BLOCK_ENTRY] = block_entry;
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -1370,5 +1849,6 @@ Stream pass4(Context &ctx, const Stream &input)
     n[026156]        = eop_end;
     register_operators(n);
     register_jumps(n);
+    register_blocks(n);
     return pass.run(023523, 01633);
 }

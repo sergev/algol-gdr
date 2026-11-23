@@ -677,7 +677,8 @@ when set, it emits `13 VJM` to `A/SUBCH` after each subscript computation.
 | 24137–24220 | IF and jumps (C++): IF 027 (the condition loaded, U1A to a new label, pushed); compare-and-jump 0130–0133 (a word of two templates, as for 24122) and 0134 (strings, template 26040); end of IF 053, 054 and ELSE 031 define the pushed label (template 26051). 02004 is the next label number |
 | 24661, 24666, 25010–25041 | GOTO a label 024 (UJ, template 24671), a switch element 025; switch (in pass 4's order): 0143 pushes the table's label, elements 0142 (a label), 0144 (an expression, with its own label), then 041 emits template 25040 and a UJ per element (C++) |
 | 24324 | address of a subscripted variable, plus the check call |
-| 25525 | block entry: assign storage offsets; enter external and 'CODE' names |
+| 25525 | block entry (C++): walks the D-list at M2 (a word without bit 47 links to a nested list, the place pushed): storage offsets from 02014 counted up (or down from 02013), numbers counted in M1, arrays' dope in the frame; an external or 'CODE' name gets the number of its entry in the external table, its name as TEXT at 05777−01400+M3; then the inner blocks recursively, the frame growing to the largest. Kind 0 or 3 of a descriptor (bits 36–38) would run data (25622, 25625) |
+| 24673–24754 | label definition `d<<12\|060` (0211.n, the frame reset for a label jumped to from inside: templates 24705, 24707), block end 037, line marker 051 / block begin 036 (0330.n), procedure 042 (entry template 24726; 02021 = parameters − 1), end of procedure body 062 (C++) |
 | 26152 | EOP (C++): the main program ends with `UJ A/STOP`, `0200.0000`, `0211.0000` (template 26160); return to the driver |
 
 Most handlers (codes 001–167) are known only by the code they serve. No error messages (I).
