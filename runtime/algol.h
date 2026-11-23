@@ -37,11 +37,12 @@ int64_t algol_bits_shift(int64_t bits, int64_t n);
 double algol_sqrt(double x);
 double algol_ln(double x);
 
-// Arrays: descriptors of int64 words (doc/codegen.md).
+// Arrays: descriptors of int64 words: data, count, dims, bounds (doc/codegen.md).
 void algol_array_alloc(int64_t *desc, int64_t dims);
 void algol_array_free(int64_t *desc);
 void algol_check_index(const int64_t *desc, int64_t dim, int64_t i);
 int64_t *algol_array_copy(const int64_t *src, int64_t dims);
+void algol_array_release(int64_t *desc);
 void algol_print_array(const int64_t *desc, int64_t type);
 
 #endif

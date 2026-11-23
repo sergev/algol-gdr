@@ -36,11 +36,15 @@ function are not functions of their own.
 
   | Slot | Contents |
   |---|---|
-  | 0 | static link: the frame of the function the procedure is declared in (null for a procedure of the program level) |
+  | 0 | static link: the frame of the function the procedure is declared in (`algol_main`'s for a procedure of the program level) |
   | 1 | the `jmp_buf` of the function, or null (see Labels) |
   | 2 | the index of the label a non-local `goto` goes to |
   | 3 | the result of a function procedure |
   | 4… | parameters, variables, array descriptors, temporaries of thunks |
+
+  The frame is zeroed on entry. A formal takes one slot when called by value (a simple
+  value) or when it is an array (the address of its descriptor); otherwise two, a pair:
+  the thunk of a name parameter or a label, the `{fn, sl}` of a procedure or a switch.
 
 - **Access.** A variable of the function itself: its slot in the frame. A variable of an
   enclosing procedure: through the static links, one per level. A global: directly.
@@ -118,8 +122,8 @@ is real. After the loop `V` keeps its last value.
 
 ## Arrays
 
-A descriptor takes `2 + 2·n` slots for `n` dimensions: the data pointer, the number of
-elements, then the lower and upper bound of each dimension. Elements are 8-byte cells in
+A descriptor takes `3 + 2·n` slots for `n` dimensions: the data pointer, the number of
+elements, the number of dimensions, then the lower and upper bound of each dimension. Elements are 8-byte cells in
 row-major order (the last subscript varies fastest). Bounds are evaluated on block entry,
 then `algol_array_alloc(desc, n)` allocates zeroed storage; `algol_array_free(desc)` frees
 it on block exit. An array is passed by the address of its descriptor. With `--check`,

@@ -106,6 +106,15 @@ void Function::terminate(const std::string &line)
     cur_->terminated_ = true;
 }
 
+void Function::prologue(const std::string &line)
+{
+    auto &entry = blocks_.front()->lines_;
+    size_t pos  = 0;
+    while (pos < entry.size() && entry[pos].find(" = alloca ") != std::string::npos)
+        pos++;
+    entry.insert(entry.begin() + pos, line);
+}
+
 void Function::raw(const std::string &line)
 {
     emit(line);

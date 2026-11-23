@@ -83,6 +83,8 @@ public:
                const std::string &attrs = "");
     Value phi(const std::string &type, const std::vector<std::pair<Value, const Block *>> &in);
     void raw(const std::string &line); // a line as is
+    // A line at the start of the entry block, after its allocas.
+    void prologue(const std::string &line);
 
     void br(const Block *to);
     void cond_br(const Value &c, const Block *t, const Block *f);

@@ -2,7 +2,8 @@
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
 // Arrays. A descriptor is int64 words: the data pointer, the number of
-// elements, then the lower and upper bound of each dimension. Elements are
+// elements, the number of dimensions, then the lower and upper bound of each
+// dimension. Elements are
 // 8-byte cells, row-major.
 //
 #include <stdlib.h>
@@ -16,8 +17,9 @@ enum { T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_BITS };
 void algol_array_alloc(int64_t *desc, int64_t dims)
 {
     int64_t count = 1;
+    desc[2] = dims;
     for (int64_t k = 0; k < dims; k++) {
-        int64_t lo = desc[2 + 2 * k], hi = desc[3 + 2 * k];
+        int64_t lo = desc[3 + 2 * k], hi = desc[4 + 2 * k];
         if (hi < lo)
             count = 0;
         else
@@ -38,7 +40,7 @@ void algol_array_free(int64_t *desc)
 
 void algol_check_index(const int64_t *desc, int64_t dim, int64_t i)
 {
-    int64_t lo = desc[2 + 2 * dim], hi = desc[3 + 2 * dim];
+    int64_t lo = desc[3 + 2 * dim], hi = desc[4 + 2 * dim];
     if (i < lo || i > hi)
         algol_error("Subscript %lld out of bounds [%lld:%lld]", (long long)i, (long long)lo,
                     (long long)hi);
@@ -55,6 +57,13 @@ int64_t *algol_array_copy(const int64_t *src, int64_t dims)
     algol_array_alloc(desc, dims);
     memcpy((void *)(intptr_t)desc[0], (void *)(intptr_t)src[0], src[1] * 8);
     return desc;
+}
+
+// A copy made by algol_array_copy, freed.
+void algol_array_release(int64_t *desc)
+{
+    algol_array_free(desc);
+    free(desc);
 }
 
 void algol_print_array(const int64_t *desc, int64_t type)

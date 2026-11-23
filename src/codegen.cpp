@@ -18,6 +18,7 @@ using namespace ast;
 namespace {
 
 constexpr int SLOT_LINK   = 0; // static link
+constexpr int SLOT_RESULT = 3; // the value of a function
 constexpr int SLOT_HEADER = 4; // first free slot
 
 // An Algol function: the program body or a procedure.
@@ -25,6 +26,7 @@ struct Func {
     ir::Function *fn{};
     Func *parent{};
     int slots{ SLOT_HEADER };
+    const decl::Procedure *proc{}; // null for the program
 };
 
 // What a declaration is, and where it lives.
@@ -38,6 +40,9 @@ struct Symbol {
     ir::Block *block{};                    // LABEL: its block in the owner's function
     int dims{};                            // ARRAY
     std::vector<const stmt::Block *> path; // LABEL: the blocks it is in
+    Func *func{};                          // PROC: its function
+    Spec spec;                             // FORMAL
+    bool by_value{};                       // FORMAL
 };
 
 // The memory type of a value type.
@@ -80,7 +85,10 @@ public:
         declare(main_, *program.block);
         statement(*program.block);
         fn_->ret_void();
-        main_.fn->stack_alloc("i64", main_.slots, 16, "frame");
+        finish(main_);
+        // Procedures, also those declared while generating others.
+        for (size_t i = 0; i < funcs_.size(); i++)
+            procedure(*funcs_[i]);
         return module_.text();
     }
 
@@ -89,6 +97,8 @@ private:
     ir::Module module_;
     Func main_;
     std::map<int, Symbol> symbols_;
+    std::vector<std::unique_ptr<Func>> funcs_; // procedures
+    int thunks_{};
     std::vector<const stmt::Block *> path_; // blocks being declared
 
     // Blocks being generated, with the arrays they allocated.
@@ -158,6 +168,8 @@ private:
                 } else if constexpr (std::is_same_v<T, decl::Arrays>) {
                     for (const auto &a : n.arrays)
                         array(f, a.id, a.name, n.type, int(n.bounds.size()));
+                } else if constexpr (std::is_same_v<T, decl::Procedure>) {
+                    declare_procedure(f, n);
                 } else {
                     unsupported("This declaration");
                 }
@@ -185,6 +197,43 @@ private:
         symbols_[id] = s;
     }
 
+    void declare_procedure(Func &f, const decl::Procedure &p)
+    {
+        funcs_.push_back(std::make_unique<Func>());
+        Func &pf  = *funcs_.back();
+        pf.parent = &f;
+        pf.proc   = &p;
+        pf.fn     = &module_.function("P." + std::to_string(p.id) + "." + p.name, "i64",
+                                      { "ptr", "ptr" }, "", "internal");
+        Symbol s;
+        s.kind         = Symbol::PROC;
+        s.type         = p.type;
+        s.name         = p.name;
+        s.owner        = &f;
+        s.func         = &pf;
+        symbols_[p.id] = s;
+        for (const auto &formal : p.formals) {
+            Symbol fs;
+            fs.kind     = Symbol::FORMAL;
+            fs.type     = formal.spec.type;
+            fs.name     = formal.name;
+            fs.owner    = &pf;
+            fs.spec     = formal.spec;
+            fs.by_value = formal.by_value;
+            fs.slot     = pf.slots;
+            // A value: one slot; an array: its descriptor's address; a name
+            // parameter, a procedure, a switch, a label: a pair.
+            bool one = formal.spec.kind == Spec::ARRAY ||
+                       (formal.spec.kind == Spec::SIMPLE && formal.by_value);
+            pf.slots += one ? 1 : 2;
+            symbols_[formal.id] = fs;
+        }
+        std::vector<const stmt::Block *> saved;
+        std::swap(saved, path_);
+        declare(pf, *p.body);
+        std::swap(saved, path_);
+    }
+
     void array(Func &f, int id, const std::string &name, Type type, int dims)
     {
         Symbol s;
@@ -193,7 +242,7 @@ private:
         s.name  = name;
         s.owner = &f;
         s.dims  = dims;
-        int n   = 2 + 2 * dims;
+        int n   = 3 + 2 * dims;
         if (&f == &main_) {
             s.global = ir::global_name("V." + std::to_string(id) + "." + name);
             module_.global(s.global + " = internal global [" + std::to_string(n) +
@@ -229,11 +278,33 @@ private:
     ir::Value address(int id)
     {
         const Symbol &s = symbol(id);
-        if (s.kind != Symbol::VAR)
-            unsupported("This variable");
-        if (s.slot < 0)
-            return { "ptr", s.global };
-        return slot(s.owner, s.slot);
+        switch (s.kind) {
+        case Symbol::VAR:
+            if (s.slot < 0)
+                return { "ptr", s.global };
+            return slot(s.owner, s.slot);
+        case Symbol::PROC:
+            // The value of a function, in its body.
+            return slot(s.func, SLOT_RESULT);
+        case Symbol::FORMAL:
+            if (s.spec.kind == Spec::SIMPLE) {
+                if (s.by_value)
+                    return slot(s.owner, s.slot);
+                return call_thunk(slot(s.owner, s.slot));
+            }
+            break;
+        default:
+            break;
+        }
+        unsupported("This variable");
+    }
+
+    // The cell of a thunk, from its pair {code, env} at ptr.
+    ir::Value call_thunk(const ir::Value &pair)
+    {
+        ir::Value code = fn_->load("ptr", pair);
+        ir::Value env  = fn_->load("ptr", fn_->gep("ptr", pair, ir::i64(1)));
+        return fn_->call("ptr", code.ref, { env });
     }
 
     ir::Value load(Type t, const ir::Value &ptr)
@@ -301,6 +372,8 @@ private:
                     return load(e.type, address(n.decl));
                 } else if constexpr (std::is_same_v<T, expr::Element>) {
                     return load(e.type, element(n.array, n.subscripts));
+                } else if constexpr (std::is_same_v<T, expr::Call>) {
+                    return from_result(call(n.proc, n.args), e.type);
                 } else if constexpr (std::is_same_v<T, expr::StdFunc>) {
                     return std_func(n);
                 } else if constexpr (std::is_same_v<T, expr::Unary>) {
@@ -485,6 +558,8 @@ private:
                     if_stmt(n);
                 } else if constexpr (std::is_same_v<T, stmt::For>) {
                     for_loop(n.control, n.elements, [&] { statement(*n.body); });
+                } else if constexpr (std::is_same_v<T, stmt::Call>) {
+                    call(n.proc, n.args);
                 } else if constexpr (std::is_same_v<T, stmt::Assign>) {
                     assign(n);
                 } else if constexpr (std::is_same_v<T, stmt::Io>) {
@@ -512,7 +587,7 @@ private:
             for (const auto &name : a->arrays) {
                 ir::Value desc = descriptor(name.id);
                 for (size_t k = 0; k < bounds.size(); k++)
-                    fn_->store(bounds[k], fn_->gep("i64", desc, ir::i64(int64_t(2 + k))));
+                    fn_->store(bounds[k], fn_->gep("i64", desc, ir::i64(int64_t(3 + k))));
                 runtime("void", "algol_array_alloc", { desc, ir::i64(int64_t(a->bounds.size())) });
                 active_.back().arrays.push_back(name.id);
             }
@@ -541,6 +616,8 @@ private:
     ir::Value descriptor(int id)
     {
         const Symbol &s = symbol(id);
+        if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::ARRAY)
+            return fn_->load("ptr", slot(s.owner, s.slot));
         if (s.kind != Symbol::ARRAY)
             unsupported("This array");
         if (s.slot < 0)
@@ -559,8 +636,8 @@ private:
         for (size_t k = 0; k < subs.size(); k++) {
             if (opt_.check)
                 runtime("void", "algol_check_index", { desc, ir::i64(int64_t(k)), subs[k] });
-            ir::Value lo = fn_->load("i64", fn_->gep("i64", desc, ir::i64(int64_t(2 + 2 * k))));
-            ir::Value hi = fn_->load("i64", fn_->gep("i64", desc, ir::i64(int64_t(3 + 2 * k))));
+            ir::Value lo = fn_->load("i64", fn_->gep("i64", desc, ir::i64(int64_t(3 + 2 * k))));
+            ir::Value hi = fn_->load("i64", fn_->gep("i64", desc, ir::i64(int64_t(4 + 2 * k))));
             ir::Value n  = fn_->binop("add", fn_->binop("sub", hi, lo), ir::i64(1));
             index = fn_->binop("add", fn_->binop("mul", index, n), fn_->binop("sub", subs[k], lo));
         }
@@ -695,6 +772,215 @@ private:
         if (auto v = std::get_if<left::Var>(&control))
             return symbol(v->decl).type;
         return symbol(std::get<left::Element>(control).array).type;
+    }
+
+    //
+    // Procedures.
+    //
+
+    // The frame: its slots zeroed on entry.
+    void finish(Func &f)
+    {
+        f.fn->stack_alloc("i64", f.slots, 16, "frame");
+        module_.declare("void", "llvm.memset.p0.i64", "ptr, i8, i64, i1");
+        f.fn->prologue("call void @llvm.memset.p0.i64(ptr %frame, i8 0, i64 " +
+                       std::to_string(8 * f.slots) + ", i1 false)");
+    }
+
+    void procedure(Func &f)
+    {
+        const decl::Procedure &p = *f.proc;
+        fn_                      = f.fn;
+        scope_                   = &f;
+        frame_                   = { "ptr", "%frame" };
+        fn_->store(fn_->param(0), slot(&f, SLOT_LINK));
+        ir::Value args = fn_->param(1);
+        for (size_t k = 0; k < p.formals.size(); k++) {
+            const Formal &formal = p.formals[k];
+            const Symbol &s      = symbol(formal.id);
+            ir::Value pair       = fn_->gep("ptr", args, ir::i64(int64_t(2 * k)));
+            ir::Value cell       = slot(&f, s.slot);
+            switch (formal.spec.kind) {
+            case Spec::SIMPLE:
+                if (formal.by_value) {
+                    ir::Value v = fn_->load(mem_type(formal.spec.type), call_thunk(pair));
+                    fn_->store(v, cell);
+                } else {
+                    copy_pair(pair, cell);
+                }
+                break;
+            case Spec::ARRAY: {
+                ir::Value desc = call_thunk(pair);
+                if (formal.by_value)
+                    desc = runtime("ptr", "algol_array_copy",
+                                   { desc, fn_->load("i64", fn_->gep("i64", desc, ir::i64(2))) });
+                fn_->store(desc, cell);
+                break;
+            }
+            case Spec::PROCEDURE:
+            case Spec::SWITCH:
+                copy_pair(call_thunk(pair), cell);
+                break;
+            case Spec::LABEL:
+                copy_pair(pair, cell);
+                break;
+            }
+        }
+        statement(*p.body);
+        if (fn_->open()) {
+            for (const auto &formal : p.formals)
+                if (formal.spec.kind == Spec::ARRAY && formal.by_value)
+                    runtime("void", "algol_array_release",
+                            { fn_->load("ptr", slot(&f, symbol(formal.id).slot)) });
+            ir::Value result = ir::i64(0);
+            if (p.type != Type::NONE)
+                result = to_result(load(p.type, slot(&f, SLOT_RESULT)), p.type);
+            fn_->ret(result);
+        }
+        finish(f);
+    }
+
+    void copy_pair(const ir::Value &from, const ir::Value &to)
+    {
+        fn_->store(fn_->load("ptr", from), to);
+        fn_->store(fn_->load("ptr", fn_->gep("ptr", from, ir::i64(1))),
+                   fn_->gep("ptr", to, ir::i64(1)));
+    }
+
+    // A value as the i64 result of a procedure, and back.
+    ir::Value to_result(const ir::Value &v, Type t)
+    {
+        switch (t) {
+        case Type::REAL:
+            return fn_->cast("bitcast", v, "i64");
+        case Type::BOOLEAN:
+            return fn_->cast("zext", v, "i64");
+        case Type::STRING:
+            return fn_->cast("ptrtoint", v, "i64");
+        default:
+            return v;
+        }
+    }
+
+    ir::Value from_result(const ir::Value &v, Type t)
+    {
+        switch (t) {
+        case Type::REAL:
+            return fn_->cast("bitcast", v, "double");
+        case Type::BOOLEAN:
+            return fn_->cast("trunc", v, "i1");
+        case Type::STRING:
+            return fn_->cast("inttoptr", v, "ptr");
+        default:
+            return v;
+        }
+    }
+
+    // A call: the actual parameters as thunks; the i64 result.
+    ir::Value call(int id, const ExprList &args)
+    {
+        const Symbol &s                    = symbol(id);
+        const std::vector<Formal> *formals = nullptr;
+        if (s.kind == Symbol::PROC)
+            formals = &s.func->proc->formals;
+        ir::Value list = ir::null();
+        if (!args.empty()) {
+            list = fn_->stack_alloc("ptr", int64_t(2 * args.size()));
+            for (size_t k = 0; k < args.size(); k++) {
+                const Formal *formal = formals && k < formals->size() ? &(*formals)[k] : nullptr;
+                auto [code, env]     = thunk(*args[k], formal);
+                ir::Value pair       = fn_->gep("ptr", list, ir::i64(int64_t(2 * k)));
+                fn_->store(code, pair);
+                fn_->store(env, fn_->gep("ptr", pair, ir::i64(1)));
+            }
+        }
+        if (s.kind == Symbol::PROC)
+            return fn_->call("i64", ir::global_name(s.func->fn->name()),
+                             { frame_of(s.func->parent), list });
+        if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::PROCEDURE) {
+            ir::Value pair = slot(s.owner, s.slot);
+            ir::Value code = fn_->load("ptr", pair);
+            ir::Value sl   = fn_->load("ptr", fn_->gep("ptr", pair, ir::i64(1)));
+            return fn_->call("i64", code.ref, { sl, list });
+        }
+        unsupported("This call");
+    }
+
+    //
+    // Thunks: an actual parameter as {code, env}, the code giving the
+    // address of its cell (doc/codegen.md).
+    //
+    std::pair<ir::Value, ir::Value> thunk(const Expr &e, const Formal *formal)
+    {
+        // A name parameter passed on: its own pair.
+        if (auto v = std::get_if<expr::Var>(&e.node)) {
+            const Symbol &s = symbol(v->decl);
+            if (s.kind == Symbol::FORMAL && !s.by_value &&
+                (s.spec.kind == Spec::SIMPLE || s.spec.kind == Spec::LABEL)) {
+                ir::Value pair = slot(s.owner, s.slot);
+                return { fn_->load("ptr", pair),
+                         fn_->load("ptr", fn_->gep("ptr", pair, ir::i64(1))) };
+            }
+        }
+        std::string name = "T." + std::to_string(thunks_++);
+        auto &tf         = module_.function(name, "ptr", { "ptr" }, "", "internal");
+
+        // Generate it in the scope of the call, with env as the frame.
+        auto saved_fn     = fn_;
+        auto saved_frame  = frame_;
+        auto saved_active = std::move(active_);
+        active_.clear();
+        fn_    = &tf;
+        frame_ = tf.param(0);
+        fn_->ret(thunk_cell(e, formal));
+        fn_     = saved_fn;
+        frame_  = saved_frame;
+        active_ = std::move(saved_active);
+        return { { "ptr", ir::global_name(name) }, frame_ };
+    }
+
+    ir::Value thunk_cell(const Expr &e, const Formal *formal)
+    {
+        auto var = std::get_if<expr::Var>(&e.node);
+        if (var) {
+            const Symbol &s = symbol(var->decl);
+            if (s.kind == Symbol::ARRAY || (s.kind == Symbol::FORMAL && s.spec.kind == Spec::ARRAY))
+                return descriptor(var->decl);
+            if (s.kind == Symbol::PROC) {
+                ir::Value cell = temp(2);
+                fn_->store({ "ptr", ir::global_name(s.func->fn->name()) }, cell);
+                fn_->store(frame_of(s.func->parent), fn_->gep("ptr", cell, ir::i64(1)));
+                return cell;
+            }
+            if (s.kind == Symbol::FORMAL && s.spec.kind == Spec::PROCEDURE)
+                return slot(s.owner, s.slot);
+            if (s.kind == Symbol::VAR || s.kind == Symbol::FORMAL)
+                return address(var->decl);
+        }
+        if (auto el = std::get_if<expr::Element>(&e.node))
+            return element(el->array, el->subscripts);
+        if (e.type == Type::NONE)
+            unsupported("This actual parameter");
+        // An expression: its value in a temporary, in the formal's type.
+        Type t      = formal && formal->spec.kind == Spec::SIMPLE && formal->spec.type != Type::NONE
+                          ? formal->spec.type
+                          : e.type;
+        ir::Value v = expr(e);
+        if (t != e.type && (t == Type::REAL || t == Type::INTEGER))
+            v = convert(v, e.type, t);
+        else
+            t = e.type;
+        ir::Value cell = temp(1);
+        store(t, v, cell);
+        return cell;
+    }
+
+    // n temporary slots in the frame of the current scope.
+    ir::Value temp(int n)
+    {
+        int k = scope_->slots;
+        scope_->slots += n;
+        return fn_->gep("i64", frame_, ir::i64(k));
     }
 
     // The left parts first, from left to right, then the value.

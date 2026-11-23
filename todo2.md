@@ -25,9 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E18** Procedures, by value: nested procedures as LLVM functions with a static link
-  (pointer to the enclosing frame), function results, recursion, value parameters
-  including arrays by reference. Test proc.
 - **E19** Call by name: thunks as `{code, env}` pairs giving the address (or the value
   for expressions); assignment to a name parameter; actual parameters that are constants,
   variables, array elements, expressions, procedures, labels, strings (runtime-abi.md

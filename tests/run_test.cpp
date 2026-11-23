@@ -35,11 +35,15 @@ const std::vector<std::string> programs = {
     "for",
     "hello",
     "hello_algol",
+    "man_or_boy",
+    "mixed",
     "pages",
     "print",
+    "proc",
     "stdfunc",
     "symbols",
     "test1",
+    "test2",
 };
 // clang-format on
 
@@ -212,4 +216,19 @@ TEST(Run, bounds_check)
                          " && " BUILD_DIR "/run_bounds");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_EQ(r.output, "Error: Subscript 4 out of bounds [1:3]\n");
+}
+
+TEST(Run, procedures)
+{
+    EXPECT_EQ(run_text("procedures", R"(_begin _integer _array A[1:3]; _integer I;
+  _integer _procedure FACT(N); _value N; _integer N;
+    FACT := _if N _le 1 _then 1 _else N * FACT(N - 1);
+  _procedure ZAP(B); _integer _array B; B[1] := 99;
+  _real _procedure HALF(X); _value X; _real X; HALF := X / 2;
+  _for I := 1 _step 1 _until 3 _do A[I] := I;
+  ZAP(A);
+  PRINT(A[1], FACT(10), HALF(3))
+_end _eop
+)"),
+              "            99        3628800  1.50000000000e+00   \n");
 }
