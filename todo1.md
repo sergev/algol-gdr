@@ -34,8 +34,6 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 
 ### Pass 4 off the machine
 
-- **D3** Leaves: emit (23655), the template interpreter (23734), operand load and save,
-  stream writes as functions with arguments; the constants at M7+… as named constants.
 - **D4** Operators, IF and jumps, switches.
 - **D5** Block entry (25525, without the Madlen-label gotos), labels, frame reset, line
   items, procedure entry and end.

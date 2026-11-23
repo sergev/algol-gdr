@@ -28,266 +28,265 @@ constexpr unsigned BLOCK_ENTRY   = 025525;
 constexpr unsigned ISO_TO_TEXT   = 030034;
 constexpr unsigned DISPATCH      = 026056; // per code: UZA handler / UJ handler
 
-// Write A; return to M13.
-unsigned write_return(Machine &m)
+constexpr unsigned SP = Machine::SP;
+
+// Constants of the pass (at M7+…).
+constexpr Word BIT48      = 0'4000'0000'0000'0000;
+constexpr Word BIT47      = 0'0400'0000'0000'0000;
+constexpr Word ADDR       = 077777;
+constexpr Word ON_STACK   = 074000000; // 15 ATX: the value saved on the stack (M7+2227)
+constexpr Word DROPPED    = 074030000; // never emitted
+constexpr Word ALIGN      = 0370002;   // the next half starts a word
+constexpr Word ALIGN_END  = 0370003;
+constexpr Word ALIGN_FILL = 0370006; // written before a half that does not fit
+constexpr Word FITS_CMD   = 01014000000;          // by bits 20–16 of a command half (M7+130)
+constexpr Word FITS_OP    = 0'0003'7400'0002'7413; // by bits 18–13 of others (M7+131)
+constexpr Word EXTERNAL   = 04131;                 // address of a call of an external
+constexpr Word EXT_HALF   = 02000000;              // the number of an external name
+constexpr Word LINE_HALF  = 067100000;             // a line marker
+constexpr Word OPERAND    = 04444;                 // template: the operand's address here
+constexpr Word INDIRECT   = 0'4000'0000'0227'7777; // added to an operand with bit 48
+constexpr Word ADDR_CLR   = 077770000;
+constexpr Word EXT_USED   = 0'7777'0000'0000'0000;
+constexpr Word EXT_COUNT  = 0'0000'7777'0000'0000;
+constexpr Word MARK_CLR   = 0'3777'7500'0077'7777;
+constexpr Word DESC_MASK  = 074077777;
+constexpr Word KIND       = 0'3400'0000'0000'0000;
+constexpr Word FRAME_MAIN = 030000000;
+constexpr Word FRAME_PROC = 034000000;
+constexpr Word CONST_BASE = 033777777;
+constexpr Word READ_BACK  = 0'7777'7777'7757'7777; // a zone back (cyclic add)
+constexpr Word OUT_CURSOR = 0'0000'0302'6020'6000; // 06000, drum 26 zone 2
+
+constexpr unsigned EXT_COUNTER = M7 + 037; // externals numbered so far
+constexpr unsigned MAIN_NAME   = M7 + 066; // the name of the main program as TEXT
+constexpr unsigned NAMES_INFO  = M7 + 02517; // *70: drum 26 zone 0 to 06000
+
+Word pop(Machine &m)
 {
-    unsigned link = m.M[13];
+    m.M[SP] = (m.M[SP] - 1) & 077777;
+    return m.mem[m.M[SP]];
+}
+
+void push(Machine &m, Word w)
+{
+    m.push(w);
+}
+
+void set_acc(Machine &m, Word w)
+{
+    m.acc = w;
+    m.set_logical();
+}
+
+Word cyclic_add(Word a, Word b)
+{
+    Word s = a + b;
+    if (s >> 48)
+        s = (s + 1) & WORD_MASK;
+    return s;
+}
+
+// Write w to the output stream (27126), returning to link.
+void write(Machine &m, Word w, unsigned link)
+{
+    m.acc = w;
     m.call(WRITE, 13, link);
-    return link;
 }
 
 //
-// 23655: emit the half-word in A (through M13). 7403.0000 is dropped. After
-// 0200.0000 (EMIT_MODE = 1) a half that does not fit the word in progress
-// first gets a 0200.0000 written before it (tables at M7+130, M7+131 by
-// opcode). A line marker (LINE) is written after the half, preceded by the
-// numbers of the external names in the table (written once each).
+// 23655: emit an instruction half; returns to link. 7403.0000 is dropped.
+// 0370002 starts EMIT_MODE: until 0370003, a half that does not fit the
+// word in progress (FITS_CMD, FITS_OP by its opcode) first gets a 0370006
+// written before it. A line marker (LINE) is written after a call of an
+// external (address 4131), preceded by the number of the next external
+// name in the table not written yet.
 //
-unsigned emit(Machine &m)
+void emit(Machine &m, Word half, unsigned link)
 {
-    m.atx(Machine::SP, 0);
-    m.aex(7, 02510);
-    if (!m.u1a()) {
-        m.utm(Machine::SP, 077777);
-        return m.M[13];
+    if (half == DROPPED) {
+        set_acc(m, 0);
+        m.set_m(13, link);
+        return;
     }
-    m.xta(0, EMIT_MODE);
-    if (m.u1a()) {
-        m.xta(Machine::SP, 077777);
-        m.aax(7, 02446);
-        if (m.u1a()) {
-            m.xta(Machine::SP, 077777);
-            m.asn(0, 0117);
-            m.aax(7, 02530);
-            m.ati(0, 016);
-            m.xta(7, 0130);
+    if (m.mem[EMIT_MODE]) {
+        unsigned k;
+        Word table;
+        if (half & 02000000) {
+            k     = (half >> 15) & 037;
+            table = FITS_CMD;
+        } else if (half == ALIGN_END) {
+            m.mem[EMIT_MODE] = 0;
+            set_acc(m, half);
+            m.set_m(13, link);
+            return;
         } else {
-            m.xta(Machine::SP, 077777);
-            m.aex(7, 02454);
-            if (!m.u1a()) {
-                m.stx(0, EMIT_MODE);
-                return m.M[13];
-            }
-            m.xta(Machine::SP, 077777);
-            m.asn(0, 0114);
-            m.aax(7, 02531);
-            m.ati(0, 016);
-            m.xta(7, 0131);
+            k     = (half >> 12) & 077;
+            table = FITS_OP;
         }
-        m.asn(14, 021);
-        m.ntr(0, 012);
-        if (!m.uza()) {
-            m.ita(0, 015);
-            m.xts(7, 02475);
-            m.call(WRITE, 13, 023646);
-            m.xta(0, 0);
-            m.stx(0, EMIT_MODE);
-            m.sti(0, 015);
-            return write_return(m);
+        m.set_m(14, k);
+        if (k > 47 || !((table >> k) & 1)) {
+            write(m, ALIGN_FILL, 023646);
+            m.mem[EMIT_MODE] = 0;
+            write(m, half, link);
+            return;
         }
-    } else {
-        m.xta(Machine::SP, 077777);
-        m.aex(7, 02441);
-        if (m.uza()) {
-            m.xta(7, 02453);
-            m.stx(0, EMIT_MODE);
-            return m.M[13];
-        }
+    } else if (half == ALIGN) {
+        m.mem[EMIT_MODE] = 1;
+        set_acc(m, half);
+        m.set_m(13, link);
+        return;
     }
-    m.xta(Machine::SP, 0);
-    m.atx(0, HALF);
-    m.xta(0, LINE);
-    m.aex(0, 0);
-    if (m.u1a()) {
-        m.xta(0, HALF);
-        m.aax(7, 02451);
-        m.aex(7, 02512);
-        if (!m.u1a()) {
-            m.ita(0, 015);
-            m.atx(0, EMIT_LINK);
-            m.xta(0, HALF);
-            m.call(WRITE, 13, 023674);
-            for (;;) {
-                m.wtc(0, EXT_NEXT);
-                m.utc(0, EXT_NAMES + 1);
-                m.xta(0, 0);
-                m.aax(7, 02506);
-                if (!m.uza())
-                    break;
-                m.xta(0, EXT_NEXT);
-                m.arx(7, 02467);
-                m.atx(0, EXT_NEXT);
-            }
-            m.wtc(0, EXT_NEXT);
-            m.utc(0, EXT_NAMES + 1);
-            m.xta(0, 1);
-            m.asn(0, 0117);
-            m.aax(7, 02526);
-            m.aox(7, 02446);
-            m.call(WRITE, 13, 023702);
-            m.xta(0, EXT_NEXT);
-            m.arx(7, 02467);
-            m.atx(0, EXT_NEXT);
-            m.xta(7, 02471);
-            m.aox(0, LINE);
-            m.call(WRITE, 13, 023705);
-            m.xta(0, 0);
-            m.atx(0, LINE);
-            m.wtc(0, EMIT_LINK);
-            return m.ea(0, m.field(0));
+    m.mem[HALF] = half;
+    if (m.mem[LINE] && (half & 07777) == EXTERNAL) {
+        m.mem[EMIT_LINK] = link;
+        write(m, half, 023674);
+        unsigned e = m.mem[EXT_NEXT] & 077777;
+        while (!(m.mem[(EXT_NAMES + 1 + e) & 077777] & EXT_USED)) {
+            m.mem[EXT_NEXT] = cyclic_add(m.mem[EXT_NEXT], 3);
+            e               = m.mem[EXT_NEXT] & 077777;
         }
+        write(m, ((m.mem[(EXT_NAMES + 2 + e) & 077777] >> 15) & 077777) | EXT_HALF, 023702);
+        m.mem[EXT_NEXT] = cyclic_add(m.mem[EXT_NEXT], 3);
+        write(m, LINE_HALF | m.mem[LINE], 023705);
+        m.mem[LINE] = 0;
+        set_acc(m, 0);
+        return;
     }
-    m.xta(0, HALF);
-    return write_return(m);
+    write(m, half, link);
 }
 
+// Emit A, returning to link.
 void emit_half(Machine &m, unsigned link)
 {
-    m.set_m(13, link);
-    emit(m);
+    emit(m, m.acc, link);
 }
 
-// 23712: the next half of the template at 02007 (bit 48: the right half),
-// through M13.
-void template_half(Machine &m, unsigned link)
+// 23712: the next half of the template at TEMPLATE_AT (bit 48: the right half).
+Word template_half(Machine &m)
 {
-    m.set_m(13, link);
-    m.xta(0, TEMPLATE_AT);
-    m.ati(0, 016);
-    m.arx(0, 0);
-    if (m.u1a()) {
-        m.xta(14, 0);
-        m.asn(0, 0130);
-    } else {
-        m.xta(14, 0);
-        m.aax(7, 02466);
-    }
-    m.xts(0, TEMPLATE_AT);
-    m.arx(7, 02507);
-    m.stx(0, TEMPLATE_AT);
+    Word at = m.mem[TEMPLATE_AT];
+    m.set_m(14, at & 077777);
+    Word word = m.mem[at & 077777];
+    Word half = (at & BIT48) ? word & 077777777 : word >> 24;
+    m.mem[TEMPLATE_AT] = cyclic_add(at, BIT48);
+    return half;
 }
 
 //
-// 23734: emit the template at M11, up to a zero half; through M12. A half
-// with address 4444 takes the operand from the stack: its address replaces
-// 4444, or, for an operand with bit 48, the operand + 4000000002277777
-// is emitted first and the half keeps address 0.
+// 23734: emit the template at t, up to a zero half. A half with address
+// 4444 takes the operand from the stack: its address replaces 4444, or, for
+// an operand with bit 48, the operand + 4000000002277777 is emitted first
+// and the half keeps address 0.
 //
-unsigned run_template(Machine &m)
+void emit_template(Machine &m, unsigned t)
 {
-    m.ita(0, 013);
-    m.atx(0, TEMPLATE_AT);
+    m.mem[TEMPLATE_AT] = t;
     for (;;) {
-        template_half(m, 023736);
-        if (m.uza())
-            return m.M[12];
-        m.atx(Machine::SP, 0);
-        m.aax(7, 02451);
-        m.aex(7, 02500);
-        if (!m.u1a()) {
-            m.xta(Machine::SP, 077776);
-            m.arx(0, 0);
-            if (m.uza()) {
-                m.arx(7, 02505);
-                emit_half(m, 023747);
-                m.xta(Machine::SP, 0);
-                m.aax(7, 02460);
-                emit_half(m, 023750);
-                m.utm(Machine::SP, 077777);
+        Word half = template_half(m);
+        if (!half)
+            break;
+        if ((half & 07777) == OPERAND) {
+            Word op = pop(m);
+            if (op & BIT48) {
+                emit(m, cyclic_add(op, INDIRECT), 023747);
+                emit(m, half & ADDR_CLR, 023750);
                 continue;
             }
-            m.xta(Machine::SP, 0);
-            m.aax(7, 02460);
-            m.aox(Machine::SP, 0);
-            m.atx(Machine::SP, 0);
+            half = (half & ADDR_CLR) | op;
         }
-        m.xta(Machine::SP, 0);
-        emit_half(m, 023735);
+        emit(m, half, 023735);
     }
+    set_acc(m, 0);
+    m.set_m(13, 023736);
+}
+
+// 23734 as entered: the template at M11, returning to M12.
+unsigned run_template(Machine &m)
+{
+    emit_template(m, m.M[11]);
+    return m.M[12];
 }
 
 //
 // The accumulator: M4 ≠ 0 is the stack cell of a value still in A.
-// 23721: it is pushed (15 ATX emitted, the cell marked); through M12.
+// 23721: it is saved (15 ATX emitted, the cell marked); returns to M12.
 //
 unsigned save_acc(Machine &m)
 {
-    m.utc(12, 0);
-    unsigned link = m.field(0);
-    if (!m.M[4])
-        return link;
-    m.xta(7, 02227);
-    m.atx(4, 0);
-    emit_half(m, 023724);
-    m.vtm(4, 0);
+    if (m.M[4]) {
+        m.mem[m.M[4]] = ON_STACK;
+        emit(m, ON_STACK, 023724);
+        m.vtm(4, 0);
+    }
     return m.M[12];
 }
 
-// 23727 with an operand in A: loaded into A (template 25772), or, with the
+// 23727: the operand d loaded into A (template 25772), or, with the
 // accumulator in use, through the stack (template 25771).
+void load_value(Machine &m, Word d)
+{
+    push(m, d);
+    unsigned t = 025772;
+    if (m.M[4]) {
+        m.mem[m.M[4]] = ON_STACK;
+        m.vtm(4, 0);
+        t = 025771;
+    }
+    m.vtm(11, t);
+    emit_template(m, t);
+}
+
+// 23727 as entered: the operand in A, returning to M12.
 unsigned load_operand(Machine &m)
 {
-    if (m.M[4]) {
-        m.xts(7, 02227);
-        m.atx(4, 0);
-        m.vtm(4, 0);
-        m.vtm(11, 025771);
-        return run_template(m);
-    }
-    m.vtm(11, 025772);
-    m.atx(Machine::SP, 0);
-    return run_template(m);
+    load_value(m, m.acc);
+    return m.M[12];
 }
 
 // 23725: the operand on the stack done: loaded if any (nonzero); M4 = 0.
 unsigned operand_done(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.u1a())
-        return load_operand(m);
-    m.vtm(4, 0);
+    Word d = pop(m);
+    if (d) {
+        load_value(m, d);
+    } else {
+        set_acc(m, 0);
+        m.vtm(4, 0);
+    }
     return m.M[12];
 }
 
 //
 // 23752: read an item and go to its handler (return address on the stack);
-// 23753 without the return. M1 = code, M2 = attribute (bits 8–12), M3 =
-// value; the handler of code c is in the left half of word DISPATCH + c/2
-// (UZA, c even) or the right one (UJ).
+// 23753 without the return. M1 = code, M2 = attribute (bits 12–8), M3 =
+// value (bits 24–13); the handler of code c is in the left half of word
+// DISPATCH + c/2 (c even) or the right one. A has bit 48 for c odd.
 //
 unsigned dispatch_next(Machine &m)
 {
     m.call(READ, 13, 023754);
-    m.atx(Machine::SP, 0);
-    m.aax(7, 02532);
-    m.ati(0, 1);
-    m.xta(Machine::SP, 077777);
-    m.asn(0, 0114);
-    m.aax(7, 02451);
-    m.sti(0, 3);
-    m.asn(0, 0107);
-    m.aax(7, 02530);
-    m.ati(0, 2);
-    m.ita(0, 1);
-    m.asn(0, 0101);
-    m.ati(0, 016);
-    m.yta(0, 0);
+    Word item = m.acc;
+    m.set_m(1, item & 0177);
+    m.set_m(2, (item >> 7) & 037);
+    m.set_m(3, (item >> 12) & 07777);
+    m.set_m(14, m.M[1] >> 1);
     Word w = m.mem[DISPATCH + m.M[14]];
-    return unsigned((m.uza() ? w >> 24 : w) & 077777);
+    set_acc(m, Word(m.M[1] & 1) << 47);
+    m.rmr = m.acc;
+    return unsigned(((m.M[1] & 1) ? w : w >> 24) & 077777);
 }
 
 unsigned read_dispatch(Machine &m)
 {
-    m.ita(0, 015);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[13]);
     return dispatch_next(m);
 }
 
 // 23625: the main loop: 02021 kept on the stack around each item.
 unsigned main_loop(Machine &m)
 {
-    m.xta(0, 02021);
-    m.atx(Machine::SP, 0);
+    push(m, m.mem[02021]);
     m.set_m(13, 023627);
     return read_dispatch(m);
 }
@@ -300,156 +299,102 @@ unsigned main_loop_2(Machine &m)
 
 unsigned main_loop_3(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    m.atx(0, 02021);
+    m.mem[02021] = pop(m);
     return MAIN_LOOP;
 }
 
 // 23623: the location counter starts after the prologue.
 unsigned prologue_done(Machine &m)
 {
-    m.ita(0, 1);
-    m.atx(0, 02020);
-    m.arx(7, 02453);
-    m.atx(0, 02004);
+    m.mem[02020] = m.M[1];
+    m.mem[02004] = m.M[1] + 1;
     return MAIN_LOOP;
 }
 
 //
 // 23523: init. The return address is pushed; external table entries get
-// their numbers (M7+37 counts them), the names of drum 26 zone 0 (06000)
-// their marks; then the outer block: the main program (the name at M7+66)
-// gets the prologue (template 23612: 7 VTM, 13 VJM A/START, 15 UTM frame),
-// a procedure ('CODE', 'ALGOL' module) its name as TEXT.
+// their numbers (EXT_COUNTER counts them), the names of drum 26 zone 0
+// (06000) used as externals lose their marks; then the outer block: the
+// main program (named MAIN_NAME) gets the prologue (template 23612: 7 VTM,
+// 13 VJM A/START, 15 UTM frame), a procedure ('CODE', 'ALGOL' module) its
+// name as TEXT.
 //
 unsigned start(Machine &m)
 {
     m.vtm(7, M7);
-    m.ita(0, 015);
-    m.xts(0, POS);
-    m.arx(7, 02524);
-    m.atx(0, PAGE);
+    push(m, m.M[13]);
+    m.mem[PAGE] = cyclic_add(m.mem[POS], READ_BACK);
     m.call(READ, 13, 023526);
-    m.xta(7, 02520);
-    m.atx(0, POS);
-    m.xta(0, 0);
-    m.atx(7, 037);
-    m.vtm(13, 077775);
-    for (;;) {
-        m.utm(13, 3);
-        m.utc(13, EXT_NAMES + 1);
-        m.xta(0, 0);
-        if (m.uza())
+    m.mem[POS]         = OUT_CURSOR;
+    m.mem[EXT_COUNTER] = 0;
+    for (unsigned e = 0;; e += 3) {
+        Word w = m.mem[EXT_NAMES + 1 + e];
+        if (!w)
             break;
-        m.aax(7, 02473);
-        if (m.uza()) {
-            m.xta(0, 0);
-            m.atx(7, 037);
+        if (!(w & EXT_COUNT)) {
+            m.mem[EXT_COUNTER] = 0;
             continue;
         }
-        m.xta(7, 037);
-        m.asn(0, 061);
-        m.utc(13, EXT_NAMES + 1);
-        m.aox(0, 1);
-        m.utc(13, EXT_NAMES + 1);
-        m.atx(0, 1);
-        m.aax(7, 02526);
-        m.arx(7, 037);
-        m.atx(7, 037);
+        Word v                   = (m.mem[EXT_COUNTER] << 15) | m.mem[EXT_NAMES + 2 + e];
+        m.mem[EXT_NAMES + 2 + e] = v;
+        m.mem[EXT_COUNTER]       = cyclic_add(v & ADDR, m.mem[EXT_COUNTER]);
     }
-    m.vtm(8, NAMES);
-    bool more = true;
+    unsigned p = NAMES;
+    bool more  = true;
     do {
-        m.utm(8, 077777);
-        m.xta(8, 0);
-        if (m.uza()) {
+        p--;
+        if (!m.mem[p]) {
             more = false;
             break;
         }
-        m.aax(7, 02452);
-    } while (m.u1a());
+    } while (m.mem[p] & BIT47);
     if (more) {
-        m.vtm(13, 3);
-        for (;;) {
-            m.utc(13, EXT_NAMES);
-            m.xta(0, 0);
-            if (m.uza())
-                break;
-            m.utc(13, EXT_NAMES + 1);
-            m.xta(0, 0);
-            m.asn(0, 0130);
-            m.aax(7, 02451);
-            m.atx(0, HALF);
-            m.utm(13, 3);
-            if (m.uza())
+        for (unsigned e = 3; m.mem[EXT_NAMES + e]; e += 3) {
+            Word name   = (m.mem[EXT_NAMES + 1 + e] >> 24) & 07777;
+            m.mem[HALF] = name;
+            if (!name)
                 continue;
-            do {
-                m.utm(8, 077777);
-                m.xta(8, 1);
-                m.aax(7, 02451);
-                m.aex(0, HALF);
-            } while (m.u1a());
-            m.xta(8, 1);
-            m.aax(7, 02502);
-            m.atx(8, 1);
+            do
+                p--;
+            while ((m.mem[p + 1] & 07777) != name);
+            m.mem[p + 1] &= MARK_CLR;
         }
     }
-    m.xta(0, 0);
-    m.atx(0, EXT_NEXT);
-    m.xta(0, 02026);
-    m.ati(0, 2);
-    m.atx(0, 02015);
+    m.vtm(8, p);
+    m.mem[EXT_NEXT] = 0;
+    Word head       = m.mem[02026];
+    m.set_m(2, head);
+    m.mem[02015] = head;
     m.vtm(14, 05760);
-    m.ita(0, 016);
-    m.atx(2, 0);
+    m.store(m.M[2], 05760);
     m.vtm(1, 010000);
     m.vtm(3, 04133);
-    m.extracode(070, 7, 02517);
-    m.xta(0, 02003);
-    m.aex(7, 02525);
-    m.arx(7, 02450);
-    m.atx(0, 02010);
+    m.extracode(070, 0, NAMES_INFO);
+    m.mem[02010] = cyclic_add(m.mem[02003] ^ WORD_MASK, CONST_BASE);
     m.vtm(4, 0);
-    m.xta(0, 0);
-    m.atx(0, 02006);
-    m.atx(0, EMIT_MODE);
-    m.xta(7, 02477);
-    m.atx(0, 02021);
-    m.xta(2, 2);
-    m.aax(7, 02503);
-    m.aex(7, 02452);
-    if (!m.uza()) {
-        m.xta(7, 066);
-        m.atx(0, 02005);
-        m.xta(7, 02455);
-        m.atx(0, 02014);
+    m.mem[02006]     = 0;
+    m.mem[EMIT_MODE] = 0;
+    m.mem[02021]     = 5;
+    if ((m.mem[m.M[2] + 2] & KIND) != BIT47) {
+        m.mem[02005] = m.mem[MAIN_NAME];
+        m.mem[02014] = FRAME_MAIN;
         m.call(BLOCK_ENTRY, 13, 023603);
-        m.xta(0, 02014);
-        m.apx(7, 02465);
+        m.acc = m.mem[02014];
+        m.apx(0, 026210); // DESC_MASK
         m.asn(0, 0105);
-        m.aex(2, 0);
-        m.atx(2, 0);
-        m.xta(0, 02014);
-        m.aax(7, 02526);
-        m.its(0, 1);
-        m.atx(Machine::SP, 0);
+        m.store(m.M[2], m.acc ^ m.mem[m.M[2]]);
+        push(m, m.mem[02014] & ADDR);
+        push(m, m.M[1]);
         m.vtm(11, 023612);
         m.vtm(12, 023623);
         return TEMPLATE;
     }
-    m.xta(7, 02456);
-    m.atx(0, 02014);
-    m.wtc(2, 1);
-    m.utc(0, 02000);
-    m.xta(0, 04144);
-    m.atx(0, 02006);
+    m.mem[02014] = FRAME_PROC;
+    m.mem[02006] = m.mem[(06144 + m.mem[m.M[2] + 1]) & 077777];
     m.call(ISO_TO_TEXT, 13, 023620);
-    m.atx(0, 02005);
+    m.mem[02005] = m.acc;
     m.call(BLOCK_ENTRY, 13, 023621);
-    m.ita(0, 1);
-    m.asn(0, 050);
-    m.aex(2, 1);
-    m.atx(2, 1);
+    m.store(m.M[2] + 1, (Word(m.M[1]) << 24) ^ m.mem[m.M[2] + 1]);
     return prologue_done(m);
 }
 
@@ -459,19 +404,16 @@ unsigned start(Machine &m)
 //
 unsigned eop_end(Machine &m)
 {
-    m.utm(Machine::SP, 077776);
-    m.wtc(Machine::SP, 0);
-    return m.ea(0, m.field(0));
+    pop(m);
+    pop(m);
+    return pop(m) & 077777;
 }
 
 unsigned eop(Machine &m)
 {
-    m.xta(0, 02005);
-    m.aex(7, 066);
-    if (m.u1a())
+    if (m.mem[02005] != m.mem[MAIN_NAME])
         return eop_end(m);
-    m.xta(0, 02020);
-    m.atx(Machine::SP, 0);
+    push(m, m.mem[02020]);
     m.vtm(11, 026160);
     m.set_m(12, 026156);
     return TEMPLATE;
@@ -3345,7 +3287,11 @@ Stream pass4(Context &ctx, const Stream &input)
     n[MAIN_LOOP]     = main_loop;
     n[023627]        = main_loop_2;
     n[023630]        = main_loop_3;
-    n[023655]        = emit;
+    n[023655]        = [](Machine &mm) {
+        unsigned link = mm.M[13];
+        emit(mm, mm.acc, link);
+        return link;
+    };
     n[023721]        = save_acc;
     n[OPERAND_DONE]  = operand_done;
     n[023727]        = load_operand;
