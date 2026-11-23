@@ -82,7 +82,7 @@ the translated passes), each working on the machine's memory and leaving its reg
 | 2 | 20571–21342 | calls, arguments, thunks, VALUE, standard and non-ALGOL procedures |
 
 | 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
-| 3 | 22162–22231 | `start`, `next_item`, `copy_item`, `fold` (src/pass3.cpp): the main loop, 146 and 026/064 |
+| 3 | 22162–22326 | `start`, `next_item`, `copy_item`, `fold`, `for_scan` (src/pass3.cpp): the main loop, 146, 026/064, FOR's first scan |
 | 3 | 22716 | `intern_constant` |
 | 3 | 23343 | `eop` |
 

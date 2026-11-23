@@ -592,12 +592,25 @@ subscript computation. An access through a stepped register has no subscript lef
 | 22167 | main loop: read an item and dispatch: 146, 075 (EOP), 055 (FOR), 042/062 (M1 −1/+1), 026/064, else copy (C++) |
 | 22203 | after a 146: drop line markers, drop the 146 before a 145 (C++) |
 | 22214 | fold a constant: the item after 026/064 is a constant (023) → negated (AVX) or made real (A+X 0) and interned; returns through M11 (C++) |
-| 22232 | FOR, first scan: classify each item (3-bit table at 22264); give up on statements it cannot handle |
+| 22232 | FOR, first scan (C++): copies the loop, classifying each item (3-bit table at 22264, below); gives up (the rest is copied by the main loop) on an item of class 3, a FOR whose control variable's descriptor word is 0, more than 046 left parts, or a control variable assigned in the body. Else the assigned variables get bit 0000040000000000 in their descriptors, and the rewrite starts over from the FOR (02013 = 02001 at the FOR; when the loop crossed a page, 02042 ≠ 0, the page is closed with a 0 and the FOR's page read again) |
 | 22327, 22352 | set up the rewrite; rewrite scan (handler table 22365, jumps at 22407) |
 | 22365 | rewrite scan classes: 6 bits per code (word code>>3, bits 6·(code&7)); class c jumps through word 22407+c/2 (left half if c even). E.g. 0130–0134 → 23115, 024/0163 (labels) → 22507 |
 | 22716 | intern a constant (C++): search slots n+1…01634 (n = the free slot at 02003) for an equal word, else take slot n and move 02003 down; A = 02032 = `slot<<12 \| 023`, plus 0200 for a negative value; returns through M12 |
 | 23231 | end of FOR: emit the preamble, the loop and the increments |
 | 23343 | EOP: written, then a 0; bit 1306 into 02001, then 02001 = 4000040262011777; return to the driver (C++) |
+
+First-scan classes (22264):
+
+| Class | Codes | Action |
+|---|---|---|
+| 0 | the rest | copied |
+| 1 | 032, 0161, 0162, 0171, 0175 | copied; d is the control variable (02014) |
+| 2 | 046, 0100, 0170, 0173 | copied; d added to the assigned list (from 02051) |
+| 3 | 020–022, 025, 035–042, 050, 056, 057, 061, 062, 065, 066, 072–075, 0101–0104, 0107–0127, 0135, 0140–0147, 0154–0157, 0165 | give up |
+| 4 | 052, 0160 | end of the loop |
+| 5 | 055 | a FOR inside: scan it instead |
+| 6 | 071, 0164 | `n<<12`: standard procedure n 6–8 copied (bits of 0700 at 22301), else give up |
+| 7 | 026, 064 | fold a constant, then classify the item after |
 
 **Constants table.** Index i is at 02144+i. It grows downward from index 1624 (03770); 1625–
 1633 are the fixed constants (1631 = 2, 1632 = 1, 1633 = 0). No error messages: when it

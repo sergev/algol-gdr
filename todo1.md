@@ -22,7 +22,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 3 (G22162)
 
-- **C13** FOR loops, first scan: the classification table 22264, when a loop is given up.
 - **C14** FOR loops, rewrite: register choice (23154), subscripts linear in the control
   variable, the preamble, the increments, inner loops (`167 … 166`); drop `pass3_gen.cpp`.
 
