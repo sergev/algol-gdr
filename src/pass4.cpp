@@ -11,9 +11,9 @@ constexpr unsigned READ      = 027154; // the next item of the input stream in A
 constexpr unsigned WRITE     = 027126; // A to the output stream
 constexpr unsigned PAGE      = 02000;  // page and position of the streams
 constexpr unsigned POS       = 02001;
-constexpr unsigned EMIT_MODE = 02022;  // 1 after 0200.0000: the next half starts a word
-constexpr unsigned NAMES     = 06000;  // the names, from drum 26 zone 0
-constexpr unsigned EXT_NAMES = 027245; // external table: 3 words per name
+constexpr unsigned EMIT_MODE = 02022;      // 1 after 0200.0000: the next half starts a word
+constexpr unsigned NAMES     = 06000;      // the names, from drum 26 zone 0
+constexpr unsigned EXT_NAMES = 027245;     // external table: 3 words per name
 constexpr unsigned LINE      = M7 + 01107; // a line marker to write after the half
 constexpr unsigned EMIT_LINK = M7 + 01106; // return of emit while writing the externals
 constexpr unsigned EXT_NEXT  = M7 + 0166;  // the external entry written next
@@ -377,7 +377,7 @@ Stream pass4(Context &ctx, const Stream &input)
     // where it left it.
     (void)input;
     TranslatedPass pass(ctx, pass4_code);
-    auto &n = pass.m.natives;
+    auto &n          = pass.m.natives;
     n[023523]        = start;
     n[023623]        = prologue_done;
     n[MAIN_LOOP]     = main_loop;
