@@ -23,6 +23,7 @@ scripts/gen-tables.py > src/tables_data.cpp # tables of the original, from monsy
 scripts/gen-passes       # passes translated from the overlay: src/passN_gen.cpp
 ALGOL_TRACE=t.tr ./build/src/algol-gdr --stop-after=2 X.alg   # trace of a translated pass
 scripts/trace-diff.py DUBNA.tr t.tr   # first difference with a dubna -d ir trace
+./build/src/algol-gdr [--setftn=one,long] -o X.std X.alg   # compile; listing on stdout
 ./build/src/algol-gdr --dump X.std   # decode and disassemble an object
 ```
 

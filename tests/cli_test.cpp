@@ -64,9 +64,16 @@ TEST(cli, invalid_utf8)
     EXPECT_NE(r.output.find(":2: invalid UTF-8"), std::string::npos);
 }
 
-TEST(cli, not_implemented)
+TEST(cli, compile)
 {
     auto r = run_command(compiler + " -o /dev/null " TEST_DIR "/algol/hello.alg");
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_NE(r.output.find("PROGRAM   ДЛИHA:   16 00020B"), std::string::npos);
+}
+
+TEST(cli, full_not_implemented)
+{
+    auto r = run_command(compiler + " --full -o /dev/null " TEST_DIR "/algol/hello.alg");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_NE(r.output.find("not implemented"), std::string::npos);
 }

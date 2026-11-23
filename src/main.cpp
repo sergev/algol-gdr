@@ -1,6 +1,8 @@
 #include <getopt.h>
 
+#include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 
 #include "dump.h"
@@ -20,6 +22,7 @@ static void print_usage(std::ostream &out)
         << "    -o FILE, --output=FILE  Object file (default stdarray.out)\n"
         << "    --full                  Full listing, with object code (like *FULL)\n"
         << "    --no-list               No listing (like *NO LIST)\n"
+        << "    --setftn=one,long       Like *call setftn: one column, long lines; check mode\n"
         << "    --stop-after=N          Print the stream of pass N (1-5) and stop\n"
         << "    --dump                  Print object file (standard array) and exit\n"
         << "    -h, --help              Display available options\n"
@@ -28,7 +31,7 @@ static void print_usage(std::ostream &out)
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER };
+    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_SETFTN };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
@@ -37,6 +40,7 @@ int main(int argc, char *argv[])
         { "no-list", no_argument, nullptr, OPT_NO_LIST },
         { "dump", no_argument, nullptr, OPT_DUMP },
         { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
+        { "setftn", required_argument, nullptr, OPT_SETFTN },
         {},
     };
     Options opt;
@@ -72,6 +76,23 @@ int main(int argc, char *argv[])
         case OPT_DUMP:
             dump = true;
             break;
+        case OPT_SETFTN: {
+            std::string args = optarg;
+            for (size_t pos = 0; pos <= args.size();) {
+                size_t end      = std::min(args.find(',', pos), args.size());
+                std::string arg = args.substr(pos, end - pos);
+                if (arg == "one") {
+                    opt.setftn_one = true;
+                } else if (arg == "long") {
+                    opt.setftn_long = true;
+                } else {
+                    std::cerr << prog_name << ": --setftn: unknown " << arg << "\n";
+                    return EXIT_FAILURE;
+                }
+                pos = end + 1;
+            }
+            break;
+        }
         case OPT_STOP_AFTER: {
             std::string arg = optarg;
             if (arg.size() != 1 || arg[0] < '1' || arg[0] > '5') {
@@ -103,15 +124,28 @@ int main(int argc, char *argv[])
         Context ctx;
         ctx.options = opt;
         ctx.source  = read_source(opt.source_file);
-        Stream stream;
-        int last = opt.stop_after ? opt.stop_after : 5;
-        for (int n = 1; n <= last; n++)
-            stream = run_pass(n, ctx, stream);
         if (opt.stop_after) {
+            Stream stream;
+            for (int n = 1; n <= opt.stop_after; n++)
+                stream = run_pass(n, ctx, stream);
             write_stream(std::cout, stream);
             return EXIT_SUCCESS;
         }
-        throw NotImplemented("compilation not implemented yet");
+        if (opt.full_listing)
+            throw NotImplemented("--full: the object listing is not implemented yet");
+        Listing listing(std::cout, opt.setftn_one, opt.setftn_long);
+        if (!opt.no_listing)
+            ctx.listing = &listing;
+        StdArray object;
+        if (!compile(ctx, object))
+            return EXIT_FAILURE;
+        std::ofstream out(opt.object_file);
+        object.write_cards(out);
+        if (!out) {
+            std::cerr << prog_name << ": cannot write " << opt.object_file << "\n";
+            return EXIT_FAILURE;
+        }
+        return EXIT_SUCCESS;
     } catch (const std::exception &e) {
         std::cerr << prog_name << ": " << e.what() << "\n";
         return EXIT_FAILURE;

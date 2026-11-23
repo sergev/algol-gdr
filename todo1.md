@@ -83,11 +83,11 @@ Pass 4 runs as translated code (`src/pass4_gen.cpp`); replace it under `Pass.str
 
 ### B7. Pass 6 and integration
 
-- **B7.2** The whole pipeline: `compile_test` and `run_test` pass for every program.
 - **B7.3** `--full`: the object listing of `A/PRINTM` (its modules are not analysed yet; do
   this last, or move it to a later milestone).
 
 ## Order
 
 With the captured streams and `pass_test`, each pass can be written and tested on its own.
-Suggested order: B3, B4, B5, and B7.2–B7.3 last.
+The whole compiler runs (passes 2–4 as translated code): `compile_test` and `run_test`
+pass for every program. Suggested order: B3, B4, B5, B7.3 last.

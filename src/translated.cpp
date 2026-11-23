@@ -28,7 +28,7 @@ TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), co
     m.M[Machine::SP] = STACK;
     m.mem[FLGEX]     = ctx.flgex;
     m.mem[NOLISFL]   = ctx.options.no_listing;
-    m.mem[CHECKFL]   = ctx.options.setftn_one || ctx.options.setftn_long;
+    m.mem[CHECKFL]   = ctx.options.check();
     m.mem[REGIM]     = (ctx.options.setftn_one ? 04000000000000000 : 0) |
                    (ctx.options.setftn_long ? 02000000000000000 : 0);
     m.mem[DATED]        = ctx.options.no_listing ? 0 : 06000000000000000;

@@ -14,6 +14,9 @@ struct Options {
     bool setftn_one{};                         // *call setftn:one: empty lines printed
     bool setftn_long{};                        // *call setftn:long
     int stop_after{};                          // print stream of this pass and stop, 1-5
+
+    // *call setftn sets CHECKFL*: check mode, no pass 3.
+    bool check() const { return setftn_one || setftn_long; }
 };
 
 #endif

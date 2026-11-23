@@ -9,6 +9,7 @@
 #include "item.h"
 #include "listing.h"
 #include "options.h"
+#include "stdarray.h"
 #include "workspace.h"
 
 //
@@ -40,5 +41,12 @@ void blank_line(const Context &ctx);
 // and return its own stream.
 //
 Stream run_pass(int n, Context &ctx, const Stream &input);
+
+//
+// The driver (01614): the passes in turn; pass 3 not in check mode, none
+// after pass 2 when there are errors. The listing ends with the summary line.
+// Returns false when no object is made.
+//
+bool compile(Context &ctx, StdArray &object);
 
 #endif

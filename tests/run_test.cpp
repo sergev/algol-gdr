@@ -52,7 +52,8 @@ TEST_P(Run, output)
     fs::create_directories(dir);
     fs::remove(obj);
 
-    auto c = run_command(compiler + " -o " + obj + " " TEST_DIR "/algol/" + name + ".alg");
+    auto c = run_command(compiler + pre_options(TEST_DIR "/algol/" + name + ".pre") + " -o " + obj +
+                         " " TEST_DIR "/algol/" + name + ".alg");
     if (c.output.find("not implemented") != std::string::npos)
         GTEST_SKIP() << "compiler not implemented";
     ASSERT_EQ(c.exit_code, 0) << c.output;

@@ -36,7 +36,8 @@ TEST_P(Compile, object)
     fs::create_directories(dir);
     fs::remove(got);
 
-    auto r = run_command(compiler + " -o " + got + " " + src);
+    auto r = run_command(compiler + pre_options(TEST_DIR "/algol/" + name + ".pre") + " -o " + got +
+                         " " + src);
     if (r.output.find("not implemented") != std::string::npos)
         GTEST_SKIP() << "compiler not implemented";
 
