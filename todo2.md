@@ -33,6 +33,10 @@ reference for the native runs.
   operands become indexes into these tables, so `.s1`/`.s2` give way to the `.ast` goldens;
   `.lst` must not change, `.sym` prints by name. The size limits of the original (hash
   table, constant page, D-list) go.
+- **E7.2** UTF-8 throughout: no more ISO (KOI-7) or TEXT encoding inside the compiler, and
+  no forced uppercase. Source, names, strings and messages stay UTF-8; keywords are
+  recognized and printed in lowercase; user identifiers keep their spelling as written.
+  Listings and goldens are updated to match.
 
 ### Driver and runtime
 
