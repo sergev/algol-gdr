@@ -60,7 +60,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   thunks, labels, arrays, runtime names; [ir.asdl](doc/ir.asdl) — the LLVM IR subset algc
   emits, as src/ir.h builds it.
 
-Milestones (from README.md):
+Milestones (from Roadmap.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
    files (standard arrays) and run them on the `dubna` simulator.
 2. Replace the backend: emit LLVM IR and invoke external `clang` to link a native executable
