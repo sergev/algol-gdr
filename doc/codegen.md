@@ -123,8 +123,10 @@ formals. An assignment to an expression parameter changes only the temporary.
 - A function whose labels can be reached that way (a label used in a switch, as an actual
   parameter, in a thunk, or by a `goto` in a nested procedure) calls `setjmp` at entry, on a
   `jmp_buf` in its frame (`[64 x i64]`, 16-aligned), and on a return by `longjmp` switches
-  on slot 2 to the label. Its variables are in memory, so nothing is lost; arrays of the
-  blocks left are not freed.
+  on slot 2 to the label. Its variables are in memory, so nothing is lost. Before the
+  label, `algol_array_unwind` frees the arrays allocated since the entry of the function
+  (`algol_array_mark`), but for those of the blocks around the label: the blocks and the
+  procedures the jump leaves.
 - A switch is a function `void @S.<id>.<name>(ptr %frame, i64 %index, ptr %out)` writing
   the label value of element `index` to `out`; an index out of range is a run-time error.
   A switch as a parameter is the pair `{fn, frame}`.
@@ -149,7 +151,8 @@ A descriptor takes `3 + 2·n` slots for `n` dimensions: the data pointer, the nu
 elements, the number of dimensions, then the lower and upper bound of each dimension. Elements are 8-byte cells in
 row-major order (the last subscript varies fastest). Bounds are evaluated on block entry,
 then `algol_array_alloc(desc, n)` allocates zeroed storage; `algol_array_free(desc)` frees
-it on block exit. An array is passed by the address of its descriptor. With `--check`,
+it on block exit. The runtime keeps the live arrays on a stack, for a non-local `goto`
+(Labels). An array is passed by the address of its descriptor. With `--check`,
 every subscript is checked by `algol_check_index`.
 
 Arrays are row-major (the last subscript varies fastest). The original stored them

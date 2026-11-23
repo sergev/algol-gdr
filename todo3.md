@@ -16,8 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F7** Storage on non-local `goto`: arrays of the blocks left by `longjmp` are freed (a
-  list of live arrays per frame), so that loops through non-local jumps do not leak.
 - **F8** Separate compilation: a file with procedures only (`_procedure p…; _eop`) compiles
   to an object whose procedures are global under their names, callable as `_algol`
   externals from another unit. Tests with two units linked together.

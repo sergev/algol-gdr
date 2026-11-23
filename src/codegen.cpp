@@ -773,9 +773,12 @@ private:
                         { desc, dims, fn_->gep("i64", { "ptr", s.common }, ir::i64(s.offset)) });
                     continue;
                 }
+                if (a->own) {
+                    runtime("void", "algol_array_alloc_own", { desc, dims });
+                    continue;
+                }
                 runtime("void", "algol_array_alloc", { desc, dims });
-                if (!a->own)
-                    active_.back().arrays.push_back(name.id);
+                active_.back().arrays.push_back(name.id);
             }
             if (done) {
                 fn_->br(done);
@@ -993,21 +996,48 @@ private:
             return;
         ir::Value jb = fn_->stack_alloc("i64", 64, 16);
         fn_->store(jb, slot(&f, SLOT_JMPBUF));
+        // The arrays live at entry; a jump frees those allocated since,
+        // but for the arrays of the blocks around its label.
+        ir::Value mark = runtime("i64", "algol_array_mark", {});
         module_.declare("i32", "_setjmp", "ptr", "returns_twice");
         ir::Value r = fn_->call("i32", "@_setjmp", { jb }, " returns_twice");
         auto *go    = fn_->new_block("far");
         auto *body  = fn_->new_block("body");
         fn_->cond_br(fn_->icmp("ne", r, { "i32", "0" }), go, body);
         fn_->set_block(go);
-        std::vector<std::pair<int64_t, const ir::Block *>> cases(f.far_labels.size());
-        std::transform(f.far_labels.begin(), f.far_labels.end(), cases.begin(), [this](int id) {
-            return std::pair<int64_t, const ir::Block *>(symbol(id).index, symbol(id).block);
-        });
+        std::vector<std::pair<int64_t, const ir::Block *>> cases;
+        auto *dispatch = fn_->block();
+        for (int id : f.far_labels) {
+            const Symbol &label = symbol(id);
+            auto *unwind        = fn_->new_block("far." + label.name);
+            fn_->set_block(unwind);
+            runtime("void", "algol_array_unwind",
+                    { fn_->binop("add", mark, ir::i64(live_arrays(label.path))) });
+            fn_->br(label.block);
+            cases.emplace_back(label.index, unwind);
+        }
+        fn_->set_block(dispatch);
         auto *bad = fn_->new_block("far.bad");
         fn_->switch_(fn_->load("i64", slot(&f, SLOT_LABEL)), bad, cases);
         fn_->set_block(bad);
         fn_->unreachable();
         fn_->set_block(body);
+    }
+
+    // The arrays allocated by blocks, from the outermost, in a function.
+    int64_t live_arrays(const std::vector<const stmt::Block *> &path) const
+    {
+        int64_t n = 0;
+        for (const auto *b : path) {
+            for (const auto &d : b->decls) {
+                auto a = std::get_if<decl::Arrays>(&d->node);
+                if (a && !a->own)
+                    n += std::count_if(a->arrays.begin(), a->arrays.end(), [this](const auto &x) {
+                        return symbol(x.id).common.empty();
+                    });
+            }
+        }
+        return n;
     }
 
     // The label value of a designational expression: {frame, index}.

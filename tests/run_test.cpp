@@ -59,6 +59,7 @@ const std::vector<std::string> programs = {
     "algol/test2",
     "algol/test3",
     "a60/for",
+    "a60/goto_arrays",
     "a60/intdiv",
     "a60/own",
     "a60/parameters",
@@ -272,6 +273,16 @@ TEST(Run, domain_error)
         run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_EQ(r.output, "             1 \nError: Square root of a negative number -1\n");
+}
+
+// Non-local gotos free the arrays they leave: 32 GB otherwise.
+TEST(Run, goto_frees_arrays)
+{
+    const std::string exe = BUILD_DIR "/run_goto_arrays_limited";
+    auto c = run_command(compiler + " -o " + exe + " " TEST_DIR "/a60/goto_arrays.alg");
+    ASSERT_EQ(c.exit_code, 0) << c.output;
+    auto r = run_command("ulimit -v 1000000; " + exe);
+    EXPECT_EQ(r.exit_code, 0) << r.output;
 }
 
 TEST(Run, division_by_zero)

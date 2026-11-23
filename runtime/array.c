@@ -3,8 +3,11 @@
 //
 // Arrays. A descriptor is int64 words: the data pointer, the number of
 // elements, the number of dimensions, then the lower and upper bound of each
-// dimension. Elements are
-// 8-byte cells, row-major.
+// dimension. Elements are 8-byte cells, row-major.
+//
+// Arrays allocated by blocks and value parameters are kept on a stack, so
+// that a non-local goto can free those of the blocks and procedures it
+// leaves: algol_array_unwind.
 //
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +28,38 @@ static int64_t count(int64_t *desc, int64_t dims)
     return n;
 }
 
-void algol_array_alloc(int64_t *desc, int64_t dims)
+typedef struct {
+    int64_t *desc;
+    int copy; // the descriptor is of algol_array_copy
+} Live;
+
+static Live *live;
+static int64_t nlive, live_cap;
+
+static void push(int64_t *desc, int copy)
+{
+    if (nlive == live_cap) {
+        live_cap = live_cap ? 2 * live_cap : 64;
+        live     = realloc(live, live_cap * sizeof(Live));
+        if (!live)
+            algol_error("No memory for arrays");
+    }
+    live[nlive++] = (Live){ desc, copy };
+}
+
+// Off the stack, from the top.
+static void forget(const int64_t *desc)
+{
+    for (int64_t i = nlive - 1; i >= 0; i--) {
+        if (live[i].desc == desc) {
+            memmove(&live[i], &live[i + 1], (nlive - i - 1) * sizeof(Live));
+            nlive--;
+            return;
+        }
+    }
+}
+
+static void allocate(int64_t *desc, int64_t dims)
 {
     int64_t n  = count(desc, dims);
     void *data = calloc(n ? n : 1, 8);
@@ -34,10 +68,40 @@ void algol_array_alloc(int64_t *desc, int64_t dims)
     desc[0] = (int64_t)(intptr_t)data;
 }
 
+void algol_array_alloc(int64_t *desc, int64_t dims)
+{
+    allocate(desc, dims);
+    push(desc, 0);
+}
+
+// An own array: never freed.
+void algol_array_alloc_own(int64_t *desc, int64_t dims)
+{
+    allocate(desc, dims);
+}
+
 void algol_array_free(int64_t *desc)
 {
+    forget(desc);
     free((void *)(intptr_t)desc[0]);
     desc[0] = 0;
+}
+
+int64_t algol_array_mark(void)
+{
+    return nlive;
+}
+
+// The arrays allocated after mark, freed.
+void algol_array_unwind(int64_t mark)
+{
+    while (nlive > mark) {
+        Live a = live[--nlive];
+        free((void *)(intptr_t)a.desc[0]);
+        a.desc[0] = 0;
+        if (a.copy)
+            free(a.desc);
+    }
 }
 
 void algol_check_index(const int64_t *desc, int64_t dim, int64_t i)
@@ -51,12 +115,13 @@ void algol_check_index(const int64_t *desc, int64_t dim, int64_t i)
 // A new array with the bounds and elements of src: a value parameter.
 int64_t *algol_array_copy(const int64_t *src, int64_t dims)
 {
-    size_t words  = 2 + 2 * dims;
+    size_t words  = 3 + 2 * dims;
     int64_t *desc = malloc(words * 8);
     if (!desc)
         algol_error("No memory for an array");
     memcpy(desc, src, words * 8);
-    algol_array_alloc(desc, dims);
+    allocate(desc, dims);
+    push(desc, 1);
     memcpy((void *)(intptr_t)desc[0], (void *)(intptr_t)src[0], src[1] * 8);
     return desc;
 }

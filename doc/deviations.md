@@ -21,7 +21,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 | Deviation | Where | Task |
 |---|---|---|
-| Arrays of the blocks left by a non-local `goto` (through `longjmp`) are not freed | code generator | F7 |
 
 ## Program structure
 
