@@ -384,7 +384,8 @@ reverse order.
 | *1731B | `LABEL AS ARGUMENT OF NON-ALGOL CALL` |
 | *2007B, *2044B, *2063B | `ILLEGAL VALUE PARAMETER`, `ILLEGAL ARGUMENT OF LENGTH`, `… OF PRINT` |
 | 22051 | `* * INCORRECT ALGOL PROGRAM * *` |
-| (I) | two KOI-7 messages about inconsistent `'COMMON'` declarations |
+| 17322 | `*****ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA X`: the elements of a block are declared in another order, or one is a procedure |
+| 17311 | `**HECOOTBETCTBИE B OПИCAHИЯX COMMON ЭЛ-TA       X`: an element is not declared |
 
 Quirk: using an array formal parameter inside a procedure body gave `ILLEGAL USE … NEXT
 STATEMENT IS 304/ 2` with a bogus line number (not investigated).

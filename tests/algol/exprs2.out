@@ -1,0 +1,16 @@
+*NAME EXPRS2
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/PARPAR E 01452                A/LPRI   E 01663                ENTIER*  E 02057
+         A/STOP     01225                A/PARVAL E 01461                A/NLINE  E 01727                A/RHOCHI E 02061
+         A/START  E 01231                A/PAREXP E 01466                A/NPAGE  E 01731                A/IHOCHI E 02074
+         A/ARRD/K   01305                A/PARLAB E 01477                A/I*ISO  E 02004                A/SIGN   E 02101
+         A/ARRD/V E 01310                A/PARSTR E 01506                A/R*ISO  E 02007                STOP*      02111
+         A/CALLP    01401                A/DRUCK    01517                A/AND      02042                EXIT     E 02112
+         A/CALLS  E 01402                A/IPRI   E 01551                A/EQUIV  E 02045                STOPFLG* C 02140
+         A/PROCRT E 01407                A/RPRI   E 01603                A/NOT    E 02046                SYSBACK*   02141
+         A/PARCON E 01432                A/BPRI   E 01637                A/IMPL   E 02051                PRINT8     02151
+         A/PARVAR E 01441                A/SPRI   E 01646                A/RTOI   E 02054                CBOБOДHO   02332
+≠
+              3              3              3              4              3              3              3  3.00000000001+00

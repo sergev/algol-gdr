@@ -22,9 +22,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 2 (G17223)
 
-- **C3** Test programs for what C1 shows unrun in pass 2 (each message, 'COMMON'
-  consistency, I/O statement checks, actual-formal checks, switches, own variables), with
-  goldens.
 - **C4** Pass 2 start and end: saving the names to drum 26 zone 0, the first scan over the
   'COMMON' table and the D-list, linking array descriptors to the records at 04000,
   `* * INCORRECT ALGOL PROGRAM * *`.

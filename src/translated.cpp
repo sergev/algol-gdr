@@ -14,7 +14,8 @@ constexpr unsigned REGIM    = 00523;  // *REGIM//: bit 48 setftn:one, bit 47 set
 constexpr unsigned FLGEX    = 00702;
 constexpr unsigned NOLISFL  = 00705;
 constexpr unsigned DATED    = 01730;  // the header with the date is printed
-constexpr unsigned ASMPRINT = 012000; // a row: first and last word on the stack, indent in A
+constexpr unsigned ASMPRINT = 012000; // a row: first and last word on the stack, indent in A;
+                                      // returns the word under them in A
 constexpr unsigned CURSOR_W = 02001;
 
 } // namespace
@@ -42,6 +43,7 @@ TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), co
             ctx_.listing->row(std::string(indent, ' ') +
                               listing_text(&mm.mem[first], 0, 6 * (last - first + 1)));
         mm.set_m(14, 0);
+        mm.xta(Machine::SP, 0); // the caller's A, under the arguments
         return mm.M[13];
     };
 }

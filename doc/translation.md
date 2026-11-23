@@ -43,7 +43,8 @@ Address 0 reads as zero: stores there are dropped (pass 2 stores to it, then rea
 
 Native routines:
 - **ASMPRINT 12000**: pops the last and the first word, takes the indent in A, and prints one
-  row through `Listing::row`; leaves M14 = 0. 01644 itself is translated (its split of long
+  row through `Listing::row`; leaves M14 = 0 and pops the word under them into A (the
+  caller's A, as in any call with the arguments on the stack). 01644 itself is translated (its split of long
   texts and its state cells 01736–01740 match the original).
 - **`*70`**: drum pages and sectors into `Workspace::drum`.
 
@@ -82,15 +83,20 @@ exactly (pass 1's scratch cells, the result cell of 30001) show up as difference
 
 `ALGOL_COVERAGE=FILE` appends the halves each translated pass ran. `scripts/coverage.py`
 compiles every test program with it and lists per pass the code words never run, each with
-the label before it in the Madlen source (code: the C ranges of `algol.sym`/`.tsym`, plus
-whatever ran). With the 36 programs of tests/algol:
+the label before it in the Madlen source (code: the C ranges of `algol.sym`/`.tsym` without
+the words of six printable characters, which are message texts, plus whatever ran). With the
+41 programs of tests/algol:
 
 | Pass | Halves of code run | Unrun |
 |---|---|---|
-| 2 | 1741 of 2186 (79%) | ~45 small pieces, mostly error branches (messages, checks of 'COMMON', I/O and actual parameters) |
-| 3 | 977 of 1166 (83%) | 23073–23125 (27 words), 22507–22517, 22734–22744, 23417–23426 and some single words |
-| 4 | 1906 of 2112 (90%) | 10 pieces, the largest 24523–24530 and 25330–25334 |
+| 2 | 1999 of 2340 (85%) | 20 pieces of 1–6 words: entries of jump tables by type and kind, short branches |
+| 3 | 1044 of 1162 (89%) | |
+| 4 | 1952 of 2142 (91%) | |
 | shared | 279 of 350 (79%) | 27137 (backward write of a word), 27165, 27220, 01653 (no listing) |
+
+Test programs for pass 2 (err_pass2, exprs, exprs2, externals, err_common2) were found by
+compiling one statement at a time, every expression of a list in every context of a list,
+and keeping the statements that ran new code.
 
 The rewrite of an unrun piece is not checked by the tests: each pass's first task adds
 programs that run it, or the piece is kept as found and marked unverified.

@@ -1,0 +1,13 @@
+'COMMENT' 'COMMON' ELEMENTS DECLARED OUT OF ORDER, NOT DECLARED,
+    OR DECLARED AS A PROCEDURE;
+'BEGIN'
+    'COMMON' /A/ X, Y;
+    'REAL' Y, X;
+    'COMMON' /B/ U, V;
+    'REAL' U;
+    'COMMON' /C/ F;
+    'INTEGER' 'PROCEDURE' F; F := 1;
+    X := 1;
+    PRINT(X)
+'END'
+'EOP'

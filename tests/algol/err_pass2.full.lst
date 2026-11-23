@@ -1,0 +1,70 @@
+*NAME ERR_PASS2
+*PUNCH
+*FULL
+*ALGOL                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P                                                ILLEGAL USE OF IDENTIFIER ′ASSIGN′. NEXT STATEMENT IS   51/
+    (7.01.82)                                                                   1
+                                                                 ILLEGAL USE OF IDENTIFIER ′STOP′. NEXT STATEMENT IS   50/ 1
+           1. ′COMMENT′ TYPE AND USE ERRORS FOUND BY PASS 2;     TYPE ERROR IN CONNECTION WITH ′-′. NEXT STATEMENT IS   49/ 1
+           2. ′CODE′: CP;                                        ILLEGAL USE OF IDENTIFIER ′SIN′. NEXT STATEMENT IS   48/ 1
+           3. ′ALGOL′: AP;                                       ILLEGAL USE OF IDENTIFIER ′PP′. NEXT STATEMENT IS   47/ 1
+           4. ′BEGIN′ ′INTEGER′ I; ′REAL′ X; ′BOOLEAN′ B;        LABEL AS ARGUMENT OF NON-ALGOL CALL . NEXT STATEMENT IS   46
+           5.   ′INTEGER′ ′ARRAY′ IA[1:3]; ′REAL′ ′ARRAY′ RA                    / 1
+               [1:3];                                            ILLEGAL ARGUMENT OF LENGTH. NEXT STATEMENT IS   45/ 1
+           6.   ′BOOLEAN′ ′ARRAY′ BA[1:3];                       IDENTIFIER ′PUNCH′ IS NOT DECLARED. NEXT STATEMENT IS   44/
+           7.   ′SWITCH′ S := L, M;                                             1
+           8.   ′INTEGER′ ′PROCEDURE′ IP(N); ′VALUE′ N; ′INT     ILLEGAL USE OF IDENTIFIER ′PP′. NEXT STATEMENT IS   43/ 1
+               EGER′ N; IP := N;                                 ILLEGAL ARGUMENT OF PRINT. NEXT STATEMENT IS   42/ 1
+           9.   ′REAL′ ′PROCEDURE′ RP; RP := 1;                  TYPE ERROR IN CONNECTION WITH ′**′. NEXT STATEMENT IS   41/
+          10.   ′BOOLEAN′ ′PROCEDURE′ BP; BP := ′TRUE′;                         1
+          11.   ′PROCEDURE′ P0; ;                                TYPE ERROR IN CONNECTION WITH RELATION. NEXT STATEMENT IS
+          12.   ′PROCEDURE′ PP(A1, A2, A3, A4, A5, A6, A7, A                    40/ 1
+               8);                                               TYPE ERROR IN CONNECTION WITH RELATION. NEXT STATEMENT IS
+          13.     ′VALUE′ A1; ′INTEGER′ A1; ′REAL′ A2; ′BOOL                    39/ 1
+               EAN′ A3; ′ARRAY′ A4;                              TYPE ERROR IN CONNECTION WITH RELATION. NEXT STATEMENT IS
+          14.     ′LABEL′ A5; ′PROCEDURE′ A6; ′STRING′ A7; ′                    38/ 1
+               SWITCH′ A8;                                       TYPE ERROR IN CONNECTION WITH ′+′. NEXT STATEMENT IS   37/ 1
+          15.   ′BEGIN′ A2 := A1 ′END′;                          TYPE ERROR IN CONNECTION WITH ′+′. NEXT STATEMENT IS   36/ 1
+          16. L: I := 1;                                         TYPE ERROR IN CONNECTION WITH INDEX. NEXT STATEMENT IS   35/
+          17. M: X := 1;                                                         1
+          18.   I := PP;                                         TYPE ERROR IN CONNECTION WITH GOTO. NEXT STATEMENT IS   34/
+          19.   I := IA;                                                        1
+          20.   I := AP;                                         TYPE ERROR IN CONNECTION WITH ′FOR′. NEXT STATEMENT IS   32/
+          21.   I := I ′LT′ X;                                                   2
+          22.   I := IP(X);                                      TYPE ERROR IN CONNECTION WITH ′FOR′. NEXT STATEMENT IS   31/
+          23.   I := IP(B);                                                      2
+          24.   I := IA[B];                                      TYPE ERROR IN CONNECTION WITH ′:=′. NEXT STATEMENT IS   31/
+          25.   I := IA[1,2];                                                   1
+          26.   I := ′′S′′+′′T′′;                                ILLEGAL USE OF IDENTIFIER ′LENGTH′. NEXT STATEMENT IS   30/
+          27.   IP(1) := 1;                                                     1
+          28.   IA := 1;                                         ILLEGAL USE OF IDENTIFIER ′IA′. NEXT STATEMENT IS   29/ 1
+          29.   LENGTH := 1;                                     ILLEGAL LEFT PART OR INPUT ELEMENT. NEXT STATEMENT IS   28/
+          30.   I := X := I;                                                    1
+          31.   ′FOR′ I := B ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1;     ILLEGAL USE OF IDENTIFIER ′I′. NEXT STATEMENT IS   27/ 1
+          32.   ′FOR′ B := 1 ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1;     ILLEGAL USE OF IDENTIFIER ′IA′. NEXT STATEMENT IS   26/ 1
+          33.   ′GOTO′ I;                                        TYPE ERROR IN CONNECTION WITH INDEX. NEXT STATEMENT IS   25/
+          34.   IA[P0] := 1;                                                     1
+          35.   I := ′NOT′ B + 1;                                NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′EXPRESSION′ AND ′N′
+          36.   I := ′IF′ B ′THEN′ B ′ELSE′ B + 1;                              . NEXT STATEMENT IS   24/ 1
+          37.   B := B ′LT′ 1;                                   NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′EXPRESSION′ AND ′N′
+          38.   B := 1 ′LT′ B;                                                  . NEXT STATEMENT IS   23/ 1
+          39.   B := 1 ′LT′ P0;                                  ILLEGAL USE OF IDENTIFIER ′I′. NEXT STATEMENT IS   22/ 1
+          40.   X := B ′POWER′ 2;                                TYPE ERROR IN CONNECTION WITH ′:=′. NEXT STATEMENT IS   21/
+          41.   PRINT(P0);                                                      1
+          42.   PRINT(PP);                                       ILLEGAL USE OF IDENTIFIER ′IA′. NEXT STATEMENT IS   20/ 1
+          43.   PUNCH(S);                                        ILLEGAL USE OF IDENTIFIER ′PP′. NEXT STATEMENT IS   19/ 1
+          44.   I := LENGTH(I);                                   * * INCORRECT ALGOL PROGRAM * *
+          45.   CP(P0);
+          46.   CP(PP);
+          47.   X := SIN(B);
+          48.   X := -B;
+          49.   STOP(I);
+          50.   ASSIGN(I);
+          51.   PP(1, I, B, RA, L, P0, ′′S′′, S);
+          52.   PP(1, X, B, RA, CP, P0, ′′S′′, S)
+          53. ′END′
+          54. ′EOP′
+ILLEGAL USE OF IDENTIFIER ′CP′. NEXT STATEMENT IS   54/ 1
+NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′I′ AND ′A2′. NEXT S
+               TATEMENT IS   52/ 1
+*END FILE

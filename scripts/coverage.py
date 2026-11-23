@@ -6,11 +6,14 @@
 Compiles each program (default tests/algol/*.alg, with the options of its .pre)
 with ALGOL_COVERAGE set, then prints per pass the halves of code run, and the
 code never run: ranges of words, each with the label before it in the Madlen
-source (os-dubna/algol). Code is what algol.sym/.tsym mark C, and whatever ran.
-A word run in one half only is listed with --all.
+source (os-dubna/algol). Code is what algol.sym/.tsym mark C, and whatever ran,
+but not a word of six printable characters (message texts are marked C too).
+A word run in one half only is listed with --all. Routines replaced by C++
+(the natives of src/passN_gen.cpp) are not counted.
 """
 import argparse
 import glob
+import importlib.util
 import os
 import re
 import subprocess
@@ -51,6 +54,21 @@ def labels(asm):
     return names
 
 
+def image(tape):
+    spec = importlib.util.spec_from_file_location('gen_tables', os.path.join(here, 'gen-tables.py'))
+    gt = importlib.util.module_from_spec(spec)
+    src = open(spec.origin).read().replace('\nmain()\n', '\n')
+    exec(compile(src, spec.origin, 'exec'), gt.__dict__)
+    with open(tape, 'rb') as f:
+        f.seek(gt.OVERLAY)
+        img = gt.ovl2bin(f.read())
+    return lambda a: img[a - gt.BASE]
+
+
+def is_text(w):
+    return all(0o40 <= (w >> s) & 0o377 < 0o177 for s in range(0, 48, 8))
+
+
 def pre_options(alg):
     opts = []
     pre = alg[:-4] + '.pre'
@@ -65,6 +83,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--compiler', default=os.path.join(root, 'build/src/algol-gdr'))
     ap.add_argument('--asm', default=os.path.join(root, '../os-dubna/algol'))
+    ap.add_argument('--tape', default=os.path.join(root, '../os-dubna/monsys/monsys.9'))
     ap.add_argument('--all', action='store_true')
     ap.add_argument('alg', nargs='*')
     args = ap.parse_args()
@@ -82,8 +101,20 @@ def main():
                 a, h = line.split()
                 run.add((int(a, 8), h == 'R'))
 
-    code = code_words(args.asm) | {a for a, _ in run}
+    word = image(args.tape)
+    code = {a for a in code_words(args.asm) if not is_text(word(a))} | {a for a, _ in run}
     names = labels(args.asm)
+    natives = set()
+    for path in glob.glob(os.path.join(root, 'src/pass*_gen.cpp')):
+        for line in open(path):
+            if line.startswith('// natives:'):
+                natives.update(int(a, 8) for a in line.split()[2:])
+    for a in natives:
+        # the routine: up to the next label that is not a local loop (crude)
+        b = a
+        while b + 1 in code and (b + 1, False) not in run and (b + 1, True) not in run:
+            b += 1
+        code -= set(range(a, b + 1))
     for title, ranges in PASSES:
         words = [a for lo, hi in ranges for a in range(lo, hi + 1) if a in code]
         done = sum((a, r) in run for a in words for r in (False, True))
