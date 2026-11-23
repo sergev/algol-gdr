@@ -9,7 +9,6 @@
 #include <string>
 
 #include "arith.h"
-#include "tables.h"
 
 namespace {
 
@@ -46,11 +45,6 @@ constexpr unsigned VALUES = 02143; // the value stack, from VALUES+1
 constexpr unsigned PREAMBLE_LIST   = 02454;
 constexpr unsigned BODY_LIST       = 02702;
 constexpr unsigned INCREMENTS_LIST = 02120;
-
-// Tables of the overlay.
-constexpr unsigned FOR_CLASSES  = 022264; // 3 bits per code: word code>>4, bits 3·(code&017)
-constexpr unsigned PARSE_CLASSES = 022365; // 6 bits per code: word code>>3, bits 6·(code&7)
-constexpr unsigned REGS          = 023153; // index register codes, from 1
 
 // Continuations, kept on the stack as return addresses.
 constexpr unsigned DRIVER      = 01632;
@@ -150,12 +144,35 @@ Word integer_product(Word a, Word x)
     return unit_add(RAW, unit_mul(NORM, a, x), INTEGER);
 }
 
-Word image(unsigned addr)
-{
-    if (addr < tables::image_base || addr >= tables::image_base + tables::image_size)
-        throw std::runtime_error("pass 3: no overlay word at " + std::to_string(addr));
-    return tables::image[addr - tables::image_base];
-}
+// Class of each item code in the first scan of a FOR loop (22264, 3 bits
+// per code): see scan_loop.
+const uint8_t FOR_CLASS[0200] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 000
+    3, 3, 3, 0, 0, 3, 7, 0, 0, 0, 1, 0, 0, 3, 3, 3, // 020
+    3, 3, 3, 0, 0, 0, 2, 0, 3, 0, 4, 0, 0, 5, 3, 3, // 040
+    0, 3, 3, 0, 7, 3, 3, 0, 0, 6, 3, 3, 3, 3, 0, 0, // 060
+    2, 3, 3, 3, 3, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, // 100
+    3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 3, 0, 0, // 120
+    3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 3, 3, 3, 3, // 140
+    4, 1, 1, 0, 6, 3, 0, 0, 2, 1, 0, 2, 0, 1, 0, 0, // 160
+};
+
+// Class of each item code in the rewrite (22365, 6 bits per code): the index
+// of its handler in classify. Codes 0160… read the words after the table.
+const uint8_t PARSE_CLASS[0200] = {
+    0, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5, // 000
+    0, 0, 0, 7, 18, 0, 15, 19, 9, 0, 0, 0, 2, 0, 0, 0, // 020
+    0, 0, 0, 3, 10, 8, 11, 4, 0, 0, 1, 21, 21, 0, 0, 0, // 040
+    0, 0, 0, 4, 4, 0, 0, 12, 6, 4, 0, 0, 0, 0, 14, 13, // 060
+    0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 100
+    0, 0, 0, 0, 0, 0, 0, 0, 20, 20, 20, 20, 20, 0, 16, 17, // 120
+    0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 4, 4, 0, 0, 0, 0, // 140
+    1, 0, 40, 18, 10, 16, 8, 0, 14, 0, 34, 0, 0, 0, 0, 16, // 160
+};
+
+// Index register codes for loop subscripts (23154), from 1: R5, R4, R3, R2,
+// R8, R9, R10, R11.
+const std::array<Word, 9> REGS = { 0, 01200, 01000, 0600, 0400, 02000, 02200, 02400, 02600 };
 
 //
 // Pass 3 (G22162): the optimizer. It copies the stream of pass 2, folding
@@ -439,7 +456,7 @@ read:
     mem(CUR) = get();
 classify: {
     unsigned code = unsigned(mem(CUR)) & 0177;
-    switch ((image(FOR_CLASSES + (code >> 4)) >> (3 * (code & 017))) & 7) {
+    switch (FOR_CLASS[code]) {
     case 0: // copied
         goto copy;
     case 1: // its control variable (032, …)
@@ -532,7 +549,7 @@ unsigned Pass3::classify()
         022607, 022664, 022666, 022665, 023417, 022425, 022436, 022507, 023073, 023115, 023123,
     };
     unsigned code = mem(CUR) & 0177;
-    unsigned cls  = (image(PARSE_CLASSES + ((code >> 3) & 017)) >> (6 * (code & 7))) & 077;
+    unsigned cls  = PARSE_CLASS[code];
     if (!cls) {
         pop();
         put(mem(CUR));
@@ -703,7 +720,7 @@ Word Pass3::load_register(unsigned list, unsigned k)
     moved_          = (moved_ + 2) & 077777;
     mem(list)       = moved_;
     mem(list_)      = (mem(list_) & HEAD_MASK) ^ 0162;
-    Word reg        = image(REGS + (mem(k) & 077777));
+    Word reg        = REGS.at(mem(k) & 077777);
     mem(list_ + 1) = reg;
     return reg;
 }
