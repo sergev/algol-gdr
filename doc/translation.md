@@ -11,13 +11,16 @@ C++ under the tests.
   data too (never run). Each half becomes one call of `Machine` (`m.xta(7, 02670)`); a
   word address is a label. Jumps with a constant target go to the label, others (through a
   register, or after UTC/WTC) through a `switch` over the labels. A jump out of the ranges
-  returns its address. `--hook ADDR` calls `m.on_entry` there.
+  returns its address. `--hook ADDR` calls `m.on_entry` there. `--native ADDR` makes the
+  code return ADDR when it gets there (by a jump, a call or falling through), so that
+  `Machine::run` calls the C++ routine registered at ADDR.
 - `scripts/gen-passes` regenerates `src/passN_gen.cpp`. Each pass gets its own copy of the
   shared code it calls: the driver's print routine 01644–01735, the streams 27114–27244,
   the formatter 27733–30000, number to text 30001–30033.
 - `src/machine.*`: memory (32K words), M1–M15, A, Y, the mode register and the modifier C,
   with the semantics of dubna's `processor.cpp` (arithmetic through `Arith`). `run()` loops:
-  a jump to a native routine runs it and continues at M13.
+  a jump to a native routine runs it and continues at the address it returns (the return
+  register of its callers).
 - `src/translated.*`: `TranslatedPass` sets the machine up from the `Context`, writes the
   input stream through the original stream helper, runs the pass from its entry with M13 =
   its return address in the driver, records the items written at 27114/27126/27137 and
@@ -43,6 +46,13 @@ Native routines:
   row through `Listing::row`; leaves M14 = 0. 01644 itself is translated (its split of long
   texts and its state cells 01736–01740 match the original).
 - **`*70`**: drum pages and sectors into `Workspace::drum`.
+
+Routines of the passes rewritten in C++ (`--native` in `scripts/gen-passes`), each working on
+the machine's memory and leaving its registers as the original does:
+
+| Pass | Address | Routine |
+|---|---|---|
+| 3 | 22716 | `intern_constant` (src/pass3.cpp) |
 
 ## Input stream
 

@@ -20,11 +20,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ## Tasks
 
-- **C2** Natives inside a translated pass: `gen-pass.py --native ADDR` makes every jump and
-  call to ADDR go through the dispatch, so that a native registered there runs instead;
-  natives return through the register the callers use. Prove it by replacing one small
-  routine of pass 3 (constant interning, 22716).
-
 ### Pass 2 (G17223)
 
 - **C3** Test programs for what C1 shows unrun in pass 2 (each message, 'COMMON'

@@ -32,9 +32,8 @@ public:
     // Drums for *70.
     Workspace *drums{};
 
-    // Routines outside the translated code: entered by a jump, they return
-    // through M13.
-    std::map<unsigned, std::function<void(Machine &)>> natives;
+    // Routines in C++: entered by a jump, they return the address to go on.
+    std::map<unsigned, std::function<unsigned(Machine &)>> natives;
 
     // Called at the marked entries of the translated code.
     std::function<void(Machine &, unsigned)> on_entry;

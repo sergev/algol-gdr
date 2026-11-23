@@ -42,6 +42,7 @@ TranslatedPass::TranslatedPass(Context &ctx, Machine::Code code) : ctx_(ctx), co
             ctx_.listing->row(std::string(indent, ' ') +
                               listing_text(&mm.mem[first], 0, 6 * (last - first + 1)));
         mm.set_m(14, 0);
+        return mm.M[13];
     };
 }
 

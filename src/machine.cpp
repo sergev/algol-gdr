@@ -88,8 +88,7 @@ unsigned Machine::run(Code code, unsigned pc)
         auto it = natives.find(pc);
         if (it == natives.end())
             return pc;
-        it->second(*this);
-        pc = M[13];
+        pc = it->second(*this);
     }
 }
 
