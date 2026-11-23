@@ -351,7 +351,21 @@ A block header has bit 48 set, and its low 12 bits give the end address.
 ### Scopes and checks
 
 - **Scopes.** The stream is reversed, so END (037) opens a scope and BEGIN (036) closes it.
-  Opening a scope also checks for TWICE DECLARED.
+  - END (17511): the block at M3 becomes the current one (02030, the old one pushed). For a
+    block header (bit 48) the item goes out with the old 02004, which is pushed and replaced
+    by M3; otherwise 0 is pushed.
+  - Opening (17455): each descriptor from the header up to its end (header & 07777) is bound
+    to its slot (02144+slot = its address) and keeps the binding it shadows in bits 33–21.
+    A non-descriptor word is a link: the scan goes on at its address (nested blocks are
+    skipped). If the shadowed binding lies between the header and its end: TWICE DECLARED;
+    after it M3 holds the slot, not the header, for the rest of the scan.
+  - BEGIN (17523): drops two stack words; the popped value, if not 0, restores 02004 and the
+    item goes out with 02030. Closing (17475) gives every slot of the block its shadowed
+    binding back; 02030 gets the outer block.
+- **Identifiers (17377).** The slot's binding goes to M4: 0 is undeclared (reported, the
+  slot gets 1), 1 is already reported. A binding inside the block at 02005 is ILLEGAL USE.
+  Otherwise M5 = bits 7–5 and M6 = bits 4–1 of the table at 21720, indexed by the
+  descriptor's bits 44–41 and by its bits 46, 45, 38, 37, 36 (packed in that order).
 - **Type checking.**
   - Recursive descent over the reversed postfix, driven by a dispatch table at 21720 with
     one word per input code.

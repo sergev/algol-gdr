@@ -22,8 +22,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 2 (G17223)
 
-- **C6** Scopes: block open and close over the reversed stream, identifier binding and the
-  shadowed entries, `TWICE DECLARED`, `IS NOT DECLARED`, `ILLEGAL USE`.
 - **C7** Type checking of expressions: the dispatch by code (21720), types and kinds in M5/M6,
   int→real conversion items, `TYPE ERROR IN CONNECTION WITH …`.
 - **C8** Statements: assignment and left parts, IF, FOR, GOTO and switches, `NO ASSIGNMENT

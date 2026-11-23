@@ -58,6 +58,9 @@ the machine's memory and leaving its registers as the original does:
 | 2 | 22027 | `finish`: from the first item to the return into the driver |
 | 2 | 17420, 17426, 17430 | `message_name`, `message`, `after_message` |
 | 2 | 17535 | `set_position`: the position text at a statement marker |
+| 2 | 17371, 17377, 17434 | `inside`, `lookup`, `illegal_use` |
+| 2 | 17454, 17455, 17475 | `open_scope_at`, `open_scope`, `close_scope` |
+| 2 | 17511, 17523 | `end_item`, `begin_item` |
 | 2–4 | 27733, 30001 | `format_line`, `itoa6` (src/translated.cpp), in every pass |
 | 3 | 22716 | `intern_constant` (src/pass3.cpp) |
 
