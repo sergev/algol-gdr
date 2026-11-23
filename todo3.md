@@ -14,12 +14,6 @@ expected output written by hand and checked against the Revised Report.
 
 ## Tasks
 
-### Language
-
-- **F8** Separate compilation: a file with procedures only (`_procedure p…; _eop`) compiles
-  to an object whose procedures are global under their names, callable as `_algol`
-  externals from another unit. Tests with two units linked together.
-
 ### Input and messages
 
 - **F9** Publication-style input, detected per file: keywords as letters with a combining

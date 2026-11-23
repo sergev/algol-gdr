@@ -44,10 +44,10 @@
 module Algol60 {
     -- A program: _code: and _algol: lists of external procedures (GDR),
     -- _common declarations (GDR), then a block or compound statement, maybe
-    -- labeled; or one procedure compiled alone (GDR). Then _eop (GDR) or the
-    -- end of the file.
+    -- labeled; or a unit of procedures compiled alone (GDR). Then _eop (GDR)
+    -- or the end of the file.
     Program = Program(External* externals, Decl* commons, Stmt body)
-            | Module(External* externals, Decl* commons, Decl procedure)
+            | Unit(External* externals, Decl* commons, Decl* procedures)
 
     -- _code: _real f, g;   _algol: p;   (GDR)
     External = (identifier name, Type? type, ExternalKind kind)

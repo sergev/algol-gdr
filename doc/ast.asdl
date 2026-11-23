@@ -19,8 +19,9 @@ module AST {
     SrcLoc = (int line, int stmt)
 
     -- _code and _algol procedures declared before the program, then its
-    -- outer block.
-    Program = (External* externals, Stmt block)
+    -- outer block. unit: procedures compiled alone, the declarations of the
+    -- block, with no statements.
+    Program = (External* externals, Stmt block, bool unit)
 
     External = (identifier name, int id, ExternalKind kind, Type type)   -- None: no value
     ExternalKind = Code | Algol

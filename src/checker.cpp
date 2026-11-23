@@ -480,10 +480,12 @@ Program Checker::program(const syn::Program &p)
         out.externals.push_back(External{ e.name.name, sym(i).id, e.kind, e.type });
     }
     Decls decls = ptrs(p.decls);
-    if (p.module) {
-        // A procedure compiled alone: a block of it.
-        decls.push_back(p.module.get());
-        out.block = make_block(SrcLoc{ p.module->line, 1 }, decls, {});
+    if (!p.procedures.empty()) {
+        // Procedures compiled alone: a block of them.
+        Decls more = ptrs(p.procedures);
+        decls.insert(decls.end(), more.begin(), more.end());
+        out.block = make_block(SrcLoc{ p.procedures.front()->line, 1 }, decls, {});
+        out.unit  = true;
         return out;
     }
     if (!p.body)

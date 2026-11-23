@@ -327,6 +327,7 @@ struct External {
 struct Program {
     std::vector<External> externals;
     StmtPtr block;
+    bool unit{}; // procedures compiled alone, global under their names
 };
 
 const char *to_string(Type t);

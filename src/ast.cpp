@@ -186,6 +186,8 @@ public:
             extern_list.seq.push_back(std::move(x));
         }
         n.add("externals", std::move(extern_list));
+        if (p.unit)
+            n.add("unit", scalar("true"));
         n.add("block", stmt(*p.block));
         return n;
     }

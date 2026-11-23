@@ -95,7 +95,9 @@ public:
 
     std::string run(const Program &program)
     {
-        main_.fn = &module_.function("algol_main", "void", {});
+        unit_    = program.unit;
+        main_.fn = unit_ ? &module_.function("algol_unit", "void", {}, "", "internal")
+                         : &module_.function("algol_main", "void", {});
         fn_      = main_.fn;
         scope_   = &main_;
         frame_   = { "ptr", "%frame" };
@@ -133,6 +135,7 @@ private:
     std::map<const decl::Procedure *, Func *> proc_funcs_;
     std::map<std::string, int> commons_; // global → words
     int thunks_{};
+    bool unit_{}; // procedures of the outer block are global under their names
     std::vector<const stmt::Block *> path_; // blocks being declared
 
     // Blocks being generated, with the arrays they allocated.
@@ -255,8 +258,11 @@ private:
         pf.parent       = &f;
         pf.proc         = &p;
         proc_funcs_[&p] = &pf;
-        pf.fn           = &module_.function("P." + std::to_string(p.id) + "." + p.name, "i64",
-                                            { "ptr", "ptr" }, "", "internal");
+        if (unit_ && &f == &main_)
+            pf.fn = &module_.function(p.name, "i64", { "ptr", "ptr" });
+        else
+            pf.fn = &module_.function("P." + std::to_string(p.id) + "." + p.name, "i64",
+                                      { "ptr", "ptr" }, "", "internal");
         Symbol s;
         s.kind         = Symbol::PROC;
         s.type         = p.type;

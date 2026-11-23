@@ -6,7 +6,8 @@
 // d.ddd±ee read as d.ddde±ee, TRUE and FALSE in lower case, and reals equal
 // to the last digit or so (BESM-6 rounds otherwise). NAME.native.out, in
 // the native layout, is the reference where the output really differs.
-// NAME.c holds C for the _code procedures of a program; NAME.in its input.
+// NAME.c holds C for the _code procedures of a program, NAME.unit.alg the
+// _algol ones; NAME.in its input.
 //
 #include <gtest/gtest.h>
 
@@ -63,6 +64,7 @@ const std::vector<std::string> programs = {
     "a60/intdiv",
     "a60/own",
     "a60/parameters",
+    "a60/units",
     "a60/program_form",
 };
 // clang-format on
@@ -119,6 +121,15 @@ std::string expected(const std::string &name)
     return file_contents(TEST_DIR "/" + name + ".out");
 }
 
+// C for the _code procedures of a program, or a unit of _algol ones.
+std::string stub_of(const std::string &base)
+{
+    for (const char *ext : { ".c", ".unit.alg" })
+        if (std::filesystem::exists(base + ext))
+            return base + ext;
+    return "";
+}
+
 // qemu-ARCH for a target triple.
 std::string qemu(const std::string &target)
 {
@@ -134,7 +145,9 @@ std::string run(const std::string &src, const std::string &exe, bool check,
     std::string tflag = target.empty() ? "" : " --target=" + target;
     std::string objects;
     if (!stub.empty()) {
-        auto c = run_command("clang" + tflag + " -c -o " + exe + "_stub.o " + stub);
+        std::string cc =
+            stub.size() > 4 && stub.substr(stub.size() - 4) == ".alg" ? compiler : "clang";
+        auto c = run_command(cc + tflag + " -c -o " + exe + "_stub.o " + stub);
         EXPECT_EQ(c.exit_code, 0) << c.output;
         objects = " " + exe + "_stub.o";
     }
@@ -173,7 +186,7 @@ TEST_P(RunTest, output)
     const std::string base = TEST_DIR "/" + name;
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
-    std::string stub       = std::filesystem::exists(base + ".c") ? base + ".c" : "";
+    std::string stub       = stub_of(base);
     std::string out = run(base + ".alg", BUILD_DIR "/run_" + test_name(name), check, input, stub);
     EXPECT_EQ(compare(out, expected(name)), "") << out;
 }
@@ -197,7 +210,7 @@ TEST_P(CrossTest, output)
     const std::string base = TEST_DIR "/" + name;
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
-    std::string stub       = std::filesystem::exists(base + ".c") ? base + ".c" : "";
+    std::string stub       = stub_of(base);
     std::string out = run(base + ".alg", BUILD_DIR "/run_" + target + "_" + test_name(name), check,
                           input, stub, target);
     EXPECT_EQ(compare(out, expected(name)), "") << out;

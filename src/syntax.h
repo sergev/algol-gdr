@@ -212,7 +212,7 @@ struct Program {
     std::vector<External> externals;
     DeclList decls; // 'COMMON' before the program
     StmtPtr body;   // the program: a block or compound statement, maybe labeled;
-    DeclPtr module; // or a procedure compiled alone
+    DeclList procedures; // or procedures compiled alone: a unit
 };
 
 } // namespace syn

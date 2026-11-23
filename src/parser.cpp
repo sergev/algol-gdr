@@ -379,8 +379,10 @@ void Parser::head(Program &p)
                 advance();
             }
             if (tok_.sym == Sym::PROCEDURE) {
-                p.module = procedure(type);
+                p.procedures.push_back(procedure(type));
                 accept(Sym::SEMICOLON);
+                if (type_of(tok_.sym) || tok_.sym == Sym::PROCEDURE)
+                    continue;
                 return;
             }
             if (tok_.sym != Sym::IDENT)
