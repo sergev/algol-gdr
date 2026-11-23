@@ -15,7 +15,8 @@ C++ under the tests.
   code return ADDR when it gets there (by a jump, a call or falling through), so that
   `Machine::run` calls the C++ routine registered at ADDR, which returns the address to go
   on at.
-- `scripts/gen-passes` regenerates `src/passN_gen.cpp`. Each pass gets its own copy of the
+- `scripts/gen-passes` regenerates `src/passN_gen.cpp` (passes 3, 4) and
+  `src/shared_gen.cpp` (the shared code alone, for pass 2). Each pass gets its own copy of the
   shared code it calls: the driver's print routine 01644–01735, the streams 27114–27244,
   the formatter 27733–30000, number to text 30001–30033.
 - `src/machine.*`: memory (32K words), M1–M15, A, Y, the mode register and the modifier C,
@@ -49,8 +50,15 @@ Native routines:
   texts and its state cells 01736–01740 match the original).
 - **`*70`**: drum pages and sectors into `Workspace::drum`.
 
-Routines of the passes rewritten in C++ (`--native` in `scripts/gen-passes`), each working on
-the machine's memory and leaving its registers as the original does:
+**Pass 2 is C++** (src/pass2.cpp): it runs on a `Machine` with `shared_code` only, so every
+address of 17223–22161 it reaches is a native; the parser's framework (read, write helpers,
+subtree parse, dispatch through the high halves of 21720, return) is native too. Its data is
+still the machine's memory (copied from and back to the `Context`), and it reads and writes
+its streams through the original stream module (27114–27244), so pages, drums and registers
+come out exactly; the driver's print 01644 is the original too.
+
+Routines of the passes rewritten in C++ (`--native` in `scripts/gen-passes` for the translated
+passes), each working on the machine's memory and leaving its registers as the original does:
 
 | Pass | Address | Routine |
 |---|---|---|

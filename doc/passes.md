@@ -498,12 +498,49 @@ reverse order.
 Quirk: using an array formal parameter inside a procedure body gave `ILLEGAL USE … NEXT
 STATEMENT IS 304/ 2` with a bogus line number (not investigated).
 
-### Output stream (V, partly decoded)
+### Output stream (V)
 
-- Identifiers become typed operations carrying the descriptor address.
-- int→real conversions (064) are inserted.
-- Examples: `X := 2` → `100 X`, `064`, `023 slot`; a variable's value → `017 desc`; a call →
-  `110`, `120`, the arguments, `020 desc`.
+Written backwards, so pass 3 reads it forwards. `d` is a descriptor (D-list) address, `s` a
+constant slot; items with an operand carry it in bits 24–13.
+
+| Code | Item |
+|---|---|
+| 017, 022 | value of a variable; of a formal by name |
+| 021, 0107 | call of a procedure without parameters (0107: marked bit 48) |
+| 024 | a label |
+| 023, 070 | constant `s`; string |
+| 063, 064 | real to integer; integer to real |
+| 013–016 | real + − × / |
+| 067, 076, 077 | integer + − × |
+| 0137 (step), 0152, 0153, 0352 | `c<<12`: real or integer to a constant power 1–63; octal shift |
+| 0147, 0150, 0151, 0347, 0350 | ** by types |
+| 047, 026 | real, integer negation |
+| 001–012, 043 | boolean operators, relations as read |
+| 0105, 0106 | = ≠ of an integer and a real |
+| 0157 | `(code−4)<<12`: string relation |
+| 0203, 0204 | octal AND, NOT (OR stays 002) |
+| `a<<12 \| n<<7 \| 044`, 046, 025 | element of array `a` (046 in a left part, 025 a switch) |
+| 045, 030 | `c<<12`: constant subscript; subscript plus c (−c mod 4096) |
+| 0250, 050 | string element, slice |
+| 0100, 0101 | left part: variable, formal by name |
+| 031, 054 | conditional expression: between the branches, its end |
+| 027 | IF (after the condition) |
+| 0130–0134 | compare-and-jump conditions |
+| 055, 032, 0141, 033, 052 | FOR start, control variable (simple, by name), DO, end |
+| 056, 035, 034, 0140 | FOR elements: plain, WHILE, STEP-UNTIL integer, real |
+| 0137, 0136, 0135 | integer constant step; expression element; by-name element |
+| 036, `d<<12 \| 037` | block begin, end |
+| 0102, 040, 0104 | block with arrays, array segment, end of bounds |
+| 0146, 0145 | jump around a procedure body, its target |
+| 0142, 0144, 0143 | switch elements: label, expression; end |
+| 0127, 0154, 0155 | VALUE: start, a real formal, end |
+| `p<<12 \| 020`, 0110 | call, its end |
+| 0111–0116, 0117, 0120, 0156 | arguments: constant, variable, procedure, label, array, thunk start / end, expression, string |
+| 057 | `n<<12`: the standard function with an expression argument |
+| 0126, 065 | non-ALGOL call (typed), then 0121–0125, 066, 074 per argument |
+| 071, 072 | standard procedure items |
+| 0473, 0273 | I/O statements |
+| `L<<12 \| n<<7 \| 051` | statement marker |
 
 ## G30001 — integer to text (V)
 

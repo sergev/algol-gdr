@@ -2,7 +2,7 @@
 
 #include "translated.h"
 
-unsigned pass2_code(Machine &m, unsigned pc);
+unsigned shared_code(Machine &m, unsigned pc);
 
 namespace {
 
@@ -31,6 +31,8 @@ constexpr unsigned FLGEX        = 00702;
 
 // Routines and data of the translated pass.
 constexpr unsigned READ_BACK    = 027143; // the previous item, in A
+constexpr unsigned WRITE_BACK   = 027114; // an item A written, through M13
+constexpr unsigned ITEM         = 02006;  // the item read
 constexpr unsigned PRINT        = 01644;  // text first..last on the stack, indent in A
 constexpr unsigned FORMAT       = 027733; // text first on the stack, last in A
 constexpr unsigned OPEN_SCOPE   = 017455; // *0232B: through M12
@@ -2437,6 +2439,128 @@ unsigned io_067(Machine &m)
 }
 
 //
+// The framework of the parser.
+//
+
+// *0127B: the previous item into ITEM, M1 (code), M2 (count), M3 (operand).
+// Returns through M13.
+unsigned read_item(Machine &m)
+{
+    m.push(m.M[13]);
+    m.call(READ_BACK, 13, 017354);
+    m.mem[ITEM] = m.acc;
+    m.set_m(1, unsigned(m.acc) & 0177);
+    m.set_m(2, unsigned(m.acc >> 7) & 037);
+    m.acc = (m.mem[ITEM] >> 12) & 07777;
+    m.rmr = 0;
+    m.set_logical();
+    m.set_m(3, unsigned(m.acc));
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    return m.mem[m.M[Machine::SP]] & 077777;
+}
+
+// *0140B, *0141B, *0142B, *0143B, *0145B: write an item through the stream
+// writer, returning through M13: the item read, A, M4<<12 ^ M14, A<<12 ^ M14, M14.
+unsigned emit_item(Machine &m)
+{
+    m.acc = m.mem[ITEM];
+    m.set_logical();
+    return WRITE_BACK;
+}
+
+unsigned emit_a(Machine &)
+{
+    return WRITE_BACK;
+}
+
+unsigned emit_shifted(Machine &m)
+{
+    m.asn(0, 64 - 12);
+    m.push(m.acc);
+    m.acc = m.M[14];
+    m.aex(Machine::SP, 0);
+    return WRITE_BACK;
+}
+
+unsigned emit_m4(Machine &m)
+{
+    m.acc = m.M[4];
+    m.set_logical();
+    return emit_shifted(m);
+}
+
+unsigned emit_m14(Machine &m)
+{
+    m.acc = m.M[14];
+    m.set_logical();
+    return WRITE_BACK;
+}
+
+// *0223B: a subtree from the item read: M12 and REPORTED pushed, REPORTED cleared.
+unsigned parse_read(Machine &m)
+{
+    m.push(m.M[12]);
+    m.push(m.mem[REPORTED]);
+    m.acc           = 0;
+    m.mem[REPORTED] = 0;
+    m.set_logical();
+    return DISPATCH;
+}
+
+// *0222B: read, then the subtree.
+unsigned parse(Machine &m)
+{
+    m.call(READ, 13, PARSE_READ);
+    return parse_read(m);
+}
+
+// *0225B: the handler of the item's code, from the high half of TYPES+code (a UJ).
+// cppcheck-suppress constParameterCallback
+unsigned dispatch(Machine &m)
+{
+    unsigned half = unsigned(m.mem[(TYPES + m.M[1]) & 077777] >> 24);
+    if ((half >> 20) || !(half & (1u << 19)) || ((half >> 12) & 0370) != 0300)
+        throw std::runtime_error("pass 2: no handler for item code " + std::to_string(m.M[1]));
+    return half & 077777;
+}
+
+// *0226B: return from a subtree, its REPORTED ORed into the caller's.
+unsigned return_sub(Machine &m)
+{
+    m.acc = m.mem[REPORTED];
+    m.aox(Machine::SP, 0);
+    m.mem[REPORTED] = m.acc;
+    m.set_m(Machine::SP, m.M[Machine::SP] - 1);
+    return m.mem[m.M[Machine::SP]] & 077777;
+}
+
+// *0217B, *0220B: the statement loop.
+unsigned next_statement(Machine &m)
+{
+    m.acc           = 0;
+    m.mem[HIDDEN]   = 0;
+    m.mem[REPORTED] = 0;
+    m.set_m(12, AFTER_END);
+    return parse_read(m);
+}
+
+unsigned after_end(Machine &m)
+{
+    m.acc           = 0;
+    m.mem[REPORTED] = 0;
+    m.set_logical();
+    m.set_m(12, AFTER_END);
+    return parse_read(m);
+}
+
+// 22026: codes that cannot occur (IF, STRING, EOP): the original jumps to 01103.
+// cppcheck-suppress constParameterCallback
+unsigned bad_item(Machine &m)
+{
+    throw std::runtime_error("pass 2: unexpected item code " + std::to_string(m.M[1]));
+}
+
+//
 // Calls. The arguments are read last to first; [M15-1] counts them, [M15-2]
 // keeps the result type. M9 walks the formals of an ALGOL procedure (0 for
 // one without a description).
@@ -3578,8 +3702,22 @@ unsigned finish(Machine &m)
 
 Stream pass2(Context &ctx, const Stream &input)
 {
-    TranslatedPass pass(ctx, pass2_code);
+    TranslatedPass pass(ctx, shared_code);
     pass.m.natives[017223] = start;
+    pass.m.natives[017352] = read_item;
+    pass.m.natives[017363] = emit_item;
+    pass.m.natives[017364] = emit_a;
+    pass.m.natives[017365] = emit_m4;
+    pass.m.natives[017366] = emit_shifted;
+    pass.m.natives[017370] = emit_m14;
+    pass.m.natives[017442] = next_statement;
+    pass.m.natives[017443] = after_end;
+    pass.m.natives[017445] = parse;
+    pass.m.natives[017446] = parse_read;
+    pass.m.natives[017450] = dispatch;
+    pass.m.natives[017451] = return_sub;
+    pass.m.natives[017625] = next_and_return;
+    pass.m.natives[022026] = bad_item;
     pass.m.natives[022027] = finish;
     pass.m.natives[017420] = message_name;
     pass.m.natives[017426] = message;

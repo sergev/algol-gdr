@@ -3,33 +3,12 @@
 # Regenerate the passes translated from the overlay (scripts/gen-pass.py).
 # Each pass gets its own copy of the shared code it calls: the driver's print
 # routine 01644, the streams 27114, the formatter 27733, number to text 30001.
+# Pass 2 is C++ and uses shared_gen.cpp, the shared code alone.
 #
 set -e
 cd "$(dirname "$(realpath "$0")")/.."
 shared="01644-01735 27114-27244 27733-30000 30001-30033"
 hooks="--hook 27114 --hook 27126 --hook 27137 --native 27733 --native 30001"
-scripts/gen-pass.py $hooks --native 17223 --native 22027 --native 17420 --native 17426 \
-    --native 17430 --native 17535 --native 17371 --native 17377 --native 17434 \
-    --native 17454 --native 17455 --native 17475 --native 17511 --native 17523 \
-    --native 17605 --native 17646 --native 17652 --native 17653 --native 17663 \
-    --native 17765 --native 17766 --native 17770 --native 17771 --native 17772 \
-    --native 17775 --native 20106 --native 20152 --native 20153 --native 20154 \
-    --native 17777 --native 20002 --native 20003 --native 20020 --native 20041 \
-    --native 20044 --native 20067 --native 20101 --native 20110 --native 20221 \
-    --native 20325 --native 20350 --native 20354 --native 20424 --native 20430 \
-    --native 17675 --native 17702 --native 17720 --native 17736 --native 17737 \
-    --native 21366 --native 21461 --native 21466 --native 17601 --native 21524 \
-    --native 21534 --native 21540 --native 21546 --native 21617 --native 17567 \
-    --native 17543 --native 21637 --native 20162 --native 20176 --native 20177 \
-    --native 20200 --native 21206 --native 17533 --native 17544 --native 17553 \
-    --native 17574 --native 20546 --native 20565 --native 20445 --native 20446 \
-    --native 20447 --native 20450 --native 20466 --native 20511 --native 20521 \
-    --native 20523 --native 20534 --native 20535 --native 20536 --native 20541 \
-    --native 20542 \
-    --native 20571 --native 20625 --native 20627 --native 20643 --native 20644 \
-    --native 20647 --native 20700 --native 21013 --native 21042 --native 21062 \
-    --native 21074 --native 21071 --native 21110 --native 21112 --native 21122 --native 21134 \
-    --native 21140 --native 21145 --native 21150 --native 21151 --native 21163 \
-    --native 21210 --native 21257 --native 21324 --native 21342 pass2 17223-22161 $shared > src/pass2_gen.cpp
+scripts/gen-pass.py $hooks shared $shared > src/shared_gen.cpp
 scripts/gen-pass.py $hooks --native 22716 pass3 22162-23522 $shared > src/pass3_gen.cpp
 scripts/gen-pass.py $hooks pass4 23523-26257 $shared 30034-30117 > src/pass4_gen.cpp

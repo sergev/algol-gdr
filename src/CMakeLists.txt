@@ -9,9 +9,9 @@ add_library(algol STATIC
     pass1_lexer.cpp
     pass1_parser.cpp
     pass2.cpp
-    pass2_gen.cpp
     pass3.cpp
     pass3_gen.cpp
+    shared_gen.cpp
     pass4.cpp
     pass4_gen.cpp
     pass5.cpp
@@ -29,7 +29,7 @@ set_source_files_properties(version.cpp PROPERTIES COMPILE_DEFINITIONS
     VERSION_STRING="${CMAKE_PROJECT_VERSION}.${GIT_REVCOUNT}-${GIT_HASH}"
 )
 
-set_source_files_properties(pass2_gen.cpp pass3_gen.cpp pass4_gen.cpp tables_data.cpp PROPERTIES SKIP_LINTING ON)
+set_source_files_properties(shared_gen.cpp pass3_gen.cpp pass4_gen.cpp tables_data.cpp PROPERTIES SKIP_LINTING ON)
 
 add_executable(algol-gdr main.cpp)
 target_link_libraries(algol-gdr algol)

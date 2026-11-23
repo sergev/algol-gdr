@@ -22,10 +22,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 2 (G17223)
 
-- **C10** Pass 2 fully native: data in `Context`, streams as vectors, drop `pass2_gen.cpp`;
-  `Pass2Mem` compares the workspace without the stream pages. Decode the pass-2 output codes
-  completely in passes.md.
-
 ### Pass 3 (G22162)
 
 - **C11** Test programs for what C1 shows unrun in pass 3 (FOR loops with several arrays,
@@ -57,7 +53,9 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Cleanup
 
-- **C25** The translator: remove `machine.*`, `translated.*` and the shared translated code if
+- **C25** The translator: the stream module and 01644 as C++ for every pass; pass 2's data
+  from `Machine` memory to `Context`, streams as vectors (pass 3 then lays its input out as
+  pass 2 does for pass 1's); remove `machine.*`, `translated.*` and `shared_gen.cpp` if
   nothing uses them, or keep `gen-pass.py` and `trace-diff.py` documented as tools. Remove
   the stream-page parts of the `.mem` checks that no longer apply.
 - **C26** Pass 1 parser as readable functions instead of the labels and the explicit stack of
