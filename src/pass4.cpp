@@ -428,6 +428,22 @@ unsigned eop(Machine &m)
 // returns to the continuation in M13.
 //
 
+constexpr Word LABEL_U1A  = 02600000;  // U1A to label n (M7+2302)
+constexpr Word LABEL_U1A2 = 02700000;  // (M7+2304)
+constexpr Word LABEL_UJ   = 03000000;  // UJ to label n (M7+2317)
+constexpr Word LABEL_DEF  = 02100000;  // label n defined here (M7+746)
+constexpr Word NEW_WORD   = 02000000;  // (M7+744)
+constexpr Word SWITCH_UJ  = 042400000; // (M7+1147)
+constexpr Word PREV_LABEL = 02777777;  // added to a label: the one after (M7+2533)
+constexpr Word FORMAL     = 0'4000'0000'7407'7777; // a formal's descriptor (M7+2513)
+constexpr Word BY_NAME    = 0'4000'0000'7400'0000; // a pushed address (M7+2514)
+constexpr Word REG_STORE  = 060440000;             // its address to register n (M7+520)
+constexpr Word STACK_ATX1 = 074000001;             // (M7+1572)
+constexpr Word ASN        = 0360000;               // (M7+2245)
+constexpr Word DIV_1      = 074010001;             // real division, both on the stack
+constexpr Word DIV_2      = 074160002;
+constexpr Word MINUS_ONE  = 0'7777'7777'7777'7776; // cyclic −1 (M7+2522)
+
 // Load the operand on the stack (23725), through M12 = link.
 void load(Machine &m, unsigned link)
 {
@@ -450,67 +466,67 @@ unsigned operand(Machine &m, unsigned link)
     return READ_DISPATCH;
 }
 
-// 23776: return (the address on the stack) with the descriptor in A in its place.
-unsigned give(Machine &m)
+// 23776: return (the address on the stack) with the descriptor d in its place.
+unsigned give(Machine &m, Word d)
 {
-    m.wtc(Machine::SP, 0);
-    m.vtm(14, 0);
-    m.atx(Machine::SP, 0);
-    return m.M[14];
+    unsigned ret = pop(m) & 077777;
+    m.set_m(14, ret);
+    push(m, d);
+    m.acc = d;
+    return ret;
 }
 
 // 24016: no value.
 unsigned give_none(Machine &m)
 {
-    m.xta(0, 0);
-    return give(m);
+    set_acc(m, 0);
+    return give(m, 0);
 }
 
-// 24015: the value is in A.
+// 24015: the value is in A, its cell the return address's.
 unsigned result_in_acc(Machine &m)
 {
-    m.utc(Machine::SP, 077777);
-    m.vtm(4, 0);
+    m.set_m(4, m.M[SP] - 1);
     return give_none(m);
 }
 
+// The value of item M3 in the constants (02010: their base).
+Word constant_address(const Machine &m)
+{
+    return cyclic_add(m.M[3], m.mem[02010]);
+}
+
 // 23764: a string (070): its address loaded into A (template 23771, or 23773
-// with A pushed).
+// with A saved).
 unsigned string_item(Machine &m)
 {
-    m.ita(0, 3);
-    m.arx(0, 02010);
-    m.atx(Machine::SP, 0);
+    push(m, constant_address(m));
     m.vtm(11, 023771);
     m.vtm(12, 024015);
-    if (!m.M[4])
-        return TEMPLATE;
-    m.vtm(11, 023773);
-    m.xta(7, 02227);
-    m.atx(4, 0);
+    if (m.M[4]) {
+        m.vtm(11, 023773);
+        m.mem[m.M[4]] = ON_STACK;
+    }
     return TEMPLATE;
 }
 
 // 23775: a constant (023): its address in the constants.
 unsigned constant_item(Machine &m)
 {
-    m.ita(0, 3);
-    m.arx(0, 02010);
-    return give(m);
+    return give(m, constant_address(m));
 }
 
-// 24000: a variable (017): from its descriptor.
+// 24000: a variable (017): from its descriptor (bit 48: packed, unpacked).
 unsigned variable_item(Machine &m)
 {
-    m.xta(3, 0);
+    Word d = m.mem[m.M[3]];
     m.ntr(0, 013);
-    if (m.uza()) {
-        m.asn(0, 073);
-        m.aux(7, 02465);
-    } else {
-        m.aax(7, 02465);
-    }
-    return give(m);
+    if (d & BIT48)
+        d = unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
+    else
+        d &= DESC_MASK;
+    m.set_logical();
+    return give(m, d);
 }
 
 // 24010: a call without parameters (0107), or a formal by name: A saved,
@@ -519,48 +535,34 @@ unsigned call_item(Machine &m)
 {
     m.set_m(12, 024011);
     save_acc(m);
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.atx(Machine::SP, 0);
-    m.aax(7, 02472);
-    if (m.uza())
-        return apply_template(m, 025751);
-    return apply_template(m, 025747);
+    Word d = m.mem[m.M[3]] & DESC_MASK;
+    push(m, d);
+    return apply_template(m, (d & ON_STACK) ? 025747 : 025751);
 }
 
 // 24005: a formal by name (022): a value parameter as a variable.
 unsigned formal_item(Machine &m)
 {
-    m.xta(3, 0);
-    m.arx(0, 0);
-    if (m.u1a())
+    Word d = m.mem[m.M[3]];
+    if (!(d & BIT48))
         return call_item(m);
-    m.aax(7, 02513);
-    return give(m);
+    return give(m, d & FORMAL);
 }
 
-// 24041: a unary operator, template in M11: the operand loaded, then the
-// template.
-unsigned unary(Machine &m)
+// 24041: a unary operator, template t: the operand loaded, then the template.
+unsigned unary(Machine &m, unsigned t)
 {
-    m.ita(0, 013);
-    m.atx(Machine::SP, 0);
+    m.vtm(11, t);
+    push(m, t);
     return operand(m, 024043);
 }
 
 unsigned unary_2(Machine &m)
 {
     load(m, 024044);
-    m.wtc(Machine::SP, 0);
-    m.vtm(11, 0);
+    m.vtm(11, pop(m));
     m.vtm(12, 024015);
     return TEMPLATE;
-}
-
-unsigned unary_with(Machine &m, unsigned t)
-{
-    m.vtm(11, t);
-    return unary(m);
 }
 
 // 24035: call the routine on the stack (template 25751).
@@ -573,13 +575,10 @@ unsigned routine_call(Machine &m)
 // routine 4030+n of its argument.
 unsigned std_function(Machine &m)
 {
-    m.ita(0, 3);
-    m.aex(7, 02501);
-    if (m.uza())
-        return unary_with(m, 025761);
-    m.utm(3, 04030);
-    m.ita(0, 3);
-    m.atx(Machine::SP, 0);
+    if (m.M[3] == 6)
+        return unary(m, 025761);
+    m.set_m(3, m.M[3] + 04030);
+    push(m, m.M[3]);
     return operand(m, 024034);
 }
 
@@ -592,41 +591,50 @@ unsigned std_function_2(Machine &m)
 // 24037: a standard procedure n without arguments (072).
 unsigned std_procedure(Machine &m)
 {
-    m.utm(3, 04030);
-    m.ita(0, 3);
-    m.atx(Machine::SP, 0);
+    m.set_m(3, m.M[3] + 04030);
+    push(m, m.M[3]);
     return routine_call(m);
 }
 
-// 24071: the template at M11, the operand on the stack.
-unsigned apply(Machine &m)
+// 24071: the template t, the operand on the stack; the template's word dropped.
+unsigned apply(Machine &m, unsigned t)
 {
+    m.vtm(11, t);
     m.set_m(12, 024072);
-    run_template(m);
-    m.utm(Machine::SP, 077777);
+    emit_template(m, t);
+    pop(m);
     return result_in_acc(m);
 }
 
-// The left operand on the stack loaded when neither is in A.
+//
+// The right operand d2 popped, the left one on the stack: unless in A, it
+// is loaded, and the right one takes its place.
+//
 void left_to_acc(Machine &m, unsigned link)
 {
-    m.xta(Machine::SP, 0);
-    if (m.u1a()) {
-        m.utm(Machine::SP, 2);
+    Word d1 = pop(m);
+    Word d2 = m.mem[(m.M[SP] + 1) & 077777];
+    if (d1) {
+        m.set_m(SP, m.M[SP] + 2);
         m.set_m(12, link);
-        load_operand(m);
-        m.utm(Machine::SP, 077776);
+        load_value(m, d1);
+        m.set_m(SP, m.M[SP] - 2);
     }
-    m.xta(Machine::SP, 1);
-    m.atx(Machine::SP, 0);
+    push(m, d2);
 }
 
-// 24062: a binary operator, template in M11: both operands; the template
-// works on A and the operand on the stack.
-unsigned binary(Machine &m)
+// The word of the template (or two) under the operand.
+Word template_word(const Machine &m)
 {
-    m.ita(0, 013);
-    m.atx(Machine::SP, 0);
+    return m.mem[(m.M[SP] - 2) & 077777];
+}
+
+// 24062: a binary operator, template t: both operands; the template works
+// on A and the operand on the stack.
+unsigned binary(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    push(m, t);
     return operand(m, 024064);
 }
 
@@ -637,26 +645,17 @@ unsigned binary_2(Machine &m)
 
 unsigned binary_3(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (!m.uza())
+    if (pop(m))
         left_to_acc(m, 024074);
-    m.wtc(Machine::SP, 077776);
-    m.vtm(11, 0);
-    return apply(m);
+    return apply(m, template_word(m) & 077777);
 }
 
-unsigned binary_with(Machine &m, unsigned t)
-{
-    m.vtm(11, t);
-    return binary(m);
-}
-
-// 24122: an operator not commutative, M11 = a word of two templates: the
+// 24122: an operator not commutative, pair = a word of two templates: the
 // left half for A op stack, the right one when the right operand is in A.
-unsigned paired(Machine &m)
+unsigned paired(Machine &m, unsigned pair)
 {
-    m.ita(0, 013);
-    m.atx(Machine::SP, 0);
+    m.vtm(11, pair);
+    push(m, pair);
     return operand(m, 024124);
 }
 
@@ -667,34 +666,18 @@ unsigned paired_2(Machine &m)
 
 unsigned paired_3(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.uza()) {
-        m.wtc(Machine::SP, 077776);
-        m.xta(0, 0);
-        m.ati(0, 013);
-        return apply(m);
-    }
+    if (!pop(m))
+        return apply(m, m.mem[template_word(m) & 077777] & 077777);
     left_to_acc(m, 024134);
-    m.wtc(Machine::SP, 077776);
-    m.xta(0, 0);
-    m.asn(0, 0130);
-    m.ati(0, 013);
-    return apply(m);
-}
-
-unsigned paired_with(Machine &m, unsigned pair)
-{
-    m.vtm(11, pair);
-    return paired(m);
+    return apply(m, (m.mem[template_word(m) & 077777] >> 24) & 077777);
 }
 
 // 24076: real division (016): both operands on the stack: two halves of
-// its own (M7+2321, M7+2323).
+// its own (DIV_1, DIV_2).
 unsigned divide(Machine &m)
 {
     m.vtm(11, 024114);
-    m.ita(0, 013);
-    m.atx(Machine::SP, 0);
+    push(m, 024114);
     return operand(m, 024100);
 }
 
@@ -705,23 +688,18 @@ unsigned divide_2(Machine &m)
 
 unsigned divide_3(Machine &m)
 {
-    m.xta(Machine::SP, 077776);
-    m.aex(7, 02472);
-    if (m.u1a())
+    if (m.mem[(m.M[SP] - 2) & 077777] != ON_STACK) // the left operand
         return paired_3(m);
-    m.xta(7, 02321);
-    emit_half(m, 024104);
-    m.xta(7, 02323);
-    emit_half(m, 024105);
-    m.utm(Machine::SP, 077775);
+    emit(m, DIV_1, 024104);
+    emit(m, DIV_2, 024105);
+    m.set_m(SP, m.M[SP] - 3);
     return result_in_acc(m);
 }
 
-// 24222: assignment, the target on the stack: the value, then the store
-// (template 25760).
-unsigned assign(Machine &m)
+// 24222: assignment to target: the value, then the store (template 25760).
+unsigned assign(Machine &m, Word target)
 {
-    m.atx(Machine::SP, 0);
+    push(m, target);
     return operand(m, 024223);
 }
 
@@ -734,19 +712,16 @@ unsigned assign_2(Machine &m)
 // 24221: to a variable (0100).
 unsigned assign_variable(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    return assign(m);
+    return assign(m, m.mem[m.M[3]] & DESC_MASK);
 }
 
-// 24240
+// 24240: the address computed is pushed (template 24242).
 unsigned assign_pushed(Machine &m)
 {
     m.vtm(11, 024242);
     m.set_m(12, 024241);
-    run_template(m);
-    m.xta(7, 02514);
-    return assign(m);
+    emit_template(m, 024242);
+    return assign(m, BY_NAME);
 }
 
 //
@@ -756,71 +731,65 @@ unsigned assign_pushed(Machine &m)
 //
 unsigned assign_formal(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02513);
+    Word d = m.mem[m.M[3]] & FORMAL;
     m.ntr(0, 013);
-    if (m.uza())
-        return assign(m);
-    m.atx(Machine::SP, 0);
+    if (d & BIT48)
+        return assign(m, d);
+    push(m, d);
     m.vtm(11, 025747);
     m.set_m(12, 024232);
-    run_template(m);
-    m.xta(0, 02021);
-    if (m.uza())
+    emit_template(m, 025747);
+    Word r = m.mem[02021];
+    if (!r)
         return assign_pushed(m);
-    m.aox(7, 0520);
-    emit_half(m, 024234);
-    m.xta(0, 02021);
-    m.asn(0, 054);
-    m.xts(0, 02021);
+    emit(m, r | REG_STORE, 024234);
     m.ntr(0, 3);
-    m.arith(7, 02453, 005);
-    m.stx(0, 02021);
-    return assign(m);
+    m.mem[02021] = r - 1;
+    m.set_logical();
+    return assign(m, (r << 20) & WORD_MASK);
 }
 
-// 25301: x ** c (c on the stack, then a flag: 1 real, 0 integer): c − 1
-// multiplications (template 25774), then for an integer 25321.
-unsigned power(Machine &m)
+// 25301: x ** c with flag (1 real, 0 integer): c and the flag kept on the
+// stack, then x: c − 1 multiplications (template 25774), then for an
+// integer 25321.
+unsigned power(Machine &m, Word flag)
 {
-    m.its(0, 3);
-    m.xts(0, 0);
-    m.atx(Machine::SP, 0);
+    push(m, flag);
+    push(m, m.M[3]);
+    push(m, 0);
     return operand(m, 025303);
 }
 
 unsigned power_loop(Machine &m)
 {
     for (;;) {
-        m.xta(Machine::SP, 077776);
-        m.arx(7, 02522);
-        if (m.uza())
+        Word c = cyclic_add(m.mem[(m.M[SP] - 2) & 077777], MINUS_ONE);
+        if (c & BIT48)
             break;
-        m.atx(Machine::SP, 077776);
-        m.xta(Machine::SP, 077777);
-        m.atx(Machine::SP, 0);
+        m.mem[(m.M[SP] - 2) & 077777] = c;
+        push(m, m.mem[(m.M[SP] - 1) & 077777]);
         m.vtm(11, 025774);
         m.set_m(12, 025306);
-        run_template(m);
+        emit_template(m, 025774);
     }
-    m.utm(Machine::SP, 077776);
-    m.xta(Machine::SP, 0);
-    if (m.u1a())
+    m.set_m(SP, m.M[SP] - 2);
+    Word flag = pop(m);
+    m.set_logical();
+    if (flag)
         return result_in_acc(m);
     return apply_template(m, 025321);
 }
 
 unsigned power_2(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.uza()) {
-        m.xta(7, 01572);
-        m.atx(Machine::SP, 077777);
-        emit_half(m, 025306);
+    Word d = pop(m);
+    if (!d) {
+        m.mem[(m.M[SP] - 1) & 077777] = STACK_ATX1;
+        emit(m, STACK_ATX1, 025306);
         return power_loop(m);
     }
-    m.atx(Machine::SP, 077777);
-    m.utm(Machine::SP, 1);
+    m.mem[(m.M[SP] - 1) & 077777] = d;
+    m.set_m(SP, m.M[SP] + 1);
     load(m, 025306);
     return power_loop(m);
 }
@@ -828,42 +797,37 @@ unsigned power_2(Machine &m)
 // 25330: an octal base ** c (0352): ASN by c.
 unsigned octal_shift(Machine &m)
 {
-    m.ita(0, 3);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[3]);
     return operand(m, 025332);
 }
 
 unsigned octal_shift_2(Machine &m)
 {
     load(m, 025333);
-    m.xta(Machine::SP, 0);
-    m.aox(7, 02245);
-    emit_half(m, 024015);
+    emit(m, pop(m) | ASN, 024015);
     return result_in_acc(m);
 }
 
 // 25276: a real ** c (0152).
 unsigned power_real(Machine &m)
 {
-    m.xta(7, 02453);
     if (m.M[2])
         return octal_shift(m);
-    return power(m);
+    return power(m, 1);
 }
 
 // 25300: an integer ** c (0153).
 unsigned power_integer(Machine &m)
 {
-    m.xta(0, 0);
-    return power(m);
+    return power(m, 0);
 }
 
-// 25337: a routine of two operands, its address in M14 (pushed): the
-// first loaded, M4 = 02017, the second, then the call.
-unsigned library_call(Machine &m)
+// 25337: a routine r of two operands (pushed): the first loaded, M4 =
+// 02017, the second, then the call.
+unsigned library_call(Machine &m, unsigned r)
 {
-    m.ita(0, 016);
-    m.atx(Machine::SP, 0);
+    m.set_m(14, r);
+    push(m, r);
     return operand(m, 025341);
 }
 
@@ -880,28 +844,24 @@ unsigned library_call_3(Machine &m)
     return routine_call(m);
 }
 
-// 0150, 0151, 0147 (** by types), 001 (IMPL), 0157 (string relation n).
+// 0150, 0151, 0147 (** by types), 001 (IMPL): routine r, or octal for an
+// octal operand (M2).
 unsigned library_with(Machine &m, unsigned r, unsigned octal)
 {
-    m.vtm(14, r);
-    if (octal && m.M[2])
-        m.vtm(14, octal);
-    return library_call(m);
+    return library_call(m, octal && m.M[2] ? octal : r);
 }
 
+// 0157: string relation n (M3): routine 4067+n.
 unsigned string_relation(Machine &m)
 {
-    m.utc(3, 077777);
-    m.vtm(14, 04070);
-    return library_call(m);
+    return library_call(m, (m.M[3] + 04067) & 077777);
 }
 
 // 25346: a string slice (050): the string, then the bounds; routine 4100
 // (template 25361). M2 ≠ 0: the string pushed first.
 unsigned slice(Machine &m)
 {
-    m.ita(0, 2);
-    m.atx(Machine::SP, 0);
+    push(m, m.M[2]);
     return operand(m, 025350);
 }
 
@@ -914,13 +874,11 @@ unsigned slice_3(Machine &m)
 unsigned slice_2(Machine &m)
 {
     load(m, 025351);
-    m.xta(Machine::SP, 0);
-    if (m.uza()) {
+    if (!pop(m)) {
         m.vtm(4, 02017);
         return operand(m, 025360);
     }
-    m.xta(7, 02227);
-    emit_half(m, 025353);
+    emit(m, ON_STACK, 025353);
     return slice_3(m);
 }
 
@@ -940,47 +898,47 @@ void register_operators(Machine::Natives &n)
 {
     n[023764] = string_item;
     n[023775] = constant_item;
-    n[023776] = give;
+    n[023776] = [](Machine &m) { return give(m, m.acc); };
     n[024000] = variable_item;
     n[024005] = formal_item;
     n[024010] = call_item;
     n[024015] = result_in_acc;
     n[024016] = give_none;
-    n[024021] = [](Machine &m) { return unary_with(m, 025753); };
-    n[024022] = [](Machine &m) { return unary_with(m, 025754); };
-    n[024023] = [](Machine &m) { return unary_with(m, m.M[2] ? 025767 : 025756); };
-    n[024026] = [](Machine &m) { return unary_with(m, 025762); };
-    n[024027] = [](Machine &m) { return unary_with(m, 025763); };
+    n[024021] = [](Machine &m) { return unary(m, 025753); };
+    n[024022] = [](Machine &m) { return unary(m, 025754); };
+    n[024023] = [](Machine &m) { return unary(m, m.M[2] ? 025767 : 025756); };
+    n[024026] = [](Machine &m) { return unary(m, 025762); };
+    n[024027] = [](Machine &m) { return unary(m, 025763); };
     n[024030] = std_function;
     n[024034] = std_function_2;
     n[024037] = std_procedure;
     n[024043] = unary_2;
-    n[024046] = [](Machine &m) { return binary_with(m, 025773); };
-    n[024047] = [](Machine &m) { return binary_with(m, 025774); };
-    n[024050] = [](Machine &m) { return binary_with(m, 025775); };
-    n[024051] = [](Machine &m) { return binary_with(m, 025777); };
-    n[024052] = [](Machine &m) { return binary_with(m, 026000); };
-    n[024053] = [](Machine &m) { return binary_with(m, m.M[2] ? 026016 : 026001); };
-    n[024055] = [](Machine &m) { return binary_with(m, 026003); };
-    n[024056] = [](Machine &m) { return binary_with(m, 026005); };
-    n[024057] = [](Machine &m) { return binary_with(m, 026007); };
-    n[024060] = [](Machine &m) { return binary_with(m, 026012); };
-    n[024061] = [](Machine &m) { return binary_with(m, 026014); };
+    n[024046] = [](Machine &m) { return binary(m, 025773); };
+    n[024047] = [](Machine &m) { return binary(m, 025774); };
+    n[024050] = [](Machine &m) { return binary(m, 025775); };
+    n[024051] = [](Machine &m) { return binary(m, 025777); };
+    n[024052] = [](Machine &m) { return binary(m, 026000); };
+    n[024053] = [](Machine &m) { return binary(m, m.M[2] ? 026016 : 026001); };
+    n[024055] = [](Machine &m) { return binary(m, 026003); };
+    n[024056] = [](Machine &m) { return binary(m, 026005); };
+    n[024057] = [](Machine &m) { return binary(m, 026007); };
+    n[024060] = [](Machine &m) { return binary(m, 026012); };
+    n[024061] = [](Machine &m) { return binary(m, 026014); };
     n[024064] = binary_2;
     n[024065] = binary_3;
-    n[024075] = [](Machine &m) { return paired_with(m, 024113); };
+    n[024075] = [](Machine &m) { return paired(m, 024113); };
     n[024076] = divide;
     n[024100] = divide_2;
     n[024101] = divide_3;
-    n[024106] = [](Machine &m) { return paired_with(m, 024115); };
-    n[024107] = [](Machine &m) { return paired_with(m, 024116); };
-    n[024110] = [](Machine &m) { return paired_with(m, 024117); };
-    n[024111] = [](Machine &m) { return paired_with(m, 024120); };
-    n[024112] = [](Machine &m) { return paired_with(m, 024121); };
+    n[024106] = [](Machine &m) { return paired(m, 024115); };
+    n[024107] = [](Machine &m) { return paired(m, 024116); };
+    n[024110] = [](Machine &m) { return paired(m, 024117); };
+    n[024111] = [](Machine &m) { return paired(m, 024120); };
+    n[024112] = [](Machine &m) { return paired(m, 024121); };
     n[024124] = paired_2;
     n[024125] = paired_3;
     n[024221] = assign_variable;
-    n[024222] = assign;
+    n[024222] = [](Machine &m) { return assign(m, m.acc); };
     n[024223] = assign_2;
     n[024226] = assign_formal;
     n[024240] = assign_pushed;
@@ -1009,14 +967,19 @@ void register_operators(Machine::Natives &n)
 // its label for the item that defines it.
 //
 
-// 24142: emit the jump in A, push its label, next label; on to the main loop.
-unsigned jump_ahead(Machine &m)
+// The next label.
+Word new_label(Machine &m)
 {
-    emit_half(m, 024143);
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 0);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
+    Word n         = m.mem[LABELS];
+    m.mem[LABELS] = cyclic_add(n, 1);
+    return n;
+}
+
+// 24142: emit the jump half, push its label, next label; on to the main loop.
+unsigned jump_ahead(Machine &m, Word half)
+{
+    emit(m, half, 024143);
+    push(m, new_label(m));
     return MAIN_LOOP;
 }
 
@@ -1029,9 +992,26 @@ unsigned if_item(Machine &m)
 unsigned if_item_2(Machine &m)
 {
     load(m, 024141);
-    m.xta(7, 02302);
-    m.aox(0, LABELS);
-    return jump_ahead(m);
+    return jump_ahead(m, LABEL_U1A | m.mem[LABELS]);
+}
+
+// Both operands of a comparison: unless the right one is in A, the left
+// one is loaded (link) and the right one takes its place. False when the
+// right one is in A.
+bool comparison_operands(Machine &m, unsigned link)
+{
+    Word d2 = pop(m);
+    if (!d2)
+        return false;
+    Word d1 = pop(m);
+    if (d1) {
+        m.set_m(SP, m.M[SP] + 2);
+        m.set_m(12, link);
+        load_value(m, d1);
+        m.set_m(SP, m.M[SP] - 2);
+    }
+    push(m, d2);
+    return true;
 }
 
 // 24146: compare-and-jump of a string (0134): both operands, template
@@ -1048,35 +1028,32 @@ unsigned string_jump_2(Machine &m)
 
 unsigned string_jump_3(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.u1a()) {
-        m.xta(Machine::SP, 0);
-        if (m.u1a()) {
-            m.utm(Machine::SP, 2);
+    Word d2 = pop(m);
+    if (d2) {
+        Word d1 = pop(m);
+        if (d1) {
+            m.set_m(SP, m.M[SP] + 2);
             load(m, 024160);
         } else {
-            m.xta(Machine::SP, 1);
-            m.atx(Machine::SP, 0);
+            push(m, d2);
         }
     }
     m.vtm(11, 026040);
     m.set_m(12, 024152);
-    run_template(m);
+    emit_template(m, 026040);
     m.vtm(4, 0);
-    m.xta(7, 02304);
-    m.aox(0, LABELS);
-    return jump_ahead(m);
+    return jump_ahead(m, LABEL_U1A2 | m.mem[LABELS]);
 }
 
 //
-// 24165: compare-and-jump (0130–0133), M11 = a word of two templates (as
+// 24165: compare-and-jump (0130–0133), pair = a word of two templates (as
 // for 24122): the label pushed under the operands; the template jumps to it.
 //
-unsigned compare_jump(Machine &m)
+unsigned compare_jump(Machine &m, unsigned pair)
 {
-    m.ita(0, 013);
-    m.xts(0, LABELS);
-    m.atx(Machine::SP, 0);
+    m.vtm(11, pair);
+    push(m, pair);
+    push(m, m.mem[LABELS]);
     return operand(m, 024167);
 }
 
@@ -1087,176 +1064,121 @@ unsigned compare_jump_2(Machine &m)
 
 unsigned compare_jump_3(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (m.u1a()) {
-        m.xta(Machine::SP, 0);
-        if (m.u1a()) {
-            m.utm(Machine::SP, 2);
-            m.set_m(12, 024205);
-            load_operand(m);
-            m.utm(Machine::SP, 077776);
-        }
-        m.xta(Machine::SP, 1);
-        m.atx(Machine::SP, 0);
-        m.wtc(Machine::SP, 077775);
-        m.xta(0, 0);
-        m.asn(0, 0130);
-        m.ati(0, 013);
-    } else {
-        m.wtc(Machine::SP, 077775);
-        m.xta(0, 0);
-        m.ati(0, 013);
-    }
+    bool left    = comparison_operands(m, 024205);
+    Word pair    = m.mem[m.mem[(m.M[SP] - 3) & 077777] & 077777];
+    unsigned t   = (left ? pair >> 24 : pair) & 077777;
+    m.vtm(11, t);
     m.vtm(4, 0);
     m.set_m(12, 024174);
-    run_template(m);
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 077777);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
+    emit_template(m, t);
+    m.mem[(m.M[SP] - 1) & 077777] = new_label(m);
     return MAIN_LOOP;
 }
 
-unsigned compare_jump_with(Machine &m, unsigned pair)
+// 24210: define label n (template 26051), the value in A.
+unsigned define_label(Machine &m, Word n)
 {
-    m.vtm(11, pair);
-    return compare_jump(m);
-}
-
-// 24210: define the label in A (template 26051), the value in A.
-unsigned define_label(Machine &m)
-{
-    m.utm(Machine::SP, 077776);
-    m.atx(0, LABELS);
+    m.set_m(SP, m.M[SP] - 2);
+    m.mem[LABELS] = n;
     return apply_template(m, 026051);
 }
 
 // 24206: the end of an IF statement (053): its label.
 unsigned if_end(Machine &m)
 {
-    m.xta(Machine::SP, 077775);
-    return define_label(m);
+    return define_label(m, m.mem[(m.M[SP] - 3) & 077777]);
 }
 
 // 24207: the end of a conditional expression (054): the label before.
 unsigned if_expression_end(Machine &m)
 {
-    m.xta(Machine::SP, 077775);
-    m.arx(7, 02522);
-    return define_label(m);
+    return define_label(m, cyclic_add(m.mem[(m.M[SP] - 3) & 077777], MINUS_ONE));
 }
 
 // 24213: ELSE (031): UJ to a new label, then the IF's label defined.
 unsigned else_item(Machine &m)
 {
-    m.utm(Machine::SP, 077776);
-    m.xta(7, 02317);
-    m.aox(0, LABELS);
-    emit_half(m, 024215);
+    m.set_m(SP, m.M[SP] - 2);
+    emit(m, LABEL_UJ | m.mem[LABELS], 024215);
     m.vtm(11, 026051);
     m.set_m(12, 024216);
-    run_template(m);
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 0);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
+    emit_template(m, 026051);
+    push(m, new_label(m));
     return MAIN_LOOP;
 }
 
 // 24666: GOTO a label (024): UJ (template 24671).
 unsigned goto_label(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.atx(Machine::SP, 0);
+    push(m, m.mem[m.M[3]] & DESC_MASK);
     m.vtm(11, 024671);
     m.vtm(12, 024016);
     return TEMPLATE;
 }
 
 // 24661: an element of a switch (025), the index on the stack: loaded
-// (template 24360) unless in A, the half M7+1147 with it, then as 024.
+// (template 24360) unless in A, the half SWITCH_UJ with it, then as 024.
 unsigned switch_element(Machine &m)
 {
-    m.xta(Machine::SP, 0);
-    if (!m.uza()) {
-        m.atx(Machine::SP, 0);
+    Word d = pop(m);
+    if (d) {
+        push(m, d);
         m.vtm(11, 024360);
         m.set_m(12, 024664);
-        run_template(m);
+        emit_template(m, 024360);
     }
-    m.xta(7, 01147);
-    m.aox(Machine::SP, 0);
-    emit_half(m, 024666);
+    emit(m, SWITCH_UJ | pop(m), 024666);
     return goto_label(m);
 }
 
 // 25010: switch elements start (0143): the label of the table pushed.
 unsigned switch_start(Machine &m)
 {
-    m.xta(0, LABELS);
-    m.atx(Machine::SP, 0);
+    push(m, m.mem[LABELS]);
     return DISPATCH_NEXT;
 }
 
 // 25012: an element expression (0144): its own label, the expression.
 unsigned switch_expression(Machine &m)
 {
-    m.xta(0, LABELS);
-    m.aox(7, 0746);
-    emit_half(m, 025014);
-    m.xta(0, LABELS);
-    m.arx(7, 02453);
-    m.atx(0, LABELS);
+    emit(m, m.mem[LABELS] | LABEL_DEF, 025014);
+    new_label(m);
     return operand(m, 025016);
 }
 
 unsigned switch_expression_2(Machine &m)
 {
-    m.xta(0, LABELS);
-    m.arx(7, 02533);
-    m.atx(Machine::SP, 077777);
+    m.mem[(m.M[SP] - 1) & 077777] = cyclic_add(m.mem[LABELS], PREV_LABEL);
     return DISPATCH_NEXT;
 }
 
 // 25020: an element label (0142).
 unsigned switch_label(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02465);
-    m.aox(7, 02317);
-    m.atx(Machine::SP, 0);
+    push(m, (m.mem[m.M[3]] & DESC_MASK) | LABEL_UJ);
     return DISPATCH_NEXT;
 }
 
-// 25023: the switch (041) with M2 elements: template 25040, then UJ to each
-// element (M7+744 after each) from the stack.
+// 25023: the switch (041) with M2 words on the stack: template 25040, then
+// each word and NEW_WORD; the table's label back to LABELS.
 unsigned switch_end(Machine &m)
 {
-    m.xta(3, 0);
-    m.aax(7, 02526);
-    m.atx(Machine::SP, 0);
-    m.atx(Machine::SP, 0);
+    Word d = m.mem[m.M[3]] & ADDR;
+    push(m, d);
+    push(m, d);
     m.vtm(11, 025040);
     m.set_m(12, 025026);
-    run_template(m);
-    m.ita(0, 2);
-    m.aex(7, 02526);
-    m.ati(0, 014);
-    m.utm(12, 1);
-    m.mtj(12, 013);
-    do {
-        m.utc(Machine::SP, 0);
-        m.xta(12, 0);
-        emit_half(m, 025033);
-        m.xta(7, 0744);
-        emit_half(m, 025034);
-        m.utm(12, 1);
-    } while (m.M[12]);
-    m.utc(11, 0);
-    m.utm(Machine::SP, 0);
-    m.xta(Machine::SP, 0);
-    m.atx(0, LABELS);
+    emit_template(m, 025040);
+    unsigned n    = m.M[2];
+    unsigned base = (m.M[SP] - n) & 077777;
+    for (unsigned i = 0; i < n; i++) {
+        emit(m, m.mem[(base + i) & 077777], 025033);
+        emit(m, NEW_WORD, 025034);
+    }
+    m.set_m(11, -n);
+    m.set_m(12, 0);
+    m.set_m(SP, base);
+    m.mem[LABELS] = pop(m);
     return DISPATCH_NEXT;
 }
 
@@ -1267,10 +1189,10 @@ void register_jumps(Machine::Natives &n)
     n[024146] = string_jump;
     n[024147] = string_jump_2;
     n[024150] = string_jump_3;
-    n[024161] = [](Machine &m) { return compare_jump_with(m, 026052); };
-    n[024162] = [](Machine &m) { return compare_jump_with(m, 026053); };
-    n[024163] = [](Machine &m) { return compare_jump_with(m, 026054); };
-    n[024164] = [](Machine &m) { return compare_jump_with(m, 026055); };
+    n[024161] = [](Machine &m) { return compare_jump(m, 026052); };
+    n[024162] = [](Machine &m) { return compare_jump(m, 026053); };
+    n[024163] = [](Machine &m) { return compare_jump(m, 026054); };
+    n[024164] = [](Machine &m) { return compare_jump(m, 026055); };
     n[024167] = compare_jump_2;
     n[024170] = compare_jump_3;
     n[024206] = if_end;
@@ -1892,7 +1814,7 @@ unsigned element_read(Machine &m)
     unsigned k = subscript(m, 024253, true) - 024253;
     m.xta(Machine::SP, 0);
     if (k == 0)
-        return give(m);
+        return give(m, m.acc);
     m.vtm(12, 024015);
     return load_operand(m);
 }
@@ -1907,7 +1829,7 @@ unsigned element_store(Machine &m)
     unsigned k = subscript(m, 024261, true) - 024261;
     if (k == 0) {
         m.xta(Machine::SP, 0);
-        return assign(m);
+        return assign(m, m.acc);
     }
     if (element_half(m, k) == 2) {
         m.aox(Machine::SP, 0);
@@ -1945,7 +1867,7 @@ unsigned element_store(Machine &m)
     m.atx(0, 02021);
     m.xta(0, 02011);
     m.aax(7, 02472);
-    return assign(m);
+    return assign(m, m.acc);
 }
 
 // 24311: the address of an element (0103), loaded (M7+1131).
@@ -2062,7 +1984,7 @@ unsigned register_item(Machine &m)
 {
     m.ita(0, 3);
     m.arx(0, 02027);
-    return give(m);
+    return give(m, m.acc);
 }
 
 // R<<20 + d.
@@ -2078,14 +2000,14 @@ void by_register(Machine &m)
 unsigned register_read(Machine &m)
 {
     by_register(m);
-    return give(m);
+    return give(m, m.acc);
 }
 
 // 25375: an element stored through R (0164).
 unsigned register_store(Machine &m)
 {
     by_register(m);
-    return assign(m);
+    return assign(m, m.acc);
 }
 
 // 25370: 0160: d + 02027 loaded, the half kept.

@@ -34,7 +34,6 @@ constants. Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compi
 
 ### Pass 4 off the machine
 
-- **D4** Operators, IF and jumps, switches.
 - **D5** Block entry (25525, without the Madlen-label gotos), labels, frame reset, line
   items, procedure entry and end.
 - **D6** Subscripts and arrays, array segments, pass 3's register items.

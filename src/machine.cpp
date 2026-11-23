@@ -10,33 +10,6 @@ namespace {
 
 constexpr Word BIT48 = 0'4000'0000'0000'0000;
 
-Word pack(Word val, Word mask)
-{
-    Word result = 0;
-    for (; mask; mask >>= 1, val >>= 1)
-        if (mask & 1) {
-            result >>= 1;
-            if (val & 1)
-                result |= BIT48;
-        }
-    return result;
-}
-
-Word unpack(Word val, Word mask)
-{
-    Word result = 0;
-    for (unsigned i = 0; i < 48; ++i) {
-        result <<= 1;
-        if (mask & BIT48) {
-            if (val & BIT48)
-                result |= 1;
-            val <<= 1;
-        }
-        mask <<= 1;
-    }
-    return result & WORD_MASK;
-}
-
 unsigned highest_bit(Word val)
 {
     int n = 32, cnt = 0;
@@ -194,14 +167,14 @@ void Machine::arith(unsigned reg, unsigned addr, int op)
 
 void Machine::apx(unsigned reg, unsigned addr)
 {
-    acc = pack(acc, operand(reg, field(addr)));
+    acc = pack_bits(acc, operand(reg, field(addr)));
     rmr = 0;
     set_logical();
 }
 
 void Machine::aux(unsigned reg, unsigned addr)
 {
-    acc = unpack(acc, operand(reg, field(addr)));
+    acc = unpack_bits(acc, operand(reg, field(addr)));
     rmr = 0;
     set_logical();
 }

@@ -50,4 +50,10 @@ private:
     void normalize_and_round(Value v, Word mr, bool round_flag);
 };
 
+// APX: the bits of val under mask, gathered to the low end.
+Word pack_bits(Word val, Word mask);
+
+// AUX: the low bits of val spread to the positions of mask.
+Word unpack_bits(Word val, Word mask);
+
 #endif

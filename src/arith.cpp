@@ -350,3 +350,32 @@ void Arith::div(Word val)
         a.normalize_to_the_right();
     normalize_and_round({ a.mantissa, a.exponent }, 0, false);
 }
+
+constexpr Word PACK_BIT48 = 0'4000'0000'0000'0000;
+
+Word pack_bits(Word val, Word mask)
+{
+    Word result = 0;
+    for (; mask; mask >>= 1, val >>= 1)
+        if (mask & 1) {
+            result >>= 1;
+            if (val & 1)
+                result |= PACK_BIT48;
+        }
+    return result;
+}
+
+Word unpack_bits(Word val, Word mask)
+{
+    Word result = 0;
+    for (unsigned i = 0; i < 48; ++i) {
+        result <<= 1;
+        if (mask & PACK_BIT48) {
+            if (val & PACK_BIT48)
+                result |= 1;
+            val <<= 1;
+        }
+        mask <<= 1;
+    }
+    return result & WORD_MASK;
+}
