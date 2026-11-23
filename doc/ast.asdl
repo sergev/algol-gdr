@@ -1,10 +1,10 @@
--- AST of algc: an Algol-GDR program after scopes and type checks (pass 2).
+-- AST of algc: an Algol-GDR program after scopes and type checks (the checker).
 --
 -- Names are resolved: a declaration has an id unique in the program, and every
 -- use refers to it (`int decl`), so the back end needs no scope rules. Implicit
 -- conversions are explicit (Convert), and every expression has its type.
--- Codes in comments are the items of the pass-2 stream that make the node
--- (doc/passes.md, "Output stream").
+-- Codes in comments are the items of the pass-2 stream of the original that
+-- make the node (doc/passes.md on the besm6 branch, "Output stream").
 --
 -- Built by the checker (src/checker.cpp) from the syntax tree. A statement's
 -- position is its line and the number of the statement on the line; a

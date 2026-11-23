@@ -55,11 +55,12 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   (where the native run differs for a reason) or `NAME.out`. `tests/a60/` holds the
   conformance programs (outputs by hand); `tests/x1/` the X1 examples with their `x1sim`
   outputs (frozen, made by `tests/x1/goldens.sh`), compared line by line.
-- `doc/` — findings about the original compiler (history: the code they describe is on the
-  `besm6` branch): [passes.md](doc/passes.md) (driver, passes 1–2, their streams),
-  [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
-  [runtime-abi.md](doc/runtime-abi.md) (what the run-time routines do),
-  [encoding.md](doc/encoding.md); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the
+- `doc/` — [passes.md](doc/passes.md) (the passes of algc, what each gives),
+  [encoding.md](doc/encoding.md) (source characters and symbols, text at run time); findings
+  about the original compiler (history: the code they describe, and the original passes.md
+  and encoding.md, are on the `besm6` branch): [tables.md](doc/tables.md),
+  [symbols.md](doc/symbols.md), [runtime-abi.md](doc/runtime-abi.md) (what the run-time
+  routines do); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the
   parser reads (Algol 60 with the Algol-GDR extensions); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
   for its implementation; [deviations.md](doc/deviations.md) — how algc differs from the
   Revised Report, and the task that removes each difference; [codegen.md](doc/codegen.md) — data, frames, calling convention,

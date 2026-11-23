@@ -4,7 +4,7 @@
 > `algc` on `main` has a new front end (src/lexer.cpp, parser.cpp, checker.cpp).
 
 The data areas of overlay `ALGOL`, and the tables inside the pass modules. Addresses are
-octal. The details of how each pass uses them are in [passes.md](passes.md).
+octal. The details of how each pass uses them are in `doc/passes.md` on the `besm6` branch.
 
 ## Memory map of the data areas
 
@@ -22,7 +22,7 @@ octal. The details of how each pass uses them are in [passes.md](passes.md).
 
 The `SET` directives at the end of `algol.asm` fill `AD02000`, `AD02166`, `AD03771` and
 `AD05754` before the passes run. Each pass reuses the pages for its own data (see the data
-flow in [passes.md](passes.md)).
+flow in `doc/passes.md` on the `besm6` branch).
 
 In the C++ `Tables` (src/tables.h) holds what passes 1 and 2 share: the name table by slot,
 the D-list by address, the 'COMMON' table. The work cells of 02000… are members of the
@@ -63,7 +63,7 @@ Standard names have no code word, so they are identifiers: ABS, ARCTAN, ASSIGN, 
 ENTIER, EXP, LENGTH, LN, LOAD, LOADGO, NEWLINE, NEWPAGE, SIGN, SIN, SQRT, STOA, STOP.
 
 The internal codes are also the codes of the stream items (see "Item format" in
-[passes.md](passes.md)), where 013–016 are `+ - * /`, 020 `(` or a call, 021 `[` or a
+`doc/passes.md` on the `besm6` branch), where 013–016 are `+ - * /`, 020 `(` or a call, 021 `[` or a
 subscripted variable, 022 `:=`, 045 `)`, 046 `]`, 047 `,`, 050 `:`, 051 `;` or a statement
 marker.
 
@@ -104,5 +104,5 @@ preset constants, the standard identifiers) is built by the `Tables` constructor
 ## Character codes
 
 The source arrives as 8-bit ISO (KOI-7), converted by the monitor from COSY. See
-[encoding.md](encoding.md) for the codes the lexer accepts, and for how `dubna` maps Unicode
+`doc/encoding.md` on the `besm6` branch for the codes the lexer accepts, and for how `dubna` maps Unicode
 onto them.

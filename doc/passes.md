@@ -1,623 +1,131 @@
-# Passes of the original compiler
+# Passes of algc
 
-> History: this describes the original compiler and its C++ rewrite on the `besm6` branch;
-> `algc` on `main` has a new front end (src/lexer.cpp, parser.cpp, checker.cpp).
-
-The root overlay `ALGOL` (loaded at 01604, entry 01614) is a driver that calls the passes one
-after another. Sources: `os-dubna/algol/*.asm` (copy in `tmp/asm-sources/`). Addresses are
-octal. The BESM-6 back end (passes 3–6) is described on the `besm6` branch; this note keeps
-the driver and passes 1–2, the front end of `algc`.
-
-## Driver (`algol.asm`, 01614–01735)
-
-```
-01614  if not NOLISFL*: print banner "A L G O L - Г Д P", "(7.01.82)"
-01625  call AG13666                      pass 1
-       call AG17223                      pass 2
-       if FLGEX*  ≠ 0: goto finish       errors found: no more passes
-       if CHECKFL* = 0: call AG22162     pass 3 (skipped in *CHECK mode)
-01632  call AG23523                      pass 4
-01633  call AG26260                      pass 5
-       call AG26666                      pass 6 (calls AG30257 at its end)
-       if FULISFL* = 0: goto finish
-       flush the listing (G44504), load overlay "A/PRINTM" (LOADCALL), return to 0425
-finish (01716):
-       clear the line buffer state, flush the listing (G44504), return to the monitor at 0425
-```
-
-The flags are cells of the monitor:
-
-| Flag | Set by | Effect in the driver |
-| --- | --- | --- |
-| `NOLISFL*` | `*NO LIST` | no banner; passes check it too (G13666, G26260) |
-| `FULISFL*` | `*FULL` | after the passes, load `A/PRINTM` to list the object code |
-| `CHECKFL*` (0521) | `*CHECK`; also `*call setftn` | skip G22162; the code gets run-time checks (more externals) |
-| `FLGEX*` | the compiler: G14504, G17223, G26260 | errors; stop after pass 2. The monitor adds it to `ERROFLG*` and keeps no object |
-
-Checked with `hello` and `test3`:
-- `*NO LIST`: the listing has only the line `PROGRAM ДЛИHA: …`, and the object is the same.
-- `*CHECK`: the listing is the same, and the object differs. For test3: 144 words of code instead
-  of 137, and one more external.
-
-### Listing output
-
-`ASMPRINT` (shared with the assembler, at 12000) prints the listing. The driver wraps it:
-- **01644 (`*0030B`)**: print a text. Its arguments are on the stack: the first and the last
-  word; the value in A is lost. On the first call it prints the header with the date
-  (`DATAPR*`). Unless `*REGIM//` has both bits 48 and 47 (`setftn:one,long`), a text of 11
-  words or more is split: the first 10 words, then the rest without its trailing blank
-  words, indented by 15 (ASMPRINT gets the indent in A). The cells `AD01736+0…3` hold its
-  state.
-- **01713**: an empty line (ASMPRINT of one blank word).
-- `G44504` is a second entry of ASMPRINT. It ends the printout and returns to the address in
-  register 13 (0425, the monitor).
-
-ASMPRINT gathers the rows of a page in `D45026` (67 rows of 11 words) and prints them
-through `*64` (the left cell, `GOST_SET_POSITION` 65, the right cell). As dubna shows it
-(measured with long programs):
-- A page has two columns of 65 rows on the first page and 66 on the next ones. Each page
-  starts with a form feed and a header line: the date on the first page, empty after.
-- A row that is blank in both columns prints nothing.
-- A page shorter than its left column prints its rows as plain lines (all short
-  listings). Otherwise (also a page that just fills its left column) each row is the left
-  cell padded to 65 characters and the right one, and the form feed of the next page ends
-  its last line.
-- With `setftn:one` there are no pages: rows print at once, blank ones too, and the printout
-  ends with an empty line.
-
-Our compiler prints only the `setftn:one,long` form (`src/listing.*`): one column, no
-splitting. Without `--list` it runs as with `*NO LIST`: errors and the summary line only. The test listings (`NAME.lst`) come from the original with
-`*call setftn:one,long`, which also sets check mode, so `ListingTest` compiles in check mode.
-
-### Data set up by the driver
-
-The `SET` directives at the end of `algol.asm` fill tables before the passes run:
-- `AD02000`: small tables, `V1/*`.
-- `AD02166…`: the keyword hash table, `V2/*`. Each entry is a pair: the word in ISO code (6
-  characters), then `7760 0000 0000 00cc`, where `cc` is the internal code of the symbol, for
-  example `BEGIN` = 036, `END` = 037, `'COMMENT'` = 0177. Standard function names
-  (`SQRT`, `SIN`, …) have no code word.
-- `AD03771`: 7 constants, `V4/0`, the same words that open the constants of every object
-  (`0020…`, `6400…0064`, `…0063`, `…0062`, `…02`, `…01`, `…00`).
-- `AD05754`: 20 words, `V6/0`.
-
-See [tables.md](tables.md) (A6.4) for the meaning of the tables.
+How `algc` turns an Algol file into a program: the passes, what each takes and gives, and
+where each stops on errors. The passes of the original BESM-6 compiler (the driver at 01614,
+`AG13666`…`AG30257`, their drum streams) are described in this file on the `besm6` branch.
 
 ## Overview
 
-Notation: an address `*nnnnB` in a module is the module start + nnnn. Line numbers refer to
-`tmp/asm-sources/agNNNNN.asm`. **V** = verified (trace with `dubna -d ime`, a memory dump, or
-an experiment with a test program); **I** = inferred from the code. The analysis scripts and
-the traces are kept outside the repository.
+```
+main.cpp     options                                       Options (options.h)
+driver.cpp   compile: for each .alg or .a60 file, translate
+  source.cpp   read_source: the file, UTF-8 checked          std::string
+  frontend.cpp front_end:
+    lexer.cpp    symbols, one at a time                      Token (lexer.h)
+    parser.cpp   the syntax tree                             syn::Program (syntax.h)
+    checker.cpp  scopes, types, conversions                  ast::Program (ast.h)
+  codegen.cpp  LLVM IR in text, through ir.cpp               NAME.ll
+  clang        -O1 by default: object, assembly or a program linked with libalgol.a and -lm
+```
 
-| Pass | Module | Role |
+Each pass works on the whole result of the one before; only the lexer and the parser run
+together (the parser asks the lexer for the next symbol). Options stop the chain early:
+
+| Option | Stops after | Output |
 |---|---|---|
-| 1 | G13666 + G14504 | reads cards; lexes; checks syntax by recursive descent; builds the name, constant and string tables and the declaration list; writes a postfix stream |
-| 2 | G17223 | reads the stream backwards; scopes, identifier binding, type checking; semantic diagnostics; writes a new stream |
-| 3 | G22162 | optimizer: folds constants, merges jumps around procedures, turns array accesses in FOR loops into index-register steps; skipped with `*CHECK` |
-| 4 | G23523 | code generator: emits instruction half-words with symbolic addresses and pseudo-items |
-| 5 | G26260 | assigns addresses: labels, external names, symbol rows; prints the line table; saves the constants |
-| 6 | G26666 | assembles the object backwards on drum 26 and hands it to the monitor; then G30257 prints `PROGRAM ДЛИHA: …` |
+| `--syntax-only` | the checker | messages; with `--list` the listing |
+| `--dump-ast` | the checker | the AST in YAML on stdout (`ast.cpp`, after doc/ast.asdl) |
+| `--emit-llvm` | the code generator | `NAME.ll` |
+| `-S`, `-c` | clang | `NAME.s`, `NAME.o` |
+| none | the link | the program `NAME` |
 
-### Data flow between passes (V, trace of a 500-line program)
+Messages go to stderr as `file:line:column: error: …` (or `warning:`) through one
+`Diagnostics` (`diag.h`), which counts the errors. After the checker, a file with an error
+gets no code: `front_end` returns nothing, and `algc` exits with status 1.
 
-| Pass | Reads | Writes |
-|---|---|---|
-| 1 | cards | stream forward (buffer 06000, drum 26 zones 2..); strings to drum 27 zone 34 |
-| 2 | pass-1 stream backward | saves page 02000–03777 to drum 26 zone 0; stream backward (buffer 10000, drum 27 zones 33..30) |
-| 3 | drum 27, forward | stream forward to drum 26 zones 10.. |
-| 4 | drum 26 zone 0 into 06000; drum 26 zones 10.. | stream forward (buffer 06000, drum 26 zones 2..) |
-| 5 | drum 26 zone 0 into 04000; pass-4 stream | constants page to drum 27 zone 33; stream forward (buffer 10000, drum 26 zones 2..) |
-| 6 | constants from drum 27 zones 34, 33; pass-5 stream backward | the object, backward (buffer 06000, drum 26 zones N..3) |
+## Source
 
-A stream that fits in one page needs no drum I/O at all (Hello, World).
+`read_source` (`source.cpp`) reads the file and checks that it is UTF-8. The lexer splits it
+into lines (dropping a CR before LF) and decodes each into code points when it gets there.
+doc/encoding.md has the characters and symbols.
 
-**The compiler never punches.** ALGOL has no `*71` (punch extracode). Pass 6 fills the
-monitor table `ENTRY*` (0626–0631):
-- 0626 = `PROGRAM`;
-- 0627 = `2000000000000000`;
-- 0630 = 0 (end of list);
-- 0631 = `0010 0000 0026 0003`, a `*70` word that reads drum 26 zone 3.
+## Lexer
 
-After the return to 0425, the monitor (`STAR*`, `CATLG`) reads the object from drum 26
-zone 3, and then punches it or stores it in the library. So the entry pair of the standard
-array is written by the monitor. (V)
+`Lexer::next` (`lexer.cpp`) gives the next symbol as a `Token`: its `Sym`, its position
+(line and column), and its value: the text of an identifier or a string, an integer, a real,
+the bits of an octal constant, or the block of a `_common` declaration, which the lexer reads
+whole.
 
-## G27126 — streams on drum (shared helper)
+- The form is decided once, at the start: an underlined letter anywhere in the file makes it
+  the publication form.
+- Blanks are skipped outside strings and `_keywords`; `′` becomes `'`.
+- Comments (`_comment …;` and the text after `_end`) are skipped here, so the parser never
+  sees them.
+- A lexical error is reported here and gives an `ERROR` symbol; the parser does not report it
+  again.
+- With `--list`, each line is handed to the listing as the lexer starts reading it
+  (`on_line`), so the listing shows the lines in the order they are read.
 
-Real extent: code 27114–27213, constants 27214–27244. The Madlen split puts parts of it in
-ag26666.asm (lines 299–322, entries 27114 and 27123) and ag27220.asm (masks). (V)
+## Parser
 
-**Cursors.** `D02000` is the read cursor and `D02001` the write cursor (V):
+`parse` (`parser.cpp`) is a recursive descent over the symbols, one symbol of lookahead and
+more where needed (`peek`: a label is an identifier or a number before `:`). It builds the
+syntax tree of `syntax.h`, after doc/algol60.asdl: names are still names, and nothing is
+typed.
 
-| Bits | Field |
-|---|---|
-| 48 | half flag: 0 = left half next, 1 = right half next |
-| 1–15 | address in the buffer |
-| 16 | carry catch for the zone step |
-| 17–21 | drum zone |
-| 22–27 | drum number (026 or 027) |
-| 31–33 | buffer page: 2 = 04000, 3 = 06000, 4 = 10000 |
+- The program: `_code:` and `_algol:` lists of external procedures, `_common` declarations,
+  then a block or compound statement; or procedures alone, a unit for separate compilation.
+  `_eop` or the end of the file ends it.
+- Expressions by priority, from the lowest: `≡`, `⊃`, `∨`, `∧`, `¬`, the relations, `+ -`,
+  `× / ÷`, `↑`; all binary operators are left-associative. A conditional expression as an
+  operand must be in parentheses.
+- Every statement gets a position: its line, and its number among the statements started on
+  that line (`SrcLoc`), which the AST keeps.
+- `_then _if … _else` is read with the `_else` on the inner `_if`, with a warning.
+- After a syntax error the parser skips to the end of the statement (`;`, `_else` or the
+  `_end` of its level) or past the declaration, leaves an `Error` node and goes on. After 30
+  errors, or at an unexpected end of the file, it stops.
 
-**Entries.** Call with `13 VJM`, value in and out in A. r11 and r12 are kept, r14 is
-clobbered. (V)
+## Checker
 
-| Entry | Operation |
-|---|---|
-| 27114 | write a half, backward |
-| 27126 | write a half, forward |
-| 27137 | write a word, backward |
-| 27143 | read a half, backward (needs one priming read whose value is dropped) |
-| 27154 | read a half, forward |
-| 27165 | read a word, backward |
-| 27173 | page I/O (internal), op in r14: 0 read fwd, 1 write fwd, 2 read back, 3 write back |
+`check` (`checker.cpp`) resolves the names of the syntax tree and checks their uses. It runs
+also after syntax errors, on what the parser built, so one run reports both kinds. It gives
+the AST of `ast.h`, after doc/ast.asdl:
 
-**Page I/O.** When the low 10 bits of the address wrap, the cursor steps a zone, and a
-1024-word page moves with `*70` at 27211. (V)
+- Every declaration gets an id unique in the program, and every use refers to it: the code
+  generator needs no scope rules.
+- A block declares its names, labels too, before its statements are checked, so they are
+  visible in the whole block. The bounds of its arrays are checked in the enclosing scope.
+  Then come its switches and procedures, its `_common` blocks, and its statements.
+- Types are checked, and implicit conversions are made explicit (`Convert`). An expression
+  with an error has type `none`, which keeps the operators above it from reporting again.
+- A formal parameter without a specification gets its kind and type from its uses in the
+  procedure body (`Usage`): called, subscripted, jumped to, a condition, an operand of `÷`
+  (doc/deviations.md has the rules).
+- Standard identifiers, in any case, unless declared: the functions (`sqrt`, `entier`, …),
+  Algol-GDR's (`PRINT`, `READ`, `NEWLINE`, …), the IFIP procedures, and the X1 library.
+  `print` is X1's in the publication form and Algol-GDR's in the `_keyword` form; `read` in
+  an expression is X1's. Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
+  arguments checked.
+- A function that never assigns its result gets a warning.
 
-**G27220** (27220–27230): `M[D02002++] = A`, the string pool. Every 256 words it writes the
-sector to drum 27 zone 34. (V)
+## Code generator
 
-## Pass 1: G13666, G14504
+`codegen` (`codegen.cpp`) turns the AST into LLVM IR text through the builder of `ir.h`
+(after doc/ir.asdl). doc/codegen.md has the representation: data, frames, calling
+convention, thunks, labels, arrays and the runtime names. Its steps:
 
-### Output (V unless noted)
+1. `declare`: storage for every name, before any code: globals for the outer block and
+   `own` variables, frame slots for the others, functions for procedures and switches.
+2. `scan`: the labels reached from other functions (by a switch, a parameter, a thunk or a
+   `goto` from a nested procedure). Their functions `setjmp` at entry (`far_entry`).
+3. `statement`: the code of the program block, in `algol_main` (in a unit, `algol_unit`).
+4. `procedure` for each procedure, `switch_function` for each switch, then the `_common`
+   globals.
 
-1. **The stream.** 24-bit postfix items in 06000…, written through `AG15120` → G27126,
-   pointer `D02001` starting at 06001.
-2. **The name/constant table** at 02144–03777. This is the keyword hash table
-   (`AD02166`…), filled in place.
-3. **The string pool** at 04000–04377, 6 ISO characters per word, ending with a zero byte;
-   written through G27220.
-4. **The D-list.** Declarations as a stack growing down from 05753 (in M3) toward 04400. The
-   standard identifiers are at 05754–05777.
+With `--check` it adds the run-time checks (doc/codegen.md, Checks).
 
-### Item format
+## Clang and the runtime
 
-| Bits | Field |
-|---|---|
-| 24–13 | operand: a table slot or a D-list address |
-| 12–8 | count n |
-| 7–1 | code |
+The driver (`driver.cpp`) writes the IR of each Algol file to a temporary `NAME.ll` (kept with
+`--save-temps`) and runs `clang` (or `$ALGC_CLANG`) with `-O1`, or the `-O` given, and
+`--target`:
 
-| Item | Meaning |
-|---|---|
-| `0102` | first item of the program |
-| `L<<12 \| n<<7 \| 051` | statement marker: line L, the n-th statement on the line |
-| `s<<12 \| 000` | identifier in name slot s (the word at 02144+s) |
-| `s<<12 \| 024 / 023 / 0105` | integer / real / octal constant at 02144+s |
-| `k<<12 \| 025` | string at word 04000+(k−01634) of the pool |
-| 001–017, 043 | operators IMPL OR AND NOT < ≤ ≥ > = ≠ + − × / ↑ ≡ |
-| 076 / 077 | TRUE / FALSE |
-| `n<<7 \| 022` | `:=` with n left parts |
-| `a<<12 \| n<<7 \| 021` | subscripted variable a with n subscripts |
-| `p<<12 \| n<<7 \| 020` | call of p with n arguments |
-| 030 / 031, 054 / 053 | THEN / ELSE; end of IF…ELSE / end of IF without ELSE (053 I) |
-| 026 | GOTO |
-| 055, `v\|032`, 034, 035, 056, `…\|033`, `d\|052` | FOR: start, control variable, step-until, while, plain element, DO, end |
-| 036 / `d<<12 \| 037` | block begin (only for a block with declarations) / block end, d = its D-list address |
-| `d<<12 \| 060` | label definition |
-| `d<<12 \| n<<7 \| 040` | array segment of n arrays; bound expressions follow, then `dims<<7 \| 0104` |
-| 042, `d\|061`, `d\|062` | procedure, VALUE, end of procedure body |
-| 044 | syntax-error marker |
+- `-c` or `-S`: one object or assembly file per input.
+- Otherwise one link of all inputs (`.alg`, `.a60`, `.ll`, `.s`, `.o`, `.a`) with
+  `libalgol.a` and `-lm`. The runtime is found in `../runtime` or `../lib` from `algc` (for
+  `--target=T`, in `T/` there), or in `$ALGC_RUNTIME`.
 
-**D-list words** (V):
-- The type is in the top bits, the name slot in the low 12 bits.
-- INTEGER `2044 4000…`, REAL `2024 4000…`, BOOLEAN `2104 4000…`, LABEL `2010 4000…`.
-- A procedure without a type: `2002 0000…`.
-- Arrays: REAL ARRAY `2021 0000…`, with the dimensions in the info field.
-- A VALUE formal adds 04000 to the top 12 bits.
-
-### D-list structure (V)
-
-The D-list is a stack growing down, so a scope's words lie above its header word:
-- A **header** word (no bit 47) opens a scope `h+1 … end−1`, `end` in its low 12 bits; it is
-  pushed when the scope ends, so its address is below everything in it:
-  - a block: bit 48 when it has arrays or 'COMMON' variables;
-  - a procedure (bit 45): its descriptor is the word just below the head; the formals are
-    the last `count` words of the scope (the first formal at `end−1`), the declarations of
-    its body below them;
-  - a FOR statement (bit 46): the labels of its body.
-- A scan of a scope (pass 2, 17455) takes the descriptors and skips a nested scope by
-  jumping to the end in its header.
-- The program's outer block is one of these scopes; M3 after pass 1 is the word below it,
-  where pass 2 opens the scope of everything up to 06000: the 'CODE' procedures and
-  'COMMON' block names declared before the program, and the standard identifiers.
-- A formal is `DESCRIPTOR | BIT46` until the VALUE list turns it into `BY_VALUE`; a simple
-  specification adds bit 48. Simple variables carry `BY_VALUE | SIMPLE`, arrays their
-  dimensions and procedures their formals at bits 20–16.
-- Pass 2 changes these words (bindings in bits 33–21, marks), so `Context::dlist` keeps the
-  D-list as pass 1 leaves it, and `Symbols` (src/symbols.h) decodes it.
-
-### Card input and characters (V)
-
-- **Reading.** The monitor's `READ*` reads each card into 02010… in 8-bit ISO (KOI-7). The
-  listing prints the card through `AG27652`, which uses G30001 for the line number.
-- **Counters.** Line counter 02060; card count `AD01736+3` (`KAPT:`).
-- **Columns.** Only 12 words, 72 columns, are scanned. Columns 73–80 (02024/02025) go only
-  to the listing.
-- **Blanks.** Words of six blanks are skipped, except inside strings.
-- **Source end.** A `*END F` card, or no more cards, before `'EOP'` prints `HET ′EOP′ !`.
-
-### Lexer `AG15414` (V)
-
-- **Dispatch.** A 128-entry character table at 16514 gives each character a dispatch class.
-  Letters (Latin, Cyrillic, lower case) start identifiers.
-- **`'` (quote).** Followed by a letter: a keyword. By `'`: a string `''…''`. By `(`: a
-  string `'(…)'`. By a digit: an octal constant.
-- **Two-character symbols.** `:=` 022, `**` 017, `(/` = `[`, `/)` = `]`.
-- **Single-character operators at KOI-7 codes 020–032:** ∨ ∧ ⊃ ¬ ≡ ≠ ≤ ≥ (see
-  [encoding.md](encoding.md)).
-- **Names.**
-  - Only the first 6 characters count, so `LONGNAME1` and `LONGNAME2` are the same name.
-  - Hash `((c1&037)<<4)|(c2&017)`, linear probing upward from 02144.
-  - A keyword is a name word followed by `7760 0000 0000 00cc`. `cc` = 0177 is `'COMMENT'`,
-    allowed only after `;` or `'BEGIN'` (otherwise ERROR 06). `cc` = 0377 is `'COMMON'`.
-  - Standard names (`PRINT`, `SIN`) have no code word: they are plain identifiers.
-- **`'COMMON'`** (`*1155B`) is read by the lexer itself: `'COMMON' /BLOCK/ V1, V2(D1),
-  V3(D1,D2,D3);` (or `.,`), one block per statement, up to 3 decimal bounds per variable.
-  Each entry of the table at 27245 has 3 words: the name; D-list pointer << 36 | name slot
-  << 24; the size (`D1·D2·D3`). For the block the second word is its length. The block name
-  goes into the name table and the D-list (`06402… | slot`); a variable gets the first free
-  slot of its hash not taken by another entry, where its declaration will be interned. Errors
-  print one of 7 messages (3 words at 16045 + 3n: `HET KOCOЙ ЧEPTЫ`, `ИMЯ COMMON > 6 CИM`, …)
-  and then ERROR 05. The declarations of the variables must follow the statement in the same
-  order, or pass 2 prints `ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA X`. The block becomes
-  the object symbol `*BLOCK*` of type 0670/0470; the variables are bound to it at run time by
-  `A/COMMON`.
-- **Text after END.** It is skipped up to `;`, END, ELSE or EOP. A non-letter in it prints
-  `WARNING SYMBOL AFTER END` once.
-- **Numbers.**
-  - Integers are unnormalized floats with exponent 2^40. Above 2^40−1: ERROR 10.
-  - Reals: `1.0⏨19` gives ERROR 11.
-  - Equal constants share one slot. New constants are allocated downward from 03770; the
-    presets are 0, 1, 2… at 03771–03777.
-- **Strings.** 6 ISO characters per word, ending with a zero byte; each word goes out
-  through G27220. Inside a string, `'ooo'` (one to three octal digits) is the character with
-  that code, and blanks are kept. G27220 stores at 04000–04377 and writes each full sector to
-  drum 27 zone 34; 02050 counts the words (`01634 + n` in bits 24–13).
-- **Character classes.** The table at 16514 has several fields per character, each a
-  dispatch: bits 4–1 the first character of a symbol (letter, quote, `.`, `:`, `*`, digit,
-  `(`, `/`, `"`, a one-character symbol with its code in bits 24–18, invalid, `,`); bits 6–5
-  the character after a quote (quote, other, letter, digit); bit 7 letter or digit; bits 10–8
-  the text after END; bit 11 not a letter; bits 13–12 in a number (other, `⏨`, `.`, digit);
-  bits 15–14 the sign of an exponent; bit 16 octal digit.
-- **Number conversion.** Digits accumulate as floating point (`×10 + d`, mode R = 2) up to
-  2^40; later digits only change the scale. A real is then multiplied by 1.25^k and 8^k (the
-  exponent field) or divided by 10 k times; `src/pass1_lexer.cpp` follows it step by step.
-- **`.,` is `;`.** After a number, `.,` ends it and the next `,` reads as `;` (02047).
-
-### Errors `AG17015` (V)
-
-1. **Count.** `FLGEX*` += 1. At 30 errors it prints `30 ERRORS , COMPILATION INTERRUPTED`
-   and stops.
-2. **Message.** It prints `ERROR nn CLASS`, with the number (from M8) in decimal. The class
-   of error n is `(word[17166 + (n>>3)] >> 6·(n&7)) & 077`, an index into the text pieces at
-   17106–17165.
-3. **Recovery.** It skips to `;` or END, emits item 044, and resumes at the point saved by
-   `AG15102`. On `'EOP'` inside the program: `↑EOP↑ BEFORE END OF PROGRAM`.
-
-| n | Class |
-|---|---|
-| 1, 2, 4, 5, 6 | SYMBOL (bad character, bad or missing quote, unknown keyword, misplaced COMMENT) |
-| 3, 7, 12, 13 | ILIST / CLIST / SLIST / DLIST OVERFLOW |
-| 8 | STRING |
-| 9, 14, 15 | NUMBER |
-| 10, 11 | INTEGER / REAL OVERFLOW |
-| 19–27 | EXPRESSION |
-| 30, 34, 46 | STATEMENT (34: `'OWN'`, or a declaration among statements) |
-| 31–33 | IF STATEMENT |
-| 35–39 | FOR STATEMENT |
-| 40, 47, 54–56 | DECLARATION |
-| 48–53 | ARRAY DECLARATION |
-| 57–60 | SWITCH DECLARATION |
-| 70–84 | PROCEDURE HEAD |
-| 90–94 | I/O STATEMENT |
-| 95 | PROGRAM HEAD |
-| 99 | PROGRAM END |
-
-### The listing of a card (AG27652)
-
-- Normally: columns 73–80, the line number `%4u`, `. `, columns 1–46; then a second line of
-  15 blanks and columns 47–72, when they are not blank.
-- With `*call setftn:one,long`: `%6u.`, five blanks and all 80 columns. (`long` alone, or
-  `one` alone, keeps the normal form; `one` makes the empty lines of G01713 visible.)
-- With `*NO LIST` a card is printed only before its first error message.
-- Ours prints the `setftn:one,long` form.
-
-### The parser in C++
-
-`src/pass1_parser.cpp` is recursive descent: a function per construct (program head,
-statement, block, declarations, procedure heading, FOR, I/O statements, expression,
-designator), with the items, D-list words and register values (M3, M4, `rau`) of the
-original in its order.
-
-After a syntax error the original (SYNERR, AG17015) resumes at a checkpoint: the address in
-02106, with the stack cut to the depth in 02107. AG15102 sets both and writes a statement
-marker. A statement (AG14020) sets the point after itself in its caller, at its start and
-again at its end (it saves and restores the pair), so an error after a statement and before
-the next checkpoint resumes there, in the caller; 'BEGIN', the declarations of a block
-(14504), an error at its end (14265), the program head (13760) and the end of the program
-(14011) set their own. A checkpoint always lies in a routine still running. In C++ the
-program, each statement and each procedure heading run as frames (`Pass1::frame`): the error
-is reported where it happens, then unwinds (`Resume`) to the frame that owns the checkpoint,
-which goes on at its label.
-
-### Main routines
-
-| Address | Role |
-|---|---|
-| 13666 | init: start timer (G27645), banner, cursors, emit `0102` |
-| 14020 | block / compound statement |
-| 14114, 14137, 14141 | IF, GOTO, assignment or call |
-| 14262 | declarations (`'COMMON'` through `AD27245`) |
-| 14510 | procedure heading |
-| 14655 | FOR statement |
-| 14762, 15037 | expressions (recursive), designators |
-| 15102, 15104, 15114, 15120 | set the resume point, emit a statement marker, push onto the D-list, emit an item |
-| 15414 | lexer |
-| 17015, 17066 | errors |
-| 27645 / 27646 | read the clock for `BPEMЯ` |
-| 27652 | print the current source line |
-
-## Pass 2: G17223
-
-It reads the pass-1 stream **backwards** (last item first) and writes its own stream
-backwards too, through 27114, so pass 3 reads it forwards. (V) C++ (`Pass2`,
-src/pass2.cpp): the streams are vectors; the handlers are chained by the continuation
-addresses of the original, the return addresses of subtrees kept on its own stack, and
-members named after their role hold what the registers M1–M6, M9, M14 carried from one
-routine to another.
-
-### Identifier table
-
-- The word at 02144+slot.
-- Pass 2 first saves 02000–03777 (the names) to drum 26 zone 0. It then reuses each word: 0
-  = undeclared, 1 = undeclared and already reported, otherwise the address of the visible
-  descriptor.
-- To print a name it swaps the saved page back in. (V)
-
-### Descriptors (D-list words, V for the values, I for the meaning of the bits)
-
-| Bits | Meaning |
-|---|---|
-| 47 | this is a descriptor |
-| 46 | formal parameter |
-| 48+47+46 | formal parameter called by name |
-| 48 | also set by pass 2 as a "used/assigned" mark |
-| 44 / 43 / 42 / 41 / 40 | string / boolean / integer / real / label |
-| 39 / 38 / 37 | simple / procedure / array (a switch is 40+37) |
-| 36 | simple variable or procedure without parameters |
-| 16 up | number of parameters or dimensions |
-| 32..21 | the shadowed table entry while the block is open; the array record at the end of the pass |
-| 12..1 | name slot |
-
-A block header has bit 48 set, and its low 12 bits give the end address.
-
-### Scopes and checks
-
-- **Scopes.** The stream is reversed, so END (037) opens a scope and BEGIN (036) closes it.
-  - END (17511): the block at M3 becomes the current one (02030, the old one pushed). For a
-    block header (bit 48) the item goes out with the old 02004, which is pushed and replaced
-    by M3; otherwise 0 is pushed.
-  - Opening (17455): each descriptor from the header up to its end (header & 07777) is bound
-    to its slot (02144+slot = its address) and keeps the binding it shadows in bits 33–21.
-    A non-descriptor word is a link: the scan goes on at its address (nested blocks are
-    skipped). If the shadowed binding lies between the header and its end: TWICE DECLARED.
-    After it the original leaves the slot in M3 and checks the rest of the scan against the
-    "block" at the slot, whose end word is in low memory (the resident monitor): it reports
-    later declarations that shadow an outer binding, or misses real ones. Ours keeps the
-    header and reports every redeclaration in the block, so such listings differ.
-  - BEGIN (17523): drops two stack words; the popped value, if not 0, restores 02004 and the
-    item goes out with 02030. Closing (17475) gives every slot of the block its shadowed
-    binding back; 02030 gets the outer block.
-- **Identifiers (17377).** The slot's binding goes to M4: 0 is undeclared (reported, the
-  slot gets 1), 1 is already reported. A binding inside the block at 02005 is ILLEGAL USE.
-  Otherwise M5 = bits 7–5 and M6 = bits 4–1 of the table at 21720, indexed by the
-  descriptor's bits 44–41 and by its bits 46, 45, 38, 37, 36 (packed in that order).
-- **The parser (V).** 17352 reads the previous item into M1 (code), M2 (count), M3
-  (operand). 17445 parses a subtree: it reads, pushes M12 and the flag 02027, clears the
-  flag, and jumps through the high half of 21720+code; 17446 does the same with the item
-  already read. A handler returns through 17451 (the flag ORed back, the saved M12), after
-  reading one item ahead. Types (M5): 1 real, 2 integer, 3 boolean, 4 string, 5 octal.
-- **Expressions (V).**
-  - Operands: an identifier writes 017 (a value), 021/0107/022 (procedures without
-    parameters), 024 (a label; bit 48 of its descriptor marks a use outside the procedure
-    at 02004); constants write 023 with their slot (TRUE, FALSE are slots 01625, 01624),
-    strings 070. An operand alone as a statement is ILLEGAL USE.
-  - + − × /: the matrix at 17667 combines the types (0 alike, 1 or 2 integer with real, 3
-    error); the left operand of a mixed pair, and the right operand of / when integer, get
-    064 (to real). The item comes from the operator's word at 20142: the real code in bits
-    30–25, the integer one in bits 36–31 (/ has none), the text for the message. Only +
-    takes strings (the item at 22137).
-  - **: unary signs before the exponent are dropped and counted; a constant exponent
-    1–63 gives `c<<12 ^ 0152` (real base) or `0153` (integer), a negative one `1 / x**c`
-    (023 of slot 01632, 064, 016); an octal base `0352` with 64±c. Otherwise 0147, 0150
-    (after 064 for int**int), 0151 (int ** a constant ≥ 64), 0347, 0350 (octal).
-  - Boolean operators need booleans; on octal OR stays 002, AND and NOT become 0203, 0204.
-  - Relations: real, integer, string; octal only = and ≠; integer with real = ≠ become
-    0105, 0106; strings `(code−4)<<12 ^ 0157`.
-  - Unary −: 047 real, 026 integer; unary + writes nothing.
-- **Statements (V).**
-  - `:=` (count n = left parts − 1): the right side first; each left part is checked
-    against the type before it (063, 064; TYPE ERROR ':=' after a right side of type 0) and
-    written as 0100 (a variable, a function's name inside its body: bit 17 of the word after
-    its descriptor marks the result assigned) or 0101 (a formal by name: bit 46 marks it
-    assigned, bit 45 forbids it). A left part that is no variable: ILLEGAL LEFT PART.
-  - IF: the condition must be boolean; it is written after the branches, then 027. A
-    condition ending in a relation becomes a compare-and-jump 0130–0134 (= on an integer and
-    a real: 0105). A conditional expression (045 … 054) writes 031 between its branches; an
-    integer and a real branch give a real result.
-  - FOR (055 v 032, elements, 033, body, d 052): the control variable must be a simple
-    variable or a formal by name of a number type (032, 0141). Elements: a variable or a
-    constant of its type as is (017, 022, 023), else the expression and 0136 (0135 for a
-    formal by name), with a conversion. STEP-UNTIL ends with 0140 (real) or 034 (integer);
-    an integer constant start and step give 0137 and the step is interned without its
-    exponent bits. A FOR with several elements gets bit 48 in its block header.
-  - SWITCH: 0146, the item, the elements (a label 0142, marked used; an expression 0144),
-    0143; each must be designational (TYPE ERROR SWITCH).
-  - Array segments: the bounds are parsed with the block's own names hidden (02005); a block
-    with arrays gets bit 16 and an item 0102 once. Constant bounds (upper below 256, lower
-    below 64) make an array record `bounds<<24 | item` at 04000…, linked at the end.
-  - A syntax-error marker (044) skips items up to the next statement marker.
-- **Procedures (V).**
-  - A procedure (042, read after its body 062) closes its scope; a function whose result
-    was never assigned (bit 17 of the word after its descriptor) gets NO ASSIGNMENT TO. A
-    procedure declared in the outermost block skips the jump around it (0146 … 0145).
-  - VALUE (061): each value formal loses bit 48 and is written with its item (0154 for a
-    real); labels and strings are not allowed (ILLEGAL VALUE PARAMETER). 0127 … 0155.
-  - A call (020) checks the number of arguments (a formal procedure takes it from its
-    first call) and writes 020 p. Arguments are read last to first, M9 walking the
-    formals: to a formal by name an expression is parsed against the formal's type, then
-    0120; otherwise it is classified by its last item: an identifier (0112 variable, 0115
-    array, 0113 procedure, 0114 label or formal), a constant (0111), a string (0156), an
-    expression as a thunk (0116 … 0117, a level down in 02022). The table at 21075 (row by
-    actual kind, a 4-bit field by formal kind) says which marks pass between them and when
-    the dimensions or parameter counts must agree: else NO ACTUAL-FORMAL CORRESPONDENCE.
-    0110 ends the call.
-  - Non-ALGOL procedures: standard ones by their number (PRINT, LENGTH, the functions of
-    one number, and two others whose arguments become left parts); 'CODE' ones write
-    0126 (065 typed) with p and n, then each argument through 21122 (0122 variable, 0123
-    array, 0125 expression, 0124 element, 066 string; 074 for strings), 0121 at the end. A
-    label argument: LABEL AS ARGUMENT OF NON-ALGOL CALL.
-  - I/O statements (063–074, 0100–0103) and string slices (050) check their arguments'
-    types (ILLEGAL ARGUMENT OF I/O STATEMENT, ILLEGAL INPUT OF).
-  - Subscripts: the item `a<<12 | n<<7 | c` first, then for each subscript (read last to
-    first) a constant below 2048 as `045 c`, `i+c`, `i−c` (c below 2048, 64) as i then
-    `030 c` (−c mod 4096), else the expression and `030 0`. A real subscript gets 063 (to
-    integer). A formal array takes its dimensions from its first use.
-- **Type checking.**
-  - Recursive descent over the reversed postfix, driven by a dispatch table at 21720 with
-    one word per input code.
-  - The type comes back in M5 (0 none, 1 real, 2 integer, 3 boolean), the kind in M6
-    (0 simple, 1 array or switch, 2 procedure with parameters, 3 procedure without).
-  - One message per subtree; sibling subtrees each report. An undeclared identifier is
-    reported once, at its last use.
-- **Start of the pass (17223).**
-  - The read cursor 02000 is the write cursor of pass 1 + 0200000; the first read returns
-    the half after the stream (nothing), so the last item is read next. The write cursor
-    becomes the constant at 22113. 02004 and 02026 get M3, 02022 M3<<12.
-  - 'COMMON' elements (the table at 27245, a zero second word ends it; block entries have
-    slot 0): the name slot must hold the element's name, else `**HECOOTBETCTBИE …` (not
-    declared); the declaration at D3 must be in this slot, else `*****ПEPEПYTAH ПOPЯДOK …`.
-    Each message adds 1 to `FLGEX*`.
-  - Each D-list declaration (05777 down to a zero word, block headers skipped) whose slot is
-    a 'COMMON' element gets bits 39–34 cleared and bit 40 set, plus 0100000 when it has no
-    dimensions.
-  - 02025 = 02003, 02032 = 04000 (the array records); page 02000 goes to drum 26 zone 0;
-    the identifier slots below 02003 are cleared; [M3] = 06000 and the outer scope is opened
-    (17455); the six words 21670… (`PROGR/END`, the position before any statement marker)
-    go to 02011; EOP (075) is written.
-- **End of the pass (22027).** At the first item: for each array record at 04000 up to
-  02032, its descriptors (count in bits 11–7, the first at bits 23–12) get the record address
-  in bits 33–21 and bit 48. Then `* * INCORRECT ALGOL PROGRAM * *` (22051–22056, through
-  27733) if `FLGEX*` is set, and the return into the driver pushed at the start.
-
-### Messages (V)
-
-Pass 2 prints its messages as it processes the stream from end to start, so they come out in
-reverse order.
-- **Position.** `NEXT STATEMENT IS l/s` is the last statement marker (051) read. Reading
-  backwards, that is the start of the statement after the error. At each marker (17535) the
-  line (M3) and the statement (M2) go through G30001 into 02015 (<<16) and 02016 (<<32) of
-  the position text at 02011, which reads `PROGR/END` before the first marker.
-- **Printing.** The data of every message is at 02007: the name, a zero word, the position
-  text. 17420 prints the format in M13 about the name of slot M3, fetched from the names
-  saved on drum 26 zone 0 (page 02000 goes to zone 1 meanwhile); 17426 prints without
-  fetching. Then 17430: M4 = M5 = 0, and the first message of a subtree sets `FLGEX*` = 1 and
-  the flag 02027, which keeps the others of the subtree quiet. Return through M8.
-- **Expansion.** The texts are ISO bytes; a byte 0200+k inserts argument k. G27733 expands
-  and prints them.
-
-| Address | Text |
-|---|---|
-| 21676 | `IDENTIFIER '…' IS NOT DECLARED` |
-| 21704 | `ILLEGAL USE OF IDENTIFIER '…'` |
-| 21712 | `TWICE DECLARED IDENTIFIER '…'` |
-| 17655 | `TYPE ERROR IN CONNECTION WITH …` (`'+'`, `'**'`, `':='`, `'IF'`, `'FOR'`, `SWITCH`, `INDEX`, `GOTO`, `BOOLEAN OP.`, `RELATION`) |
-| 17563 | `NO ASSIGNMENT TO '…'` |
-| *0534B | `ILLEGAL LEFT PART OR INPUT ELEMENT` |
-| *1214B, *1257B | `ILLEGAL ARGUMENT OF I/O STATEMENT`, `ILLEGAL INPUT OF '…'` |
-| *1520B | `NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN '…' AND '…'` |
-| *1731B | `LABEL AS ARGUMENT OF NON-ALGOL CALL` |
-| *2007B, *2044B, *2063B | `ILLEGAL VALUE PARAMETER`, `ILLEGAL ARGUMENT OF LENGTH`, `… OF PRINT` |
-| 22051 | `* * INCORRECT ALGOL PROGRAM * *` |
-| 17322 | `*****ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA X`: the elements of a block are declared in another order, or one is a procedure |
-| 17311 | `**HECOOTBETCTBИE B OПИCAHИЯX COMMON ЭЛ-TA       X`: an element is not declared |
-
-Quirk: using an array formal parameter inside a procedure body gave `ILLEGAL USE … NEXT
-STATEMENT IS 304/ 2` with a bogus line number (not investigated).
-
-### Output stream (V)
-
-Written backwards, so pass 3 reads it forwards. `d` is a descriptor (D-list) address, `s` a
-constant slot; items with an operand carry it in bits 24–13.
-
-Read forwards it is mostly in prefix order: an operator before its operands, a statement's
-item before its parts (`0100 v` then the value; `027` or `0130`–`0134` then the condition,
-the branches, `031`, `054`, or `053` without ELSE). Exceptions: the subscripts come before
-their array item (`045`/`030` …, then `044`, `046`, `025` or `0103`), the arguments of a call
-between its end item and the procedure (`0110` … `020 p`, `0121` … `0126 p`/`065 p`/`073`).
-Blocks without arrays leave no items; nor do compound statements. The order was found on
-the test programs and is what `src/ast_builder.cpp` reads.
-
-| Code | Item |
-|---|---|
-| 017, 022 | value of a variable; of a formal by name |
-| 021, 0107 | call of a procedure without parameters (0107: marked bit 48) |
-| 024 | a label |
-| 023, 070 | constant `s`; string |
-| 063, 064 | real to integer; integer to real |
-| 013–016 | real + − × / |
-| 067, 076, 077 | integer + − × |
-| 0137 (step), 0152, 0153, 0352 | `c<<12`: real or integer to a constant power 1–63; octal shift |
-| 0147, 0150, 0151, 0347, 0350 | ** by types |
-| 047, 026 | real, integer negation |
-| 001–012, 043 | boolean operators, relations as read |
-| 0105, 0106 | = ≠ of an integer and a real |
-| 0157 | `(code−4)<<12`: string relation |
-| 0203, 0204 | octal AND, NOT (OR stays 002) |
-| `a<<12 \| n<<7 \| 044`, 046, 025 | element of array `a` (046 in a left part, 025 a switch) |
-| 045, 030 | `c<<12`: constant subscript; subscript plus c (−c mod 4096) |
-| 0250, 050 | string element, slice |
-| 0100, 0101 | left part: variable, formal by name |
-| 031, 054 | conditional expression: between the branches, its end |
-| 027 | IF (after the condition) |
-| 0130–0134 | compare-and-jump conditions |
-| 055, 032, 0141, 033, 052 | FOR start, control variable (simple, by name), DO, end |
-| 056, 035, 034, 0140 | FOR elements: plain, WHILE, STEP-UNTIL integer, real |
-| 0137, 0136, 0135 | integer constant step; expression element; by-name element |
-| 036, `d<<12 \| 037` | block begin, end |
-| 0102, 040, 0104 | block with arrays; array segment `a<<12 \| n<<7` (n arrays at a … a+n−1); end of bounds `k<<7` (k dimensions) |
-| 0146, 0145 | jump around a procedure body, its target |
-| 0142, 0144, 0143 | switch elements: label, expression; end |
-| 0127, 0154, 0155 | VALUE: start, a real formal, end |
-| `p<<12 \| 020`, 0110 | call, its end; `n<<12 \| 057` LOAD with n arguments |
-| 0111–0116, 0117, 0120, 0156 | arguments: constant, variable, procedure, label, array, thunk start / end, expression, string |
-| 057 | `n<<12`: the standard function with an expression argument |
-| 0126, 065 | non-ALGOL call (typed), then 0121–0125, 066, 074 per argument |
-| 071, 072 | standard procedure items: `071 n` SIN…ENTIER (n 0–8), LENGTH (0100); PRINT of an expression (010+type), of an array (017+type, then `017 a`), READ of a variable (072+type, then `017 d`); `072` NEWLINE (057), NEWPAGE (016) in PRINT; READ to left parts (051+type, after them); in I/O lists a string variable (`071 030`), an array (`071 031`), after an element (`072 027`), the end (`072 032`) |
-| 0473, 0273 | I/O statements (`073 c`, c 060 for 'PRINT' and 'WRITE'): after `0121` and the parameters, then the list |
-| `L<<12 \| n<<7 \| 051` | statement marker |
-
-## G30001 — integer to text (V)
-
-- Call: `VJM 30001`, number in A.
-- Result: 6 ISO characters, right-justified with leading spaces: `"%6u"` of
-  `n & 06777777` below a million. It divides by 10^5 … 1 in floating point; each digit is
-  the quotient & 017 XOR `0`, so above a million the first "digit" is wrong.
-- Clobbers M14 (the fill character, blank or `0`) and cells 025–027 (the remainder, the
-  divisor, the text without the `0` of the last digit).
-
-## G27733 — formatted line (V)
-
-- Call: the format address on the stack, the data address in A, `VJM` through M13. It pops
-  the format and the word under it, and returns the data address in A.
-- Builds the line in a 22-word frame on the stack, saving M12, M3, M4, M1, M2, M13 under it,
-  and prints it through 01644 with indent 1.
-- Format bytes: 001–0177 a literal character; 0200+n inserts data word n (an ISO string of
-  up to 6 characters, ending with a zero byte); 000 ends the format.
-- Prints through `A01644`.
-
-## G27645
-
-`27645`/`27646` read a clock (`*50 070100`) into 02141/02140; `27652` prints a source line.
+The runtime (`runtime/`, C) has `main`, which calls the program's `algol_main` and then ends
+the output; the input and output of Algol-GDR (`print.c`, `read.c`, `format.c`), IFIP
+(`ifip.c`) and the X1 (`x1.c`); strings, arrays, arithmetic and the checks.

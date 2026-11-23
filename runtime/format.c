@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// Input and output with a Fortran format: ''(I3, F7.2, 10HTEXT, 2X, A, /)''.
+// Input and output with a Fortran format: `(I3, F7.2, 10HTEXT, 2X, A, /)'.
 // Edits: Iw, Fw.d, Ew.d, Gw.d (as E), Aw, Lw, nX, nH…, '…', /, repeat counts and
 // groups. When the items outrun the format it starts again with a new record;
 // a statement ends its record. No carriage control: every column is printed.

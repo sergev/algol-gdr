@@ -1,102 +1,129 @@
-# Source encoding
+# Source and text encoding
 
-> History: this describes the original compiler and its C++ rewrite on the `besm6` branch.
-> `algc` on `main` reads UTF-8 directly: see the source language in CLAUDE.md.
+How `algc` reads the characters of a program, and what text a compiled program reads and
+writes. The syntax built from these symbols is [algol60.asdl](algol60.asdl); how the
+original BESM-6 compiler read KOI-7 cards is in this file on the `besm6` branch.
 
-How source text reaches the original compiler, what it accepts, and what our compiler will
-accept in UTF-8.
+## The source file
 
-## The path of a source line
+- The file is UTF-8 (`src/source.cpp`). A bad sequence stops the compiler:
+  `FILE:LINE: invalid UTF-8 sequence`.
+- Lines end with LF or CR LF and have no length limit. The lexer works on code points, one
+  line at a time; `′` (U+2032, the quote of the BESM-6 listings) is read as `'`.
+- Blanks (space, tab, CR, FF) and line ends separate nothing outside strings and keywords
+  of the `_word` form: `noun phrase` is the identifier `nounphrase`, `1 000` is 1000.
+- Messages give `file:line:column:`; the column counts code points from 1, a combining
+  underline among them.
 
-1. **The job file** is UTF-8. `dubna` reads it line by line (`Machine::load_script`).
-2. **KOI-7.** `utf8_to_koi7` (`dubna/encoding.cpp`) converts each line:
-   - lower-case Latin letters become upper case;
-   - Cyrillic letters that look like Latin ones become those (`А`→`A`, `В`→`B`, `Е`→`E`, …),
-     and the others get their KOI-7 codes;
-   - characters it does not know are dropped.
-3. **COSY.** The line is packed in COSY form and stored on drum 1, where the monitor's card
-   reader finds it.
-4. **Card.** The line is treated as a punched card: only **columns 1–72** belong to the
-   program, and columns 73–80 are ignored. Text past column 72 is lost without a warning.
-   Check: a comment whose `;` fell in column 73 swallowed the declarations after it.
-5. **Listing.** The compiler prints keywords with `′` in place of `'`, and letters in upper
-   case: `′BEGIN′`, `PRINT(′′HELLO, WORLD!′′)`. String constants keep only upper case, so the
-   output of `print(''Hello, World!'')` is `HELLO, WORLD!`.
+## Two forms
 
-## What the original compiler accepts
+A file with an underlined letter anywhere (U+0332, combining low line) is in the
+publication form; otherwise it is in the `_keyword` form. The file name does not matter
+(`.alg` and `.a60` are both Algol), and the form changes only how keywords are written:
 
-Keywords are words in quotes: `'BEGIN'`, `'INTEGER'`, `'POWER'`, … The full list, with
-internal codes, is in the hash table at 02166 (see [passes.md](passes.md), data set up by the
-driver). It is checked on the first 6 characters (`'NOTGREATER'` → `NOTGRE`).
+| | `_keyword` form | Publication form |
+|---|---|---|
+| Keyword | `_begin`, `_BEGIN`, `_Begin`: `_` and letters and digits up to a blank or other character | underlined letters: `b̲e̲g̲i̲n̲`; `g̲o̲ t̲o̲` is one keyword; a doubled underline is accepted |
+| `print` | Algol-GDR's `PRINT` | the X1 procedure |
 
-Symbols, tested by compiling `PRINT(…)` under `dubna`:
+Both forms take the same keywords, in any case:
 
-| Symbol | Original Algol-GDR | Use instead |
-| --- | --- | --- |
-| `+ - * / < > = ( ) [ ] , ; :` and `:=` | accepted | |
-| `≠` | accepted | `'NE'`, `'NOTEQUAL'` |
-| `⏨` | accepted: exponent, `1.5⏨-3` | (`@` becomes `°`, which is rejected) |
-| `×` | `ERROR 01 SYMBOL` | `*` |
-| `÷` | read as `≥`: `dubna` gives it code 032, which the lexer reads as `≥` (`7 ÷ 2` printed `TRUE`) | — |
-| `↑` | `ERROR 01 SYMBOL` | `'POWER'` |
-| `≤ ≥` | `ERROR 01 SYMBOL` | `'LE'`, `'GE'` (`'NOTGREATER'`, `'NOTLESS'`) |
-| `¬ ∧ ∨ ⊃ ≡` | `ERROR 01 SYMBOL` | `'NOT'`, `'AND'`, `'OR'`, `'IMPL'`, `'EQUIV'` |
+`algol and array backspace begin bits boolean code comment common decode div do else encode
+end endfile eop eq equal equiv false for ge goto greater gt if impl integer label le less lt
+ne not notequal notgreater notless or own power print procedure punch read real rewind step
+string switch then true until value while write`
 
-Other word operators: `'LT'`, `'LESS'`, `'GT'`, `'GREATER'`, `'EQ'`, `'EQUAL'`.
+A keyword in quotes, as the original wrote it (`'BEGIN'`), is an error: `Write a keyword as
+_BEGIN, not in quotes`.
 
-**Why most symbols fail.** The lexer itself accepts single-character operators at these
-KOI-7 codes (pass 1 analysis, character table at 16514):
+## Letters, digits, identifiers
 
-| Code | 020 | 021 | 022 | 023 | 024 | 030 | 031 | 032 |
-|---|---|---|---|---|---|---|---|---|
-| Operator | `∨` | `∧` | `⊃` | `¬` | `≡` | `≠` | `≤` | `≥` |
+- Letters: Latin (`A`–`Z`, `a`–`z`, and U+00C0–U+024F but `×` and `÷`), Greek and
+  Cyrillic (U+0370–U+04FF). Digits: `0`–`9`.
+- An identifier is a letter and letters and digits, of any length, kept as written and
+  case-sensitive: `Count` and `count` differ.
+- Standard identifiers (`sqrt`, `PRINT`, `outreal`, `PRINTTEXT`, …) are recognized in any
+  case; a declaration of the same name hides them.
 
-`dubna` gives the Unicode symbols different codes (`∨`→036, `∧`→`&`, `≤`→016, …), so only
-`≠` arrives where the lexer expects it. And `‘` (U+2018), which `dubna` maps to 020, does work as `∨`: `A ‘ B` gave TRUE, `B ‘ B` FALSE.
-The two tables disagree; our compiler simply accepts the Unicode symbols.
+## Operators and delimiters
 
-Strings: `''text''` or `'('text')'`.
+| Symbol | Also written |
+|---|---|
+| `×` | `*` |
+| `/` | |
+| `÷` | `_div` |
+| `↑` | `^`, `**`, `_power` |
+| `<` | `_lt`, `_less` |
+| `≤` | `⩽`, `_le`, `_notgreater` |
+| `=` | `_eq`, `_equal` |
+| `≠` | `_ne`, `_notequal` |
+| `≥` | `⩾`, `_ge`, `_notless` |
+| `>` | `_gt`, `_greater` |
+| `¬` | `_not` |
+| `∧` | `&`, `_and` |
+| `∨` | `_or` |
+| `⊃` | `_impl` |
+| `≡` | `_equiv` |
+| `[` `]` | `(/` `/)` |
+| `;` | `.,` |
+| `+ - ( ) , : :=` | |
 
-Limits found:
-- `1.0⏨20` gives `ERROR 11 REAL OVERFLOW`, because the BESM-6 range ends near 10¹⁹.
-- `'OWN'` is in the keyword table, but gives `ERROR 34 STATEMENT` wherever it is used.
+Any other character outside a string or comment is an error: `Illegal character 'X'`.
 
-## Our compiler
+## Numbers
 
-`src/card.cpp` turns each source line into a card exactly as `dubna` does (80 KOI-7
-characters, blank-padded, six per word, like 02010… after `READ*`; characters `dubna` does
-not know are dropped). Strings, comments and the listing are then those of the original:
-`''A∧B''` prints `A∧B`, and `@` is the letter 0100 (printed `°`), not an exponent.
+- Integers: digits, up to 2⁶³ − 1. Reals: digits with `.` and a fraction, and an exponent
+  after `⏨` (U+23E8): `1.5`, `.5`, `1⏨3`, `⏨-2` (that is 10⁻²). The result is an IEEE
+  double; a constant that overflows it is an error.
+- A number ending in `.,` is followed by `;`.
+- Octal constants: `'777'`, up to 16 octal digits, a value of type `_bits`.
 
-The lexer (`Pass1::unicode_operator`) takes the codes `dubna` gives `∧ ∨ ⊃ ¬ ≡ ≤ ≥ × ↑`
-(`&`, 036, 034, 037, 035, 016, 017, 006, 026) as those operators, only where the original
-gives `ERROR 01 SYMBOL`: programs the original accepts are compiled the same.
+## Strings
 
-Only columns 1–72 count, as in the original. To produce the same object code as the original, the
-reader maps every form to the same internal symbol:
+- A string is in `` `…' `` or in `‘…’`. Quotes of the same kind nest, and the inner ones
+  belong to the string: `` `Hello, `Algol'' `` is ``Hello, `Algol'``. A lone apostrophe
+  goes in `‘'’`.
+- Inside a string every character counts, blanks and line ends too; the text is kept as
+  UTF-8, in its case.
+- Deprecated: the strings of Algol-GDR, `''…''` and `'('…')'` (also opened by `"`), where
+  `'ddd'` is a character by its octal code point (`''X'101'''` is `XA`). They do not nest,
+  and the first one in a file gets a warning: `Strings in '' are deprecated: write `text'`.
 
-| Internal symbol | Accepted spellings |
-| --- | --- |
-| multiply | `*`, `×` |
-| power | `'POWER'`, `↑` |
-| ≤ ≥ ≠ | `'LE'`, `'NOTGREATER'`, `≤` · `'GE'`, `'NOTLESS'`, `≥` · `'NE'`, `'NOTEQUAL'`, `≠` |
-| < > = | `<`, `'LT'`, `'LESS'` · `>`, `'GT'`, `'GREATER'` · `=`, `'EQ'`, `'EQUAL'` |
-| logical | `'NOT'` `¬` · `'AND'` `∧` · `'OR'` `∨` · `'IMPL'` `⊃` · `'EQUIV'` `≡` |
-| exponent | `⏨` |
-| quote | `'` and `′` (the listing form) |
+## Comments
 
-Settled since:
-- `÷` (and `_div`) is integer division, as in Algol 60. No integer division operator of
-  the original has been found (the keyword table has none, and `/` gives a real).
-- Lower case is kept: the original makes everything upper case, strings included; `algc`
-  keeps identifiers and strings as written (the tests where this changes the output have
-  a `NAME.native.out`).
+- `_comment` (`c̲o̲m̲m̲e̲n̲t̲`) after `;` or `_begin` skips up to the next `;` (or `.,`).
+- After `_end`, the text up to `;`, `_end`, `_else` or `_eop` is a comment. Letters and
+  digits pass quietly; anything else gets one warning per comment.
+- `_eop` may end the program; the end of the file does as well.
 
 ## The listing
 
-The compiler prints ISO (KOI-7); the line printer gets GOST, and `dubna` writes UTF-8. The
-mapping, measured by compiling a comment with every code, is in `src/listing.cpp`. Most codes
-print as themselves (upper-case Latin, digits, punctuation); some differ: `'` → `′`,
-`#` → `≠`, `$` → `◇`, `&` → `∧`, `?` → `↑`, `@` → `°`, `\` → `‾`, `^` → `|`; codes 0140–0176
-are Cyrillic (with Latin look-alikes: `а` prints as `A`); 020–037 are `‘ ― ↑ ⏨ ≠ ° ÷ ’ ⊃ ≡ ∨
-¬`. Codes 001, 002, 015, 021–024 and 0177 print as nothing, and 003 ends the line.
+`algc --list` prints the banner `A L G O L - Г Д P` and `(7.01.82)` of the original, then
+each source line as read, UTF-8, after its number: `%6d.` and five blanks.
+
+## Text at run time
+
+All text a program reads and writes is UTF-8 (runtime/):
+
+- A string is a NUL-terminated UTF-8 C string; its indices (`s[i]`, `s[i:j]`, `length`)
+  count code points from 1.
+- `PRINT` (Algol-GDR) writes fields of the original's widths, strings as they are
+  (runtime/print.c); `READ` reads words separated by white space (runtime/read.c).
+- The IFIP `outsymbol` and `insymbol` work in code points: a symbol's place in the string,
+  or minus its code point.
+- `_write`, `_print`, `_read`, `_encode`, `_decode` with a Fortran format
+  (runtime/format.c): records are lines; an `A` field takes characters. A format's
+  `'…'` edit cannot be written inside `` `…' ``; write the format in `‘…’`.
+- The X1 library works in X1 symbol codes (x1-algol-compiler/doc/algol-encoding.md): `PRSYM`
+  writes a code as its UTF-8 symbol (`⎕` for an unused one), `RESYM` reads a UTF-8 symbol
+  and gives its code, 255 at the end of the input; `read` takes `⏨` as the exponent
+  (runtime/x1.c).
+
+doc/codegen.md has the details of each.
+
+## Differences from the original
+
+The original read KOI-7 cards: columns 1–72 only, upper case only, names by their first 6
+characters, keywords in quotes (`'BEGIN'`), strings in `''…''`, and of the symbols above only
+`≠` and `⏨` (the rest by their word forms). `algc` keeps names and strings as written, so the
+tests where case changes the output have a `NAME.native.out`.
