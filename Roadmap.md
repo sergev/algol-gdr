@@ -16,31 +16,13 @@ Milestone 1 is done: the C++ compiler produces the same objects and listings as 
 branch, and the analysis of the original is in `doc/`. Milestone 2 is done: a new front end
 (lexer, parser, checker → AST) and an LLVM backend (doc/codegen.md) make native executables
 on x86_64, arm64 and riscv64, and the 32 test programs with a `dubna` run print the same
-output natively.
+output natively. Milestone 3 is done: Algol 60 of the Revised Report (call by name with
+conversions, `own`, the full `for`, labels and switches, separate compilation), the
+publication input form, messages with columns, the IFIP and Algol-GDR I/O, run-time checks
+with `--check`, and a conformance suite in `tests/a60/`; what still differs from the Report
+is in doc/deviations.md.
 
 ---
-
-## Milestone 3 — Full Algol-60 and runtime
-
-Goal: a complete Revised Report Algol-60 implementation.
-
-- **Language gaps.** List what Algol-GDR leaves out or restricts compared with the Revised
-  Report, and close each one: full call by name, `switch` declarations and designational
-  expressions, `own` arrays with dynamic bounds, procedures as parameters, labels as
-  parameters, side effects in `for` lists, and so on.
-- **Input.** Accept a modern publication-style input form alongside the quoted-keyword one
-  (for example, bold keywords written in lower case), selected by an option or detected
-  automatically.
-- **Diagnostics.** Clear messages with file, line and column; error recovery that continues
-  after the first error.
-- **Runtime library.** I/O following the IFIP modified report (`inreal`, `outreal`, `ininteger`,
-  `outinteger`, `outstring`, …) plus the Algol-GDR procedures. Formatted output, input from
-  files and stdin, and run-time checks (array bounds, overflow) that can be turned on.
-- **Conformance.** Collect Algol-60 test programs (the Revised Report examples, classic
-  algorithm collections, and the `dubna` Algol examples) into a regression suite.
-
-Done when the conformance suite passes, and the remaining known deviations from the Revised
-Report are documented.
 
 ## Milestone 4 — The X1 Algol examples
 
@@ -49,9 +31,9 @@ Goal: compile and run every program in `/home/vak/Project/Algol/x1-algol-compile
 `outer_planets`, …) natively, with the output shown in that directory's `README.md` and `*.md`
 files.
 
-- **Publication syntax.** Keywords written with combining underline (`b̲e̲g̲i̲n̲`, U+0332 after each
-  letter), strings in `` `…' `` quotes, lower-case identifiers, `⏨` exponents. This is the
-  modern input form from Milestone 3; these files are its reference.
+- **Publication syntax.** Read since Milestone 3: with the X1 procedures declared as
+  `_code`, every example passes the front end but `bulls_and_cows`, which lacks a `;`
+  before `NLCR` (line 71).
 - **X1 library procedures.** The examples call the Electrologica X1 environment, not
   Algol-GDR's I/O. Add them to the runtime:
   - output: `PRINTTEXT`, `print`, `PRSYM`, `SPACE`, `NLCR`, `ABSFIXT`, `FIXT`, `FLOT`;

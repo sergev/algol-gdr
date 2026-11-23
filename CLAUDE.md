@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Goal: port the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
 system) to modern 64-bit machines (x86_64, arm64, riscv64) as **`algc`**, in **C++20** with
 UTF-8 input/output and LLVM as an external backend. Milestones 0 (groundwork), 1 (the C++
-rewrite, same objects and listings as the original; on the `besm6` branch) and 2 (a new
-front end and an LLVM backend: native executables for x86_64, arm64, riscv64) are done.
-Next is Milestone 3 (Roadmap.md). Plan files `todoN.md` list only the tasks left (IDs like
+rewrite, same objects and listings as the original; on the `besm6` branch), 2 (a new
+front end and an LLVM backend: native executables for x86_64, arm64, riscv64) and 3 (Algol
+60 of the Revised Report, the publication form, IFIP I/O, checks; doc/deviations.md) are
+done. Next is Milestone 4 (Roadmap.md). Plan files `todoN.md` list only the tasks left (IDs like
 A6.3); delete a task when it is done, in the same commit.
 
 ## Commands
@@ -66,8 +67,8 @@ Milestones (from Roadmap.md):
    files (standard arrays) and run them on the `dubna` simulator.
 2. Replace the backend: emit LLVM IR and invoke external `clang` to link a native executable
    (done).
-3. Extend the parser to full Algol-60 and develop a full runtime library (plan:
-   [todo3.md](todo3.md)).
+3. Extend the parser to full Algol-60 and develop a full runtime library (done; what
+   remains different is in [doc/deviations.md](doc/deviations.md)).
 4. Compile and run all programs from x1-algol-compiler/examples.
 
 Detailed plan: [Roadmap.md](Roadmap.md).

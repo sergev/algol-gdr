@@ -1,9 +1,8 @@
 # Deviations from the Revised Report
 
-How `algc` differs from the Revised Report on the Algorithmic Language Algol 60 (1963):
-where each difference is, and the task of [todo3.md](../todo3.md) that removes it. A task
-deletes its lines when it is done; what remains at the end of Milestone 3 is the list of
-documented deviations.
+How `algc` differs from the Revised Report on the Algorithmic Language Algol 60 (1963),
+where, and why. Milestone 3 removed the others; the programs of `tests/a60/` check what
+it added.
 
 ## Representation
 
@@ -21,16 +20,24 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 ## Language
 
-| Deviation | Where | Task |
+| Deviation | Where | Reason |
 |---|---|---|
+| A `goto` to a switch designator whose index is out of range stops the program; the Report (4.3.5) makes it a dummy statement | code generator | An error shows the bug where a silent dummy statement would hide it |
+| A formal parameter without a specification takes its kind and type from its uses in the body (below), not from each actual | checker | The code needs one kind per formal; real with conversion serves integer actuals too |
+| An array called by value keeps the element type of the actual, not the formal's | code generator | Accesses convert through the tag, so values are right; only a copy of another type would differ |
+| Strings of the `_keyword` form do not nest | lexer | The Algol-GDR form; the publication form nests |
+| The standard identifiers of Algol-GDR (`PRINT`, `READ`, `NEWLINE`, `LOAD`, …) and of IFIP are predeclared | checker | Algol-GDR programs use them; a declaration hides them |
+| Recursion is limited by the machine stack | — | Frames are on the stack (man or boy at k = 12 needs about 1 MB) |
 
 ## Run time
 
-The Report leaves input and output to implementations; the IFIP modified report defines a
-set of standard procedures.
+The Report leaves input and output to implementations. `algc` has the procedures of the
+IFIP Modified Report and those of Algol-GDR (doc/codegen.md); channels are 0 (input) and 1
+(output), units are files.
 
-| Deviation | Where | Task |
+| Deviation | Where | Reason |
 |---|---|---|
+| Without `--check`, integer overflow wraps around and real overflow gives an infinity | code generator | Speed; `--check` stops the program instead |
 
 ## Implementation choices
 

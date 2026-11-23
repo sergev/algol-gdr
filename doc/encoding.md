@@ -85,11 +85,12 @@ reader maps every form to the same internal symbol:
 | exponent | `⏨` |
 | quote | `'` and `′` (the listing form) |
 
-Open questions:
-- Whether `÷` should mean integer division, as in Algol 60. No integer division operator
-  of the original has been found (the keyword table has none, and `/` gives a real).
-- What to do with lower case: the original makes everything upper case, strings included.
-  Keeping lower case in strings changes the output, so it needs an option (Milestone 3).
+Settled since:
+- `÷` (and `_div`) is integer division, as in Algol 60. No integer division operator of
+  the original has been found (the keyword table has none, and `/` gives a real).
+- Lower case is kept: the original makes everything upper case, strings included; `algc`
+  keeps identifiers and strings as written (the tests where this changes the output have
+  a `NAME.native.out`).
 
 ## The listing
 

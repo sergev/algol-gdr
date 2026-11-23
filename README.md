@@ -4,7 +4,8 @@
 ordinary program you can run on a modern computer: a PC (x86_64) or an ARM or RISC-V machine.
 
 It started as a revival of Algol-GDR, the Algol compiler of the Soviet BESM-6 computer.
-It reads that dialect today, and full Algol 60 is the next step.
+It reads that dialect and Algol 60 as the Revised Report defines it, also in the
+publication form with underlined keywords (`.a60` files).
 
 ## Build
 
@@ -40,7 +41,8 @@ Hello, World!
 - Keywords start with an underscore: `_begin`, `_end`, `_integer`, `_if`, `_then`.
 - Strings are in double apostrophes: `''text''`.
 - The program ends with `_eop`.
-- Use `PRINT(...)` to print numbers and strings, and `NEWLINE` to start a new line.
+- Use `PRINT(...)` to print numbers and strings, and `NEWLINE` to start a new line; or the
+  standard Algol 60 procedures `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
 
 ```
 _begin _integer i;
@@ -65,6 +67,7 @@ The `tests/algol/` directory has more examples.
 ## Learn more
 
 - [Roadmap.md](Roadmap.md): where the project is going.
+- [doc/deviations.md](doc/deviations.md): how `algc` differs from the Revised Report.
 - [doc/](doc/): how the compiler works.
 - [x1-algol-compiler](https://github.com/sergev/x1-algol-compiler): Algol 60 programs this
   compiler aims to run.
