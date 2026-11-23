@@ -5,6 +5,7 @@
 #ifndef ALGOL_PASS1_H
 #define ALGOL_PASS1_H
 
+#include <array>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -32,7 +33,7 @@ public:
     //
     void lex();
     unsigned symbol() const { return m4_; }
-    Word symbol_word() const { return ws_[D_SYM]; }
+    Word symbol_word() const { return sym_; }
 
     // A syntax error found by the lexer or the parser (AG17015).
     struct SyntaxError {
@@ -45,46 +46,9 @@ public:
     // The compilation ends here (AG01716).
     struct Finish {};
 
-    // Workspace cells (AD02000+n).
-    static constexpr unsigned D_SYM      = 02000; // symbol word
-    static constexpr unsigned D_CONST    = 02003; // next free constant slot
-    static constexpr unsigned D_CHAR     = 02004; // current character
-    static constexpr unsigned D_AFTEREND = 02005; // skipping the text after END
-    static constexpr unsigned CARD       = 02010; // the card, 14 words
-    static constexpr unsigned D_WORD     = 02026; // current card word
-    static constexpr unsigned D_KEYWORD  = 02027; // a quote started the name
-    static constexpr unsigned D_BLANK    = 02030; // character to skip
-    static constexpr unsigned D_BLANKS   = 02031; // word to skip
-    static constexpr unsigned D_NAME     = 02032; // name being read, ISO
-    static constexpr unsigned D_WARNED   = 02033; // WARNING SYMBOL AFTER END printed
-    static constexpr unsigned D_POINT    = 02034; // number: '.' seen
-    static constexpr unsigned D_EXP      = 02035; // number: exponent seen
-    static constexpr unsigned D_LAST     = 02036; // number: last character
-    static constexpr unsigned D_LOST     = 02037; // number: digits beyond precision
-    static constexpr unsigned D_VALUE    = 02040; // number: value of the digits
-    static constexpr unsigned D_NEXT     = 02041; // number: next value
-    static constexpr unsigned D_MANT     = 02042; // number: mantissa before the exponent
-    static constexpr unsigned D_EXPNEG   = 02043; // number: negative exponent
-    static constexpr unsigned D_FRAC     = 02044; // number: starts with '.'
-    static constexpr unsigned D_POWER    = 02045; // number: scaled value
-    static constexpr unsigned D_KEY      = 02046; // constant being interned
-    static constexpr unsigned D_SEMI     = 02047; // ',' after '.,' means ';'
-    static constexpr unsigned D_STRINGS  = 02050; // string pool end << 12
-    static constexpr unsigned D_LINE     = 02060; // line counter
-    static constexpr unsigned D_PRINTED  = 02061; // last line printed
-    static constexpr unsigned D_LIST     = 02121; // listing on
-    static constexpr unsigned D_POOL     = 02002; // string pool cursor (G27220)
-    static constexpr unsigned NAMES      = 02144; // name/constant table
-    static constexpr unsigned D_RESPC    = 02106; // resume after an error: address
-    static constexpr unsigned D_RESSP    = 02107; // … and stack depth
-    static constexpr unsigned D_MARKLINE = 02122; // line of the last statement marker
-    static constexpr unsigned D_MARKN    = 02123; // its count << 7
-    static constexpr unsigned D_RENAME   = 02137; // name of the first label, TEXT
-    static constexpr unsigned CARDS      = 01741; // card count, integer
-
 private:
     Context &ctx_;
-    Workspace &ws_;
+    Tables &tables_;
     std::vector<Word> &strings_; // the string pool on drum
     std::vector<Card> cards_;
     size_t next_card_{};
@@ -99,6 +63,47 @@ private:
     Word cells_[022]{}; // 16111-16132: cells of the 'COMMON' reader in the code
 
     Word emit_item_{}; // 15144
+
+    // Cells of the original at 02000… (D-list and name table in tables_).
+    Word sym_{ 051 };      // 02000: symbol word
+    Word cursor_{};        // 02001: stream write cursor
+    Word pool_{};          // 02002: string pool cursor (G27220)
+    Word char_{ 01634 << 12 }; // 02004: current character
+    Word afterend_{};      // 02005: skipping the text after END
+    Card card_{};          // 02010: the card, 14 words
+    Word word_{};          // 02026: current card word
+    Word keyword_{};       // 02027: a quote started the name
+    Word blank_{ 040 };    // 02030: character to skip
+    Word blanks_{};        // 02031: word to skip
+    Word name_{};          // 02032: name being read, ISO
+    Word warned_{};        // 02033: WARNING SYMBOL AFTER END printed
+    Word point_{};         // 02034: number: '.' seen
+    Word exp_{};           // 02035: number: exponent seen
+    Word last_{};          // 02036: number: last character
+    Word lost_{};          // 02037: number: digits beyond precision
+    Word value_{};         // 02040: number: value of the digits
+    Word next_{};          // 02041: number: next value
+    Word mant_{};          // 02042: number: mantissa before the exponent
+    Word expneg_{};        // 02043: number: negative exponent
+    Word frac_{};          // 02044: number: starts with '.'
+    Word power_{};         // 02045: number: scaled value
+    Word key_{};           // 02046: constant being interned
+    Word semi_{};          // 02047: ',' after '.,' means ';'
+    Word pool_end_{ 01634 << 12 }; // 02050: string pool end << 12
+    Word io_item_{};       // 02052: item of an I/O statement
+    Word head_kind_{};     // 02054: 'ALGOL' or 'CODE' before the program
+    Word head_desc_{};     // 02055: descriptor bits of a declaration before the program
+    Word head_slot_{};     // 02056: its name slot
+    Word line_{};          // 02060: line counter
+    Word printed_{};       // 02061: last line printed
+    Word io_done_{};       // 02117: the I/O element wrote the item
+    Word list_{};          // 02121: listing on
+    Word markline_{};      // 02122: line of the last statement marker
+    Word markn_{};         // 02123: its count << 7
+    Word label_name_{};    // 02136: name of the first label
+    Word rename_{};        // 02137: … in TEXT
+    Word card_count_{};    // 01741: card count, integer
+    std::array<Word, 0400> pool_page_{}; // 04000-04377: the string pool page
     Stream out_;
 
     // Where the parser goes on after a syntax error: a label in a frame.
@@ -110,7 +115,7 @@ private:
     Checkpoint checkpoint_{};
     unsigned frames_{};
 
-    Word D0() const { return ws_[D_SYM]; }
+    Word D0() const { return sym_; }
     template <class Body>
     void frame(Body body);
     Checkpoint recover(unsigned n);

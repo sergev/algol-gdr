@@ -226,11 +226,11 @@ void Pass1::emit(Word a)
     if ((a & 07777) == 0) {
         Word slot = (a >> 12) & 07777;
         for (unsigned k = 3;; k += 3) {
-            if (ws_[027246 + k] == 0)
+            if (tables_.common(1 + k) == 0)
                 break;
-            if (((ws_[027247 + k] & 077777) ^ 1) != 0)
+            if (((tables_.common(2 + k) & 077777) ^ 1) != 0)
                 continue;
-            if (((ws_[027246 + k] >> 24) & 07777) != slot)
+            if (((tables_.common(1 + k) >> 24) & 07777) != slot)
                 continue;
             out_.push_back(Item{ uint32_t(CONST_1 & MASK24) });
             a = emit_item_ | 0221;
@@ -250,14 +250,14 @@ void Pass1::syntax_error(unsigned n)
 void Pass1::stmark()
 {
     Word a;
-    if (ws_[D_LINE] == ws_[D_MARKLINE]) {
-        a = arx(ws_[D_MARKN], COUNT);
+    if (line_ == markline_) {
+        a = arx(markn_, COUNT);
     } else {
-        ws_[D_MARKLINE] = ws_[D_LINE];
+        markline_ = line_;
         a               = COUNT;
     }
-    ws_[D_MARKN] = a;
-    emit(((ws_[D_MARKLINE] << 12) & MASK48) | ws_[D_MARKN] | 051);
+    markn_ = a;
+    emit(((markline_ << 12) & MASK48) | markn_ | 051);
 }
 
 // AG15102: the checkpoint, then a marker.
@@ -270,7 +270,7 @@ void Pass1::setres(unsigned owner, unsigned label)
 // AG15114: push a word onto the D-list, which grows down from 05753.
 void Pass1::dpush(Word a)
 {
-    ws_[m3_] = a;
+    tables_.dlist(m3_) = a;
     m3_      = (m3_ - 1) & R15;
     if (((m3_ + 073401) & R15) == 0)
         throw SyntaxError{ 015 };
@@ -301,20 +301,20 @@ Pass1::Checkpoint Pass1::recover(unsigned n)
             if (D0() != 051 && D0() != 037) {
                 if (D0() == 075)
                     eop_inside();
-                if (ws_[D_SEMI]) {
-                    ws_[D_SEMI] = 0;
+                if (semi_) {
+                    semi_ = 0;
                     lex();
-                    ws_[D_SYM] = 051;
+                    sym_ = 051;
                     m4_        = 051;
                 } else {
-                    ws_[D_WARNED]   = 051;
-                    ws_[D_AFTEREND] = 051;
-                    ws_[D_KEYWORD]  = 0;
+                    warned_   = 051;
+                    afterend_ = 051;
+                    keyword_  = 0;
                     lex();
                 }
             }
             emit(044);
-            ws_[D_WARNED] = 0;
+            warned_ = 0;
             if (checkpoint_.label == THIRTY_ERRORS)
                 skip_to_eop();
             return checkpoint_;
@@ -349,12 +349,12 @@ void Pass1::program()
 {
     if (ctx_.options.list)
         blank_line(ctx_);
-    ws_[D_LIST] = ctx_.options.list ? 1 : 0;
+    list_ = ctx_.options.list ? 1 : 0;
     m5_         = 0;
     m6_         = 0;
     m3_         = 05753;
-    ws_[02001]  = STREAM_START;
-    ws_[D_POOL] = POOL_START;
+    cursor_  = STREAM_START;
+    pool_ = POOL_START;
     frame([&](unsigned self, unsigned at) {
         switch (at) {
         case START:
@@ -362,7 +362,7 @@ void Pass1::program()
             emit(0102);
             stmark();
             lex();
-            ws_[02054] = 0;
+            head_kind_ = 0;
             [[fallthrough]];
         case HEAD_NEXT:
             program_head(self, at == HEAD_NEXT);
@@ -382,10 +382,10 @@ void Pass1::program()
             throw std::logic_error("pass 1: no checkpoint " + std::to_string(at));
         }
         // *0050B: the last sector of the string pool.
-        Word pool   = ws_[D_POOL];
-        ws_[D_POOL] = pool | 0377;
-        pool_put(ws_[D_POOL]);
-        ws_[D_POOL] = pool;
+        Word pool   = pool_;
+        pool_ = pool | 0377;
+        pool_put(pool_);
+        pool_ = pool;
     });
 }
 
@@ -409,11 +409,11 @@ void Pass1::program_head(unsigned self, bool resumed)
     // A name of the list (L13755): to the D-list, then ',' and the next, or
     // ';'. entry: a name was read (else at L13760, after one).
     auto names = [&](bool entry) {
-        if (entry && !ws_[02054])
+        if (entry && !head_kind_)
             bad();
         for (;;) {
             if (entry)
-                dpush(ws_[02054] | ws_[02055] | ws_[02056]);
+                dpush(head_kind_ | head_desc_ | head_slot_);
             entry = true;
             m4_   = (m4_ - 051) & R15; // L13760
             if (!m4_) {
@@ -426,19 +426,19 @@ void Pass1::program_head(unsigned self, bool resumed)
             lex();
             if (m4_)
                 bad();
-            ws_[02056] = D0() >> 12;
+            head_slot_ = D0() >> 12;
             lex();
         }
     };
     if (resumed)
         names(false);
     for (;;) { // L13711
-        ws_[02055] = DESCRIPTOR;
+        head_desc_ = DESCRIPTOR;
         Word type  = 0;
         switch (attr(m4_).head) {
         case 1: // 'ALGOL' :
         case 2: // 'CODE' :
-            ws_[02054] = attr(m4_).head == 1 ? ALGOL_PROC : CODE_PROC;
+            head_kind_ = attr(m4_).head == 1 ? ALGOL_PROC : CODE_PROC;
             lex();
             m4_ = (m4_ - 050) & R15;
             if (m4_)
@@ -461,11 +461,11 @@ void Pass1::program_head(unsigned self, bool resumed)
             type = (DESCRIPTOR | BITS);
             break;
         case 7: // 'PROCEDURE'
-            procedure(ws_[02055] | (DESCRIPTOR | PROCEDURE));
+            procedure(head_desc_ | (DESCRIPTOR | PROCEDURE));
             return;
         case 010: // labels before the program, or a name of a list
             for (;;) {
-                ws_[02056] = D0() >> 12;
+                head_slot_ = D0() >> 12;
                 lex();
                 if (D0() == 047 || D0() == 051)
                     break;
@@ -473,11 +473,11 @@ void Pass1::program_head(unsigned self, bool resumed)
                     bad();
                 lex();
                 emit((Word(m3_) << 12) | 060);
-                if (!ws_[D_RENAME]) {
-                    ws_[02136]    = ws_[NAMES + ws_[02056]];
-                    ws_[D_RENAME] = apx(ws_[02136], NOT_BLANK);
+                if (!rename_) {
+                    label_name_    = tables_.name(head_slot_);
+                    rename_ = apx(label_name_, NOT_BLANK);
                 }
-                dpush(ws_[02056] | (DESCRIPTOR | LABEL | SIMPLE));
+                dpush(head_slot_ | (DESCRIPTOR | LABEL | SIMPLE));
                 if (m4_) {
                     if (D0() != 036)
                         bad();
@@ -494,15 +494,15 @@ void Pass1::program_head(unsigned self, bool resumed)
             bad();
         }
         // L13750: a type before an external name, or before 'PROCEDURE'.
-        ws_[02055] = type;
+        head_desc_ = type;
         lex();
         if (D0() == 042) {
-            procedure(ws_[02055] | (DESCRIPTOR | PROCEDURE));
+            procedure(head_desc_ | (DESCRIPTOR | PROCEDURE));
             return;
         }
         if (m4_)
             bad();
-        ws_[02056] = D0() >> 12;
+        head_slot_ = D0() >> 12;
         lex();
         names(true);
     }
@@ -930,7 +930,7 @@ void Pass1::array_declaration(Word type, Word &saved)
         unsigned p = m3_;
         do { // *0502B
             p      = (p + 1) & R15;
-            ws_[p] = ((dims << 8) & MASK48) | ws_[p];
+            tables_.dlist(p) = ((dims << 8) & MASK48) | tables_.dlist(p);
             n      = (n - 1) & R15;
         } while (n);
         lex();
@@ -953,7 +953,7 @@ void Pass1::variables(Word type, Word &saved)
         Word slot      = D0() >> 12;
         bool in_common = false;
         for (unsigned k = 0;; k = (k + 3) & R15) {
-            Word a = ws_[(027246 + k) & R15];
+            Word a = tables_.common((1 + k) & R15);
             if (!a)
                 break;
             if ((((a >> 24) & 07777) ^ slot) == 0) {
@@ -971,7 +971,7 @@ void Pass1::variables(Word type, Word &saved)
             emit(CONST_1);
             emit(dims | 0104);
             unsigned p = (m3_ + 1) & R15;
-            ws_[p]     = ((dims << 8) & MASK48) | ws_[p];
+            tables_.dlist(p) = ((dims << 8) & MASK48) | tables_.dlist(p);
         } else { // *0560B
             type |= (BY_VALUE | SIMPLE);
             dpush((D0() >> 12) | type);
@@ -1081,9 +1081,9 @@ void Pass1::formals(Word start, Word &count)
             if (m4_)
                 syntax_error(0114);
             unsigned f = find_formal(start);
-            if (ws_[f] & BY_VALUE)
+            if (tables_.dlist(f) & BY_VALUE)
                 syntax_error(0116);
-            ws_[f] = (ws_[f] & ~BIT46) | BY_VALUE;
+            tables_.dlist(f) = (tables_.dlist(f) & ~BIT46) | BY_VALUE;
             emit((Word(f) << 12) | 061);
             lex();
             if (D0() != 047)
@@ -1145,9 +1145,9 @@ void Pass1::formals(Word start, Word &count)
                 syntax_error(0121);
             specified  = arx(specified, COUNT);
             unsigned f = find_formal(start);
-            if (ws_[f] & SPECIFIED)
+            if (tables_.dlist(f) & SPECIFIED)
                 syntax_error(0122);
-            ws_[f] |= spec;
+            tables_.dlist(f) |= spec;
             lex();
             if (D0() == 051) {
                 lex();
@@ -1173,8 +1173,8 @@ void Pass1::io_list(Word first)
     if (attr(m4_).statement != 017) {
         for (;;) { // *0306B
             io_element();
-            if (!ws_[02117])
-                emit(ws_[02052]);
+            if (!io_done_)
+                emit(io_item_);
             if (D0() != 047)
                 break;
             lex();
@@ -1186,7 +1186,7 @@ void Pass1::io_list(Word first)
 // *0266B: (e [, e]) or (e) or e, then the list.
 void Pass1::io_statement(Word item)
 {
-    ws_[02052] = item;
+    io_item_ = item;
     lex();
     if (D0() != 020) { // *0320B
         emit(CONST_50);
@@ -1226,7 +1226,7 @@ void Pass1::io_statement(Word item)
 // *0325B: (e) or (e, e), then the list.
 void Pass1::io_format(Word item)
 {
-    ws_[02052] = item;
+    io_item_ = item;
     lex();
     m4_ = (m4_ - 020) & R15;
     if (m4_)
@@ -1254,7 +1254,7 @@ void Pass1::io_format(Word item)
 // *0342B: PRINT and the like: e, then the list.
 void Pass1::io_print(Word item, Word first)
 {
-    ws_[02052] = item;
+    io_item_ = item;
     lex();
     emit(first); // *0344B
     expression(0);
@@ -1269,7 +1269,7 @@ void Pass1::io_print(Word item, Word first)
 // *0352B: (e, e, e), then the list after the item first.
 void Pass1::io_three(Word item, Word first)
 {
-    ws_[02052] = item;
+    io_item_ = item;
     lex(); // *0353B
     unsigned sep = 020;
     for (int k = 0; k < 3; k++) {
@@ -1308,13 +1308,13 @@ void Pass1::io_element()
             if (D0() == 047) {
                 lex();
                 io_element();
-                if (!ws_[02117])
-                    emit(ws_[02052]);
+                if (!io_done_)
+                    emit(io_item_);
                 continue;
             }
             if (D0() != 045)
                 syntax_error(0136);
-            ws_[02117] = ws_[02052];
+            io_done_ = io_item_;
             lex();
             return;
         }
@@ -1322,35 +1322,35 @@ void Pass1::io_element()
     if (D0() == 020) { // *0220B
         lex();
         io_element();
-        if (ws_[02117]) {
+        if (io_done_) {
             rest();
             return;
         }
         if (D0() != 045) {
-            emit(ws_[02052]);
+            emit(io_item_);
             rest();
             return;
         }
         lex();
         if (attr(m4_).priority)
             operators(0);
-        ws_[02117] = 0;
+        io_done_ = 0;
         return;
     }
     if (D0() == 032) { // *0244B: FOR in an I/O list
         Word saved = m3_;
         for_head();
         io_element();
-        if (!ws_[02117]) {
-            ws_[02117] = ws_[02052];
-            emit(ws_[02117]);
+        if (!io_done_) {
+            io_done_ = io_item_;
+            emit(io_done_);
         }
-        ws_[02054] = saved;
+        head_kind_ = saved;
         for_end(saved);
         return;
     }
     expression(0);
-    ws_[02117] = 0;
+    io_done_ = 0;
 }
 
 //
@@ -1504,14 +1504,14 @@ void Pass1::designator(unsigned prio, Word id)
 // searched down from the heading's start.
 unsigned Pass1::find_formal(Word start)
 {
-    ws_[D_SYM] = ws_[D_SYM] >> 12;
+    sym_ = sym_ >> 12;
     unsigned f = start & R15;
     for (;;) {
         f      = (f - 1) & R15;
-        Word w = ws_[f];
+        Word w = tables_.dlist(f);
         if (!w)
             throw SyntaxError{ 0115 };
-        if (((w & 07777) ^ ws_[D_SYM]) == 0)
+        if (((w & 07777) ^ sym_) == 0)
             return f;
     }
 }
@@ -1579,9 +1579,9 @@ const std::array<const char *, 0150> TEXT = {
 // The line of a syntax error: ERROR nn and its text.
 void Pass1::print_error(unsigned n)
 {
-    if (!ws_[D_LIST] && ws_[D_LINE] != ws_[D_PRINTED]) {
+    if (!list_ && line_ != printed_) {
         print_card();
-        ws_[D_PRINTED] = ws_[D_LINE];
+        printed_ = line_;
     }
     char num[16];
     std::snprintf(num, sizeof(num), "ERROR %02u    ", n);

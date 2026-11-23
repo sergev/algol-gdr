@@ -41,7 +41,7 @@ constexpr unsigned BLOCK       = 02030; // the innermost open block
 constexpr unsigned BOUNDS      = 02031; // constant bounds of an array segment, or 0
 constexpr unsigned ARRAYS_END  = 02032; // end of the array records at 04000
 constexpr unsigned NAMES       = 02144; // slot i at NAMES + i
-constexpr unsigned NAMES_PAGE  = 02000; // the page saved to drum
+constexpr unsigned CELLS       = 01736; // the work cells of the original
 constexpr unsigned ARRAYS      = 04000;
 constexpr unsigned DLIST_END   = 06000;
 constexpr unsigned COMMON      = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
@@ -470,6 +470,8 @@ private:
     unsigned sp_{ STACK };
     Word zero_{};
     Word flgex_{};
+    std::array<Word, NAMES - CELLS> cells_{};                  // 01736-02143: the work cells
+    std::array<Word, Tables::DLIST_BEGIN - ARRAYS> records_{}; // 04000-04377: the array records
 
     // The item read: code (M1), count (M2), operand (M3).
     unsigned code_{}, count_{}, operand_{};
@@ -653,8 +655,18 @@ private:
 Word &Pass2::mem(unsigned a)
 {
     a &= 077777;
-    if (Workspace::contains(a))
-        return ctx_.ws[a];
+    if (a == FREE_CONST)
+        return ctx_.tables.free_const;
+    if (a >= NAMES && a < NAMES + Tables::SLOTS)
+        return ctx_.tables.name(a - NAMES);
+    if (a >= Tables::DLIST_BEGIN && a < Tables::DLIST_END)
+        return ctx_.tables.dlist(a);
+    if (a >= COMMON && a < COMMON + Tables::COMMON_SIZE)
+        return ctx_.tables.common(a - COMMON);
+    if (a >= CELLS && a < NAMES)
+        return cells_[a - CELLS];
+    if (a >= ARRAYS && a < Tables::DLIST_BEGIN)
+        return records_[a - ARRAYS];
     if (a >= STACK && a < STACK + STACK_SIZE)
         return stack_[a - STACK];
     if (a == FLGEX)
@@ -672,10 +684,10 @@ Word &Pass2::mem(unsigned a)
 //
 Word Pass2::saved_name(unsigned slot)
 {
-    unsigned a = (NAMES + slot) & 077777;
-    if (a >= NAMES_PAGE && a < NAMES_PAGE + 1024)
-        return ctx_.saved_names.at(a - NAMES_PAGE);
-    return mem(a);
+    slot &= 077777;
+    if (slot < ctx_.saved_names.size())
+        return ctx_.saved_names[slot];
+    return mem(NAMES + slot);
 }
 
 //
@@ -996,7 +1008,7 @@ unsigned Pass2::start()
 
     mem(FREE_SAVED) = mem(FREE_CONST);
     mem(ARRAYS_END) = ARRAYS;
-    ctx_.saved_names.assign(&ctx_.ws[NAMES_PAGE], &ctx_.ws[NAMES_PAGE] + 1024);
+    ctx_.saved_names.assign(ctx_.tables.names().begin(), ctx_.tables.names().end());
     for (unsigned k = addr(mem(FREE_CONST)); k;)
         name(--k) = 0;
     store(operand_, DLIST_END);

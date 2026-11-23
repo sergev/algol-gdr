@@ -247,7 +247,7 @@ unsigned Pass1::unicode_operator(unsigned c)
 
 void Pass1::error(unsigned n)
 {
-    ws_[D_SYM] = 0;
+    sym_ = 0;
     throw SyntaxError{ n };
 }
 
@@ -268,24 +268,24 @@ L1523:
         m5_ = (m5_ + 1) & R15;
         goto L1545;
     }
-    ws_[D_LINE] = arx(ws_[D_LINE], 1);
-    ws_[CARDS]  = arx(ws_[CARDS], 1) | INT0;
+    line_ = arx(line_, 1);
+    card_count_  = arx(card_count_, 1) | INT0;
     if (next_card_ >= cards_.size() || cards_[next_card_][0] == 01244251621020106) // *END F
         throw NoEop{};
     read_card();
-    if (ws_[D_LIST])
+    if (list_)
         print_card();
     m5_ = 077765;
     m6_ = 077772;
 L1545:
-    ws_[D_WORD] = ws_[(02023 + m5_) & R15];
-    if (ws_[D_WORD] == ws_[D_BLANKS])
+    word_ = card_.at((m5_ + 013) & R15);
+    if (word_ == blanks_)
         goto L1523;
 L1547: {
     int pos     = int(m6_) - 0100000; // -6…-1
-    unsigned c  = (ws_[D_WORD] >> (8 * (-pos - 1))) & 0377;
-    ws_[D_CHAR] = c;
-    if (c == ws_[D_BLANK]) {
+    unsigned c  = (word_ >> (8 * (-pos - 1))) & 0377;
+    char_ = c;
+    if (c == blank_) {
         m6_ = (m6_ + 1) & R15;
         goto L1522;
     }
@@ -294,18 +294,19 @@ L1547: {
 }
 
 Pass1::Pass1(Context &ctx)
-    : ctx_(ctx), ws_(ctx.ws), strings_(ctx.strings), cards_(read_cards(ctx.source))
+      : ctx_(ctx), tables_(ctx.tables), strings_(ctx.strings), cards_(read_cards(ctx.source))
 {
     // From the start of AG13666.
-    ws_[D_LIST] = ctx.options.list ? 1 : 0;
-    ws_[D_POOL] = 04420276740004000;
+    list_   = ctx.options.list ? 1 : 0;
+    pool_   = 04420276740004000;
+    blanks_ = BLANKS;
 }
 
 void Pass1::read_card()
 {
     const Card &card = cards_[next_card_++];
     for (unsigned i = 0; i < CARD_WORDS; i++)
-        ws_[CARD + i] = card[i];
+        card_[i] = card[i];
 }
 
 //
@@ -317,9 +318,9 @@ void Pass1::print_card()
         return;
     Word card[CARD_WORDS];
     for (unsigned i = 0; i < CARD_WORDS; i++)
-        card[i] = ws_[CARD + i];
+        card[i] = card_[i];
     char num[16];
-    std::snprintf(num, sizeof(num), "%6u.     ", unsigned(ws_[D_LINE] & 077777777));
+    std::snprintf(num, sizeof(num), "%6u.     ", unsigned(line_ & 077777777));
     print_line(num + listing_text(card, 0, 80));
 }
 
@@ -327,23 +328,23 @@ void Pass1::print_card()
 // to the string pool on drum.
 void Pass1::pool_put(Word w)
 {
-    ws_[ws_[D_POOL] & R15] = w;
-    ws_[D_POOL]            = arx(ws_[D_POOL], 1);
-    if ((ws_[D_POOL] << 40) & MASK48)
+    pool_page_.at((pool_ & R15) - 04000) = w;
+    pool_            = arx(pool_, 1);
+    if ((pool_ << 40) & MASK48)
         return;
-    ws_[D_POOL] = arx(ws_[D_POOL], 037777400);
+    pool_ = arx(pool_, 037777400);
     for (unsigned i = 0; i < 256; i++)
-        strings_.push_back(ws_[04000 + i]);
+        strings_.push_back(pool_page_[i]);
 }
 
 // *1102B: a word of a string to the pool.
 void Pass1::store_string_word()
 {
-    ws_[D_STRINGS] = arx(ws_[D_STRINGS], 010000);
-    unsigned m9    = ((ws_[D_STRINGS] >> 12) - 01634 - 06000) & R15;
+    pool_end_ = arx(pool_end_, 010000);
+    unsigned m9    = ((pool_end_ >> 12) - 01634 - 06000) & R15;
     if (m9 == 0)
         error(12);
-    pool_put(ws_[D_NAME]);
+    pool_put(name_);
 }
 
 //
@@ -352,16 +353,16 @@ void Pass1::store_string_word()
 //
 unsigned Pass1::intern(Word value, unsigned slot)
 {
-    ws_[D_KEY]        = value;
-    ws_[NAMES + slot] = value;
+    key_        = value;
+    tables_.name(slot) = value;
     unsigned m14      = 01633;
-    while (ws_[(NAMES + m14) & R15] != ws_[D_KEY])
+    while (tables_.name((m14) & R15) != key_)
         m14 = (m14 - 1) & R15;
-    if (m14 != ws_[D_CONST])
+    if (m14 != tables_.free_const)
         return m14;
     slot         = (slot - 1) & R15;
-    ws_[D_CONST] = slot;
-    if (ws_[(NAMES + slot) & R15])
+    tables_.free_const = slot;
+    if (tables_.name((slot) & R15))
         error(7);
     return slot + 1;
 }
@@ -373,10 +374,10 @@ void Pass1::lex()
     Word stack = 0; // the one word the octal escapes keep on the stack
 
     c = nextch(false);
-    if (ws_[D_AFTEREND])
+    if (afterend_)
         goto L1461;
 L0712:
-    m11 = ws_[D_CHAR];
+    m11 = char_;
     switch (chclass(m11).dispatch) {
     case 0: // letter
         a = 0;
@@ -386,7 +387,7 @@ L0712:
         m11 = c;
         switch (chclass(c).quoted) {
         case 0: // '': a string
-            a = ws_[D_CONST];
+            a = tables_.free_const;
             goto L1015;
         case 1: // '(' ')' string, or an error
             if (c != '(')
@@ -394,7 +395,7 @@ L0712:
             c = nextch();
             if (c != '\'')
                 error(2);
-            a = ws_[D_CONST];
+            a = tables_.free_const;
             goto L1015;
         case 2: // a keyword
             a = 2;
@@ -409,8 +410,8 @@ L0712:
         c   = nextch();
         if (c == ',')
             goto L0766;
-        ws_[D_POINT] = c ^ ',';
-        ws_[D_FRAC]  = c ^ ',';
+        point_ = c ^ ',';
+        frac_  = c ^ ',';
         a            = 0;
         goto L1557;
     case 3: // ':' or ':='
@@ -427,7 +428,7 @@ L0712:
         goto L0766;
     case 5: // number
         a            = 0;
-        ws_[D_POINT] = 0;
+        point_ = 0;
         goto L1557;
     case 6: // '(' or '(/'
         m4_ = 020;
@@ -454,12 +455,12 @@ L0712:
         }
         error(1);
     case 013: // ',', or ';' after '.,' at the end of a number
-        if (!ws_[D_SEMI]) {
+        if (!semi_) {
             a = 047;
             goto L1012;
         }
         m4_         = 051;
-        ws_[D_SEMI] = 0;
+        semi_ = 0;
         goto L0766;
     default:
         error(1);
@@ -470,37 +471,37 @@ L0746: // '<octal digits>'
     if (m10 == 0)
         error(14);
     m10 = (m10 + 021) & R15;
-    if (!chclass(ws_[D_CHAR]).octal)
+    if (!chclass(char_).octal)
         error(15);
-    stack = ((stack << 3) & MASK48) | (ws_[D_CHAR] & 7);
+    stack = ((stack << 3) & MASK48) | (char_ & 7);
     if (nextch() != '\'')
         goto L0746;
     nextch();
-    m8         = ws_[D_CONST];
+    m8         = tables_.free_const;
     a          = Word(intern(stack, m8)) << 12;
     m4_        = 0105;
-    ws_[D_SYM] = a | 0105;
+    sym_ = a | 0105;
     return;
 
 L0766:
-    ws_[D_SYM] = m4_;
+    sym_ = m4_;
 L0767:
     m6_ = (m6_ + 1) & R15;
     return;
 L0777:
-    ws_[D_SYM] = m4_;
+    sym_ = m4_;
     return;
 L1012:
-    ws_[D_SYM] = a;
+    sym_ = a;
     m4_        = a & R15;
     m6_        = (m6_ + 1) & R15;
     return;
 
 L0743:
-    ws_[D_KEYWORD] = a;
+    keyword_ = a;
 
     // *1111B: a name of letters and digits, the first 6 characters count.
-    ws_[D_NAME] = Word(m11) << 40;
+    name_ = Word(m11) << 40;
     m10         = 077773;
 L1113:
     c   = nextch();
@@ -509,48 +510,48 @@ L1113:
         if (m10 == 0)
             goto L1113;
         int k = int(m10) - 0100000; // -5…-1
-        ws_[D_NAME] |= Word(c) << (8 * (-k - 1));
+        name_ |= Word(c) << (8 * (-k - 1));
         m10 = (m10 + 1) & R15;
         goto L1113;
     }
-    a  = ws_[D_NAME];
+    a  = name_;
     m8 = ((a >> 40) & 037) << 4 | ((a >> 32) & 017);
     for (;;) {
-        Word w = ws_[(NAMES + m8) & R15];
+        Word w = tables_.name((m8) & R15);
         if (w == 0) {
-            ws_[(NAMES + m8) & R15] = ws_[D_NAME];
-            if (m8 == ws_[D_CONST])
+            tables_.name((m8) & R15) = name_;
+            if (m8 == tables_.free_const)
                 error(3);
             break;
         }
-        if (w == ws_[D_NAME])
+        if (w == name_)
             break;
         m8 = (m8 + 1) & R15;
     }
-    if (!ws_[D_KEYWORD]) {
-        ws_[D_SYM] = m8 << 12;
+    if (!keyword_) {
+        sym_ = Word(m8) << 12;
         m4_        = 0;
         return;
     }
 
     // *1142B: a keyword in quotes.
-    if (ws_[D_CHAR] != '\'') {
+    if (char_ != '\'') {
         m8 = 4;
-        if (ws_[D_AFTEREND])
+        if (afterend_)
             goto L1475;
         error(4);
     }
-    if (ws_[D_AFTEREND]) {
-        Word w = ws_[(NAMES + m8 + 1) & R15];
+    if (afterend_) {
+        Word w = tables_.name((m8 + 1) & R15);
         if ((w >> 40) != 0377)
             goto L1475;
         m4_ = w & R15;
         if (m4_ == 037) {
-            ws_[D_WARNED] = 0;
+            warned_ = 0;
             goto L0766;
         }
         if (m4_ == 031) {
-            ws_[D_AFTEREND] = 0;
+            afterend_ = 0;
             goto L0766;
         }
         if (m4_ != 075)
@@ -558,7 +559,7 @@ L1113:
         goto L0777;
     }
     {
-        Word w = ws_[(NAMES + m8 + 1) & R15];
+        Word w = tables_.name((m8 + 1) & R15);
         if ((w >> 40) != 0377) {
             m6_ = (m6_ + 1) & R15;
             error(5);
@@ -573,11 +574,11 @@ L1113:
         goto L1427;
     if (m4_ != 037)
         goto L0766;
-    ws_[D_AFTEREND] = ws_[D_CHAR];
+    afterend_ = char_;
     goto L0766;
 
 L1427: // 'COMMENT': after ';' or 'BEGIN' only; skipped up to ';' or '.,'
-    if (ws_[D_SYM] != 051 && ws_[D_SYM] != 036) {
+    if (sym_ != 051 && sym_ != 036) {
         m6_ = (m6_ + 1) & R15;
         error(6);
     }
@@ -592,14 +593,14 @@ L1433:
     c = nextch();
     if (c == ',')
         goto L1440;
-    c = ws_[D_CHAR];
+    c = char_;
     goto L1433;
 L1440:
     nextch();
     goto L0712;
 
 L1461: // *1461B: the text after END, up to ';', END, ELSE or EOP
-    switch (chclass(ws_[D_CHAR]).after_end) {
+    switch (chclass(char_).after_end) {
     case 0: // ';'
         goto L1472;
     case 1: // '.'
@@ -611,7 +612,7 @@ L1461: // *1461B: the text after END, up to ';', END, ELSE or EOP
         if (chclass(c).not_letter)
             goto L1475;
         m11 = c;
-        a   = ws_[D_CHAR];
+        a   = char_;
         goto L0743;
     default: // letter or digit
         nextch();
@@ -621,45 +622,45 @@ L1466:
     if (nextch() == ',')
         goto L1472;
 L1475:
-    if (!ws_[D_WARNED]) {
-        if (!ws_[D_LIST] && ws_[D_LINE] != ws_[D_PRINTED]) {
+    if (!warned_) {
+        if (!list_ && line_ != printed_) {
             print_card();
-            ws_[D_PRINTED] = ws_[D_LINE];
+            printed_ = line_;
         }
         print_line("WARNING SYMBOL AFTER END");
-        ws_[D_WARNED] = ws_[D_CHAR];
+        warned_ = char_;
     }
-    if (ws_[D_CHAR] == ';')
+    if (char_ == ';')
         goto L1472;
-    if (ws_[D_CHAR] == '.')
+    if (char_ == '.')
         goto L1466;
     nextch();
     goto L1461;
 L1472:
-    ws_[D_AFTEREND] = 0;
-    ws_[D_WARNED]   = 0;
+    afterend_ = 0;
+    warned_   = 0;
     m4_             = 051;
     goto L0766;
 
 L1015: // *1015B: a string; blanks are kept
-    ws_[D_BLANK]  = a;
-    ws_[D_BLANKS] = ONES;
-    ws_[D_SYM]    = ws_[D_STRINGS];
+    blank_  = a;
+    blanks_ = ONES;
+    sym_    = pool_end_;
 L1020:
-    ws_[D_NAME] = 0;
+    name_ = 0;
     m10         = 077773;
 L1022:
     c = nextch();
     if (c != '\'') {
         if (c == 05) {
-            ws_[D_BLANKS] = BLANKS;
-            ws_[D_BLANK]  = 040;
+            blanks_ = BLANKS;
+            blank_  = 040;
             goto L1030;
         }
         goto L1035;
     }
-    ws_[D_BLANKS] = BLANKS;
-    ws_[D_BLANK]  = 040;
+    blanks_ = BLANKS;
+    blank_  = 040;
     c             = nextch();
     if (c == '\'')
         goto L1030;
@@ -671,9 +672,9 @@ L1022:
     {
         Word v = 0;
         for (int i = 0;; i++) {
-            if (!chclass(ws_[D_CHAR]).octal)
+            if (!chclass(char_).octal)
                 error(8);
-            v = (v << 3) | (ws_[D_CHAR] & 7);
+            v = (v << 3) | (char_ & 7);
             if (i == 2) {
                 if (v & 0400)
                     error(8);
@@ -684,13 +685,13 @@ L1022:
             if (nextch() == '\'')
                 break;
         }
-        ws_[D_CHAR]   = v;
-        ws_[D_BLANKS] = ONES;
-        ws_[D_BLANK]  = 0377;
+        char_   = v;
+        blanks_ = ONES;
+        blank_  = 0377;
     }
 L1035: {
     int k = int(m10 ? m10 - 0100000 : 0); // -5…0
-    ws_[D_NAME] |= ws_[D_CHAR] << (8 * -k);
+    name_ |= char_ << (8 * -k);
     if (m10 != 0) {
         m10 = (m10 + 1) & R15;
         goto L1022;
@@ -701,95 +702,95 @@ L1035: {
 L1030:
     store_string_word();
     m4_ = 025;
-    ws_[D_SYM] |= 025;
+    sym_ |= 025;
     goto L0767;
 
 L1557: // *1556B: a number
-    ws_[D_LOST]   = a;
-    ws_[D_EXP]    = a;
-    ws_[D_LAST]   = a;
-    ws_[D_VALUE]  = a;
-    ws_[D_EXPNEG] = a;
+    lost_   = a;
+    exp_    = a;
+    last_   = a;
+    value_  = a;
+    expneg_ = a;
     m10           = 0;
 L1562:
-    switch (chclass(ws_[D_CHAR]).number) {
+    switch (chclass(char_).number) {
     case 0: // end
-        a = ws_[D_LAST];
+        a = last_;
         goto L1641;
     case 1: // exponent sign
-        if (ws_[D_LAST])
+        if (last_)
             goto L16324;
-        if (ws_[D_POINT]) {
-            if (ws_[D_FRAC])
+        if (point_) {
+            if (frac_)
                 error(9);
         }
-        ws_[D_VALUE] = REAL1;
+        value_ = REAL1;
     L16324:
-        if (ws_[D_EXP])
+        if (exp_)
             error(9);
-        ws_[D_POINT] = 0;
-        ws_[D_EXP]   = ws_[D_CHAR];
-        ws_[D_MANT]  = ws_[D_VALUE];
-        ws_[D_VALUE] = 0;
+        point_ = 0;
+        exp_   = char_;
+        mant_  = value_;
+        value_ = 0;
         c            = nextch();
         switch (chclass(c).exponent) {
         case 0:
             error(9);
         case 1: // '-'
-            ws_[D_EXPNEG] = 1;
+            expneg_ = 1;
             nextch();
-            ws_[D_LAST] = 0;
+            last_ = 0;
             break;
         case 2: // '+'
-            ws_[D_EXPNEG] = 0;
+            expneg_ = 0;
             nextch();
-            ws_[D_LAST] = 0;
+            last_ = 0;
             break;
         default: // digit
-            ws_[D_EXPNEG] = 0;
+            expneg_ = 0;
             break;
         }
-        ws_[D_LOST] = 0;
+        lost_ = 0;
         goto L1562;
     case 2: // '.'
         c = nextch();
         if (c == ',') {
-            ws_[D_SEMI] = ';';
-            a           = ws_[D_LAST];
+            semi_ = ';';
+            a           = last_;
             goto L1641;
         }
-        if (ws_[D_POINT])
+        if (point_)
             error(9);
-        ws_[D_LAST]  = 0;
-        ws_[D_POINT] = c;
-        ws_[D_FRAC]  = c;
-        if (ws_[D_EXP])
+        last_  = 0;
+        point_ = c;
+        frac_  = c;
+        if (exp_)
             error(9);
         goto L1562;
     default: // digit
-        if (ws_[D_LOST]) {
+        if (lost_) {
             m10 = (m10 + 1) & R15;
         } else {
-            Arith x(ws_[D_VALUE], rau_);
+            Arith x(value_, rau_);
             x.mul(INT10);
-            x.add((ws_[D_CHAR] & 017) | INT0);
-            ws_[D_NEXT] = x.acc;
+            x.add((char_ & 017) | INT0);
+            next_ = x.acc;
             x.sub(TWO40);
             if (!(x.acc & 0'0020'0000'0000'0000)) {
                 // *1651B: beyond 2^40
-                if (ws_[D_EXP])
+                if (exp_)
                     error(9);
-                ws_[D_LOST] = ws_[D_CHAR];
+                lost_ = char_;
                 m10         = (m10 + 1) & R15;
             } else {
-                ws_[D_VALUE] = ws_[D_NEXT];
+                value_ = next_;
             }
         }
-        if (ws_[D_POINT]) {
+        if (point_) {
             m10         = (m10 - 1) & R15;
-            ws_[D_FRAC] = 0;
+            frac_ = 0;
         }
-        ws_[D_LAST] = ws_[D_CHAR];
+        last_ = char_;
         nextch();
         goto L1562;
     }
@@ -797,28 +798,28 @@ L1562:
 L1641: // *1641B: the end of a number
     if (a == 0)
         error(9);
-    m8 = ws_[D_CONST];
-    if (ws_[D_EXP] || ws_[D_POINT]) {
-        if (!ws_[D_EXP]) {
-            ws_[D_MANT]  = ws_[D_VALUE];
-            ws_[D_VALUE] = 0;
+    m8 = tables_.free_const;
+    if (exp_ || point_) {
+        if (!exp_) {
+            mant_  = value_;
+            value_ = 0;
         }
-        if (!ws_[D_MANT]) {
+        if (!mant_) {
             a = 0;
         } else {
             // *1704B: scale the mantissa by the decimal exponent.
             rau_        = 2;
-            unsigned m9 = to_integer(ws_[D_VALUE]) & R15;
+            unsigned m9 = to_integer(value_) & R15;
             unsigned check; // the value *1740B tests
             if (m10 & 040000) {
-                if (ws_[D_EXPNEG]) {
+                if (expneg_) {
                     check = neg15(m10);
                     m10   = (check + m9) & R15;
                     goto L1740;
                 }
                 goto L1734;
             }
-            if (ws_[D_EXPNEG]) {
+            if (expneg_) {
                 m9 = neg15(m9);
                 goto L1734;
             }
@@ -835,7 +836,7 @@ L1641: // *1641B: the end of a number
                 a = 0;
                 goto L1676;
             }
-            a = ws_[D_MANT];
+            a = mant_;
             while (m10) {
                 Arith x(a, rau_);
                 x.div(REAL10);
@@ -844,41 +845,41 @@ L1641: // *1641B: the end of a number
             }
             goto L1676;
         L1712:
-            a = ws_[D_MANT];
+            a = mant_;
             if (m10 == 0)
                 goto L1676;
             if (m10 & 077740)
                 error(11);
-            m9         = (((ws_[D_MANT] << 1) & MASK48) >> 42) & R15;
+            m9         = (((mant_ << 1) & MASK48) >> 42) & R15;
             m9         = (m9 + 3 * m10) & R15;
-            Word mant  = ws_[D_MANT] & 04017777777777777;
-            ws_[D_KEY] = INT1;
+            Word mant  = mant_ & 04017777777777777;
+            key_ = INT1;
             while (m10) {
                 Arith x(C1_25, rau_);
-                x.mul(ws_[D_KEY]);
-                ws_[D_KEY] = x.acc;
+                x.mul(key_);
+                key_ = x.acc;
                 m10        = (m10 - 1) & R15;
             }
-            Arith x(ws_[D_KEY], rau_);
+            Arith x(key_, rau_);
             x.mul(mant);
-            ws_[D_POWER] = x.acc;
+            power_ = x.acc;
             Word e       = ((x.acc << 1) & MASK48) >> 42;
             if ((m9 + e) & 077700)
                 error(11);
-            a = arx(Word(m9) << 41, ws_[D_POWER]);
+            a = arx(Word(m9) << 41, power_);
         }
     L1676:
         a          = Word(intern(a, m8)) << 12;
         m4_        = 023;
-        ws_[D_SYM] = a | 023;
+        sym_ = a | 023;
         return;
     }
-    if (ws_[D_LOST])
+    if (lost_)
         error(10);
-    a          = Word(intern(to_integer(ws_[D_VALUE]), m8)) << 12;
+    a          = Word(intern(to_integer(value_), m8)) << 12;
     rau_       = 2;
     m4_        = 024;
-    ws_[D_SYM] = a | 024;
+    sym_ = a | 024;
 }
 
 //
@@ -921,16 +922,16 @@ unsigned Pass1::common_slot(Word name)
 {
     unsigned m4 = ((name >> 40) & 037) << 4 | ((name >> 32) & 017);
     for (;;) {
-        while (ws_[(NAMES + m4) & R15] != 0)
+        while (tables_.name((m4) & R15) != 0)
             m4 = (m4 + 1) & R15;
         cell(016111) = Word(m4) << 24;
         unsigned m11 = 0;
         for (;; m11 += 3) {
-            if (ws_[(COMTAB + m11) & R15] == 0) {
+            if (tables_.common((m11) & R15) == 0) {
                 cell(016111) = 0;
                 return m4;
             }
-            if (((ws_[(COMTAB + 1 + m11) & R15] & 0000077770000000) ^ cell(016111)) == 0)
+            if (((tables_.common((1 + m11) & R15) & 0000077770000000) ^ cell(016111)) == 0)
                 break;
         }
         m4 = (m4 + 1) & R15;
@@ -964,7 +965,7 @@ void Pass1::common()
 
     // *1161B: the name of the block, up to 6 characters.
     while ((c = nextch()) != '/') {
-        common_pack(ws_[(COMTAB + cell(016125)) & R15], ws_[D_CHAR]);
+        common_pack(tables_.common((cell(016125)) & R15), char_);
         if (cell(016131) == 070) {
             cell(016131) = 0;
             common_error(1);
@@ -973,8 +974,8 @@ void Pass1::common()
 
     // *1174B
     unsigned idx            = cell(016125) & R15;
-    unsigned m4             = common_slot(ws_[(COMTAB + idx) & R15]);
-    ws_[(NAMES + m4) & R15] = ws_[(COMTAB + idx) & R15];
+    unsigned m4             = common_slot(tables_.common((idx) & R15));
+    tables_.name((m4) & R15) = tables_.common((idx) & R15);
     dpush(Word(m4) | 06402000000000000);
     cell(016132) = Word(m3_) << 36;
     cell(016127) = cell(016125);
@@ -989,30 +990,30 @@ L1207:
 L1211:
     nextch();
 L1212:
-    if (ws_[D_CHAR] == ',' || ws_[D_CHAR] == ';')
+    if (char_ == ',' || char_ == ';')
         goto L1230;
-    if (ws_[D_CHAR] == '.') {
+    if (char_ == '.') {
         if (nextch() != ',')
             common_error(3);
-        ws_[D_CHAR] = ';';
+        char_ = ';';
         goto L1230;
     }
-    common_pack(cell(016111), ws_[D_CHAR]);
+    common_pack(cell(016111), char_);
     if (nextch() != '(')
         goto L1212;
 L1230:
-    ws_[(COMTAB + cell(016125)) & R15] = cell(016111);
+    tables_.common((cell(016125)) & R15) = cell(016111);
     cell(016125)                       = arx(cell(016125), 3);
     if (cell(016125) == 0377)
         common_error(2);
     m4                            = common_slot(cell(016111));
     idx                           = cell(016125) & R15;
-    ws_[(COMTAB - 2 + idx) & R15] = asn(Word(m4), 050) | cell(016132);
-    ws_[(COMTAB - 1 + idx) & R15] = 1;
+    tables_.common((idx - 2) & R15) = asn(Word(m4), 050) | cell(016132);
+    tables_.common((idx - 1) & R15) = 1;
     cell(016132)                  = arx(cell(016132), D_MASK) & D_MASK;
     cell(016131)                  = 0;
     cell(016127)                  = arx(cell(016127), Word(1) << 24);
-    switch (ws_[D_CHAR]) {
+    switch (char_) {
     case '(':
         break;
     case ',':
@@ -1028,7 +1029,7 @@ L1230:
     do {
         cell(016130) = 0;
         while ((c = nextch()) != ',' && c != ')')
-            cell(016130) = asn((ws_[D_CHAR] & 017) | cell(016130), 074);
+            cell(016130) = asn((char_ & 017) | cell(016130), 074);
         cell(016126) = REAL1;
         cell(016124) = 0;
         for (;;) {
@@ -1046,7 +1047,7 @@ L1230:
         }
         cell(016111 + (cell(016115) & R15)) = cell(016124);
         cell(016115)                        = arx(cell(016115), 1);
-    } while (ws_[D_CHAR] != ')');
+    } while (char_ != ')');
     {
         Arith x(cell(016111), rau_);
         x.mul(cell(016112));
@@ -1057,7 +1058,7 @@ L1230:
         x.add(INT0);
         rau_         = 6;
         cell(016124) = x.acc;
-        Word &size   = ws_[(COMTAB - 1 + idx) & R15];
+        Word &size   = tables_.common((idx - 1) & R15);
         size         = arx(x.acc & R15, size);
         cell(016127) = arx(asn(cell(016124), 050), cell(016127));
     }
@@ -1076,7 +1077,7 @@ L1230:
     // *1412B: the length of the block.
 L1412:
     cell(016131)                                   = 0;
-    ws_[(COMTAB + 1 + (cell(016127) & R15)) & R15] = asn(cell(016127), 0130);
+    tables_.common((1 + (cell(016127) & R15)) & R15) = asn(cell(016127), 0130);
     cell(016115)                                   = 0;
     cell(016127)                                   = 0;
 }

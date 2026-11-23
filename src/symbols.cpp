@@ -29,15 +29,10 @@ constexpr Word LABEL      = 0'0010'0000'0000'0000;
 constexpr Word PROCEDURE  = 0'0002'0000'0000'0000;
 constexpr Word ARRAY      = 0'0001'0000'0000'0000;
 
-constexpr unsigned DLIST_BEGIN = 04400;
-constexpr unsigned STANDARD    = 05754;
-constexpr unsigned DLIST_END   = 06000;
-constexpr unsigned PAGE        = 02000; // the names and constants page, 02000-03777
-constexpr unsigned NAMES       = 02144; // slot 0
-constexpr unsigned FREE_CONST  = 02003; // the lowest constant slot
+constexpr unsigned DLIST_BEGIN = Tables::DLIST_BEGIN;
+constexpr unsigned STANDARD    = Tables::STANDARD;
+constexpr unsigned DLIST_END   = Tables::DLIST_END;
 constexpr unsigned POOL_BASE   = 01634; // string index of the first pool word
-constexpr unsigned COMTAB      = 027245;
-constexpr unsigned COMTAB_END  = 027645;
 
 unsigned link(Word w)
 {
@@ -93,26 +88,26 @@ std::string iso_text(const Word *w, size_t n, size_t *used = nullptr)
 Symbols::Symbols(const Context &ctx)
     : names_(ctx.saved_names), strings_(ctx.strings)
 {
-    if (ctx.dlist.size() != DLIST_END - DLIST_BEGIN || names_.size() != 1024)
+    if (ctx.dlist.size() != DLIST_END - DLIST_BEGIN || names_.size() != Tables::SLOTS)
         throw std::logic_error("symbols: passes 1 and 2 have not run");
-    for (unsigned a = PAGE; a < PAGE + 1024; a++)
-        constants_.push_back(ctx.ws[a]);
-    first_constant_ = ctx.ws[FREE_CONST] & 07777;
+    constants_.assign(ctx.tables.names().begin(), ctx.tables.names().end());
+    first_constant_ = ctx.tables.free_const & 07777;
 
     // The D-list as pass 1 leaves it, at its addresses.
     std::vector<Word> dlist(DLIST_END);
     std::copy(ctx.dlist.begin(), ctx.dlist.end(), dlist.begin() + DLIST_BEGIN);
 
     // The 'COMMON' table: a zero second word ends it; block entries have slot 0.
-    for (unsigned a = COMTAB; a + 2 < COMTAB_END && ctx.ws[a + 1]; a += 3) {
-        Word info = ctx.ws[a + 1];
+    const Tables &t = ctx.tables;
+    for (unsigned i = 0; i + 2 < Tables::COMMON_SIZE && t.common(i + 1); i += 3) {
+        Word info = t.common(i + 1);
         CommonEntry e;
-        Word text = ctx.ws[a];
+        Word text = t.common(i);
         e.name    = rtrim(iso_text(&text, 1));
         e.slot = (info >> 24) & 07777;
         if (e.slot) {
             e.decl = (info >> 36) & 07777;
-            e.size = ctx.ws[a + 2] & 077777777;
+            e.size = t.common(i + 2) & 077777777;
         } else {
             e.size = info & 077777777;
         }
@@ -228,18 +223,16 @@ std::vector<unsigned> Symbols::formals(unsigned addr) const
 
 std::string Symbols::name(unsigned slot) const
 {
-    unsigned i = NAMES + slot - PAGE;
-    if (i >= names_.size())
+    if (slot >= names_.size())
         return "?";
-    return rtrim(iso_text(&names_[i], 1));
+    return rtrim(iso_text(&names_[slot], 1));
 }
 
 Word Symbols::constant(unsigned slot) const
 {
-    unsigned i = NAMES + slot - PAGE;
-    if (slot < first_constant_ || i >= constants_.size())
+    if (slot < first_constant_ || slot >= constants_.size())
         throw std::out_of_range("no constant in slot " + std::to_string(slot));
-    return constants_[i];
+    return constants_[slot];
 }
 
 double Symbols::to_real(Word w)

@@ -14,7 +14,7 @@
 #include "item.h"
 #include "listing.h"
 #include "options.h"
-#include "workspace.h"
+#include "tables.h"
 
 //
 // State shared by the passes.
@@ -22,11 +22,11 @@
 struct Context {
     Options options;
     std::string source;          // program text, UTF-8 (pass 1)
-    Workspace ws;                // tables at their original addresses
+    Tables tables;               // shared by passes 1 and 2
     Listing *listing{ nullptr }; // listing output, or none
 
     // What the original keeps on its scratch drums.
-    std::vector<Word> saved_names; // drum 26 zone 0: page 02000-03777 as pass 2 starts
+    std::vector<Word> saved_names; // the name table by slot as pass 2 starts (drum 26 zone 0)
     std::vector<Word> strings;     // drum 27 zones 34..: the string pool (pass 1)
     std::vector<Word> dlist;       // 04400-05777 as pass 1 leaves it
 

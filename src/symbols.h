@@ -101,8 +101,8 @@ public:
     void print(std::ostream &out) const;
 
 private:
-    std::vector<Word> names_;     // page 02000-03777 after pass 1
-    std::vector<Word> constants_; // page 02000-03777 after pass 2
+    std::vector<Word> names_;     // the name table by slot after pass 1
+    std::vector<Word> constants_; // … after pass 2
     std::vector<Word> strings_;
     unsigned first_constant_{};
 

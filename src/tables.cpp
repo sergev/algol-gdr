@@ -2,9 +2,8 @@
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
 
-#include "workspace.h"
+#include "tables.h"
 
-#include <stdexcept>
 #include <string>
 
 #include "card.h"
@@ -60,7 +59,7 @@ struct Standard {
     const char *name;
 };
 
-const Standard STANDARD[] = {
+const Standard STANDARD_IDS[] = {
     { 06402340000000000, "ASSIGN" },  { 02402000000000000, "ATOS" },
     { 06442300000000000, "LENGTH" },  { 02402000000000000, "STOA" },
     { 06422040000100000, "SIN" },     { 06422040000100000, "COS" },
@@ -72,8 +71,6 @@ const Standard STANDARD[] = {
     { 06002200000000000, "NEWLINE" }, { 06002240000000000, "NEWPAGE" },
     { 02402000000000000, "LOAD" },    { 06402000000000000, "LOADGO" },
 };
-
-constexpr unsigned NAMES_BASE = 02144;
 
 // A name's word: its first 6 characters in ISO.
 Word name_word(const char *name)
@@ -89,46 +86,26 @@ unsigned hash(Word w)
 
 } // namespace
 
-void Workspace::reset()
+Tables::Tables()
 {
-    low_.fill(0);
-    comtab_.fill(0);
-    Workspace &w = *this;
-    w[02000]     = 051;         // the symbol: ';'
-    w[02003]     = 01623;       // the next free constant slot
-    w[02004]     = 01634 << 12; // the string pool
-    w[02030]     = 040;         // the character to skip
-    w[02031]     = iso_word("      ");
-    w[02050]     = 01634 << 12; // the end of the string pool
-    w[02063]     = iso_word("ERROR ");
-
     for (const auto &n : NAMES) {
-        Word name     = name_word(n.name);
-        unsigned slot = hash(name);
-        while (w[NAMES_BASE + slot])
+        Word w        = name_word(n.name);
+        unsigned slot = hash(w);
+        while (names_[slot])
             slot++;
-        w[NAMES_BASE + slot] = name;
+        names_[slot] = w;
         if (n.code)
-            w[NAMES_BASE + slot + 1] = KEYWORD | n.code;
+            names_[slot + 1] = KEYWORD | n.code;
     }
-    unsigned a = 03771;
+    unsigned slot = 01625; // 03771…
     for (Word c : PRESET_CONSTANTS)
-        w[a++] = c;
-    a = 05754;
-    for (const auto &s : STANDARD) {
-        Word name     = name_word(s.name);
-        unsigned slot = hash(name);
-        while (w[NAMES_BASE + slot] != name)
-            slot++;
-        w[a++] = s.bits | slot;
+        names_[slot++] = c;
+    unsigned a = STANDARD;
+    for (const auto &s : STANDARD_IDS) {
+        Word w  = name_word(s.name);
+        unsigned k = hash(w);
+        while (names_[k] != w)
+            k++;
+        dlist(a++) = s.bits | k;
     }
-}
-
-Word *Workspace::word(unsigned addr)
-{
-    if (addr >= LOW_BEGIN && addr < LOW_END)
-        return &low_[addr - LOW_BEGIN];
-    if (addr >= COMTAB && addr < COMTAB_END)
-        return &comtab_[addr - COMTAB];
-    throw std::out_of_range("workspace address " + std::to_string(addr) + " out of range");
 }

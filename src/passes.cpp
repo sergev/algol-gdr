@@ -27,8 +27,8 @@ Stream run_pass(int n, Context &ctx, const Stream &input)
         {
             Stream out = Pass1(ctx).run();
             ctx.dlist.clear();
-            for (unsigned a = 04400; a < 06000; a++)
-                ctx.dlist.push_back(ctx.ws[a]);
+            for (unsigned a = Tables::DLIST_BEGIN; a < Tables::DLIST_END; a++)
+                ctx.dlist.push_back(ctx.tables.dlist(a));
             return out;
         }
     case 2:
