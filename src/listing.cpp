@@ -110,7 +110,7 @@ void Listing::row(const std::string &cell)
 void Listing::print_page()
 {
     const size_t n = rows_per_column();
-    if (rows_.size() <= n) {
+    if (rows_.size() < n) {
         for (const auto &r : rows_)
             if (!r.empty())
                 out_ << r << '\n';

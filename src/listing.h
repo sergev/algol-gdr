@@ -26,10 +26,10 @@ std::string rtrim(std::string s);
 // The printout of the compiler (AG01644, AG01713 and ASMPRINT). A text of 11
 // words or more is split after 10 words, the rest indented by 15 (not with
 // setftn:one,long). Rows are gathered into pages of two columns, 65 rows each
-// on the first page and 66 after; a blank row prints nothing. A page that
-// fills its left column only prints as plain lines, otherwise each row is the
-// left cell padded to 65 characters and the right one, and the page ends with
-// a form feed. With setftn:one rows are printed at once, blank ones too, and
+// on the first page and 66 after; a blank row prints nothing. A page shorter
+// than its left column prints as plain lines, otherwise each row is the left
+// cell padded to 65 characters and the right one, and the page ends with a
+// form feed. With setftn:one rows are printed at once, blank ones too, and
 // the printout ends with an empty line.
 //
 class Listing {

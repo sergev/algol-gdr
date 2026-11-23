@@ -55,8 +55,8 @@ through `*64` (the left cell, `GOST_SET_POSITION` 65, the right cell). As dubna 
 - A page has two columns of 65 rows on the first page and 66 on the next ones. Each page
   starts with a form feed and a header line: the date on the first page, empty after.
 - A row that is blank in both columns prints nothing.
-- A page with its left column only prints its rows as plain lines (all short listings).
-  Otherwise each row is the left cell padded to 65 characters and the right one, and the
+- A page shorter than its left column prints its rows as plain lines (all short
+  listings). Otherwise (also a page that just fills its left column) each row is the left cell padded to 65 characters and the right one, and the
   form feed of the next page ends its last line.
 - With `setftn:one` there are no pages: rows print at once, blank ones too, and the printout
   ends with an empty line.
@@ -372,8 +372,11 @@ A block header has bit 48 set, and its low 12 bits give the end address.
   - Opening (17455): each descriptor from the header up to its end (header & 07777) is bound
     to its slot (02144+slot = its address) and keeps the binding it shadows in bits 33–21.
     A non-descriptor word is a link: the scan goes on at its address (nested blocks are
-    skipped). If the shadowed binding lies between the header and its end: TWICE DECLARED;
-    after it M3 holds the slot, not the header, for the rest of the scan.
+    skipped). If the shadowed binding lies between the header and its end: TWICE DECLARED.
+    After it the original leaves the slot in M3 and checks the rest of the scan against the
+    "block" at the slot, whose end word is in low memory (the resident monitor): it reports
+    later declarations that shadow an outer binding, or misses real ones. Ours keeps the
+    header and reports every redeclaration in the block, so such listings differ.
   - BEGIN (17523): drops two stack words; the popped value, if not 0, restores 02004 and the
     item goes out with 02030. Closing (17475) gives every slot of the block its shadowed
     binding back; 02030 gets the outer block.

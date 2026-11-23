@@ -23,11 +23,6 @@ Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compile.object`,
 
 ### Cleanup
 
-- **D18** Low memory (00000-01603, the resident monitor) as the original pass 2 sees
-  it: after the first TWICE DECLARED of a block, `open_scope` checks the next ones against
-  the "block" at the name slot, whose end word lies there; the original reports every later
-  declaration that shadows a binding, ours none (found by fuzzing against `ref-compile`).
-  Also the page after ↑EOP↑ BEFORE END OF PROGRAM ends with a form feed in the original.
 - **D19** `--full`: the object listing of the sub-overlay `A/PRINTM` (30355…, modules not
   analysed yet); or move it to a later milestone. Its rows are the only cells that can be
   longer than 64 characters (left) or 63 (right, which dubna wraps at 128).
