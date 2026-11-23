@@ -24,4 +24,4 @@ Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compile.object`,
 ### Cleanup
 
 - **D19** `--full`: the object listing of the sub-overlay `A/PRINTM` (30355…, modules not
-  analysed yet), in one column as the rest; or move it to a later milestone.
+  analysed yet), in one column as the rest.

@@ -8,7 +8,7 @@
 //
 struct Options {
     std::string source_file;                   // input .alg file
-    std::string object_file{ "stdarray.out" }; // output standard array
+    std::string object_file;                   // output standard array (default: NAME.o)
     bool full_listing{};                       // like *full card
     bool list{};                               // listing; off: like *no list card
     bool check_mode{};                         // like *check card: CHECKFL*

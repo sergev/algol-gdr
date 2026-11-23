@@ -18,10 +18,10 @@ static void print_usage(std::ostream &out)
         << "Usage:\n"
         << "    " << prog_name << " [options...] file.alg\n"
         << "Options:\n"
-        << "    -o FILE, --output=FILE  Object file (default stdarray.out)\n"
-        << "    --full                  Full listing, with object code (like *FULL); implies --list\n"
-        << "    --list                  Listing of the program (else errors only, like *NO LIST)\n"
-        << "    --check                 Run-time checks, no optimization (like *CHECK)\n"
+        << "    -o FILE, --output=FILE  Object file (default file.o)\n"
+        << "    --list                  Listing of the program (else errors only)\n"
+        << "    --full                  Full listing, with object code\n"
+        << "    --check                 Run-time checks, no optimization\n"
         << "    --stop-after=N          Print the stream of pass N (1-5) and stop\n"
         << "    --dump                  Print object file (standard array) and exit\n"
         << "    -h, --help              Display available options\n"
@@ -96,6 +96,13 @@ int main(int argc, char *argv[])
     if (opt.source_file.empty()) {
         print_usage(std::cerr);
         return EXIT_FAILURE;
+    }
+
+    if (opt.object_file.empty()) {
+        std::string base = opt.source_file;
+        if (base.size() > 4 && base.compare(base.size() - 4, 4, ".alg") == 0)
+            base.resize(base.size() - 4);
+        opt.object_file = base + ".o";
     }
 
     try {

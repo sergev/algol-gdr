@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <fstream>
 
 #include "util.h"
@@ -107,4 +108,16 @@ TEST(cli, bad_stop_after)
     auto r = run_command(compiler + " --stop-after=6 " TEST_DIR "/algol/hello.alg");
     EXPECT_NE(r.exit_code, 0);
     EXPECT_NE(r.output.find("--stop-after"), std::string::npos);
+}
+
+// The object of FOO.alg goes to FOO.o by default.
+TEST(cli, default_output)
+{
+    const std::string base = BUILD_DIR "/cli_default";
+    std::filesystem::copy_file(TEST_DIR "/algol/hello.alg", base + ".alg",
+                               std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::remove(base + ".o");
+    auto r = run_command(compiler + " " + base + ".alg");
+    EXPECT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_EQ(file_contents(base + ".o"), file_contents(TEST_DIR "/algol/hello.std"));
 }
