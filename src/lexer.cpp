@@ -327,7 +327,7 @@ Token Lexer::scan()
     case QUOTE:
         c = advance();
         if (c == QUOTE)
-            return string();
+            return rejected_string(false);
         if (is_letter(c)) {
             std::string w = word(true);
             if (text_[col_] == QUOTE)
@@ -337,10 +337,10 @@ Token Lexer::scan()
         if (is_digit(c))
             return octal();
         if (c == '(' && advance() == QUOTE)
-            return string();
+            return rejected_string(false);
         return error("Unexpected character after a quote");
     case '"':
-        return string();
+        return rejected_string(true);
     case '`':
         return quoted_string(QUOTE);
     case U'‘':
@@ -511,60 +511,42 @@ Token Lexer::after_end()
     return make(Sym::SEMICOLON);
 }
 
-// A string of Algol-GDR: ''…'' or '('…')'; 'ddd' inside is a character by
-// its octal code. Deprecated: a warning at the first one.
-Token Lexer::string()
+// A string of Algol-GDR, ''…'' or '('…')' ('ddd' inside), or one in "…": an
+// error, skipped up to its end.
+Token Lexer::rejected_string(bool double_quoted)
 {
-    Pos start = start_;
-    if (!old_string_) {
-        old_string_ = true;
-        diag_.warning(start, "Strings in '' are deprecated: write `text'");
-    }
+    Pos start    = start_;
     string_line_ = start;
     skip_blanks_ = false;
-    std::string text;
     for (;;) {
         char32_t c = advance();
-        if (c != QUOTE) {
-            append_utf8(text, c);
+        if (double_quoted) {
+            if (c == '"')
+                break;
             continue;
         }
-        skip_blanks_ = true;
-        c            = advance();
+        if (c != QUOTE)
+            continue;
+        c = advance();
         if (c == QUOTE)
             break;
-        if (c == ')') {
-            if (advance() == QUOTE)
-                break;
-            skip_line();
-            return error("Bad end of a string");
+        if (c == ')' && text_[col_ + 1] == QUOTE) {
+            step();
+            break;
         }
-        char32_t v = 0;
-        for (int n = 0;; n++) {
-            if (n == 7 || !is_octal(ch_)) {
-                skip_line();
-                return error("Bad character code in a string");
-            }
-            v = v << 3 | (ch_ & 7);
-            if (advance() == QUOTE)
-                break;
-        }
-        if (v > 0x10ffff || (v >= 0xd800 && v <= 0xdfff)) {
-            skip_line();
-            return error("Bad character code in a string");
-        }
-        append_utf8(text, v);
-        skip_blanks_ = false;
+        while (is_octal(c)) // 'ddd': c ends at its closing quote
+            c = advance();
     }
+    skip_blanks_ = true;
     step();
-    Token t = make(Sym::STRING_CONST);
+    Token t = error(double_quoted ? "Strings in \"…\" are not supported: write `text'"
+                                  : "Strings in '' are not supported: write `text'");
     t.line  = start;
-    t.text  = text;
     return t;
 }
 
-// A string: `…' or ‘…’, nested; the inner quotes are kept. In the outer
-// level of `…', '` is an apostrophe.
+// A string: `…' or ‘…’, nested; the inner quotes are kept. In `…', '` is
+// an apostrophe.
 Token Lexer::quoted_string(char32_t close)
 {
     char32_t open = ch_;
@@ -576,8 +558,8 @@ Token Lexer::quoted_string(char32_t close)
         char32_t c = advance();
         if (c == open) {
             depth++;
-        } else if (c == close && depth == 1 && open == '`' && text_[col_ + 1] == '`') {
-            step(); // '` in the outer string: an apostrophe
+        } else if (c == close && open == '`' && text_[col_ + 1] == '`') {
+            step(); // '`: an apostrophe
         } else if (c == close && --depth == 0) {
             break;
         }

@@ -80,19 +80,13 @@ Any other character outside a string or comment is an error: `Illegal character 
 
 ## Strings
 
-- A string is in `` `…' `` or in `‘…’`. Quotes of the same kind nest, and the inner ones
+- A string is in `` `…' `` or in `‘…’` (U+2018, U+2019). 
+  Quotes of the same kind nest, and the inner ones
   belong to the string: `` `Hello, `Algol'' `` is ``Hello, `Algol'``.
-- A lone apostrophe: `` '` `` in the outer level of `` `…' `` (as if the string closed and
-  opened again): `` `it'`s' `` is `it's`. Only there: in a nested string `` '` `` closes it
-  and opens another (`` `see `a'`b' now' `` is ``see `a'`b' now``), and the two characters
-  must be on one line. Or the whole string in `‘…’`, where `'` is a plain character:
-  `‘it's’`. Neither is X1 Algol: `x1sim` prints `` `it'`s' `` as `it`, and rejects
-  `‘…’`.
+- A lone apostrophe in `` `…' `` is `` '` ``.
+  Or the whole string in `‘…’`, where `'` is a plain character: `‘it's’`.
 - Inside a string every character counts, blanks and line ends too; the text is kept as
   UTF-8, in its case.
-- Deprecated: the strings of Algol-GDR, `''…''` and `'('…')'` (also opened by `"`), where
-  `'ddd'` is a character by its octal code point (`''X'101'''` is `XA`). They do not nest,
-  and the first one in a file gets a warning: `Strings in '' are deprecated: write `text'`.
 
 ## Comments
 

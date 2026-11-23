@@ -157,14 +157,12 @@ private:
     bool semicolon_{}; // a number ended with '.,'
     bool eof_{};
     bool publication_{}; // keywords underlined: b̲e̲g̲i̲n̲, strings in `…'
-    bool old_string_{};  // a string in '' was seen: warned once
     int string_line_{};  // where an open string began
     Sym last_{ Sym::SEMICOLON };
 
     char32_t fetch();
     char32_t advance();
     void step() { col_++; }
-    void skip_line() { col_ = text_.size(); }
     std::string word(bool raw);
 
     Token make(Sym s) const;
@@ -176,7 +174,7 @@ private:
     bool underlined() const;
     std::string underlined_word();
     Token quoted_string(char32_t close);
-    Token string();
+    Token rejected_string(bool double_quoted);
     Token octal();
     Token number(bool point); // point: after a leading '.'
     Token after_end();

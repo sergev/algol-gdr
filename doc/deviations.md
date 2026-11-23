@@ -11,7 +11,8 @@ The reference language is printed with underlined keywords and symbols that a ke
 not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60.asdl):
 
 - Keywords are `_word` in any case; strings are `` `…' `` or `‘…’`, nested, the inner
-  quotes kept, an apostrophe `` '` `` in the outer level of `` `…' `` (the Algol-GDR `''…''` and `'('…')'`, which do not nest, are deprecated); the
+  quotes kept, an apostrophe `` '` `` in `` `…' `` (the Algol-GDR `''…''` and `'('…')'`
+  are errors); the
   ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ÷ ↑` have ASCII and word forms.
 - A file with an underlined letter (U+0332) is in the publication form: keywords are
   underlined words (`b̲e̲g̲i̲n̲`, `g̲o̲ t̲o̲`). Both forms read the same symbols otherwise.

@@ -69,13 +69,13 @@ TEST(Lexer, strings)
     EXPECT_EQ(t[3].text, "");
     EXPECT_EQ(messages, "");
 
-    // '` in the outer level is an apostrophe; in a nested string it closes
-    // and opens; split by a line end it is two strings.
-    t = tokens("`it'`s' `'`' `see `a'`b' now' `a'\n`b'\n_eop", &messages);
+    // '` is an apostrophe, also in a nested string; split by a line end it
+    // is two strings.
+    t = tokens("`it'`s' `'`' `see `it'`s' now' `a'\n`b'\n_eop", &messages);
     ASSERT_EQ(t.size(), 6u);
     EXPECT_EQ(t[0].text, "it's");
     EXPECT_EQ(t[1].text, "'");
-    EXPECT_EQ(t[2].text, "see `a'`b' now");
+    EXPECT_EQ(t[2].text, "see `it's' now");
     EXPECT_EQ(t[3].text, "a");
     EXPECT_EQ(t[4].text, "b");
     EXPECT_EQ(messages, "");
@@ -84,16 +84,19 @@ TEST(Lexer, strings)
     EXPECT_EQ(messages, "x.alg:1: error: Unterminated string\n");
 }
 
-// The strings of Algol-GDR, deprecated: one warning.
-TEST(Lexer, old_strings)
+// The strings of Algol-GDR and in "…": an error each, skipped whole.
+TEST(Lexer, rejected_strings)
 {
     std::string messages;
-    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750'''\n_eop", &messages);
-    ASSERT_EQ(t.size(), 4u);
-    EXPECT_EQ(t[0].text, "A b");
-    EXPECT_EQ(t[1].text, "Ж");
-    EXPECT_EQ(t[2].text, "XAY⏨");
-    EXPECT_EQ(messages, "x.alg:1:1: warning: Strings in '' are deprecated: write `text'\n");
+    auto t = tokens("''A b'' '('Ж')' ''X'101'Y'21750''' \"q\nr\" 1\n_eop", &messages);
+    EXPECT_EQ(messages,
+              "x.alg:1:1: error: Strings in '' are not supported: write `text'\n"
+              "x.alg:1:9: error: Strings in '' are not supported: write `text'\n"
+              "x.alg:1:17: error: Strings in '' are not supported: write `text'\n"
+              "x.alg:1:36: error: Strings in \"…\" are not supported: write `text'\n");
+    ASSERT_EQ(t.size(), 6u);
+    EXPECT_EQ(t[3].sym, Sym::ERROR);
+    EXPECT_EQ(t[4].sym, Sym::INTEGER_CONST);
 }
 
 TEST(Lexer, keywords_and_names)
@@ -158,9 +161,8 @@ TEST(Lexer, errors)
               "x.alg:1:5: error: Unknown keyword _foo\n"
               "x.alg:1:10: error: Write a keyword as _begin, not in quotes\n"
               "x.alg:1:18: error: Malformed number\n"
-              "x.alg:2:1: warning: Strings in '' are deprecated: write `text'\n"
-              "x.alg:2:1: error: Bad character code in a string\n");
-    EXPECT_EQ(t.back().sym, Sym::END_OF_FILE);
+              "x.alg:2:1: error: Strings in '' are not supported: write `text'\n");
+    EXPECT_EQ(t.back().sym, Sym::EOP);
 }
 
 // The publication form: underlined keywords, `…' strings nested.

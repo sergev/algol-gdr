@@ -105,10 +105,9 @@ Milestones (all done; the history is in README.md):
 
 UTF-8 text. Keywords are `_` and a word, in any case (`_begin`, `_eop` may end the program); a
 blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in
-`` `…' `` or `‘…’`, nested, the inner quotes kept; in the outer level of `` `…' `` an
-apostrophe is `` '` `` (`` `it'`s' ``); the Algol-GDR `''…''` and `'('…')'`
-(`'ddd'` inside: a character by its octal code point; `′` is a quote too) are deprecated, a
-warning at the first one of a file. Octal constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give
+`` `…' `` or `‘…’`, nested, the inner quotes kept; in `` `…' `` an apostrophe is `` '` ``
+(`` `it'`s' ``). The Algol-GDR `''…''` and `'('…')'` and strings in `"…"` are errors, each
+skipped whole (`′` is a quote too). Octal constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give
 keywords in lower case, messages as `_begin`. Blanks are ignored inside names and numbers
 (`noun phrase` is `nounphrase`). The original wrote keywords in quotes: `'BEGIN'`. Identifiers:
 Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as written;
