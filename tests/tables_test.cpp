@@ -14,7 +14,7 @@ static Word workspace(unsigned addr)
 
 TEST(tables, workspace)
 {
-    EXPECT_EQ(workspace(02166), 02025112220254400u); // BEGIN
+    EXPECT_EQ(workspace(02166), 02025112220254400u); // ARRAY
     EXPECT_EQ(workspace(02167), 07760000000000040u);
     EXPECT_EQ(workspace(03771), 00020000000000000u);
     EXPECT_EQ(workspace(05754), 06402340000000027u);

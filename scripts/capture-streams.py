@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """capture-streams.py - pass streams and data from a dubna -d imer trace of Algol-GDR.
 
-    capture-streams.py TRACE OUTBASE [TABLES_DATA]
+    capture-streams.py TRACE OUTBASE [DUMP_WORKSPACE]
 
 Writes OUTBASE.sN (stream written by pass N, one item per line in octal, in memory
 order: a stream written backward is reversed) and OUTBASE.mem (per pass, the words
@@ -16,12 +16,13 @@ first instruction. Pass 3 moves back over what it wrote (the FOR rewrite): its
 stream is read from where it left it, drum 26 zones 10…, up to EOP (075).
 
 Memory and the scratch drums are shadowed from the start of pass 1: memory starts
-as the data set by the driver (TABLES_DATA, default src/tables_data.cpp), then
+as the data set by the driver (from DUMP_WORKSPACE, default build/tests/dump-workspace), then
 follows the traced writes and drum transfers. Every traced read is checked
 against the shadow; mismatches are reported on stderr.
 """
 import os
 import re
+import subprocess
 import sys
 
 PASSES = {'13666': 1, '17223': 2, '22162': 3, '23523': 4, '26260': 5, '26666': 6}
@@ -34,7 +35,6 @@ DRUM = re.compile(r'^\s+Drum ([0-7]+) (Read|Write) \[([0-7]{5})-([0-7]{5})\] = '
 REG = re.compile(r'^\s+M([0-7]+) = ([0-7]{5})$')
 LEXRET = re.compile(r'^1(5[4-7]|6[0-4])[0-7]{2} [LR]: 14 30 00000 uj')
 INSN = re.compile(r'^[0-7]{5} [LR]: ')
-INIT = re.compile(r'^    \{ 0([0-7]+), 0([0-7]+) \},')
 RANGES = [(0o1736, 0o12000), (0o27245, 0o27645)]
 DRUMS = {'26', '27'}     # scratch drums: data and streams between passes
 
@@ -60,13 +60,13 @@ def main():
     if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
     trace, out = sys.argv[1], sys.argv[2]
-    data = sys.argv[3] if len(sys.argv) > 3 else \
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), '../src/tables_data.cpp')
+    dump = sys.argv[3] if len(sys.argv) > 3 else \
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), '../build/tests/dump-workspace')
     init = {}
-    for line in open(data):
-        m = INIT.match(line)
-        if m:
-            init[int(m.group(1), 8)] = int(m.group(2), 8)
+    for line in subprocess.run([dump], capture_output=True, text=True, check=True).stdout.split('\n'):
+        if line:
+            addr, value = line.split()
+            init[int(addr, 8)] = int(value, 8)
 
     npass = 0
     streams = {}            # pass -> [(entry, value)]

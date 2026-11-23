@@ -6,7 +6,7 @@ TEST(workspace, init)
 {
     Workspace ws;
     EXPECT_EQ(ws[02000], 051u);
-    EXPECT_EQ(ws[02166], 02025112220254400u); // BEGIN
+    EXPECT_EQ(ws[02166], 02025112220254400u); // ARRAY
     EXPECT_EQ(ws[04400], 0u);                 // D-list
     EXPECT_EQ(ws[05754], 06402340000000027u);
     EXPECT_EQ(ws[027245], 0u);
