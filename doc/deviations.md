@@ -21,7 +21,6 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 | Deviation | Where | Task |
 |---|---|---|
-| No integer division `÷` | lexer, parser, checker, code generator | F2 |
 | Unsigned integers are not labels | parser | F3 |
 | The parameter delimiter `) letter string: (` is not read; only `,` | parser | F3 |
 | Every formal parameter must be specified | parser | F4 |

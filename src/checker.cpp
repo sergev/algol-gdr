@@ -1043,6 +1043,10 @@ ExprPtr Checker::binary(const syn::expr::Binary &b, int line)
         l = convert(std::move(l), Type::REAL, line, "");
         r = convert(std::move(r), Type::REAL, line, "");
         return make(BinaryOp::DIV, Type::REAL);
+    case Sym::INTDIV:
+        if (l->type != Type::INTEGER || r->type != Type::INTEGER)
+            return fail();
+        return make(BinaryOp::INT_DIV, Type::INTEGER);
     case Sym::POWER: {
         if (l->type == Type::BITS && r->type == Type::INTEGER)
             return make(BinaryOp::POWER, Type::BITS);

@@ -30,6 +30,7 @@ enum class Sym {
     MINUS,
     TIMES,
     SLASH,
+    INTDIV, // ÷ _div
     POWER,
     LT,
     LE,

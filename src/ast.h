@@ -31,7 +31,24 @@ enum class StdFunc { ABS, SIGN, SQRT, SIN, COS, ARCTAN, LN, EXP, ENTIER, LENGTH 
 enum class StdProc { STOP, LOAD, LOADGO, ASSIGN, ATOS, STOA };
 enum class IoOp { PRINT, PUNCH, READ, WRITE, DECODE, ENCODE, REWIND, BACKSPACE, ENDFILE };
 enum class UnaryOp { NEG, NOT };
-enum class BinaryOp { ADD, SUB, MUL, DIV, POWER, LT, LE, EQ, NE, GE, GT, AND, OR, IMPL, EQUIV };
+enum class BinaryOp {
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    INT_DIV,
+    POWER,
+    LT,
+    LE,
+    EQ,
+    NE,
+    GE,
+    GT,
+    AND,
+    OR,
+    IMPL,
+    EQUIV
+};
 enum class Conversion { INT_TO_REAL, REAL_TO_INT };
 
 struct Expr;

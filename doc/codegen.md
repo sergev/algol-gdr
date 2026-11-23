@@ -21,7 +21,8 @@ globals; strings made at run time (concatenation, slices) are allocated with `ma
 never freed, as on the original's heap.
 
 Conversions: integer to real is `sitofp`. Real to integer (an assignment or a value
-parameter) rounds as `A/RTOI`: ⌊x + ½⌋. `/` always gives a real.
+parameter) rounds as `A/RTOI`: ⌊x + ½⌋. `/` always gives a real; `÷` is `algol_idiv`, truncating toward zero, an error
+when dividing by zero.
 
 ## Functions and frames
 

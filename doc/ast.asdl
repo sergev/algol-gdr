@@ -126,7 +126,7 @@ module AST {
     -- 076, 077; Power: 0147-0153, 0347, 0350 (on bits by a constant: a shift,
     -- 0352). Add on strings concatenates. Relations on numbers, strings (0157),
     -- bits (Eq, Ne). And, Or, Not on Boolean operands and on bits (0203).
-    BinaryOp = Add | Sub | Mul | Div | Power
+    BinaryOp = Add | Sub | Mul | Div | IntDiv | Power
              | Lt | Le | Eq | Ne | Ge | Gt
              | And | Or | Impl | Equiv
 

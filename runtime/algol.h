@@ -47,7 +47,8 @@ _Bool algol_read_boolean(void);
 char *algol_read_string(void);
 void algol_read_array(int64_t *desc, int64_t type);
 
-// Exponentiation.
+// Integer division, exponentiation.
+int64_t algol_idiv(int64_t a, int64_t b);
 int64_t algol_ipow(int64_t base, int64_t exp);
 double algol_rpow(double base, int64_t exp);
 double algol_power(double x, double y);

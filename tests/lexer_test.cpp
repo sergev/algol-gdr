@@ -94,6 +94,8 @@ TEST(Lexer, keywords_and_names)
     EXPECT_EQ(syms("¬A ∨ B ∧ C ⊃ D ≡ E ≤ F ≥ G ≠ H × I ↑ J _eop"),
               syms("_not A _or B _and C _impl D _equiv E\n"
                    "_le F _ge G _ne H * I _power J _eop"));
+    EXPECT_EQ(syms("A ÷ B _div C _eop"), (std::vector<Sym>{ Sym::IDENT, Sym::INTDIV, Sym::IDENT,
+                                                            Sym::INTDIV, Sym::IDENT, Sym::EOP }));
 }
 
 TEST(Lexer, comment_and_after_end)

@@ -1,11 +1,21 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// Exponentiation, after the original's A/IHOCHI, A/RHOCHI and POWER.
+// Integer division; exponentiation, after the original's A/IHOCHI, A/RHOCHI and POWER.
 //
 #include <math.h>
 
 #include "algol.h"
+
+// a ÷ b: the quotient truncated toward zero.
+int64_t algol_idiv(int64_t a, int64_t b)
+{
+    if (b == 0)
+        algol_error("Integer division by zero");
+    if (b == -1)
+        return -(uint64_t)a;
+    return a / b;
+}
 
 // integer ↑ integer: repeated multiplication.
 int64_t algol_ipow(int64_t base, int64_t exp)

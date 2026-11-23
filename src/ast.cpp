@@ -20,15 +20,17 @@ struct overloaded : F... {
 template <class... F>
 overloaded(F...) -> overloaded<F...>;
 
-const char *const TYPE_NAMES[]       = { "integer", "real", "boolean", "string", "bits", "none" };
-const char *const STD_FUNC_NAMES[]   = { "abs",    "sign", "sqrt", "sin",    "cos",
-                                         "arctan", "ln",   "exp",  "entier", "length" };
-const char *const STD_PROC_NAMES[]   = { "stop", "load", "loadgo", "assign", "atos", "stoa" };
-const char *const IO_OP_NAMES[]      = { "print",  "punch",  "read",      "write",  "decode",
-                                         "encode", "rewind", "backspace", "endfile" };
-const char *const UNARY_NAMES[]      = { "neg", "not" };
-const char *const BINARY_NAMES[]     = { "add", "sub", "mul", "div", "power", "lt",   "le",   "eq",
-                                         "ne",  "ge",  "gt",  "and", "or",    "impl", "equiv" };
+const char *const TYPE_NAMES[]     = { "integer", "real", "boolean", "string", "bits", "none" };
+const char *const STD_FUNC_NAMES[] = { "abs",    "sign", "sqrt", "sin",    "cos",
+                                       "arctan", "ln",   "exp",  "entier", "length" };
+const char *const STD_PROC_NAMES[] = { "stop", "load", "loadgo", "assign", "atos", "stoa" };
+const char *const IO_OP_NAMES[]    = { "print",  "punch",  "read",      "write",  "decode",
+                                       "encode", "rewind", "backspace", "endfile" };
+const char *const UNARY_NAMES[]    = { "neg", "not" };
+const char *const BINARY_NAMES[]   = {
+    "add", "sub", "mul", "div", "intdiv", "power", "lt",   "le",
+    "eq",  "ne",  "ge",  "gt",  "and",    "or",    "impl", "equiv"
+};
 const char *const CONVERSION_NAMES[] = { "int_to_real", "real_to_int" };
 const char *const SPEC_NAMES[]       = { "simple", "array", "procedure", "label", "switch" };
 

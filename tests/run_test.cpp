@@ -10,6 +10,7 @@
 //
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -22,41 +23,42 @@ namespace {
 
 const std::string compiler = BUILD_DIR "/src/algc";
 
-// The programs the code generator handles so far.
+// The programs, as DIR/NAME under tests/.
 // clang-format off
 const std::vector<std::string> programs = {
-    "arith",
-    "arrays",
-    "arrays_check",
-    "blocks",
-    "boolean",
-    "bozp_ybyb",
-    "comment",
-    "common",
-    "cond",
-    "empty",
-    "exprs",
-    "exprs2",
-    "for",
-    "for2",
-    "for2_check",
-    "goto",
-    "hello",
-    "hello_algol",
-    "man_or_boy",
-    "mixed",
-    "pages",
-    "print",
-    "proc",
-    "quine",
-    "quinio",
-    "stdfunc",
-    "strings",
-    "switch",
-    "symbols",
-    "test1",
-    "test2",
-    "test3",
+    "algol/arith",
+    "algol/arrays",
+    "algol/arrays_check",
+    "algol/blocks",
+    "algol/boolean",
+    "algol/bozp_ybyb",
+    "algol/comment",
+    "algol/common",
+    "algol/cond",
+    "algol/empty",
+    "algol/exprs",
+    "algol/exprs2",
+    "algol/for",
+    "algol/for2",
+    "algol/for2_check",
+    "algol/goto",
+    "algol/hello",
+    "algol/hello_algol",
+    "algol/man_or_boy",
+    "algol/mixed",
+    "algol/pages",
+    "algol/print",
+    "algol/proc",
+    "algol/quine",
+    "algol/quinio",
+    "algol/stdfunc",
+    "algol/strings",
+    "algol/switch",
+    "algol/symbols",
+    "algol/test1",
+    "algol/test2",
+    "algol/test3",
+    "a60/intdiv",
 };
 // clang-format on
 
@@ -106,10 +108,10 @@ std::string compare(const std::string &output, const std::string &expected)
 
 std::string expected(const std::string &name)
 {
-    std::string native = TEST_DIR "/algol/" + name + ".native.out";
+    std::string native = TEST_DIR "/" + name + ".native.out";
     if (std::filesystem::exists(native))
         return file_contents(native);
-    return file_contents(TEST_DIR "/algol/" + name + ".out");
+    return file_contents(TEST_DIR "/" + name + ".out");
 }
 
 // qemu-ARCH for a target triple.
@@ -148,6 +150,14 @@ std::string run_text(const std::string &name, const std::string &text, bool chec
     return run(src, BUILD_DIR "/run_" + name, check);
 }
 
+// algol_arith for algol/arith.
+std::string test_name(const std::string &path)
+{
+    std::string s = path;
+    std::replace(s.begin(), s.end(), '/', '_');
+    return s;
+}
+
 class RunTest : public ::testing::TestWithParam<std::string> {};
 
 } // namespace
@@ -155,15 +165,18 @@ class RunTest : public ::testing::TestWithParam<std::string> {};
 TEST_P(RunTest, output)
 {
     const std::string name = GetParam();
-    const std::string base = TEST_DIR "/algol/" + name;
+    const std::string base = TEST_DIR "/" + name;
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = std::filesystem::exists(base + ".c") ? base + ".c" : "";
-    std::string out        = run(base + ".alg", BUILD_DIR "/run_" + name, check, input, stub);
+    std::string out = run(base + ".alg", BUILD_DIR "/run_" + test_name(name), check, input, stub);
     EXPECT_EQ(compare(out, expected(name)), "") << out;
 }
 
-INSTANTIATE_TEST_SUITE_P(algol, RunTest, ::testing::ValuesIn(programs));
+INSTANTIATE_TEST_SUITE_P(algol, RunTest, ::testing::ValuesIn(programs),
+                         [](const ::testing::TestParamInfo<std::string> &p) {
+                             return test_name(p.param);
+                         });
 
 // The same for other targets, run under qemu; skipped without the runtime for
 // the target (built when /usr/TRIPLE exists) or without qemu.
@@ -176,12 +189,12 @@ TEST_P(CrossTest, output)
         GTEST_SKIP() << "no runtime for " << target;
     if (run_command("command -v " + qemu(target)).exit_code != 0)
         GTEST_SKIP() << "no " << qemu(target);
-    const std::string base = TEST_DIR "/algol/" + name;
+    const std::string base = TEST_DIR "/" + name;
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = std::filesystem::exists(base + ".c") ? base + ".c" : "";
-    std::string out =
-        run(base + ".alg", BUILD_DIR "/run_" + target + "_" + name, check, input, stub, target);
+    std::string out = run(base + ".alg", BUILD_DIR "/run_" + target + "_" + test_name(name), check,
+                          input, stub, target);
     EXPECT_EQ(compare(out, expected(name)), "") << out;
 }
 
@@ -189,7 +202,7 @@ TEST_P(CrossTest, output)
 std::string cross_name(const ::testing::TestParamInfo<std::tuple<std::string, std::string>> &p)
 {
     const std::string &triple = std::get<0>(p.param);
-    return triple.substr(0, triple.find('-')) + "_" + std::get<1>(p.param);
+    return triple.substr(0, triple.find('-')) + "_" + test_name(std::get<1>(p.param));
 }
 
 INSTANTIATE_TEST_SUITE_P(algol, CrossTest,
@@ -255,6 +268,16 @@ TEST(Run, domain_error)
         run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_EQ(r.output, "             1 \nError: Square root of a negative number -1\n");
+}
+
+TEST(Run, division_by_zero)
+{
+    const std::string src = BUILD_DIR "/run_idiv.alg";
+    std::ofstream(src) << "_begin _integer z; z := 0; PRINT(1 ÷ z) _end _eop\n";
+    auto r =
+        run_command(compiler + " -o " BUILD_DIR "/run_idiv " + src + " && " BUILD_DIR "/run_idiv");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "Error: Integer division by zero\n");
 }
 
 TEST(Run, arrays)

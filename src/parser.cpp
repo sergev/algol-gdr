@@ -47,6 +47,7 @@ int priority(Sym s)
         return 7;
     case Sym::TIMES:
     case Sym::SLASH:
+    case Sym::INTDIV:
         return 8;
     case Sym::POWER:
         return 9;

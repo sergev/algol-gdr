@@ -535,6 +535,8 @@ private:
             return fn_->binop(real ? "fmul" : "mul", l, r);
         case BinaryOp::DIV:
             return fn_->binop("fdiv", l, r);
+        case BinaryOp::INT_DIV:
+            return runtime("i64", "algol_idiv", { l, r });
         case BinaryOp::POWER:
             return power(l, r, t, b.right->type);
         case BinaryOp::LT:

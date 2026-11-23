@@ -16,9 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F2** Integer division `÷` (also `_div`): lexer, parser (priority of `×` and `/`),
-  checker (integer operands), code: `a ÷ b` = sign(a/b) × entier(|a/b|), so truncation
-  toward zero; division by zero a run-time error. Tests.
 - **F3** Program form of the Revised Report: `_eop` optional (the end of the file ends the
   program); unsigned integers as labels (`10: …`, `_goto 10`); the parameter delimiter
   `) letter string: (` as a comma. doc/algol60.asdl updated.
