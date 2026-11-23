@@ -14,7 +14,8 @@ struct RunResult {
 RunResult run_command(const std::string &cmd);
 std::string file_contents(const std::string &filename);
 
-// Compiler options for the control cards in a NAME.pre file: --check
+// Compiler options for the control cards in a NAME.pre file: --check, and
+// --list unless *no list.
 std::string pre_options(const std::string &filename);
 
 #endif

@@ -144,7 +144,7 @@ L1547: {
 Pass1::Pass1(Context &ctx) : ctx_(ctx), ws_(ctx.ws), cards_(read_cards(ctx.source))
 {
     // From the start of AG13666.
-    ws_[D_LIST] = ctx.options.no_listing ? 0 : 1;
+    ws_[D_LIST] = ctx.options.list ? 1 : 0;
     ws_[D_POOL] = 04420276740004000;
 }
 

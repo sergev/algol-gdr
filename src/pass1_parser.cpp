@@ -243,9 +243,9 @@ void Pass1::eop_inside()
 //
 void Pass1::program()
 {
-    if (!ctx_.options.no_listing)
+    if (ctx_.options.list)
         blank_line(ctx_);
-    ws_[D_LIST] = ctx_.options.no_listing ? 0 : 1;
+    ws_[D_LIST] = ctx_.options.list ? 1 : 0;
     m5_         = 0;
     m6_         = 0;
     m3_         = 05753;

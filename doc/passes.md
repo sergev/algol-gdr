@@ -63,7 +63,7 @@ through `*64` (the left cell, `GOST_SET_POSITION` 65, the right cell). As dubna 
   ends with an empty line.
 
 Our compiler prints only the `setftn:one,long` form (`src/listing.*`): one column, no
-splitting. The test listings (`NAME.lst`) come from the original with
+splitting. Without `--list` it runs as with `*NO LIST`: errors and the summary line only. The test listings (`NAME.lst`) come from the original with
 `*call setftn:one,long`, which also sets check mode, so `ListingTest` compiles in check mode.
 
 ### Data set up by the driver

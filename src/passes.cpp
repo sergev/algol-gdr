@@ -11,7 +11,7 @@
 
 void blank_line(const Context &ctx)
 {
-    if (ctx.listing && !ctx.options.no_listing)
+    if (ctx.listing && ctx.options.list)
         ctx.listing->blank();
 }
 
@@ -20,7 +20,7 @@ Stream run_pass(int n, Context &ctx, const Stream &input)
     switch (n) {
     case 1:
         // The driver's banner, then pass 1.
-        if (ctx.listing && !ctx.options.no_listing) {
+        if (ctx.listing && ctx.options.list) {
             ctx.listing->print("A L G O L - Г Д P");
             ctx.listing->print("    (7.01.82)");
         }
@@ -51,7 +51,7 @@ bool compile(Context &ctx, StdArray &object)
             stream = run_pass(5, ctx, stream);
             object = pass6(ctx, stream);
             made   = !object.words.empty();
-            if (made && ctx.listing && !ctx.options.no_listing)
+            if (made && ctx.listing)
                 ctx.listing->print(summary_line(ctx));
             // G44504; after errors in passes 1-2 the driver skips it.
             if (ctx.listing)

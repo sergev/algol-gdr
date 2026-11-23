@@ -34,8 +34,11 @@ std::string pre_options(const std::string &path)
 {
     std::ifstream in(path);
     std::string line, opts;
+    bool list = true;
     while (std::getline(in, line))
         if (line == "*check")
             opts += " --check";
-    return opts;
+        else if (line == "*no list")
+            list = false;
+    return list ? opts + " --list" : opts;
 }

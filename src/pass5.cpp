@@ -95,7 +95,7 @@ void restore_rtnames(Workspace &ws)
 Stream pass5(Context &ctx, const Stream &input)
 {
     Workspace &ws = ctx.ws;
-    Listing *list = ctx.options.no_listing ? nullptr : ctx.listing;
+    Listing *list = ctx.options.list ? ctx.listing : nullptr;
     if (list) {
         blank_line(ctx);
         list->print(HEADING);

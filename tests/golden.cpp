@@ -63,8 +63,11 @@ void load_options(Options &opt, const std::string &name)
 {
     std::ifstream in(path(name, ".pre"));
     std::string line;
+    opt.list = true;
     while (std::getline(in, line)) {
         if (line == "*check")
             opt.check_mode = true;
+        if (line == "*no list")
+            opt.list = false;
     }
 }

@@ -19,8 +19,8 @@ static void print_usage(std::ostream &out)
         << "    " << prog_name << " [options...] file.alg\n"
         << "Options:\n"
         << "    -o FILE, --output=FILE  Object file (default stdarray.out)\n"
-        << "    --full                  Full listing, with object code (like *FULL)\n"
-        << "    --no-list               No listing (like *NO LIST)\n"
+        << "    --full                  Full listing, with object code (like *FULL); implies --list\n"
+        << "    --list                  Listing of the program (else errors only, like *NO LIST)\n"
         << "    --check                 Run-time checks, no optimization (like *CHECK)\n"
         << "    --stop-after=N          Print the stream of pass N (1-5) and stop\n"
         << "    --dump                  Print object file (standard array) and exit\n"
@@ -30,13 +30,13 @@ static void print_usage(std::ostream &out)
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_CHECK };
+    enum { OPT_FULL = 256, OPT_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_CHECK };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
         { "output", required_argument, nullptr, 'o' },
         { "full", no_argument, nullptr, OPT_FULL },
-        { "no-list", no_argument, nullptr, OPT_NO_LIST },
+        { "list", no_argument, nullptr, OPT_LIST },
         { "dump", no_argument, nullptr, OPT_DUMP },
         { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
         { "check", no_argument, nullptr, OPT_CHECK },
@@ -68,9 +68,10 @@ int main(int argc, char *argv[])
             break;
         case OPT_FULL:
             opt.full_listing = true;
+            opt.list         = true;
             break;
-        case OPT_NO_LIST:
-            opt.no_listing = true;
+        case OPT_LIST:
+            opt.list = true;
             break;
         case OPT_DUMP:
             dump = true;
@@ -96,10 +97,6 @@ int main(int argc, char *argv[])
         print_usage(std::cerr);
         return EXIT_FAILURE;
     }
-    if (opt.full_listing && opt.no_listing) {
-        std::cerr << prog_name << ": --full and --no-list are mutually exclusive\n";
-        return EXIT_FAILURE;
-    }
 
     try {
         if (dump) {
@@ -119,8 +116,7 @@ int main(int argc, char *argv[])
         if (opt.full_listing)
             throw NotImplemented("--full: the object listing is not implemented yet");
         Listing listing(std::cout);
-        if (!opt.no_listing)
-            ctx.listing = &listing;
+        ctx.listing = &listing;
         StdArray object;
         if (!compile(ctx, object))
             return EXIT_FAILURE;

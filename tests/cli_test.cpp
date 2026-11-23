@@ -41,11 +41,18 @@ TEST(cli, two_files)
     EXPECT_NE(r.output.find("too many input files"), std::string::npos);
 }
 
-TEST(cli, full_and_no_list)
+// Without --list only the errors and the summary line print, as with *NO LIST.
+TEST(cli, list)
 {
-    auto r = run_command(compiler + " --full --no-list " TEST_DIR "/algol/hello.alg");
-    EXPECT_EQ(r.exit_code, 1);
-    EXPECT_NE(r.output.find("mutually exclusive"), std::string::npos);
+    const std::string out = " -o " BUILD_DIR "/cli_list.std " TEST_DIR "/algol/hello.alg";
+    auto r                = run_command(compiler + out);
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_EQ(r.output.find("A L G O L"), std::string::npos);
+    EXPECT_EQ(r.output.rfind("PROGRAM   ДЛИHA:", 0), 0u) << r.output;
+
+    r = run_command(compiler + " --list" + out);
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_EQ(r.output.rfind("A L G O L", 0), 0u) << r.output;
 }
 
 TEST(cli, missing_file)
