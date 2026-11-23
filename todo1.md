@@ -23,7 +23,6 @@ its routines documented in `doc/passes.md` (V where verified).
 
 ### Pass 4 (G23523)
 
-- **C17** The template interpreter (23712, 23734, templates at 25747) and the operand stack.
 - **C18** Arithmetic, constants and assignment.
 - **C19** Booleans, relations, IF, GOTO, labels and switches.
 - **C20** Blocks and storage: frame offsets, block entry (25525), own variables.

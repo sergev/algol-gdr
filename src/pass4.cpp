@@ -6,18 +6,19 @@ unsigned pass4_code(Machine &m, unsigned pc);
 
 namespace {
 
-constexpr unsigned M7        = 023523; // base of the constants: M7+2441… = 26164…
-constexpr unsigned READ      = 027154; // the next item of the input stream in A
-constexpr unsigned WRITE     = 027126; // A to the output stream
-constexpr unsigned PAGE      = 02000;  // page and position of the streams
-constexpr unsigned POS       = 02001;
-constexpr unsigned EMIT_MODE = 02022;      // 1 after 0200.0000: the next half starts a word
-constexpr unsigned NAMES     = 06000;      // the names, from drum 26 zone 0
-constexpr unsigned EXT_NAMES = 027245;     // external table: 3 words per name
-constexpr unsigned LINE      = M7 + 01107; // a line marker to write after the half
-constexpr unsigned EMIT_LINK = M7 + 01106; // return of emit while writing the externals
-constexpr unsigned EXT_NEXT  = M7 + 0166;  // the external entry written next
-constexpr unsigned HALF      = M7 + 036;   // the half being written
+constexpr unsigned M7          = 023523; // base of the constants: M7+2441… = 26164…
+constexpr unsigned READ        = 027154; // the next item of the input stream in A
+constexpr unsigned WRITE       = 027126; // A to the output stream
+constexpr unsigned PAGE        = 02000;  // page and position of the streams
+constexpr unsigned POS         = 02001;
+constexpr unsigned EMIT_MODE   = 02022;      // 1 after 0200.0000: the next half starts a word
+constexpr unsigned NAMES       = 06000;      // the names, from drum 26 zone 0
+constexpr unsigned EXT_NAMES   = 027245;     // external table: 3 words per name
+constexpr unsigned LINE        = M7 + 01107; // a line marker to write after the half
+constexpr unsigned EMIT_LINK   = M7 + 01106; // return of emit while writing the externals
+constexpr unsigned EXT_NEXT    = M7 + 0166;  // the external entry written next
+constexpr unsigned HALF        = M7 + 036;   // the half being written
+constexpr unsigned TEMPLATE_AT = 02007;      // the template half to emit next
 
 constexpr unsigned MAIN_LOOP     = 023625;
 constexpr unsigned READ_DISPATCH = 023752;
@@ -95,17 +96,17 @@ unsigned emit(Machine &m)
         }
     }
     m.xta(Machine::SP, 0);
-    m.atx(7, 036);
-    m.xta(7, 01107);
+    m.atx(0, HALF);
+    m.xta(0, LINE);
     m.aex(0, 0);
     if (m.u1a()) {
-        m.xta(7, 036);
+        m.xta(0, HALF);
         m.aax(7, 02451);
         m.aex(7, 02512);
         if (!m.u1a()) {
             m.ita(0, 015);
-            m.atx(7, 01106);
-            m.xta(7, 036);
+            m.atx(0, EMIT_LINK);
+            m.xta(0, HALF);
             m.call(WRITE, 13, 023674);
             for (;;) {
                 m.wtc(0, EXT_NEXT);
@@ -114,9 +115,9 @@ unsigned emit(Machine &m)
                 m.aax(7, 02506);
                 if (!m.uza())
                     break;
-                m.xta(7, 0166);
+                m.xta(0, EXT_NEXT);
                 m.arx(7, 02467);
-                m.atx(7, 0166);
+                m.atx(0, EXT_NEXT);
             }
             m.wtc(0, EXT_NEXT);
             m.utc(0, EXT_NAMES + 1);
@@ -125,20 +126,128 @@ unsigned emit(Machine &m)
             m.aax(7, 02526);
             m.aox(7, 02446);
             m.call(WRITE, 13, 023702);
-            m.xta(7, 0166);
+            m.xta(0, EXT_NEXT);
             m.arx(7, 02467);
-            m.atx(7, 0166);
+            m.atx(0, EXT_NEXT);
             m.xta(7, 02471);
-            m.aox(7, 01107);
+            m.aox(0, LINE);
             m.call(WRITE, 13, 023705);
             m.xta(0, 0);
-            m.atx(7, 01107);
+            m.atx(0, LINE);
             m.wtc(0, EMIT_LINK);
             return m.ea(0, m.field(0));
         }
     }
-    m.xta(7, 036);
+    m.xta(0, HALF);
     return write_return(m);
+}
+
+void emit_half(Machine &m, unsigned link)
+{
+    m.set_m(13, link);
+    emit(m);
+}
+
+// 23712: the next half of the template at 02007 (bit 48: the right half),
+// through M13.
+void template_half(Machine &m, unsigned link)
+{
+    m.set_m(13, link);
+    m.xta(0, TEMPLATE_AT);
+    m.ati(0, 016);
+    m.arx(0, 0);
+    if (m.u1a()) {
+        m.xta(14, 0);
+        m.asn(0, 0130);
+    } else {
+        m.xta(14, 0);
+        m.aax(7, 02466);
+    }
+    m.xts(0, TEMPLATE_AT);
+    m.arx(7, 02507);
+    m.stx(0, TEMPLATE_AT);
+}
+
+//
+// 23734: emit the template at M11, up to a zero half; through M12. A half
+// with address 4444 takes the operand from the stack: its address replaces
+// 4444, or, for an operand with bit 48, the operand + 4000000002277777
+// is emitted first and the half keeps address 0.
+//
+unsigned run_template(Machine &m)
+{
+    m.ita(0, 013);
+    m.atx(0, TEMPLATE_AT);
+    for (;;) {
+        template_half(m, 023736);
+        if (m.uza())
+            return m.M[12];
+        m.atx(Machine::SP, 0);
+        m.aax(7, 02451);
+        m.aex(7, 02500);
+        if (!m.u1a()) {
+            m.xta(Machine::SP, 077776);
+            m.arx(0, 0);
+            if (m.uza()) {
+                m.arx(7, 02505);
+                emit_half(m, 023747);
+                m.xta(Machine::SP, 0);
+                m.aax(7, 02460);
+                emit_half(m, 023750);
+                m.utm(Machine::SP, 077777);
+                continue;
+            }
+            m.xta(Machine::SP, 0);
+            m.aax(7, 02460);
+            m.aox(Machine::SP, 0);
+            m.atx(Machine::SP, 0);
+        }
+        m.xta(Machine::SP, 0);
+        emit_half(m, 023735);
+    }
+}
+
+//
+// The accumulator: M4 ≠ 0 is the stack cell of a value still in A.
+// 23721: it is pushed (15 ATX emitted, the cell marked); through M12.
+//
+unsigned save_acc(Machine &m)
+{
+    m.utc(12, 0);
+    unsigned link = m.field(0);
+    if (!m.M[4])
+        return link;
+    m.xta(7, 02227);
+    m.atx(4, 0);
+    emit_half(m, 023724);
+    m.vtm(4, 0);
+    return m.M[12];
+}
+
+// 23727 with an operand in A: loaded into A (template 25772), or, with the
+// accumulator in use, through the stack (template 25771).
+unsigned load_operand(Machine &m)
+{
+    if (m.M[4]) {
+        m.xts(7, 02227);
+        m.atx(4, 0);
+        m.vtm(4, 0);
+        m.vtm(11, 025771);
+        return run_template(m);
+    }
+    m.vtm(11, 025772);
+    m.atx(Machine::SP, 0);
+    return run_template(m);
+}
+
+// 23725: the operand on the stack done: loaded if any (nonzero); M4 = 0.
+unsigned operand_done(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.u1a())
+        return load_operand(m);
+    m.vtm(4, 0);
+    return m.M[12];
 }
 
 //
@@ -271,7 +380,7 @@ unsigned start(Machine &m)
             m.xta(0, 0);
             m.asn(0, 0130);
             m.aax(7, 02451);
-            m.atx(7, 036);
+            m.atx(0, HALF);
             m.utm(13, 3);
             if (m.uza())
                 continue;
@@ -279,7 +388,7 @@ unsigned start(Machine &m)
                 m.utm(8, 077777);
                 m.xta(8, 1);
                 m.aax(7, 02451);
-                m.aex(7, 036);
+                m.aex(0, HALF);
             } while (m.u1a());
             m.xta(8, 1);
             m.aax(7, 02502);
@@ -287,7 +396,7 @@ unsigned start(Machine &m)
         }
     }
     m.xta(0, 0);
-    m.atx(7, 0166);
+    m.atx(0, EXT_NEXT);
     m.xta(0, 02026);
     m.ati(0, 2);
     m.atx(0, 02015);
@@ -384,6 +493,10 @@ Stream pass4(Context &ctx, const Stream &input)
     n[023627]        = main_loop_2;
     n[023630]        = main_loop_3;
     n[023655]        = emit;
+    n[023721]        = save_acc;
+    n[OPERAND_DONE]  = operand_done;
+    n[023727]        = load_operand;
+    n[TEMPLATE]      = run_template;
     n[READ_DISPATCH] = read_dispatch;
     n[DISPATCH_NEXT] = dispatch_next;
     n[026152]        = eop;
