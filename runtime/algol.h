@@ -71,6 +71,13 @@ void algol_outsymbol(int64_t channel, const char *str, int64_t n);
 void algol_outterminator(int64_t channel);
 _Noreturn void algol_fault(const char *s, double r);
 
+// The checks of --check.
+void algol_check_overflow(_Bool overflow);
+void algol_check_divisor(double d);
+double algol_check_real(double v);
+void algol_check_round(double v);
+void algol_check_actuals(void **args, int64_t n, const char *spec, const char *name);
+
 // Integer division, exponentiation.
 int64_t algol_idiv(int64_t a, int64_t b);
 int64_t algol_ipow(int64_t base, int64_t exp);

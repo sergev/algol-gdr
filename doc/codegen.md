@@ -69,8 +69,10 @@ define internal i64 @P.<id>.<name>(ptr %sl, ptr %args)
 ```
 
 - `%sl` is the static link; `%args` points to an array of one triple
-  `{ptr code, ptr env, i64 type}` per parameter (a thunk, below), or is null without
-  parameters.
+  `{ptr code, ptr env, i64 tag}` per parameter (a thunk, below), or is null without
+  parameters. The word before the first triple holds their number. With `--check` the
+  procedure calls `algol_check_actuals` on entry: the number, and the kind and type of
+  each actual against its formal.
 - The result is an `i64`: an integer as is, a real by `bitcast`, a Boolean by `zext`, a
   string by `ptrtoint`; a procedure without a type returns 0. The caller converts it back.
 - On entry the procedure evaluates each value parameter once: it calls the thunk, loads the
@@ -92,8 +94,10 @@ define internal ptr @T.<n>(ptr %env)
 ```
 
 `env` is the frame of the function where the call is; the code returns the address of a
-cell. `type` is the `Type` of the cell as in src/ast.h (0 integer, 1 real, 2 Boolean,
-3 string, 4 bits, 5 none), of the elements for an array, of the result for a procedure.
+cell. The tag is the `Type` of the cell as in src/ast.h (0 integer, 1 real, 2 Boolean,
+3 string, 4 bits, 5 none; of the elements for an array, of the result for a procedure),
+plus 16 × the kind of the actual: 0 a value, 1 a variable, 2 an array, 3 a procedure,
+4 a label, 5 a switch.
 
 | Actual | The cell |
 |---|---|
@@ -176,6 +180,15 @@ account (see tests/algol/quinio.c).
 - **`_common /NAME/ …`** is a global `NAME` with common linkage, `int64_t NAME[n]`: its
   elements in order, a variable one cell, an array its elements. C or another unit sees
   the same storage under the same name.
+
+## Checks
+
+With `--check`: integer `+ − ×` through `llvm.s{add,sub,mul}.with.overflow.i64` and
+`algol_check_overflow`; real `/` checks its divisor (`algol_check_divisor`); real results
+of arithmetic, `↑` and `exp` must be finite (`algol_check_real`); a real rounded to an
+integer must fit (`algol_check_round`); subscripts are in their bounds
+(`algol_check_index`); actual parameters as above. Always: switch and string indices,
+integer `÷` by zero, overflow in `integer ↑ integer`.
 
 ## Standard functions and operators
 

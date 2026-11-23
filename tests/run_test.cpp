@@ -331,6 +331,38 @@ TEST(Run, gdr_io)
     EXPECT_EQ(file_contents(exe + ".7"), "  9\n");
 }
 
+// Each check of --check stops the program with its message.
+TEST(Run, checks)
+{
+    const std::vector<std::pair<std::string, std::string>> cases = {
+        { "_integer i; i := maxint; i := i + 1", "Integer overflow" },
+        { "_integer i; i := -maxint; i := i × 3", "Integer overflow" },
+        { "_integer i; i := 10; i := i ↑ 30", "Integer overflow" },
+        { "_real x; x := 0; x := 1 / x", "Division by zero" },
+        { "_real x; x := maxreal; x := x × 10", "Real overflow" },
+        { "_real x; x := 1000; x := exp(x)", "Real overflow" },
+        { "_integer i; i := maxreal", "Real 1.79769e+308 too large for an integer" },
+        { "_string s; s := ''abc''; PRINT(s[5])", "String index [5:5] out of range 1..3" },
+        { "_switch w := L; _goto w[2]; L:", "Switch index 2 out of range" },
+        { "_procedure p(a, b); _real a, b; ; _procedure q(f); _procedure f; f(1); q(p)",
+          "Procedure p called with 1 parameters instead of 2" },
+        { "_procedure p(a); _real _array a; ; _procedure q(f); _procedure f; f(1); q(p)",
+          "Parameter 1 of p is a value, not what the formal takes" },
+        { "_procedure p(a); _real a; ; _procedure q(f); _procedure f; f(_true); q(p)",
+          "Parameter 1 of p is Boolean, not real" },
+    };
+    int n = 0;
+    for (const auto &[body, message] : cases) {
+        const std::string exe = BUILD_DIR "/run_check" + std::to_string(n++);
+        std::ofstream(exe + ".alg") << "_begin " << body << " _end\n";
+        auto c = run_command(compiler + " --check -o " + exe + " " + exe + ".alg");
+        ASSERT_EQ(c.exit_code, 0) << body << "\n" << c.output;
+        auto r = run_command(exe);
+        EXPECT_EQ(r.exit_code, 1) << body;
+        EXPECT_EQ(r.output, "Error: " + message + "\n") << body;
+    }
+}
+
 TEST(Run, division_by_zero)
 {
     const std::string src = BUILD_DIR "/run_idiv.alg";

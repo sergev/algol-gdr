@@ -14,13 +14,6 @@ expected output written by hand and checked against the Revised Report.
 
 ## Tasks
 
-### Runtime
-
-- **F13** Run-time checks with `--check`: integer overflow (`llvm.*.with.overflow`), division
-  by zero, real overflow to infinity, string indices, switch indices, the number and kinds of
-  actual parameters through formal procedures. Each check a test that it stops the program
-  with a message.
-
 ### Conformance
 
 - **F14** A conformance suite in `tests/a60/`: the examples of the Revised Report (Absmax,

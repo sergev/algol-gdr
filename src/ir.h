@@ -74,6 +74,8 @@ public:
     Value fcmp(const std::string &cond, const Value &a, const Value &b);
     Value cast(const std::string &op, const Value &v, const std::string &to);
     Value select(const Value &c, const Value &a, const Value &b);
+    // Field index of an aggregate, of type type.
+    Value extract(const Value &agg, int index, const std::string &type);
     Value stack_alloc(const std::string &type, int64_t count = 1, int align = 8,
                       const std::string &label = "");
     Value load(const std::string &type, const Value &ptr);

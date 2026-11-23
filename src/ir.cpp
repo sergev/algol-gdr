@@ -155,6 +155,13 @@ Value Function::select(const Value &c, const Value &a, const Value &b)
     return { a.type, t };
 }
 
+Value Function::extract(const Value &agg, int index, const std::string &type)
+{
+    std::string t = tmp();
+    emit(t + " = extractvalue " + agg.str() + ", " + std::to_string(index));
+    return { type, t };
+}
+
 Value Function::stack_alloc(const std::string &type, int64_t count, int align,
                             const std::string &label)
 {

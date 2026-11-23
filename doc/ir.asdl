@@ -49,6 +49,7 @@ module IR {
          | FCmp(temp result, FCond cond, Value left, Value right)       -- %t = fcmp cond T a, b
          | Cast(temp result, CastOp op, Value value, Type to)           -- %t = op T v to T2
          | Select(temp result, Value cond, Value then, Value else)      -- %t = select i1 c, T a, T b
+         | Extract(temp result, Value aggregate, int index)             -- %t = extractvalue {…} a, i
          -- %t = alloca T, i64 N, align A: always in the entry block, after
          -- the allocas already there, so loops do not grow the stack
          | Alloca(temp result, Type type, int count, int align)

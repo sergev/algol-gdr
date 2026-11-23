@@ -25,13 +25,15 @@ int64_t algol_ipow(int64_t base, int64_t exp)
     if (base == 0 && exp == 0)
         algol_error("0 ↑ 0");
     int64_t r = 1;
-    while (exp > 0) {
-        if (exp & 1)
-            r *= base;
-        base *= base;
+    for (;;) {
+        if ((exp & 1) && __builtin_mul_overflow(r, base, &r))
+            algol_error("Integer overflow");
         exp >>= 1;
+        if (exp == 0)
+            return r;
+        if (__builtin_mul_overflow(base, base, &base))
+            algol_error("Integer overflow");
     }
-    return r;
 }
 
 // real ↑ integer: repeated multiplication; a negative exponent divides
@@ -95,4 +97,31 @@ double algol_ln(double x)
     if (x <= 0)
         algol_error("Logarithm of a number not above 0: %g", x);
     return log(x);
+}
+
+// The checks of --check.
+void algol_check_overflow(_Bool overflow)
+{
+    if (overflow)
+        algol_error("Integer overflow");
+}
+
+void algol_check_divisor(double d)
+{
+    if (d == 0)
+        algol_error("Division by zero");
+}
+
+double algol_check_real(double v)
+{
+    if (!isfinite(v))
+        algol_error("Real overflow");
+    return v;
+}
+
+// A real rounded to an integer: in its range.
+void algol_check_round(double v)
+{
+    if (!(v >= -9223372036854775808.0 && v < 9223372036854775808.0))
+        algol_error("Real %g too large for an integer", v);
 }

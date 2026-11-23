@@ -31,8 +31,6 @@ set of standard procedures.
 
 | Deviation | Where | Task |
 |---|---|---|
-| Integer overflow wraps around; division by zero and real overflow are not reported; string and switch indices are checked only in part; calls through formal procedures are not checked against the procedure | code generator, runtime | F13 |
-| Array subscripts are checked only with `--check` | code generator | F13 |
 
 ## Implementation choices
 
@@ -64,6 +62,11 @@ not deviations.
   a blank (the terminator). `insymbol` gives the place of the symbol in the string, or
   minus its code point; `outsymbol` with a negative number writes the code point.
   `maxreal`, `minreal` and `epsilon` are those of IEEE double, `maxint` 2⁶³ − 1.
+- Run-time checks: always the switch and string indices, integer division by zero and
+  `integer ↑ integer` overflow; with `--check` also array subscripts, integer overflow,
+  real division by zero, real overflow, a real too large for an integer, and the number,
+  kinds and types of the actual parameters of every procedure. Without `--check` integer
+  arithmetic wraps around and reals go to infinity.
 - An array called by value keeps the type of the actual's elements.
 - An unsigned integer as an actual parameter is a label when the formal is specified
   `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.
