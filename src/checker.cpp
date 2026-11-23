@@ -396,9 +396,9 @@ private:
     std::vector<int> functions_; // procedures whose bodies are being checked
     std::set<std::string> undeclared_;
 
-    void error(int line, const std::string &message) { diag_.error(line, message); }
+    void error(Pos line, const std::string &message) { diag_.error(line, message); }
 
-    int declare(int line, const std::string &name, Symbol s);
+    int declare(Pos line, const std::string &name, Symbol s);
     int lookup(const std::string &name) const;
     const Symbol &sym(int index) const { return symbols_[index]; }
 
@@ -411,7 +411,7 @@ private:
     static void collect_labels(const syn::Stmt &s, std::vector<const syn::Ident *> &labels);
     void declare_labels(const Stmts &body, DeclList &out);
     void procedure_body(const syn::decl::Procedure &p, int index, decl::Procedure &out);
-    DeclPtr common(int line, const CommonBlock &block);
+    DeclPtr common(Pos line, const CommonBlock &block);
 
     // Statements.
     StmtList statements(const syn::StmtList &list);
@@ -420,30 +420,30 @@ private:
     StmtPtr assignment(SrcLoc loc, const syn::stmt::Assign &a);
     StmtPtr for_stmt(SrcLoc loc, const syn::stmt::For &f);
     std::vector<ForElement> for_elements(const std::vector<syn::ForElement> &list, Type t,
-                                         int line);
+                                         Pos line);
     StmtPtr call_stmt(SrcLoc loc, const syn::Expr &e);
     StmtPtr std_stmt(SrcLoc loc, Std s, const std::string &name, const syn::ExprList *args,
-                     int line);
+                     Pos line);
     StmtPtr io_stmt(SrcLoc loc, const syn::stmt::Io &io);
-    IoList io_items(const std::vector<syn::IoItem> &items, int line);
+    IoList io_items(const std::vector<syn::IoItem> &items, Pos line);
     std::optional<LeftPart> left_part(const syn::Expr &e, Type &type);
 
     // Expressions.
     ExprPtr expr(const syn::Expr &e);
     ExprPtr bad() { return make_expr(Type::NONE, expr::IntConst{ 0 }); }
-    ExprPtr convert(ExprPtr e, Type to, int line, const std::string &what);
+    ExprPtr convert(ExprPtr e, Type to, Pos line, const std::string &what);
     ExprPtr integer(const syn::Expr &e, const std::string &what);
     ExprPtr boolean(const syn::Expr &e, const std::string &what);
-    ExprPtr binary(const syn::expr::Binary &b, int line);
-    ExprPtr named(const std::string &name, int line, bool argument);
-    ExprPtr indexed(const syn::expr::Index &x, int line);
-    ExprPtr call(const std::string &name, const syn::ExprList &args, int line);
-    ExprList arguments(int index, const syn::ExprList &args, int line);
+    ExprPtr binary(const syn::expr::Binary &b, Pos line);
+    ExprPtr named(const std::string &name, Pos line, bool argument);
+    ExprPtr indexed(const syn::expr::Index &x, Pos line);
+    ExprPtr call(const std::string &name, const syn::ExprList &args, Pos line);
+    ExprList arguments(int index, const syn::ExprList &args, Pos line);
     ExprPtr actual(const syn::Expr &e, const Symbol *formal, int n, const std::string &proc);
     ExprPtr designational(const syn::Expr &e, const std::string &what);
 };
 
-int Checker::declare(int line, const std::string &name, Symbol s)
+int Checker::declare(Pos line, const std::string &name, Symbol s)
 {
     auto &names = scopes_.back().names;
     if (names.count(name))
@@ -756,7 +756,7 @@ void Checker::procedure_body(const syn::decl::Procedure &p, int index, decl::Pro
 }
 
 // _common /block/: its elements are variables or arrays of this block.
-DeclPtr Checker::common(int line, const CommonBlock &block)
+DeclPtr Checker::common(Pos line, const CommonBlock &block)
 {
     decl::Common c;
     c.name = block.name;
@@ -911,7 +911,7 @@ StmtPtr Checker::assignment(SrcLoc loc, const syn::stmt::Assign &a)
 StmtPtr Checker::for_stmt(SrcLoc loc, const syn::stmt::For &f)
 {
     stmt::For out;
-    int line     = f.var->line;
+    Pos line     = f.var->line;
     Type t       = Type::NONE;
     auto control = left_part(*f.var, t);
     if (control && !numeric(t)) {
@@ -925,7 +925,7 @@ StmtPtr Checker::for_stmt(SrcLoc loc, const syn::stmt::For &f)
 }
 
 std::vector<ForElement> Checker::for_elements(const std::vector<syn::ForElement> &list, Type t,
-                                              int line)
+                                              Pos line)
 {
     std::vector<ForElement> out;
     const std::string what = "an element of _for";
@@ -973,7 +973,7 @@ StmtPtr Checker::call_stmt(SrcLoc loc, const syn::Expr &e)
 }
 
 StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::ExprList *args,
-                          int line)
+                          Pos line)
 {
     size_t n = args ? args->size() : 0;
     switch (s) {
@@ -1092,7 +1092,7 @@ StmtPtr Checker::io_stmt(SrcLoc loc, const syn::stmt::Io &io)
     return make_stmt(loc, std::move(out));
 }
 
-IoList Checker::io_items(const std::vector<syn::IoItem> &items, int line)
+IoList Checker::io_items(const std::vector<syn::IoItem> &items, Pos line)
 {
     IoList out;
     for (const auto &item : items) {
@@ -1118,7 +1118,7 @@ IoList Checker::io_items(const std::vector<syn::IoItem> &items, int line)
 //
 // Expressions.
 //
-ExprPtr Checker::convert(ExprPtr e, Type to, int line, const std::string &what)
+ExprPtr Checker::convert(ExprPtr e, Type to, Pos line, const std::string &what)
 {
     if (e->type == to || e->type == Type::NONE || to == Type::NONE)
         return e;
@@ -1169,7 +1169,7 @@ ExprPtr Checker::designational(const syn::Expr &e, const std::string &what)
 
 ExprPtr Checker::expr(const syn::Expr &e)
 {
-    int line = e.line;
+    Pos line = e.line;
     return std::visit(
         [&](const auto &x) -> ExprPtr {
             using T = std::decay_t<decltype(x)>;
@@ -1252,7 +1252,7 @@ ExprPtr Checker::expr(const syn::Expr &e)
         e.node);
 }
 
-ExprPtr Checker::binary(const syn::expr::Binary &b, int line)
+ExprPtr Checker::binary(const syn::expr::Binary &b, Pos line)
 {
     ExprPtr l = expr(*b.left);
     ExprPtr r = expr(*b.right);
@@ -1356,7 +1356,7 @@ ExprPtr Checker::binary(const syn::expr::Binary &b, int line)
 
 // A name alone: a variable, a call without arguments, a label; an array, a
 // switch or a procedure only as an argument.
-ExprPtr Checker::named(const std::string &nm, int line, bool argument)
+ExprPtr Checker::named(const std::string &nm, Pos line, bool argument)
 {
     int i = lookup(nm);
     if (i < 0) {
@@ -1398,7 +1398,7 @@ ExprPtr Checker::named(const std::string &nm, int line, bool argument)
 }
 
 // a[i, j]: an array element, a switch element, a character of a string.
-ExprPtr Checker::indexed(const syn::expr::Index &x, int line)
+ExprPtr Checker::indexed(const syn::expr::Index &x, Pos line)
 {
     int i = lookup(x.name);
     if (i < 0) {
@@ -1432,7 +1432,7 @@ ExprPtr Checker::indexed(const syn::expr::Index &x, int line)
 }
 
 // f(args): a function, a standard function.
-ExprPtr Checker::call(const std::string &nm, const syn::ExprList &args, int line)
+ExprPtr Checker::call(const std::string &nm, const syn::ExprList &args, Pos line)
 {
     int i = lookup(nm);
     if (i < 0) {
@@ -1480,7 +1480,7 @@ ExprPtr Checker::call(const std::string &nm, const syn::ExprList &args, int line
 }
 
 // The arguments of a call of procedure index, against its formals if known.
-ExprList Checker::arguments(int index, const syn::ExprList &args, int line)
+ExprList Checker::arguments(int index, const syn::ExprList &args, Pos line)
 {
     const Symbol &p = sym(index);
     ExprList out;

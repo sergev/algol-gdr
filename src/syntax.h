@@ -34,7 +34,7 @@ using DeclList = std::vector<DeclPtr>;
 // A name where it is written.
 struct Ident {
     std::string name;
-    int line{};
+    Pos line{}; // and column
 };
 
 namespace expr {
@@ -87,7 +87,7 @@ struct Expr {
     std::variant<expr::Int, expr::Real, expr::Bits, expr::Bool, expr::String, expr::Name,
                  expr::Index, expr::Slice, expr::Call, expr::Unary, expr::Binary, expr::If>
         node;
-    int line{};
+    Pos line{}; // and column
 };
 
 struct ForElement {
@@ -198,7 +198,7 @@ struct Common {
 
 struct Decl {
     std::variant<decl::Vars, decl::Arrays, decl::Switch, decl::Procedure, decl::Common> node;
-    int line{};
+    Pos line{}; // and column
 };
 
 // A 'CODE' or 'ALGOL' procedure before the program.

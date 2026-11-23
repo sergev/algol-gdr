@@ -1,5 +1,5 @@
-err_undeclared.alg:3: error: 'I' is declared twice
-err_undeclared.alg:5: error: Undeclared identifier 'Y'
-err_undeclared.alg:6: error: Undeclared identifier 'Z'
-err_undeclared.alg:7: error: Undeclared identifier 'P'
-err_undeclared.alg:8: error: Undeclared identifier 'NOWHERE'
+err_undeclared.alg:3:17: error: 'I' is declared twice
+err_undeclared.alg:5:10: error: Undeclared identifier 'Y'
+err_undeclared.alg:6:5: error: Undeclared identifier 'Z'
+err_undeclared.alg:7:5: error: Undeclared identifier 'P'
+err_undeclared.alg:8:11: error: Undeclared identifier 'NOWHERE'

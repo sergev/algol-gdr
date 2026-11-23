@@ -1,1 +1,1 @@
-err_end.alg:8: error: Missing _end
+err_end.alg:8:1: error: Missing _end

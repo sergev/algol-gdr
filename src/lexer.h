@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "diag.h"
+
 class Diagnostics;
 
 //
@@ -111,7 +113,7 @@ struct CommonBlock {
 
 struct Token {
     Sym sym{ Sym::END_OF_FILE };
-    int line{};
+    Pos line{}; // and column
     std::string text; // identifier as written, or the characters of a string (UTF-8)
     int64_t ival{};   // INTEGER_CONST
     double rval{};    // REAL_CONST
@@ -148,6 +150,7 @@ private:
     char32_t ch_{};
     bool skip_blanks_{ true };
     int line_{};
+    Pos start_{}; // of the symbol being read
     bool after_end_{};
     bool warned_{};
     bool semicolon_{}; // a number ended with '.,'
@@ -167,7 +170,7 @@ private:
     Token scan();
     Token name();
     Token keyword_symbol();
-    Token keyword_token(const std::string &kw, int start);
+    Token keyword_token(const std::string &kw, Pos start);
     bool underlined() const;
     std::string underlined_word();
     Token quoted_string(char32_t close);

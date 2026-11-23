@@ -36,10 +36,6 @@ set of standard procedures.
 | Integer overflow wraps around; division by zero and real overflow are not reported; string and switch indices are checked only in part; calls through formal procedures are not checked against the procedure | code generator, runtime | F13 |
 | Array subscripts are checked only with `--check` | code generator | F13 |
 
-## Messages
-
-Messages give the line but not the column: **F10**.
-
 ## Implementation choices
 
 Where the Report leaves a choice to the implementation, `algc` does as follows; these are

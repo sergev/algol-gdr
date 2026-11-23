@@ -37,20 +37,20 @@ TEST(Parser, precedence)
 TEST(Parser, recovery)
 {
     EXPECT_EQ(messages("_begin X := (1; Y := 2 + ; Z := 3\n_end _eop"),
-              "x.alg:1: error: Expected ')', found ';'\n"
-              "x.alg:1: error: Expected an expression, found ';'\n");
+              "x.alg:1:15: error: Expected ')', found ';'\n"
+              "x.alg:1:26: error: Expected an expression, found ';'\n");
     EXPECT_EQ(messages("_begin _integer X _end _eop"),
-              "x.alg:1: error: Expected ';', found _end\n");
-    EXPECT_EQ(messages("_begin X := 1;"), "x.alg:1: error: Missing _end\n");
-    EXPECT_EQ(messages("_begin X := (1"), "x.alg:1: error: Unexpected end of the file\n");
+              "x.alg:1:19: error: Expected ';', found _end\n");
+    EXPECT_EQ(messages("_begin X := 1;"), "x.alg:1:14: error: Missing _end\n");
+    EXPECT_EQ(messages("_begin X := (1"), "x.alg:1:14: error: Unexpected end of the file\n");
 }
 
 TEST(Parser, procedure_heading)
 {
     EXPECT_EQ(messages("_begin _procedure P(A, B); _value C; _real A, A; X := 1;\n"
                        "P(1, 2) _end _eop"),
-              "x.alg:1: error: 'C' is not a formal parameter of 'P'\n"
-              "x.alg:1: error: Formal parameter 'A' is specified twice\n");
+              "x.alg:1:35: error: 'C' is not a formal parameter of 'P'\n"
+              "x.alg:1:47: error: Formal parameter 'A' is specified twice\n");
     EXPECT_EQ(messages("_begin _procedure P(A); _value A; ; P(1) _end _eop"),
-              "x.alg:1: error: Formal parameter 'A' is called by value but not specified\n");
+              "x.alg:1:32: error: Formal parameter 'A' is called by value but not specified\n");
 }

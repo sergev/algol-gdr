@@ -111,7 +111,7 @@ bool ends_statement(Sym s)
 }
 
 template <class T>
-ExprPtr new_expr(int line, T node)
+ExprPtr new_expr(Pos line, T node)
 {
     return std::make_unique<Expr>(Expr{ std::move(node), line });
 }
@@ -123,7 +123,7 @@ StmtPtr new_stmt(ast::SrcLoc loc, T node)
 }
 
 template <class T>
-DeclPtr new_decl(int line, T node)
+DeclPtr new_decl(Pos line, T node)
 {
     return std::make_unique<Decl>(Decl{ std::move(node), line });
 }
@@ -150,7 +150,7 @@ private:
     ExprList arguments();
     bool accept(Sym s);
     std::string found() const;
-    void report(int line, const std::string &message);
+    void report(Pos line, const std::string &message);
     [[noreturn]] void fail(const std::string &message);
     void expect(Sym s);
     Ident ident();
@@ -259,7 +259,7 @@ std::string Parser::found() const
     }
 }
 
-void Parser::report(int line, const std::string &message)
+void Parser::report(Pos line, const std::string &message)
 {
     diag_.error(line, message);
     if (diag_.errors() >= MAX_ERRORS) {
@@ -518,7 +518,7 @@ DeclList Parser::declarations()
 
 DeclPtr Parser::declaration()
 {
-    int line = tok_.line;
+    Pos line = tok_.line;
     switch (tok_.sym) {
     case Sym::COMMON: {
         auto block = tok_.common;
@@ -570,7 +570,7 @@ DeclPtr Parser::declaration()
 // _array segments: names [bounds] (or with '(' ')'), separated by ','.
 DeclPtr Parser::arrays(ast::Type type, bool own)
 {
-    int line = tok_.line;
+    Pos line = tok_.line;
     advance();
     decl::Arrays a;
     a.type = type;
@@ -607,7 +607,7 @@ DeclPtr Parser::arrays(ast::Type type, bool own)
 
 DeclPtr Parser::switch_decl()
 {
-    int line = tok_.line;
+    Pos line = tok_.line;
     advance();
     decl::Switch s;
     s.name = ident();
@@ -627,7 +627,7 @@ DeclPtr Parser::switch_decl()
 //
 DeclPtr Parser::procedure(ast::Type type)
 {
-    int line = tok_.line;
+    Pos line = tok_.line;
     advance();
     decl::Procedure p;
     p.type = type;
@@ -829,7 +829,7 @@ IoItem Parser::io_item()
 //
 ExprPtr Parser::expression(int prio)
 {
-    int line = tok_.line;
+    Pos line = tok_.line;
     ExprPtr e;
     switch (tok_.sym) {
     case Sym::IF: {
@@ -896,7 +896,7 @@ ExprPtr Parser::operators(int prio, ExprPtr left)
         if (!p || p < prio)
             return left;
         Sym op   = tok_.sym;
-        int line = tok_.line;
+        Pos line = tok_.line;
         advance();
         ExprPtr right = expression(p + 1);
         left          = new_expr(line, expr::Binary{ op, std::move(left), std::move(right) });
@@ -906,7 +906,7 @@ ExprPtr Parser::operators(int prio, ExprPtr left)
 // name, name(args), name[subscripts], name[i:j]
 ExprPtr Parser::designator()
 {
-    int line         = tok_.line;
+    Pos line         = tok_.line;
     std::string name = ident().name;
     if (accept(Sym::LPAREN))
         return new_expr(line, expr::Call{ name, arguments() });

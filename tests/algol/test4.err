@@ -1,8 +1,8 @@
-test4.alg:4: error: Expected an expression, found ';'
-test4.alg:6: error: Expected an expression, found _until
-test4.alg:10: error: Expected _eop after the program, found _end
-test4.alg:3: error: 'I' is declared twice
-test4.alg:5: error: Type error in the condition of _if: integer instead of boolean
-test4.alg:5: error: Undeclared identifier 'NOWHERE'
-test4.alg:7: error: Undeclared identifier 'A'
-test4.alg:8: error: Type error in '+': boolean and real
+test4.alg:4:14: error: Expected an expression, found ';'
+test4.alg:6:23: error: Expected an expression, found _until
+test4.alg:10:1: error: Expected _eop after the program, found _end
+test4.alg:3:17: error: 'I' is declared twice
+test4.alg:5:9: error: Type error in the condition of _if: integer instead of boolean
+test4.alg:5:23: error: Undeclared identifier 'NOWHERE'
+test4.alg:7:5: error: Undeclared identifier 'A'
+test4.alg:8:16: error: Type error in '+': boolean and real

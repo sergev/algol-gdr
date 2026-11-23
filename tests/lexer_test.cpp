@@ -128,11 +128,11 @@ TEST(Lexer, errors)
     std::string messages;
     auto t = tokens("A % _foo 'begin' 1.X\n''S'9'' _eop", &messages);
     EXPECT_EQ(messages,
-              "x.alg:1: error: Illegal character '%'\n"
-              "x.alg:1: error: Unknown keyword _foo\n"
-              "x.alg:1: error: Write a keyword as _begin, not in quotes\n"
-              "x.alg:1: error: Malformed number\n"
-              "x.alg:2: error: Bad character code in a string\n");
+              "x.alg:1:3: error: Illegal character '%'\n"
+              "x.alg:1:5: error: Unknown keyword _foo\n"
+              "x.alg:1:10: error: Write a keyword as _begin, not in quotes\n"
+              "x.alg:1:18: error: Malformed number\n"
+              "x.alg:2:1: error: Bad character code in a string\n");
     EXPECT_EQ(t.back().sym, Sym::END_OF_FILE);
 }
 

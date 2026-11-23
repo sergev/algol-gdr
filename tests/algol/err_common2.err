@@ -1,2 +1,2 @@
-err_common2.alg:6: error: _common element 'V' is not declared in its block
-err_common2.alg:8: error: _common element 'F' is not a variable or an array
+err_common2.alg:6:5: error: _common element 'V' is not declared in its block
+err_common2.alg:8:5: error: _common element 'F' is not a variable or an array

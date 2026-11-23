@@ -34,7 +34,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   IR), `ir.*` (the IR text builder), `frontend.*` (parse, check, listing), `source.*`
   (UTF-8 input), `lexer.*` (symbols), `parser.*` and
   `syntax.h` (the syntax tree), `checker.*` (scopes and types: the AST), `ast.*` (the AST
-  after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages), `listing.*`
+  after doc/ast.asdl, its YAML form), `diag.*` (GNU-style messages, `file:line:column:`), `listing.*`
   (the printout).
 - `runtime/` — the run-time library `libalgol.a` (C, uses libc and libm): `main` calls the
   program's `algol_main`; printing, errors. algc finds it in `../runtime` or `../lib` from

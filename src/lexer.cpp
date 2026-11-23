@@ -274,13 +274,14 @@ Token Lexer::make(Sym s) const
 {
     Token t;
     t.sym  = s;
-    t.line = line_;
+    t.line = start_;
     return t;
 }
 
+// At the symbol being read.
 Token Lexer::error(const std::string &message)
 {
-    diag_.error(line_, message);
+    diag_.error(start_, message);
     return make(Sym::ERROR);
 }
 
@@ -303,10 +304,11 @@ Token Lexer::next()
 Token Lexer::scan()
 {
     char32_t c = fetch();
+    start_     = Pos(line_, int(col_) + 1);
     if (after_end_)
         return after_end();
     if (is_letter(c) && underlined()) {
-        int start      = line_;
+        Pos start      = start_;
         std::string kw = underlined_word();
         if (!keyword(kw))
             return error("Unknown keyword " + kw);
@@ -399,7 +401,7 @@ std::string Lexer::word(bool raw)
 
 Token Lexer::name()
 {
-    int start = line_;
+    Pos start = start_;
     Token t   = make(Sym::IDENT);
     t.text    = word(false);
     t.line    = start;
@@ -409,14 +411,14 @@ Token Lexer::name()
 // A keyword: _ and letters and digits, in any case, up to a blank.
 Token Lexer::keyword_symbol()
 {
-    int start      = line_;
+    Pos start      = start_;
     std::string kw = word(true);
     if (!keyword(kw))
         return error("Unknown keyword _" + kw);
     return keyword_token(kw, start);
 }
 
-Token Lexer::keyword_token(const std::string &kw, int start)
+Token Lexer::keyword_token(const std::string &kw, Pos start)
 {
     const Sym *sym = keyword(kw);
     switch (*sym) {
@@ -469,7 +471,7 @@ Token Lexer::after_end()
             if (c == ',')
                 break;
         } else if ((is_letter(c) && underlined()) || (c == '_' && is_letter(text_[col_ + 1]))) {
-            int start = line_;
+            Pos start(line_, int(col_) + 1);
             std::string w;
             if (c == '_') {
                 step();
@@ -512,7 +514,7 @@ Token Lexer::after_end()
 // A string: ''…'' or '('…')'; 'ddd' inside is a character by its octal code.
 Token Lexer::string()
 {
-    int start    = line_;
+    Pos start    = start_;
     string_line_ = start;
     skip_blanks_ = false;
     std::string text;
@@ -561,7 +563,7 @@ Token Lexer::string()
 Token Lexer::quoted_string(char32_t close)
 {
     char32_t open = ch_;
-    int start     = line_;
+    Pos start     = start_;
     string_line_  = start;
     skip_blanks_  = false;
     std::string text;
@@ -609,7 +611,7 @@ Token Lexer::octal()
 //
 Token Lexer::number(bool point)
 {
-    int start = line_;
+    Pos start = start_;
     std::string whole, fraction, exponent;
     bool exp = false, negative = false, digit = false, bad = point && !is_digit(ch_);
     for (char32_t c = ch_; !bad;) {
@@ -687,7 +689,7 @@ Token Lexer::number(bool point)
 //
 Token Lexer::common()
 {
-    int start = line_;
+    Pos start = start_;
     auto bad  = [&](const std::string &message) {
         while (ch_ != ';')
             advance();

@@ -14,11 +14,6 @@ expected output written by hand and checked against the Revised Report.
 
 ## Tasks
 
-### Input and messages
-
-- **F10** Messages with columns: `file:line:column: error: …`, the column of the symbol
-  where the error is found; tokens and AST nodes keep their column. Goldens updated.
-
 ### Runtime
 
 - **F11** The I/O of the IFIP modified report as standard procedures: `inreal`, `outreal`,
