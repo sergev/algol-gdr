@@ -268,8 +268,8 @@ L1523:
         m5_ = (m5_ + 1) & R15;
         goto L1545;
     }
-    line_ = arx(line_, 1);
-    card_count_  = arx(card_count_, 1) | INT0;
+    line_       = arx(line_, 1);
+    card_count_ = arx(card_count_, 1) | INT0;
     if (next_card_ >= cards_.size() || cards_[next_card_][0] == 01244251621020106) // *END F
         throw NoEop{};
     read_card();
@@ -282,9 +282,9 @@ L1545:
     if (word_ == blanks_)
         goto L1523;
 L1547: {
-    int pos     = int(m6_) - 0100000; // -6…-1
-    unsigned c  = (word_ >> (8 * (-pos - 1))) & 0377;
-    char_ = c;
+    int pos    = int(m6_) - 0100000; // -6…-1
+    unsigned c = (word_ >> (8 * (-pos - 1))) & 0377;
+    char_      = c;
     if (c == blank_) {
         m6_ = (m6_ + 1) & R15;
         goto L1522;
@@ -294,7 +294,7 @@ L1547: {
 }
 
 Pass1::Pass1(Context &ctx)
-      : ctx_(ctx), tables_(ctx.tables), strings_(ctx.strings), cards_(read_cards(ctx.source))
+    : ctx_(ctx), tables_(ctx.tables), strings_(ctx.strings), cards_(read_cards(ctx.source))
 {
     // From the start of AG13666.
     list_   = ctx.options.list ? 1 : 0;
@@ -329,7 +329,7 @@ void Pass1::print_card()
 void Pass1::pool_put(Word w)
 {
     pool_page_.at((pool_ & R15) - 04000) = w;
-    pool_            = arx(pool_, 1);
+    pool_                                = arx(pool_, 1);
     if ((pool_ << 40) & MASK48)
         return;
     pool_ = arx(pool_, 037777400);
@@ -340,8 +340,8 @@ void Pass1::pool_put(Word w)
 // *1102B: a word of a string to the pool.
 void Pass1::store_string_word()
 {
-    pool_end_ = arx(pool_end_, 010000);
-    unsigned m9    = ((pool_end_ >> 12) - 01634 - 06000) & R15;
+    pool_end_   = arx(pool_end_, 010000);
+    unsigned m9 = ((pool_end_ >> 12) - 01634 - 06000) & R15;
     if (m9 == 0)
         error(12);
     pool_put(name_);
@@ -353,16 +353,16 @@ void Pass1::store_string_word()
 //
 unsigned Pass1::intern(Word value, unsigned slot)
 {
-    key_        = value;
+    key_               = value;
     tables_.name(slot) = value;
-    unsigned m14      = 01633;
-    while (tables_.name((m14) & R15) != key_)
+    unsigned m14       = 01633;
+    while (tables_.name((m14)&R15) != key_)
         m14 = (m14 - 1) & R15;
     if (m14 != tables_.free_const)
         return m14;
-    slot         = (slot - 1) & R15;
+    slot               = (slot - 1) & R15;
     tables_.free_const = slot;
-    if (tables_.name((slot) & R15))
+    if (tables_.name((slot)&R15))
         error(7);
     return slot + 1;
 }
@@ -412,7 +412,7 @@ L0712:
             goto L0766;
         point_ = c ^ ',';
         frac_  = c ^ ',';
-        a            = 0;
+        a      = 0;
         goto L1557;
     case 3: // ':' or ':='
         m4_ = 050;
@@ -427,7 +427,7 @@ L0712:
         m4_ = 017;
         goto L0766;
     case 5: // number
-        a            = 0;
+        a      = 0;
         point_ = 0;
         goto L1557;
     case 6: // '(' or '(/'
@@ -459,7 +459,7 @@ L0712:
             a = 047;
             goto L1012;
         }
-        m4_         = 051;
+        m4_   = 051;
         semi_ = 0;
         goto L0766;
     default:
@@ -477,9 +477,9 @@ L0746: // '<octal digits>'
     if (nextch() != '\'')
         goto L0746;
     nextch();
-    m8         = tables_.free_const;
-    a          = Word(intern(stack, m8)) << 12;
-    m4_        = 0105;
+    m8   = tables_.free_const;
+    a    = Word(intern(stack, m8)) << 12;
+    m4_  = 0105;
     sym_ = a | 0105;
     return;
 
@@ -493,8 +493,8 @@ L0777:
     return;
 L1012:
     sym_ = a;
-    m4_        = a & R15;
-    m6_        = (m6_ + 1) & R15;
+    m4_  = a & R15;
+    m6_  = (m6_ + 1) & R15;
     return;
 
 L0743:
@@ -502,7 +502,7 @@ L0743:
 
     // *1111B: a name of letters and digits, the first 6 characters count.
     name_ = Word(m11) << 40;
-    m10         = 077773;
+    m10   = 077773;
 L1113:
     c   = nextch();
     m11 = c;
@@ -517,9 +517,9 @@ L1113:
     a  = name_;
     m8 = ((a >> 40) & 037) << 4 | ((a >> 32) & 017);
     for (;;) {
-        Word w = tables_.name((m8) & R15);
+        Word w = tables_.name((m8)&R15);
         if (w == 0) {
-            tables_.name((m8) & R15) = name_;
+            tables_.name((m8)&R15) = name_;
             if (m8 == tables_.free_const)
                 error(3);
             break;
@@ -530,7 +530,7 @@ L1113:
     }
     if (!keyword_) {
         sym_ = Word(m8) << 12;
-        m4_        = 0;
+        m4_  = 0;
         return;
     }
 
@@ -639,7 +639,7 @@ L1475:
 L1472:
     afterend_ = 0;
     warned_   = 0;
-    m4_             = 051;
+    m4_       = 051;
     goto L0766;
 
 L1015: // *1015B: a string; blanks are kept
@@ -648,7 +648,7 @@ L1015: // *1015B: a string; blanks are kept
     sym_    = pool_end_;
 L1020:
     name_ = 0;
-    m10         = 077773;
+    m10   = 077773;
 L1022:
     c = nextch();
     if (c != '\'') {
@@ -661,7 +661,7 @@ L1022:
     }
     blanks_ = BLANKS;
     blank_  = 040;
-    c             = nextch();
+    c       = nextch();
     if (c == '\'')
         goto L1030;
     if (c == ')') {
@@ -711,7 +711,7 @@ L1557: // *1556B: a number
     last_   = a;
     value_  = a;
     expneg_ = a;
-    m10           = 0;
+    m10     = 0;
 L1562:
     switch (chclass(char_).number) {
     case 0: // end
@@ -732,7 +732,7 @@ L1562:
         exp_   = char_;
         mant_  = value_;
         value_ = 0;
-        c            = nextch();
+        c      = nextch();
         switch (chclass(c).exponent) {
         case 0:
             error(9);
@@ -756,7 +756,7 @@ L1562:
         c = nextch();
         if (c == ',') {
             semi_ = ';';
-            a           = last_;
+            a     = last_;
             goto L1641;
         }
         if (point_)
@@ -781,13 +781,13 @@ L1562:
                 if (exp_)
                     error(9);
                 lost_ = char_;
-                m10         = (m10 + 1) & R15;
+                m10   = (m10 + 1) & R15;
             } else {
                 value_ = next_;
             }
         }
         if (point_) {
-            m10         = (m10 - 1) & R15;
+            m10   = (m10 - 1) & R15;
             frac_ = 0;
         }
         last_ = char_;
@@ -850,35 +850,35 @@ L1641: // *1641B: the end of a number
                 goto L1676;
             if (m10 & 077740)
                 error(11);
-            m9         = (((mant_ << 1) & MASK48) >> 42) & R15;
-            m9         = (m9 + 3 * m10) & R15;
-            Word mant  = mant_ & 04017777777777777;
-            key_ = INT1;
+            m9        = (((mant_ << 1) & MASK48) >> 42) & R15;
+            m9        = (m9 + 3 * m10) & R15;
+            Word mant = mant_ & 04017777777777777;
+            key_      = INT1;
             while (m10) {
                 Arith x(C1_25, rau_);
                 x.mul(key_);
                 key_ = x.acc;
-                m10        = (m10 - 1) & R15;
+                m10  = (m10 - 1) & R15;
             }
             Arith x(key_, rau_);
             x.mul(mant);
             power_ = x.acc;
-            Word e       = ((x.acc << 1) & MASK48) >> 42;
+            Word e = ((x.acc << 1) & MASK48) >> 42;
             if ((m9 + e) & 077700)
                 error(11);
             a = arx(Word(m9) << 41, power_);
         }
     L1676:
-        a          = Word(intern(a, m8)) << 12;
-        m4_        = 023;
+        a    = Word(intern(a, m8)) << 12;
+        m4_  = 023;
         sym_ = a | 023;
         return;
     }
     if (lost_)
         error(10);
-    a          = Word(intern(to_integer(value_), m8)) << 12;
-    rau_       = 2;
-    m4_        = 024;
+    a    = Word(intern(to_integer(value_), m8)) << 12;
+    rau_ = 2;
+    m4_  = 024;
     sym_ = a | 024;
 }
 
@@ -922,12 +922,12 @@ unsigned Pass1::common_slot(Word name)
 {
     unsigned m4 = ((name >> 40) & 037) << 4 | ((name >> 32) & 017);
     for (;;) {
-        while (tables_.name((m4) & R15) != 0)
+        while (tables_.name((m4)&R15) != 0)
             m4 = (m4 + 1) & R15;
         cell(016111) = Word(m4) << 24;
         unsigned m11 = 0;
         for (;; m11 += 3) {
-            if (tables_.common((m11) & R15) == 0) {
+            if (tables_.common((m11)&R15) == 0) {
                 cell(016111) = 0;
                 return m4;
             }
@@ -973,9 +973,9 @@ void Pass1::common()
     }
 
     // *1174B
-    unsigned idx            = cell(016125) & R15;
-    unsigned m4             = common_slot(tables_.common((idx) & R15));
-    tables_.name((m4) & R15) = tables_.common((idx) & R15);
+    unsigned idx           = cell(016125) & R15;
+    unsigned m4            = common_slot(tables_.common((idx)&R15));
+    tables_.name((m4)&R15) = tables_.common((idx)&R15);
     dpush(Word(m4) | 06402000000000000);
     cell(016132) = Word(m3_) << 36;
     cell(016127) = cell(016125);
@@ -1003,16 +1003,16 @@ L1212:
         goto L1212;
 L1230:
     tables_.common((cell(016125)) & R15) = cell(016111);
-    cell(016125)                       = arx(cell(016125), 3);
+    cell(016125)                         = arx(cell(016125), 3);
     if (cell(016125) == 0377)
         common_error(2);
-    m4                            = common_slot(cell(016111));
-    idx                           = cell(016125) & R15;
+    m4                              = common_slot(cell(016111));
+    idx                             = cell(016125) & R15;
     tables_.common((idx - 2) & R15) = asn(Word(m4), 050) | cell(016132);
     tables_.common((idx - 1) & R15) = 1;
-    cell(016132)                  = arx(cell(016132), D_MASK) & D_MASK;
-    cell(016131)                  = 0;
-    cell(016127)                  = arx(cell(016127), Word(1) << 24);
+    cell(016132)                    = arx(cell(016132), D_MASK) & D_MASK;
+    cell(016131)                    = 0;
+    cell(016127)                    = arx(cell(016127), Word(1) << 24);
     switch (char_) {
     case '(':
         break;
@@ -1076,8 +1076,8 @@ L1230:
 
     // *1412B: the length of the block.
 L1412:
-    cell(016131)                                   = 0;
+    cell(016131)                                     = 0;
     tables_.common((1 + (cell(016127) & R15)) & R15) = asn(cell(016127), 0130);
-    cell(016115)                                   = 0;
-    cell(016127)                                   = 0;
+    cell(016115)                                     = 0;
+    cell(016127)                                     = 0;
 }

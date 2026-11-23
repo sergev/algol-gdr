@@ -23,13 +23,6 @@ reference for the native runs.
 
 ### Cut the BESM-6 back end
 
-### Front end data
-
-- **E5** Move pass 1 and pass 2 off `Workspace` onto those structs and drop `Workspace`
-  (Roadmap: one-page streams, the hash table, the 1K constant page go with it). The stream
-  operands stay slot numbers and D-list indexes, so `.s1`/`.s2` still compare. Then drop
-  `.mem` and `PassMem`.
-
 ### Tree
 
 - **E6** AST (`ast.h`): program, blocks with declarations (variables, arrays with bound

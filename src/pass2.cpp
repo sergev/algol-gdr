@@ -20,32 +20,19 @@ namespace {
 
 using namespace std::string_view_literals;
 
-// Cells of the workspace.
-constexpr unsigned FREE_CONST  = 02003; // the lowest constant slot
-constexpr unsigned DLIST_TOP   = 02004; // the innermost procedure (or thunk, then 0)
-constexpr unsigned HIDDEN      = 02005; // a block whose names are not visible here
-constexpr unsigned ITEM        = 02006; // the item read
-constexpr unsigned ARGS        = 02007; // data of the messages: the name, 0, the position
-constexpr unsigned POSITION    = 02011; // 6 words: "PROGR/END" before any marker
-constexpr unsigned LINE_TEXT   = 02015; // of POSITION: the line number
-constexpr unsigned STMT_TEXT   = 02016; // the statement on the line
-constexpr unsigned BLOCK_END   = 02017; // the end of the block being scanned
-constexpr unsigned ARGS2       = 02017; // the second name of NO ACTUAL-FORMAL CORRESPONDENCE
-constexpr unsigned BLOCK_DLIST = 02022; // thunks counted, <<12
-constexpr unsigned STEP_KIND   = 02023; // the last item of a STEP element: 0137, 0140, 034
-constexpr unsigned ELEMENTS    = 02024; // the elements of the FOR list
-constexpr unsigned FREE_SAVED  = 02025;
-constexpr unsigned DLIST_TOP2  = 02026; // the outermost block
-constexpr unsigned REPORTED    = 02027; // a message in this subtree
-constexpr unsigned BLOCK       = 02030; // the innermost open block
-constexpr unsigned BOUNDS      = 02031; // constant bounds of an array segment, or 0
-constexpr unsigned ARRAYS_END  = 02032; // end of the array records at 04000
-constexpr unsigned NAMES       = 02144; // slot i at NAMES + i
-constexpr unsigned CELLS       = 01736; // the work cells of the original
-constexpr unsigned ARRAYS      = 04000;
-constexpr unsigned DLIST_END   = 06000;
-constexpr unsigned COMMON      = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
-constexpr unsigned FLGEX       = 00702;
+// Addresses of the original: cells, tables.
+constexpr unsigned ARGS      = 02007; // data of the messages: the name, 0, the position
+constexpr unsigned POSITION  = 02011; // 6 words: "PROGR/END" before any marker
+constexpr unsigned LINE_TEXT = 02015; // of POSITION: the line number
+constexpr unsigned STMT_TEXT = 02016; // the statement on the line
+constexpr unsigned BLOCK_END = 02017; // the end of the block being scanned
+constexpr unsigned ARGS2     = 02017; // the second name of NO ACTUAL-FORMAL CORRESPONDENCE
+constexpr unsigned NAMES     = 02144; // slot i at NAMES + i
+constexpr unsigned CELLS     = 01736; // the work cells of the original
+constexpr unsigned ARRAYS    = 04000;
+constexpr unsigned DLIST_END = 06000;
+constexpr unsigned COMMON    = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
+constexpr unsigned FLGEX     = 00702;
 
 constexpr unsigned ONE        = 01632; // the slot of the constant 1
 constexpr unsigned TRUE_SLOT  = 01625;
@@ -470,7 +457,20 @@ private:
     unsigned sp_{ STACK };
     Word zero_{};
     Word flgex_{};
-    std::array<Word, NAMES - CELLS> cells_{};                  // 01736-02143: the work cells
+    // Cells of the original at 02000….
+    Word dlist_top2_{};  // the outermost block
+    Word dlist_top_{};   // the innermost procedure (or thunk, then 0)
+    Word hidden_{};      // a block whose names are not visible here
+    Word item_{};        // the item read
+    Word block_dlist_{}; // thunks counted, <<12
+    Word step_kind_{};   // the last item of a STEP element: 0137, 0140, 034
+    Word elements_{};    // the elements of the FOR list
+    Word free_saved_{};
+    Word reported_{};                         // a message in this subtree
+    Word block_{};                            // the innermost open block
+    Word bounds_{};                           // constant bounds of an array segment, or 0
+    Word arrays_end_{};                       // end of the array records at 04000
+    std::array<Word, NAMES - CELLS> cells_{}; // 01736-02143: the work cells
     std::array<Word, Tables::DLIST_BEGIN - ARRAYS> records_{}; // 04000-04377: the array records
 
     // The item read: code (M1), count (M2), operand (M3).
@@ -506,7 +506,7 @@ private:
     void emit(Word w) { out_.push_back(Item{ uint32_t(w & Item::MASK) }); }
     void emit_shifted(Word a) { emit(((a << 12) & WORD_MASK) ^ emit_code_); }
     void emit_code() { emit(emit_code_); }
-    void emit_item() { emit(mem(ITEM)); }
+    void emit_item() { emit(item_); }
 
     // Subtrees.
     unsigned parse_read(unsigned ret);
@@ -593,7 +593,7 @@ private:
     unsigned bounds_item();
     unsigned array_item();
     unsigned syntax_error_item();
-    bool outermost(Word a) { return raw_sub(a, mem(DLIST_TOP2)) == 2; }
+    bool outermost(Word a) { return raw_sub(a, dlist_top2_) == 2; }
     unsigned decl_end();
     unsigned procedure_item();
     unsigned body_end_item();
@@ -655,8 +655,6 @@ private:
 Word &Pass2::mem(unsigned a)
 {
     a &= 077777;
-    if (a == FREE_CONST)
-        return ctx_.tables.free_const;
     if (a >= NAMES && a < NAMES + Tables::SLOTS)
         return ctx_.tables.name(a - NAMES);
     if (a >= Tables::DLIST_BEGIN && a < Tables::DLIST_END)
@@ -697,11 +695,11 @@ void Pass2::read()
 {
     if (!pos_)
         throw std::runtime_error("pass 2: read before the start of the stream");
-    Word w    = in_[--pos_].bits;
-    mem(ITEM) = w;
-    code_     = w & 0177;
-    count_    = (w >> 7) & 037;
-    operand_  = (w >> 12) & 07777;
+    Word w   = in_[--pos_].bits;
+    item_    = w;
+    code_    = w & 0177;
+    count_   = (w >> 7) & 037;
+    operand_ = (w >> 12) & 07777;
 }
 
 // *0223B: a subtree from the item read: its return address and REPORTED
@@ -709,8 +707,8 @@ void Pass2::read()
 unsigned Pass2::parse_read(unsigned ret)
 {
     push(ret);
-    push(mem(REPORTED));
-    mem(REPORTED) = 0;
+    push(reported_);
+    reported_ = 0;
     return DISPATCH;
 }
 
@@ -744,7 +742,7 @@ unsigned Pass2::dispatch()
 // *0226B: return from a subtree, its REPORTED ORed into the caller's.
 unsigned Pass2::return_sub()
 {
-    mem(REPORTED) |= pop();
+    reported_ |= pop();
     return addr(pop());
 }
 
@@ -804,10 +802,10 @@ Word Pass2::after_message()
 {
     desc_ = 0;
     type_ = 0;
-    if (Word r = mem(REPORTED))
+    if (Word r = reported_)
         return r;
-    flgex_        = 1;
-    mem(REPORTED) = 1;
+    flgex_    = 1;
+    reported_ = 1;
     return 1;
 }
 
@@ -829,7 +827,7 @@ Word Pass2::message_name(const Format &format)
 // *0211B: ILLEGAL USE OF IDENTIFIER of slot operand_, unless reported in this subtree.
 Word Pass2::illegal_use()
 {
-    if (Word r = mem(REPORTED))
+    if (Word r = reported_)
         return r;
     return message_name(ILLEGAL_USE);
 }
@@ -837,7 +835,7 @@ Word Pass2::illegal_use()
 // *0430B: TYPE ERROR IN CONNECTION WITH the text at ARGS, unless reported in this subtree.
 Word Pass2::type_error_args()
 {
-    if (Word r = mem(REPORTED))
+    if (Word r = reported_)
         return r;
     return message(TYPE_ERROR);
 }
@@ -891,7 +889,7 @@ void Pass2::lookup()
         after_message();
         return;
     }
-    if (mem(HIDDEN) && inside(mem(HIDDEN))) {
+    if (hidden_ && inside(hidden_)) {
         illegal_use();
         return;
     }
@@ -938,7 +936,7 @@ void Pass2::open_scope(unsigned header, Word end)
 // back the binding it shadowed.
 void Pass2::close_scope()
 {
-    unsigned p     = addr(mem(BLOCK));
+    unsigned p     = addr(block_);
     mem(BLOCK_END) = mem(p) & 07777;
     for (;;) {
         p++;
@@ -973,9 +971,9 @@ unsigned Pass2::start()
 {
     type_ = 0;
     push(DRIVER); // the first read of the original is past the end: nothing
-    mem(DLIST_TOP2)  = operand_;
-    mem(DLIST_TOP)   = operand_;
-    mem(BLOCK_DLIST) = Word(operand_) << 12;
+    dlist_top2_  = operand_;
+    dlist_top_   = operand_;
+    block_dlist_ = Word(operand_) << 12;
 
     // Each element: its slot holds its name, and the declaration at D3 is its own.
     for (unsigned k = 0; mem(COMMON + k + 1); k += 3) {
@@ -1006,10 +1004,10 @@ unsigned Pass2::start()
         }
     }
 
-    mem(FREE_SAVED) = mem(FREE_CONST);
-    mem(ARRAYS_END) = ARRAYS;
+    free_saved_ = ctx_.tables.free_const;
+    arrays_end_ = ARRAYS;
     ctx_.saved_names.assign(ctx_.tables.names().begin(), ctx_.tables.names().end());
-    for (unsigned k = addr(mem(FREE_CONST)); k;)
+    for (unsigned k = addr(ctx_.tables.free_const); k;)
         name(--k) = 0;
     store(operand_, DLIST_END);
     open_scope(operand_, DLIST_END);
@@ -1028,7 +1026,7 @@ unsigned Pass2::start()
 unsigned Pass2::finish()
 {
     sp_ -= 2;
-    for (unsigned p = ARRAYS; p != mem(ARRAYS_END); p++) {
+    for (unsigned p = ARRAYS; p != arrays_end_; p++) {
         Word rec  = mem(p);
         count_    = (rec >> 7) & 037;
         desc_     = (rec >> 12) & 07777;
@@ -1052,12 +1050,12 @@ unsigned Pass2::finish()
 //
 unsigned Pass2::end_item()
 {
-    push(mem(BLOCK));
-    mem(BLOCK) = operand_;
+    push(block_);
+    block_ = operand_;
     if (mem(operand_) & BIT48) {
-        push(mem(DLIST_TOP));
-        mem(DLIST_TOP) = operand_;
-        emit_code_     = code_;
+        push(dlist_top_);
+        dlist_top_ = operand_;
+        emit_code_ = code_;
         emit_shifted(top(1));
     } else {
         push(0);
@@ -1075,12 +1073,12 @@ unsigned Pass2::begin_item()
 {
     sp_ -= 2;
     if (Word top_saved = pop()) {
-        mem(DLIST_TOP) = top_saved;
-        emit_code_     = code_;
-        emit_shifted(mem(BLOCK));
+        dlist_top_ = top_saved;
+        emit_code_ = code_;
+        emit_shifted(block_);
     }
     close_scope();
-    mem(BLOCK) = pop();
+    block_ = pop();
     read();
     return DISPATCH;
 }
@@ -1136,7 +1134,7 @@ unsigned Pass2::identifier()
             emit_code_ = kind_ ? 022 : 017;
             return emit_operand(desc_);
         }
-        if (!inside(mem(DLIST_TOP)))
+        if (!inside(dlist_top_))
             mem(desc_) |= BIT48;
         emit_code_ = 024;
         return emit_operand(desc_);
@@ -1705,7 +1703,7 @@ unsigned Pass2::after_left()
     case 2:
     case 3:
         mem(desc_ + 1) |= RESULT_SET;
-        if (!less(desc_, mem(BLOCK)) || !less(mem(BLOCK), addr(mem(desc_ + 1)))) {
+        if (!less(desc_, block_) || !less(block_, addr(mem(desc_ + 1)))) {
             illegal_use();
             return NEXT_LEFT;
         }
@@ -1994,15 +1992,15 @@ unsigned Pass2::for_element()
 // *2356B: one element more.
 unsigned Pass2::count_element()
 {
-    mem(ELEMENTS) = cyclic_add(mem(ELEMENTS), 1);
+    elements_ = cyclic_add(elements_, 1);
     return DISPATCH;
 }
 
 // Code 052, end of a FOR statement (read first): its block becomes BLOCK.
 unsigned Pass2::for_end_item()
 {
-    push(mem(BLOCK));
-    mem(BLOCK) = operand_;
+    push(block_);
+    block_ = operand_;
     open_scope_at();
     emit_item();
     read();
@@ -2017,7 +2015,7 @@ unsigned Pass2::do_item()
     read();
     push(desc_);
     push(type_);
-    mem(ELEMENTS) = 0;
+    elements_ = 0;
     if (!NUMERIC[type_ & 7])
         type_error(FOR_TEXT);
     return DISPATCH;
@@ -2056,8 +2054,8 @@ unsigned Pass2::step_item()
     read();
     if (unsigned after = for_element())
         emit(after);
-    mem(STEP_KIND) = STEP_KINDS[addr(top(1)) & 7];
-    bool general   = top(1) != 2 || code_ != 024;
+    step_kind_   = STEP_KINDS[addr(top(1)) & 7];
+    bool general = top(1) != 2 || code_ != 024;
     if (general) {
         if (unsigned after = for_element())
             emit(after);
@@ -2071,14 +2069,14 @@ unsigned Pass2::step_item()
             for_element();
         } else {
             emit_code_     = 0137;
-            mem(STEP_KIND) = 0137;
-            emit_code_     = addr(mem(FREE_SAVED));
+            step_kind_     = 0137;
+            emit_code_     = addr(free_saved_);
             mem(BLOCK_END) = name(step) & MANTISSA;
             for (;;) {
                 Word c = name(emit_code_);
                 if (!c) {
-                    name(emit_code_) = mem(BLOCK_END);
-                    mem(FREE_CONST)  = cyclic_add(emit_code_, MINUS_ONE);
+                    name(emit_code_)       = mem(BLOCK_END);
+                    ctx_.tables.free_const = cyclic_add(emit_code_, MINUS_ONE);
                     break;
                 }
                 if (c == mem(BLOCK_END))
@@ -2086,11 +2084,11 @@ unsigned Pass2::step_item()
                 emit_code_ = (emit_code_ - 1) & 077777;
             }
             emit((Word(emit_code_) << 12) ^ 023);
-            emit(cyclic_add(mem(ITEM), MINUS_ONE));
+            emit(cyclic_add(item_, MINUS_ONE));
             read();
         }
     }
-    emit(mem(STEP_KIND));
+    emit(step_kind_);
     return count_element();
 }
 
@@ -2101,8 +2099,8 @@ unsigned Pass2::step_item()
 //
 unsigned Pass2::control_item()
 {
-    if (mem(ELEMENTS) != 1) {
-        unsigned block = addr(mem(BLOCK));
+    if (elements_ != 1) {
+        unsigned block = addr(block_);
         store(block, BIT48 | mem(block));
     }
     pop();
@@ -2122,7 +2120,7 @@ unsigned Pass2::control_item()
     }
     if (!bad)
         emit_shifted(desc_);
-    mem(REPORTED) = 0;
+    reported_ = 0;
     read();
     return DISPATCH;
 }
@@ -2136,8 +2134,8 @@ void Pass2::close_block()
     sp_ -= 2;
     close_scope();
     emit_code_ = code_;
-    emit_shifted(mem(BLOCK));
-    mem(BLOCK) = pop();
+    emit_shifted(block_);
+    block_ = pop();
     read();
 }
 
@@ -2156,9 +2154,9 @@ unsigned Pass2::switch_item()
     emit_code_ = 0146;
     emit_code();
     emit_item();
-    push(mem(DLIST_TOP));
+    push(dlist_top_);
     push(count_);
-    mem(DLIST_TOP) = 0;
+    dlist_top_ = 0;
     read();
     for (;;) {
         if (code_) {
@@ -2201,26 +2199,26 @@ unsigned Pass2::switch_item()
 //
 unsigned Pass2::bounds_item()
 {
-    emit_code_ = addr(mem(BLOCK));
+    emit_code_ = addr(block_);
     if (!(mem(emit_code_) & HAS_ARRAYS)) {
         mem(emit_code_) ^= HAS_ARRAYS;
         emit_code_ = 0102;
-        emit_shifted(mem(BLOCK));
+        emit_shifted(block_);
     }
     emit_item();
     read();
-    mem(HIDDEN) = mem(BLOCK);
-    emit_code_  = (code_ - 024) & 077777;
+    hidden_    = block_;
+    emit_code_ = (code_ - 024) & 077777;
     if (!emit_code_ && small_constant(INTEGER | 256)) {
-        mem(BOUNDS) = name(operand_);
+        bounds_ = name(operand_);
         subtree(020213);
         emit_code_ = (code_ - 024) & 077777;
         if (!emit_code_ && small_constant(INTEGER | 64)) {
-            mem(BOUNDS) |= (name(operand_) << 12) & WORD_MASK;
+            bounds_ |= (name(operand_) << 12) & WORD_MASK;
             return BOUND_LOOP;
         }
     }
-    mem(BOUNDS) = 0;
+    bounds_ = 0;
     return BOUND_LOOP;
 }
 
@@ -2230,12 +2228,12 @@ unsigned Pass2::bounds_item()
 //
 unsigned Pass2::array_item()
 {
-    mem(HIDDEN) = 0;
+    hidden_ = 0;
     sp_ -= 2;
     emit_item();
-    if (Word b = mem(BOUNDS)) {
-        store(addr(mem(ARRAYS_END)), ((b << 24) & WORD_MASK) | mem(ITEM));
-        mem(ARRAYS_END) = cyclic_add(mem(ARRAYS_END), 1);
+    if (Word b = bounds_) {
+        store(addr(arrays_end_), ((b << 24) & WORD_MASK) | item_);
+        arrays_end_ = cyclic_add(arrays_end_, 1);
     }
     read();
     return DISPATCH;
@@ -2258,8 +2256,8 @@ unsigned Pass2::syntax_error_item()
 //
 unsigned Pass2::decl_end()
 {
-    desc_          = addr(mem(DLIST_TOP));
-    mem(DLIST_TOP) = pop();
+    desc_      = addr(dlist_top_);
+    dlist_top_ = pop();
     if (outermost(desc_)) {
         desc_ = (desc_ - 1) & 077777;
         proc_params();
@@ -2278,7 +2276,7 @@ unsigned Pass2::decl_end()
 unsigned Pass2::procedure_item()
 {
     close_block();
-    desc_ = addr(mem(DLIST_TOP));
+    desc_ = addr(dlist_top_);
     if ((mem(desc_ - 1) & FUNCTION) && !(mem(desc_) & RESULT_SET)) {
         operand_ = addr(mem(desc_ - 1));
         message_name(NO_ASSIGNMENT);
@@ -2293,8 +2291,8 @@ unsigned Pass2::procedure_item()
 //
 unsigned Pass2::body_end_item()
 {
-    push(mem(DLIST_TOP));
-    mem(DLIST_TOP) = operand_;
+    push(dlist_top_);
+    dlist_top_ = operand_;
     if (!outermost(operand_)) {
         emit_code_ = 0146;
         emit_code();
@@ -2368,7 +2366,7 @@ unsigned Pass2::set_position()
 unsigned Pass2::goto_item()
 {
     parse_sub(017647);
-    if (type_ && !mem(REPORTED))
+    if (type_ && !reported_)
         type_error(GOTO_TEXT);
     return DISPATCH;
 }
@@ -2439,7 +2437,7 @@ unsigned Pass2::io_string()
 {
     loop(io_arg(020454), 020454);
     type_ = (type_ - 4) & 077777;
-    if (type_ && !mem(REPORTED))
+    if (type_ && !reported_)
         message(IO_ERROR);
     return io_last();
 }
@@ -2588,7 +2586,7 @@ unsigned Pass2::actual_done()
 //
 unsigned Pass2::mismatch()
 {
-    if (mem(REPORTED))
+    if (reported_)
         return actual_count();
     mem(ARGS)      = saved_name(addr(mem(formal_)));
     mem(ARGS2)     = saved_name(addr(mem(desc_)));
@@ -2690,12 +2688,12 @@ unsigned Pass2::actual_emit(Word a)
 void Pass2::thunk()
 {
     push(formal_);
-    push(mem(DLIST_TOP));
-    mem(DLIST_TOP) = 0;
-    Word level     = mem(BLOCK_DLIST);
+    push(dlist_top_);
+    dlist_top_ = 0;
+    Word level = block_dlist_;
     push(level);
-    mem(BLOCK_DLIST) = cyclic_add(level, LEVEL_DOWN);
-    emit_code_       = 0116;
+    block_dlist_ = cyclic_add(level, LEVEL_DOWN);
+    emit_code_   = 0116;
     emit(0116 | top(1));
 }
 
@@ -2704,8 +2702,8 @@ unsigned Pass2::thunk_end()
 {
     emit_code_ = 0117;
     emit(0117 | pop());
-    mem(DLIST_TOP) = pop();
-    formal_        = addr(pop());
+    dlist_top_ = pop();
+    formal_    = addr(pop());
     if (!formal_)
         return actual_count();
     return correspond();
@@ -2866,7 +2864,7 @@ unsigned Pass2::call_item()
     lookup();
     push(type_);
     push(count_);
-    if (mem(REPORTED))
+    if (reported_)
         return call_head();
     emit_code_ = (desc_ - STD_PROC) & 077777;
     if (!emit_code_) {
@@ -2913,7 +2911,7 @@ unsigned Pass2::call_item()
 // *1722B: a label argument (type_ 0): LABEL AS ARGUMENT OF NON-ALGOL CALL.
 unsigned Pass2::arg_label()
 {
-    if (!type_ && !mem(REPORTED))
+    if (!type_ && !reported_)
         message(LABEL_ARG);
     return arg_return();
 }
@@ -2973,7 +2971,7 @@ unsigned Pass2::arg_ident()
         read();
         return ARG_LABEL;
     };
-    if (mem(REPORTED))
+    if (reported_)
         return item();
     if (type_ == STRING_TYPE)
         return parse_read(ARG_EXPRESSION);
@@ -3089,7 +3087,7 @@ unsigned Pass2::as_left_part(unsigned ret)
 {
     emit_code_ = ret;
     push(ret);
-    push(mem(REPORTED));
+    push(reported_);
     push(1);
     push(type_);
     push(type_);
@@ -3219,12 +3217,12 @@ void Pass2::register_handlers()
 
     // The framework.
     h[NEXT_ITEM] = [this] { // *0217B: the statement loop
-        mem(HIDDEN)   = 0;
-        mem(REPORTED) = 0;
+        hidden_   = 0;
+        reported_ = 0;
         return parse_read(AFTER_END);
     };
     h[AFTER_END] = [this] { // *0220B
-        mem(REPORTED) = 0;
+        reported_ = 0;
         return parse_read(AFTER_END);
     };
     h[DISPATCH]    = [this] { return dispatch(); };

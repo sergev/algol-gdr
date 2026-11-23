@@ -16,7 +16,7 @@
 namespace {
 
 // D-list words, as pass 1 makes them (pass1_parser.cpp).
-constexpr Word BIT48      = 0'4000'0000'0000'0000; // a block header with arrays; a value formal; 'CODE'
+constexpr Word BIT48 = 0'4000'0000'0000'0000; // a block header with arrays; a value formal; 'CODE'
 constexpr Word DESCRIPTOR = 0'2000'0000'0000'0000;
 constexpr Word BIT46      = 0'1000'0000'0000'0000; // a formal by name; a FOR
 constexpr Word BIT45      = 0'0400'0000'0000'0000; // a procedure's head
@@ -53,7 +53,7 @@ const char *kind_name(Kind k)
 
 const char *mode_name(Mode m)
 {
-    static const char *const names[] = { "local",  "value",  "name",    "code",
+    static const char *const names[] = { "local", "value",  "name",    "code",
                                          "algol", "common", "standard" };
     return names[int(m)];
 }
@@ -85,8 +85,7 @@ std::string iso_text(const Word *w, size_t n, size_t *used = nullptr)
 
 } // namespace
 
-Symbols::Symbols(const Context &ctx)
-    : names_(ctx.saved_names), strings_(ctx.strings)
+Symbols::Symbols(const Context &ctx) : names_(ctx.saved_names), strings_(ctx.strings)
 {
     if (ctx.dlist.size() != DLIST_END - DLIST_BEGIN || names_.size() != Tables::SLOTS)
         throw std::logic_error("symbols: passes 1 and 2 have not run");
@@ -104,7 +103,7 @@ Symbols::Symbols(const Context &ctx)
         CommonEntry e;
         Word text = t.common(i);
         e.name    = rtrim(iso_text(&text, 1));
-        e.slot = (info >> 24) & 07777;
+        e.slot    = (info >> 24) & 07777;
         if (e.slot) {
             e.decl = (info >> 36) & 07777;
             e.size = t.common(i + 2) & 077777777;
@@ -114,10 +113,10 @@ Symbols::Symbols(const Context &ctx)
         common.push_back(e);
     }
 
-    root          = ctx.regs[3] & 07777;
-    Scope &top    = scopes[root];
-    top.kind      = ScopeKind::ROOT;
-    top.addr      = root;
+    root       = ctx.regs[3] & 07777;
+    Scope &top = scopes[root];
+    top.kind   = ScopeKind::ROOT;
+    top.addr   = root;
     scan(root, DLIST_END, top, dlist);
     const auto &items = scopes[root].items;
     auto block        = std::find_if(items.begin(), items.end(), [this](unsigned a) {

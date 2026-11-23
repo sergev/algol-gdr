@@ -102,7 +102,7 @@ Tables::Tables()
         names_[slot++] = c;
     unsigned a = STANDARD;
     for (const auto &s : STANDARD_IDS) {
-        Word w  = name_word(s.name);
+        Word w     = name_word(s.name);
         unsigned k = hash(w);
         while (names_[k] != w)
             k++;

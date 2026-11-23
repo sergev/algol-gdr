@@ -16,8 +16,8 @@
 
 //
 // Pass 1 (G13666, G14504): reads the cards, lexes, checks the syntax and
-// writes the first stream. The lexer and the parser share their state in the
-// workspace cells 02000…, as the original does; see doc/passes.md.
+// writes the first stream. The lexer and the parser share their state in
+// members named after the cells 02000… of the original; see doc/passes.md.
 //
 class Pass1 {
 public:
@@ -65,44 +65,44 @@ private:
     Word emit_item_{}; // 15144
 
     // Cells of the original at 02000… (D-list and name table in tables_).
-    Word sym_{ 051 };      // 02000: symbol word
-    Word cursor_{};        // 02001: stream write cursor
-    Word pool_{};          // 02002: string pool cursor (G27220)
-    Word char_{ 01634 << 12 }; // 02004: current character
-    Word afterend_{};      // 02005: skipping the text after END
-    Card card_{};          // 02010: the card, 14 words
-    Word word_{};          // 02026: current card word
-    Word keyword_{};       // 02027: a quote started the name
-    Word blank_{ 040 };    // 02030: character to skip
-    Word blanks_{};        // 02031: word to skip
-    Word name_{};          // 02032: name being read, ISO
-    Word warned_{};        // 02033: WARNING SYMBOL AFTER END printed
-    Word point_{};         // 02034: number: '.' seen
-    Word exp_{};           // 02035: number: exponent seen
-    Word last_{};          // 02036: number: last character
-    Word lost_{};          // 02037: number: digits beyond precision
-    Word value_{};         // 02040: number: value of the digits
-    Word next_{};          // 02041: number: next value
-    Word mant_{};          // 02042: number: mantissa before the exponent
-    Word expneg_{};        // 02043: number: negative exponent
-    Word frac_{};          // 02044: number: starts with '.'
-    Word power_{};         // 02045: number: scaled value
-    Word key_{};           // 02046: constant being interned
-    Word semi_{};          // 02047: ',' after '.,' means ';'
+    Word sym_{ 051 };              // 02000: symbol word
+    Word cursor_{};                // 02001: stream write cursor
+    Word pool_{};                  // 02002: string pool cursor (G27220)
+    Word char_{ 01634 << 12 };     // 02004: current character
+    Word afterend_{};              // 02005: skipping the text after END
+    Card card_{};                  // 02010: the card, 14 words
+    Word word_{};                  // 02026: current card word
+    Word keyword_{};               // 02027: a quote started the name
+    Word blank_{ 040 };            // 02030: character to skip
+    Word blanks_{};                // 02031: word to skip
+    Word name_{};                  // 02032: name being read, ISO
+    Word warned_{};                // 02033: WARNING SYMBOL AFTER END printed
+    Word point_{};                 // 02034: number: '.' seen
+    Word exp_{};                   // 02035: number: exponent seen
+    Word last_{};                  // 02036: number: last character
+    Word lost_{};                  // 02037: number: digits beyond precision
+    Word value_{};                 // 02040: number: value of the digits
+    Word next_{};                  // 02041: number: next value
+    Word mant_{};                  // 02042: number: mantissa before the exponent
+    Word expneg_{};                // 02043: number: negative exponent
+    Word frac_{};                  // 02044: number: starts with '.'
+    Word power_{};                 // 02045: number: scaled value
+    Word key_{};                   // 02046: constant being interned
+    Word semi_{};                  // 02047: ',' after '.,' means ';'
     Word pool_end_{ 01634 << 12 }; // 02050: string pool end << 12
-    Word io_item_{};       // 02052: item of an I/O statement
-    Word head_kind_{};     // 02054: 'ALGOL' or 'CODE' before the program
-    Word head_desc_{};     // 02055: descriptor bits of a declaration before the program
-    Word head_slot_{};     // 02056: its name slot
-    Word line_{};          // 02060: line counter
-    Word printed_{};       // 02061: last line printed
-    Word io_done_{};       // 02117: the I/O element wrote the item
-    Word list_{};          // 02121: listing on
-    Word markline_{};      // 02122: line of the last statement marker
-    Word markn_{};         // 02123: its count << 7
-    Word label_name_{};    // 02136: name of the first label
-    Word rename_{};        // 02137: … in TEXT
-    Word card_count_{};    // 01741: card count, integer
+    Word io_item_{};               // 02052: item of an I/O statement
+    Word head_kind_{};             // 02054: 'ALGOL' or 'CODE' before the program
+    Word head_desc_{};             // 02055: descriptor bits of a declaration before the program
+    Word head_slot_{};             // 02056: its name slot
+    Word line_{};                  // 02060: line counter
+    Word printed_{};               // 02061: last line printed
+    Word io_done_{};               // 02117: the I/O element wrote the item
+    Word list_{};                  // 02121: listing on
+    Word markline_{};              // 02122: line of the last statement marker
+    Word markn_{};                 // 02123: its count << 7
+    Word label_name_{};            // 02136: name of the first label
+    Word rename_{};                // 02137: … in TEXT
+    Word card_count_{};            // 01741: card count, integer
     std::array<Word, 0400> pool_page_{}; // 04000-04377: the string pool page
     Stream out_;
 

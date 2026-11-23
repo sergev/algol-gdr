@@ -21,10 +21,11 @@ The `SET` directives at the end of `algol.asm` fill `AD02000`, `AD02166`, `AD037
 `AD05754` before the passes run. Each pass reuses the pages for its own data (see the data
 flow in [passes.md](passes.md)).
 
-In the C++ `Workspace` holds 01736–05777 and 27245–27644. The streams are vectors; pass 4
-keeps its copy of the names at 06000 itself. What the original keeps on the scratch drums is
-in `Context`: `saved_names` (drum 26 zone 0), `constants` (drum 27 zone 33, from its end)
-and `strings` (drum 27 zones 34…).
+In the C++ `Tables` (src/tables.h) holds what passes 1 and 2 share: the name table by slot,
+the D-list by address, the 'COMMON' table. The work cells of 02000… are members of the
+passes, named after their role. The streams are vectors. What the original keeps on the
+scratch drums is in `Context`: `saved_names` (drum 26 zone 0, the name table by slot) and
+`strings` (drum 27 zones 34…).
 
 ## Keyword hash table (02166…)
 
@@ -94,8 +95,8 @@ with the escapes as octal bytes (`"IDENTIFIER ′\200′ IS NOT DECLARED\202"`),
 words by `iso_words` (`src/card.h`).
 
 The data set before the passes run (01736–05777: the cells of 02000, the name table, the
-preset constants, the standard identifiers) is built by `Workspace::reset`
-(`src/workspace.cpp`) from the keywords in the order of their words in the original.
+preset constants, the standard identifiers) is built by the `Tables` constructor
+(`src/tables.cpp`) from the keywords in the order of their words in the original.
 
 ## Character codes
 

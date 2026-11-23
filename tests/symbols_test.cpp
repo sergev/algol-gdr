@@ -66,9 +66,10 @@ static Context compiled(const std::string &text)
 
 TEST(Symbols, formals)
 {
-    Context ctx = compiled("'BEGIN' 'REAL' 'PROCEDURE' F(A, B, C); 'VALUE' B;\n"
-                           "'INTEGER' A, B; 'REAL' 'ARRAY' C; F := A + B + C[1];\n"
-                           "PRINT(F(1, 2, ''X''))\n'END'\n'EOP'\n");
+    Context ctx = compiled(
+        "'BEGIN' 'REAL' 'PROCEDURE' F(A, B, C); 'VALUE' B;\n"
+        "'INTEGER' A, B; 'REAL' 'ARRAY' C; F := A + B + C[1];\n"
+        "PRINT(F(1, 2, ''X''))\n'END'\n'EOP'\n");
     Symbols sym(ctx);
     unsigned f = 0;
     for (auto &[addr, d] : sym.decls)

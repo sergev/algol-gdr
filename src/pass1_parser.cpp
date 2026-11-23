@@ -254,7 +254,7 @@ void Pass1::stmark()
         a = arx(markn_, COUNT);
     } else {
         markline_ = line_;
-        a               = COUNT;
+        a         = COUNT;
     }
     markn_ = a;
     emit(((markline_ << 12) & MASK48) | markn_ | 051);
@@ -271,7 +271,7 @@ void Pass1::setres(unsigned owner, unsigned label)
 void Pass1::dpush(Word a)
 {
     tables_.dlist(m3_) = a;
-    m3_      = (m3_ - 1) & R15;
+    m3_                = (m3_ - 1) & R15;
     if (((m3_ + 073401) & R15) == 0)
         throw SyntaxError{ 015 };
 }
@@ -305,7 +305,7 @@ Pass1::Checkpoint Pass1::recover(unsigned n)
                     semi_ = 0;
                     lex();
                     sym_ = 051;
-                    m4_        = 051;
+                    m4_  = 051;
                 } else {
                     warned_   = 051;
                     afterend_ = 051;
@@ -349,12 +349,12 @@ void Pass1::program()
 {
     if (ctx_.options.list)
         blank_line(ctx_);
-    list_ = ctx_.options.list ? 1 : 0;
-    m5_         = 0;
-    m6_         = 0;
-    m3_         = 05753;
-    cursor_  = STREAM_START;
-    pool_ = POOL_START;
+    list_   = ctx_.options.list ? 1 : 0;
+    m5_     = 0;
+    m6_     = 0;
+    m3_     = 05753;
+    cursor_ = STREAM_START;
+    pool_   = POOL_START;
     frame([&](unsigned self, unsigned at) {
         switch (at) {
         case START:
@@ -382,8 +382,8 @@ void Pass1::program()
             throw std::logic_error("pass 1: no checkpoint " + std::to_string(at));
         }
         // *0050B: the last sector of the string pool.
-        Word pool   = pool_;
-        pool_ = pool | 0377;
+        Word pool = pool_;
+        pool_     = pool | 0377;
         pool_put(pool_);
         pool_ = pool;
     });
@@ -474,8 +474,8 @@ void Pass1::program_head(unsigned self, bool resumed)
                 lex();
                 emit((Word(m3_) << 12) | 060);
                 if (!rename_) {
-                    label_name_    = tables_.name(head_slot_);
-                    rename_ = apx(label_name_, NOT_BLANK);
+                    label_name_ = tables_.name(head_slot_);
+                    rename_     = apx(label_name_, NOT_BLANK);
                 }
                 dpush(head_slot_ | (DESCRIPTOR | LABEL | SIMPLE));
                 if (m4_) {
@@ -929,9 +929,9 @@ void Pass1::array_declaration(Word type, Word &saved)
         unsigned n = (count >> 7) & R15;
         unsigned p = m3_;
         do { // *0502B
-            p      = (p + 1) & R15;
+            p                = (p + 1) & R15;
             tables_.dlist(p) = ((dims << 8) & MASK48) | tables_.dlist(p);
-            n      = (n - 1) & R15;
+            n                = (n - 1) & R15;
         } while (n);
         lex();
         if (D0() == 047)
@@ -970,7 +970,7 @@ void Pass1::variables(Word type, Word &saved)
             emit(CONST_1);
             emit(CONST_1);
             emit(dims | 0104);
-            unsigned p = (m3_ + 1) & R15;
+            unsigned p       = (m3_ + 1) & R15;
             tables_.dlist(p) = ((dims << 8) & MASK48) | tables_.dlist(p);
         } else { // *0560B
             type |= (BY_VALUE | SIMPLE);
@@ -1504,7 +1504,7 @@ void Pass1::designator(unsigned prio, Word id)
 // searched down from the heading's start.
 unsigned Pass1::find_formal(Word start)
 {
-    sym_ = sym_ >> 12;
+    sym_       = sym_ >> 12;
     unsigned f = start & R15;
     for (;;) {
         f      = (f - 1) & R15;
