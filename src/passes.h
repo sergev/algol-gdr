@@ -21,8 +21,9 @@ struct Context {
     Workspace ws;                // tables at their original addresses
     Listing *listing{ nullptr }; // listing output, or none
 
-    // Index registers as the previous pass left them; some passes take data
-    // in them (pass 6: M5 = number of symbol rows).
+    // Index registers a pass leaves for the next: M3-M6 after pass 1 (pass 2
+    // starts with them, M3 the outer block), M5 after pass 5 (the number of
+    // symbol rows, for pass 6).
     std::array<unsigned, 16> regs{};
 
     unsigned flgex{}; // FLGEX*: errors found

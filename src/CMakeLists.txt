@@ -5,7 +5,6 @@ add_library(algol STATIC
     dump.cpp
     item.cpp
     listing.cpp
-    machine.cpp
     pass1_lexer.cpp
     pass1_parser.cpp
     pass2.cpp
@@ -17,7 +16,6 @@ add_library(algol STATIC
     source.cpp
     stdarray.cpp
     tables_data.cpp
-    translated.cpp
     version.cpp
     workspace.cpp
 )

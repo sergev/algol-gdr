@@ -3211,14 +3211,10 @@ Pass2::Pass2(Context &ctx, const Stream &input)
            tables::image + (OWN_END - tables::image_base)),
       flgex_(ctx.flgex)
 {
-    code_      = ctx.regs[1] & 077777;
-    count_     = ctx.regs[2] & 077777;
-    operand_   = ctx.regs[3] & 077777;
-    desc_      = ctx.regs[4] & 077777;
-    type_      = ctx.regs[5] & 077777;
-    kind_      = ctx.regs[6] & 077777;
-    formal_    = ctx.regs[9] & 077777;
-    emit_code_ = ctx.regs[14] & 077777;
+    operand_ = ctx.regs[3] & 077777;
+    desc_    = ctx.regs[4] & 077777;
+    type_    = ctx.regs[5] & 077777;
+    kind_    = ctx.regs[6] & 077777;
     register_handlers();
 }
 

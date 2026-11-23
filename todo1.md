@@ -5,8 +5,8 @@ produces the same object (`.std`) and listing as the original, in readable C++.
 
 **Where we are.** The whole compiler runs and `compile_test`/`run_test` pass for every
 program. All six passes are plain C++ on `Context`; passes 2, 3 and 4 keep the continuation
-addresses of the original on their own stack, and their streams are vectors. `machine.*`
-and `translated.*` are no longer used. What we know about the original is in `doc/`
+addresses of the original on their own stack, and their streams are vectors. What we know
+about the original is in `doc/`
 ([passes.md](doc/passes.md), [tables.md](doc/tables.md), [runtime-abi.md](doc/runtime-abi.md),
 [stdarray.md](doc/stdarray.md), [encoding.md](doc/encoding.md)).
 
@@ -23,9 +23,6 @@ Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compile.object`,
 
 ### Cleanup
 
-- **D15** Remove `machine.*` and `translated.*` (pass 2 has its own 01644, 27733 and
-  30001); `ctx.regs` keeps only what a later pass reads; doc/translation.md retired,
-  CLAUDE.md and doc/passes.md updated.
 - **D16** Pass 1 parser as readable functions instead of the labels and the explicit stack
   of the original, under the same tests.
 - **D17** Listing details not covered yet: a left cell over 64 characters, a right cell over

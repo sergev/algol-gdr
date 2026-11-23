@@ -1,8 +1,8 @@
 //
 // Passes 2-4 as a whole: besides the stream (pass_test), the words each leaves
-// in the workspace and on drum, and its registers, must be those of NAME.mem.
-// A pass off the machine keeps its streams in vectors: its stream pages,
-// their drum zones and cursors are not compared, nor its registers.
+// in the workspace and on drum must be those of NAME.mem. The passes keep
+// their streams in vectors: the stream pages, their drum zones and cursors
+// are not compared, nor the registers (no later pass reads them).
 //
 #include <gtest/gtest.h>
 
@@ -23,14 +23,12 @@ struct MemCase {
 
 class PassMem : public ::testing::TestWithParam<MemCase> {};
 
-// Passes 2-4: registers (no later pass reads them), the stream cursors
-// 02000-02001 (and pass 3's at 02013, 02015, 02042), pages 06000-11777,
-// drum 26 from zone 2; for pass 2 also the cells of 01644 (01736-01740)
-// and the cursors saved with page 02000 (drum 26 zones 0, 1, words 0-1).
+// Registers, the stream cursors 02000-02001 (and pass 3's at 02013, 02015,
+// 02042), pages 06000-11777, drum 26 from zone 2; for pass 2 also the cells
+// of 01644 (01736-01740) and the cursors saved with page 02000 (drum 26
+// zones 0, 1, words 0-1).
 static bool stream_part(int pass, const std::string &line)
 {
-    if (pass < 2)
-        return false;
     if (line.rfind("reg", 0) == 0)
         return true;
     std::istringstream f(line);
@@ -76,13 +74,10 @@ TEST_P(PassMem, workspace)
             continue;
         std::istringstream f(line);
         f >> std::oct;
-        std::string word;
         unsigned addr;
         Word want, got;
-        if (line.rfind("reg", 0) == 0) {
-            f >> word >> addr >> want;
-            got = ctx.regs[addr];
-        } else if (line.rfind("drum", 0) == 0) {
+        if (line.rfind("drum", 0) == 0) {
+            std::string word;
             unsigned unit, zone;
             f >> word >> unit >> zone >> addr >> want;
             got = ctx.ws.drum(unit, zone, addr);
