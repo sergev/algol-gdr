@@ -1,10 +1,8 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// Each pass on its own: for each tests/algol program and pass N with an
-// expected stream NAME.sN, run pass N on the expected stream of the previous
-// pass, with the workspace rebuilt from NAME.mem, and compare.
-// Skipped while the pass is not implemented.
+// The streams of passes 1 and 2 of each tests/algol program must be
+// NAME.s1 and NAME.s2 (when the original made them).
 //
 #include <gtest/gtest.h>
 
@@ -39,20 +37,10 @@ TEST_P(Pass, stream)
     auto &[name, pass] = GetParam();
     Context ctx;
     load_options(ctx.options, name);
-    load_mem(ctx, path(name, ".mem"), pass);
-
-    Stream input;
-    if (pass == 1) {
-        ctx.source = read_source(path(name, ".alg"));
-    } else {
-        input = read_stream_file(path(name, ".s" + std::to_string(pass - 1)));
-    }
+    ctx.source = read_source(path(name, ".alg"));
     Stream got;
-    try {
-        got = run_pass(pass, ctx, input);
-    } catch (const NotImplemented &e) {
-        GTEST_SKIP() << e.what();
-    }
+    for (int n = 1; n <= pass; n++)
+        got = run_pass(n, ctx, got);
     auto want = read_stream_file(path(name, ".s" + std::to_string(pass)));
     auto diff = std::mismatch(got.begin(), got.end(), want.begin(), want.end());
     EXPECT_TRUE(diff.first == got.end() && diff.second == want.end())

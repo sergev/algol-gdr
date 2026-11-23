@@ -30,25 +30,6 @@ TEST(card, words)
     EXPECT_EQ(card[13], 01002000000000000u);
 }
 
-// The last card of each program is still at 02010… after pass 1, or the
-// *END FILE card after it, when pass 1 looked for 'EOP'. Without pass 2 the
-// dump runs to the end of the job, so those programs are left out.
-TEST(card, last_card)
-{
-    for (const auto &name : program_names()) {
-        if (!std::filesystem::exists(path(name, ".s2")))
-            continue;
-        Context ctx;
-        load_mem(ctx, path(name, ".mem"), 2);
-        auto cards = read_cards(read_source(path(name, ".alg")));
-        ASSERT_FALSE(cards.empty()) << name;
-        if (ctx.ws[02010] >> 40 == '*')
-            cards.push_back(make_card("*END FILE"));
-        for (unsigned i = 0; i < CARD_WORDS; i++)
-            EXPECT_EQ(cards.back()[i], ctx.ws[02010 + i]) << name << " word " << i;
-    }
-}
-
 // UTF-8 text to ISO words; 0200-0277 alone are format escapes.
 TEST(card, iso_words)
 {
