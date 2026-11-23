@@ -12,41 +12,13 @@ at 01736–11777, the pass modules `ag13666`…`ag30257`) and the listing overla
 `AG23523`, `AG26260`, `AG26666`, …), so the C++ structure can follow it pass by pass.
 
 Milestone 1 is done: the C++ compiler produces the same objects and listings as the original
-(the reference oracle, running under `dubna`) for the test corpus. The analysis of the
-original is in `doc/`.
+(the reference oracle, running under `dubna`) for the test corpus; it is on the `besm6`
+branch, and the analysis of the original is in `doc/`. Milestone 2 is done: a new front end
+(lexer, parser, checker → AST) and an LLVM backend (doc/codegen.md) make native executables
+on x86_64, arm64 and riscv64, and the 32 test programs with a `dubna` run print the same
+output natively.
 
 ---
-
-## Milestone 2 — LLVM backend
-
-Goal: `algc file.alg -o prog` produces a native executable on x86_64, arm64 and riscv64.
-
-**Done.** The code generator and the runtime are described in doc/codegen.md; the 32 test
-programs with a `dubna` run give the same output natively, on x86_64 and, under qemu, on
-aarch64 and riscv64. `own` variables are not done (the front end rejects them, as the
-original did).
-
-- **Front end** (done). The passes of the original are gone; that version stays on the
-  `besm6` branch. A new lexer, parser and checker build the AST (doc/ast.asdl), without the
-  size limits of the original, with GNU-style messages.
-- **Split point**: the AST (todo2.md).
-- **IR generation** modelled on `blang` (`irbuilder.go`, `driver.go`): emit textual LLVM IR,
-  call `clang` to compile and link. Options `-S` (keep `.ll`), `-c`, `-O`.
-- **Semantics on a 64-bit host.** Decide and document:
-  - `integer` and `real` representation (BESM-6 has 48-bit words with a 40-bit mantissa; on the
-    host likely `int64_t` and `double`);
-  - `Boolean`;
-  - strings (UTF-8);
-  - arrays with dynamic bounds;
-  - own variables.
-- **Procedures.** Recursion, nested scopes (static link or display), parameters by value, and
-  by name (thunks), labels and non-local `goto` out of procedures.
-- **Runtime library in C** (as `blang/runtime`): the standard functions (`abs`, `sign`, `sqrt`,
-  `sin`, `cos`, `arctan`, `ln`, `exp`, `entier`) and the I/O procedures used by Algol-GDR
-  programs (`print` and its relatives), with output formatted like the original.
-- Tests: the test corpus compiled natively, with output compared to the `dubna` runs.
-
-Done when the whole corpus runs natively with the same output as on `dubna`.
 
 ## Milestone 3 — Full Algol-60 and runtime
 
@@ -107,14 +79,11 @@ under `x1sim`. Any example skipped on purpose is listed with the reason.
 
 ## Risks and open questions
 
-- **Faithful vs clean rewrite.** A literal translation is easier to verify against the original;
-  a clean design is easier to retarget. Milestone 1 was faithful; refactor into an explicit
-  IR at the start of Milestone 2.
 - **Undocumented internals.** The passes come from disassembly. Their roles and data are mapped
   in `doc/passes.md`, but most handlers of the code generator (pass 4) are still unknown.
 - **Arithmetic differences.** BESM-6 float rounding, range and integer width differ from IEEE
-  `double` and `int64_t`. Numeric output may not match `dubna` exactly in Milestone 2; the
-  comparison tests must allow for that.
+  `double` and `int64_t`: reals may differ from `dubna` in the last digit, which the
+  comparison tests allow for.
 - **Character set.** The original works in GOST/KOI-7 codes with upper case only; `algc`
   reads UTF-8, keeps identifiers as written (case-sensitive, any length) and takes keywords
   in any case.

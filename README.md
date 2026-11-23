@@ -14,7 +14,8 @@ doc/codegen.md for the few expected differences). The C++ rewrite of the origina
 which made the same listings and object modules, is on the `besm6` branch. Next: full
 Algol-60 with a complete runtime library, and the Algol-60 programs in
 [x1-algol-compiler/examples](https://github.com/sergev/x1-algol-compiler/tree/main/examples).
-The plan is in [Roadmap.md](Roadmap.md).
+The plan is in [Roadmap.md](Roadmap.md); how the code is generated, in
+[doc/codegen.md](doc/codegen.md).
 
 ## Build
 

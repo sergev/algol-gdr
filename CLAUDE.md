@@ -6,10 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Goal: port the BESM-6 **Algol-GDR** compiler (ALGOL-ГДР, 7.01.82, from the Dubna monitor
 system) to modern 64-bit machines (x86_64, arm64, riscv64) as **`algc`**, in **C++20** with
-UTF-8 input/output and LLVM as an external backend. Milestones 0 (groundwork) and 1 (the
-C++ rewrite, same objects and listings as the original) are done; that rewrite is on the
-`besm6` branch. `main` has a new front end (lexer, parser, checker → AST). Plan files `todoN.md` list only the tasks left (IDs like A6.3); delete a
-task when it is done, in the same commit.
+UTF-8 input/output and LLVM as an external backend. Milestones 0 (groundwork), 1 (the C++
+rewrite, same objects and listings as the original; on the `besm6` branch) and 2 (a new
+front end and an LLVM backend: native executables for x86_64, arm64, riscv64) are done.
+Next is Milestone 3 (Roadmap.md). Plan files `todoN.md` list only the tasks left (IDs like
+A6.3); delete a task when it is done, in the same commit.
 
 ## Commands
 
@@ -63,7 +64,7 @@ Milestones (from README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
    files (standard arrays) and run them on the `dubna` simulator.
 2. Replace the backend: emit LLVM IR and invoke external `clang` to link a native executable
-   (plan: [todo2.md](todo2.md)).
+   (done).
 3. Extend the parser to full Algol-60 and develop a full runtime library.
 4. Compile and run all programs from x1-algol-compiler/examples.
 
@@ -77,7 +78,7 @@ Detailed plan: [Roadmap.md](Roadmap.md).
 - `/home/vak/Project/Besm-6/dubna` — C++17 BESM-6 / Dubna emulator; runs Algol-GDR jobs and
   BESM-6 object files. Has its own CLAUDE.md and Algol examples.
 - `/home/vak/Project/Lang/bcpl-compiler/blang` — BCPL compiler (Go) that emits LLVM IR and calls
-  `clang`; model for the Milestone 2 backend.
+  `clang`; the model for the backend of algc.
 - `/home/vak/Project/Algol/x1-algol-compiler/examples/` — Algol-60 programs in publication
   syntax (underlined keywords, X1 I/O procedures); compiling them all is the final goal.
 - `/home/vak/Project/Besm-6/os-dubna/docs/` — BESM-6 instruction set, data representation,
