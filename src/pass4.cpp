@@ -2364,6 +2364,398 @@ void register_arrays(Machine::Natives &n)
     n[025511] = register_loop_6;
 }
 
+//
+// FOR loops. 055 reserves 10 stack words for the loop (S−10 … S−1 below):
+// S−10 L, S−9 L+1, S−8 L+2 its labels; S−7 the control variable's address,
+// S−6 the loop descriptor's word, S−5 the control variable (032/0141),
+// S−2 the jump to the body after the elements. 02031 = the loop
+// descriptor; with registers (bit 0400000 of it, from pass 3) the
+// elements go to 25475.
+//
+constexpr unsigned REGISTER_LOOP = 025475;
+
+unsigned step_in_acc(Machine &m);
+
+// 25042: FOR (055).
+unsigned for_item(Machine &m)
+{
+    m.utm(Machine::SP, 012);
+    m.ita(0, 3);
+    m.atx(0, 02031);
+    m.xta(0, LABELS);
+    m.atx(Machine::SP, 077766);
+    m.arx(7, 02453);
+    m.atx(Machine::SP, 077767);
+    m.arx(7, 02453);
+    m.atx(Machine::SP, 077770);
+    m.arx(7, 02453);
+    m.atx(0, LABELS);
+    m.xta(0, 0);
+    m.atx(Machine::SP, 077776);
+    m.xta(3, 0);
+    m.asn(0, 0130);
+    m.aax(7, 02526);
+    m.atx(Machine::SP, 077772);
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    m.atx(Machine::SP, 077771);
+    m.arx(7, 02461);
+    m.atx(0, 02027);
+    m.xta(3, 0);
+    m.aax(7, 02442);
+    if (!m.uza()) {
+        m.xta(0, 02021);
+        m.atx(0, 02030);
+        m.xta(7, 02453);
+        m.atx(0, 02021);
+    }
+    return DISPATCH_NEXT;
+}
+
+// 25062, 25064: the control variable, simple (032) or by name (0141).
+unsigned control_variable(Machine &m, bool by_name)
+{
+    m.xta(3, 0);
+    m.aax(7, 02465);
+    if (by_name)
+        m.aox(7, 02507);
+    m.atx(Machine::SP, 077773);
+    return DISPATCH_NEXT;
+}
+
+// 25067: a by-name element (0135).
+unsigned by_name_element(Machine &m)
+{
+    m.xta(3, 0);
+    m.arx(0, 0);
+    if (m.u1a())
+        return give_none(m);
+    return DISPATCH_NEXT;
+}
+
+// 25075: the half in A with label L+1, then (unless the descriptor word
+// is 0) 0211 of L+2; on to the main loop.
+unsigned for_jump(Machine &m)
+{
+    m.aox(Machine::SP, 077767);
+    emit_half(m, 025076);
+    m.xta(Machine::SP, 077772);
+    if (m.uza())
+        return MAIN_LOOP;
+    m.aox(7, 0746);
+    emit_half(m, MAIN_LOOP);
+    return MAIN_LOOP;
+}
+
+// 25071: DO (033): the jump to the body (S−2, U1A or UJ).
+unsigned do_item(Machine &m)
+{
+    m.wtc(0, 02031);
+    m.xta(0, 0);
+    m.aax(7, 02443);
+    if (m.u1a())
+        return MAIN_LOOP;
+    m.xta(Machine::SP, 077776);
+    if (!m.uza()) {
+        m.aex(7, 02437);
+        return for_jump(m);
+    }
+    m.xta(Machine::SP, 077772);
+    if (m.uza())
+        return MAIN_LOOP;
+    m.xta(7, 02317);
+    return for_jump(m);
+}
+
+// 25103: the end of a FOR (052): UJ back to L (or by the step), 0211 of
+// L+1; the frame dropped, 02004 = L.
+unsigned for_end(Machine &m)
+{
+    m.utm(Machine::SP, 077776);
+    m.xta(3, 0);
+    m.aax(7, 02443);
+    if (m.u1a()) {
+        m.xta(Machine::SP, 077766);
+        m.aox(7, 01376);
+        emit_half(m, 025110);
+    } else {
+        m.xta(Machine::SP, 077772);
+        if (m.u1a()) {
+            m.xta(Machine::SP, 077771);
+            m.aox(7, 02241);
+            emit_half(m, 025124);
+            m.xta(0, 0);
+        } else {
+            m.xta(Machine::SP, 077766);
+        }
+        m.aox(7, 02317);
+        emit_half(m, 025110);
+    }
+    m.xta(7, 0746);
+    m.aox(Machine::SP, 077767);
+    emit_half(m, 025112);
+    m.xta(Machine::SP, 077766);
+    m.atx(0, LABELS);
+    m.utm(Machine::SP, 077766);
+    m.xta(3, 0);
+    m.aax(7, 02442);
+    if (!m.uza()) {
+        m.xta(0, 02030);
+        m.atx(0, 02021);
+    }
+    return DISPATCH_NEXT;
+}
+
+//
+// 25132: an element of kind M14: 0 STEP-UNTIL integer (034), 1 real (0140),
+// 2 integer constant step (0137), 3 WHILE (035), 4 plain (056). The jump
+// of the element before (S−2), the address (template 25174) and 0211 L
+// for the first; then the value, and its continuation from the table at
+// 25151.
+//
+unsigned element_item(Machine &m)
+{
+    m.ita(0, 016);
+    m.atx(Machine::SP, 077777);
+    m.wtc(0, 02031);
+    m.xta(0, 0);
+    m.aax(7, 02443);
+    if (m.u1a())
+        return REGISTER_LOOP;
+    m.xta(Machine::SP, 077776);
+    if (!m.uza()) {
+        m.aox(Machine::SP, 077772);
+        emit_half(m, 025137);
+    }
+    m.xta(Machine::SP, 077772);
+    if (!m.uza()) {
+        m.xta(Machine::SP, 077771);
+        m.xts(Machine::SP, 077765);
+        m.atx(Machine::SP, 0);
+        m.vtm(11, 025174);
+        m.set_m(12, 025143);
+        run_template(m);
+    }
+    m.xta(Machine::SP, 077777);
+    m.aex(7, 02467);
+    if (!m.u1a()) {
+        m.xta(Machine::SP, 077766);
+        m.aox(7, 0746);
+        emit_half(m, 025146);
+    }
+    return operand(m, 025147);
+}
+
+unsigned element_kind(Machine &m, unsigned kind)
+{
+    m.vtm(14, kind);
+    return element_item(m);
+}
+
+unsigned element_value(Machine &m)
+{
+    m.wtc(Machine::SP, 077776);
+    m.wtc(0, 025151);
+    m.vtm(12, 0);
+    return OPERAND_DONE;
+}
+
+// The value stored into the control variable (template 25760).
+void store_control(Machine &m, unsigned link)
+{
+    m.xta(Machine::SP, 077773);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025760);
+    m.set_m(12, link);
+    run_template(m);
+}
+
+// 25156: WHILE: stored; the condition, U1A next.
+unsigned while_value(Machine &m)
+{
+    store_control(m, 025160);
+    m.xta(7, 02304);
+    m.atx(Machine::SP, 077776);
+    return operand(m, 025162);
+}
+
+unsigned while_condition(Machine &m)
+{
+    m.vtm(12, DISPATCH_NEXT);
+    return OPERAND_DONE;
+}
+
+// 25163: a plain element: stored, UJ to the body, 0211 of L.
+unsigned plain_value(Machine &m)
+{
+    store_control(m, 025165);
+    m.xta(Machine::SP, 077772);
+    if (m.uza()) {
+        m.xta(Machine::SP, 077766);
+        m.atx(Machine::SP, 077767);
+        return DISPATCH_NEXT;
+    }
+    m.aox(7, 02317);
+    emit_half(m, 025167);
+    m.xta(0, 0);
+    m.atx(Machine::SP, 077776);
+    m.xta(Machine::SP, 077766);
+    m.aox(7, 0746);
+    emit_half(m, DISPATCH_NEXT);
+    return DISPATCH_NEXT;
+}
+
+// 25206: template M11 with M5 = the kind, returning to 25210 + kind.
+unsigned by_kind(Machine &m)
+{
+    m.ati(0, 5);
+    m.utc(5, 025210);
+    m.vtm(12, 0);
+    return TEMPLATE;
+}
+
+// 25176: STEP-UNTIL: the initial value stored (template 25235), then the
+// step: a constant one (023, M2 = 0) is kept in S−3; in A: 25247.
+unsigned step_value(Machine &m)
+{
+    m.xta(0, 0);
+    m.atx(Machine::SP, 077775);
+    return operand(m, 025200);
+}
+
+unsigned step_operand(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.uza())
+        return step_in_acc(m);
+    m.atx(Machine::SP, 077774);
+    m.utm(1, 077755);
+    if (!m.M[1] && !m.M[2])
+        m.atx(Machine::SP, 077775);
+    m.vtm(11, 025235);
+    m.xts(Machine::SP, 077765);
+    m.xts(Machine::SP, 077765);
+    m.xts(Machine::SP, 077774);
+    return by_kind(m);
+}
+
+// 25210…25212 by kind: the increment (templates 25243, 25237, 25241),
+// then the until value: compared (template 26020, or 26017 when in A),
+// and for a step not constant the sign test (template 25227); U1A to the
+// body.
+unsigned increment(Machine &m, unsigned t)
+{
+    m.vtm(11, t);
+    m.xta(Machine::SP, 077773);
+    m.xts(Machine::SP, 077766);
+    m.xts(Machine::SP, 077771);
+    m.atx(Machine::SP, 0);
+    m.set_m(12, 025216);
+    run_template(m);
+    return operand(m, 025217);
+}
+
+unsigned until_test(Machine &m)
+{
+    m.xta(Machine::SP, 077775);
+    if (!m.u1a()) {
+        m.xta(Machine::SP, 077774);
+        m.atx(Machine::SP, 0);
+        m.vtm(11, 025227);
+        m.set_m(12, 025225);
+        run_template(m);
+    }
+    m.xta(7, 02302);
+    m.atx(Machine::SP, 077776);
+    return DISPATCH_NEXT;
+}
+
+unsigned until_value(Machine &m)
+{
+    m.xta(Machine::SP, 0);
+    if (m.uza())
+        return operand(m, 025231);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 026020);
+    m.set_m(12, 025222);
+    run_template(m);
+    return until_test(m);
+}
+
+unsigned until_in_acc(Machine &m)
+{
+    load(m, 025232);
+    m.xta(Machine::SP, 077773);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 026017);
+    m.vtm(12, 025222);
+    return TEMPLATE;
+}
+
+// 25247: a step in A: kept in a temporary (template 25265, the until
+// after it), then by kind with template 25270.
+unsigned step_in_acc(Machine &m)
+{
+    m.xta(Machine::SP, 077766);
+    m.xts(Machine::SP, 077770);
+    m.aax(7, 02465);
+    m.arx(7, 02453);
+    m.xts(Machine::SP, 077765);
+    m.xts(Machine::SP, 077770);
+    m.atx(Machine::SP, 0);
+    m.vtm(11, 025265);
+    m.set_m(12, 025254);
+    run_template(m);
+    return operand(m, 025255);
+}
+
+unsigned step_in_acc_2(Machine &m)
+{
+    load(m, 025256);
+    m.xta(Machine::SP, 077770);
+    m.xts(Machine::SP, 077766);
+    m.xts(Machine::SP, 077771);
+    m.xts(Machine::SP, 077766);
+    m.aax(7, 02465);
+    m.arx(7, 02453);
+    m.xts(Machine::SP, 077764);
+    m.xts(Machine::SP, 077762);
+    m.xts(Machine::SP, 077775);
+    m.xts(7, 02227);
+    m.atx(Machine::SP, 077765);
+    m.xta(Machine::SP, 077770);
+    m.vtm(11, 025270);
+    return by_kind(m);
+}
+
+void register_loops(Machine::Natives &n)
+{
+    n[025042] = for_item;
+    n[025062] = [](Machine &m) { return control_variable(m, false); };
+    n[025064] = [](Machine &m) { return control_variable(m, true); };
+    n[025067] = by_name_element;
+    n[025071] = do_item;
+    n[025103] = for_end;
+    n[025125] = [](Machine &m) { return element_kind(m, 1); };
+    n[025126] = [](Machine &m) { return element_kind(m, 0); };
+    n[025127] = [](Machine &m) { return element_kind(m, 2); };
+    n[025130] = [](Machine &m) { return element_kind(m, 4); };
+    n[025131] = [](Machine &m) { return element_kind(m, 3); };
+    n[025147] = element_value;
+    n[025156] = while_value;
+    n[025162] = while_condition;
+    n[025163] = plain_value;
+    n[025176] = step_value;
+    n[025200] = step_operand;
+    n[025210] = [](Machine &m) { return increment(m, 025243); };
+    n[025211] = [](Machine &m) { return increment(m, 025237); };
+    n[025212] = [](Machine &m) { return increment(m, 025241); };
+    n[025217] = until_value;
+    n[025222] = until_test;
+    n[025231] = until_in_acc;
+    n[025255] = step_in_acc_2;
+}
+
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
@@ -2391,5 +2783,6 @@ Stream pass4(Context &ctx, const Stream &input)
     register_jumps(n);
     register_blocks(n);
     register_arrays(n);
+    register_loops(n);
     return pass.run(023523, 01633);
 }

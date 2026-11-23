@@ -11,5 +11,5 @@ shared="01644-01735 27114-27244 27733-30000 30001-30033"
 hooks="--hook 27114 --hook 27126 --hook 27137 --native 27733 --native 30001"
 scripts/gen-pass.py $hooks shared $shared > src/shared_gen.cpp
 scripts/gen-pass.py $hooks --replaced 23523-24360 --replaced 24616-24754 \
-    --replaced 25010-25041 --replaced 25276-25362 --replaced 25363-25746 \
+    --replaced 25010-25746 \
     --replaced 26152-26157 pass4 23523-26257 $shared 30034-30117 > src/pass4_gen.cpp

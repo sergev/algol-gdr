@@ -91,6 +91,7 @@ the translated passes), each working on the machine's memory and leaving its reg
 | 4 | 24137–24220, 24661–24672, 25010–25041 | IF, compare-and-jump, GOTO, switches (`register_jumps`) |
 | 4 | 24673–24754, 25525–25746 | labels, blocks, procedure entry and end, block entry (`register_blocks`) |
 | 4 | 24244–24360, 24616–24660, 25363–25524 | subscripts, arrays, pass 3's register items (`register_arrays`) |
+| 4 | 25042–25275 | FOR loops (`register_loops`) |
 
 Natives write memory through `Machine::store`, which drops stores to address 0 as the
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep
