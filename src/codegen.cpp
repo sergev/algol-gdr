@@ -7,6 +7,7 @@
 #include "codegen.h"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <stdexcept>
 
@@ -397,6 +398,8 @@ private:
                     go_to(*n.target);
                 } else if constexpr (std::is_same_v<T, stmt::If>) {
                     if_stmt(n);
+                } else if constexpr (std::is_same_v<T, stmt::For>) {
+                    for_loop(n.control, n.elements, [&] { statement(*n.body); });
                 } else if constexpr (std::is_same_v<T, stmt::Assign>) {
                     assign(n);
                 } else if constexpr (std::is_same_v<T, stmt::Io>) {
@@ -434,6 +437,105 @@ private:
         fn_->br(symbol(ref->label).block);
     }
 
+    //
+    // FOR: the body once; each element goes to it with its number in a
+    // state cell, and after the body a switch on the state goes back.
+    //
+    void for_loop(const LeftPart &control, const std::vector<ForElement> &elements,
+                  const std::function<void()> &body)
+    {
+        Type vt          = control_type(control);
+        ir::Value state  = fn_->stack_alloc("i64");
+        auto *body_block = fn_->new_block("for.body");
+        auto *done       = fn_->new_block("for.end");
+        std::vector<std::pair<int64_t, const ir::Block *>> back;
+        auto set = [&](const Expr &e) {
+            auto [ptr, t] = left_part(control);
+            store(t, convert(expr(e), e.type, t), ptr);
+        };
+        auto enter = [&](int64_t k) {
+            fn_->store(ir::i64(k), state);
+            fn_->br(body_block);
+            auto *cont = fn_->new_block("for.next");
+            back.push_back({ k, cont });
+            fn_->set_block(cont);
+        };
+        for (size_t k = 0; k < elements.size(); k++) {
+            std::visit(
+                [&](const auto &el) {
+                    using T = std::decay_t<decltype(el)>;
+                    if constexpr (std::is_same_v<T, for_elem::Value>) {
+                        set(*el.value);
+                        enter(k);
+                    } else if constexpr (std::is_same_v<T, for_elem::While>) {
+                        auto *loop = fn_->new_block("for.while");
+                        auto *next = fn_->new_block("for.elem");
+                        fn_->br(loop);
+                        fn_->set_block(loop);
+                        set(*el.value);
+                        auto *go = fn_->new_block("for.go");
+                        fn_->cond_br(expr(*el.condition), go, next);
+                        fn_->set_block(go);
+                        enter(k);
+                        fn_->br(loop);
+                        fn_->set_block(next);
+                    } else {
+                        set(*el.init);
+                        auto *test = fn_->new_block("for.test");
+                        auto *next = fn_->new_block("for.elem");
+                        fn_->br(test);
+                        fn_->set_block(test);
+                        // (V - C) × sign(B) > 0: the end.
+                        Type t         = vt == Type::REAL || el.step->type == Type::REAL ||
+                                         el.until->type == Type::REAL
+                                             ? Type::REAL
+                                             : Type::INTEGER;
+                        ir::Value v    = convert(load(vt, left_part(control).first), vt, t);
+                        ir::Value b    = convert(expr(*el.step), el.step->type, t);
+                        ir::Value c    = convert(expr(*el.until), el.until->type, t);
+                        bool real      = t == Type::REAL;
+                        ir::Value d    = fn_->binop(real ? "fsub" : "sub", v, c);
+                        ir::Value zero = real ? ir::real(0) : ir::i64(0);
+                        auto gt        = [&](const ir::Value &x) {
+                            return real ? fn_->fcmp("ogt", x, zero) : fn_->icmp("sgt", x, zero);
+                        };
+                        auto lt = [&](const ir::Value &x) {
+                            return real ? fn_->fcmp("olt", x, zero) : fn_->icmp("slt", x, zero);
+                        };
+                        ir::Value over = fn_->binop("or", fn_->binop("and", gt(b), gt(d)),
+                                                    fn_->binop("and", lt(b), lt(d)));
+                        auto *go       = fn_->new_block("for.go");
+                        fn_->cond_br(over, next, go);
+                        fn_->set_block(go);
+                        enter(k);
+                        // V := V + B
+                        auto [ptr, ct] = left_part(control);
+                        Type st       = ct == Type::REAL || el.step->type == Type::REAL ? Type::REAL
+                                                                                        : Type::INTEGER;
+                        ir::Value sum = fn_->binop(st == Type::REAL ? "fadd" : "add",
+                                                   convert(load(ct, ptr), ct, st),
+                                                   convert(expr(*el.step), el.step->type, st));
+                        store(ct, convert(sum, st, ct), ptr);
+                        fn_->br(test);
+                        fn_->set_block(next);
+                    }
+                },
+                elements[k]);
+        }
+        fn_->br(done);
+        fn_->set_block(body_block);
+        body();
+        fn_->switch_(fn_->load("i64", state), done, back);
+        fn_->set_block(done);
+    }
+
+    Type control_type(const LeftPart &control) const
+    {
+        if (auto v = std::get_if<left::Var>(&control))
+            return symbol(v->decl).type;
+        unsupported("An element as the control variable");
+    }
+
     // The left parts first, from left to right, then the value.
     void assign(const stmt::Assign &a)
     {
@@ -456,7 +558,12 @@ private:
     {
         if (s.op != IoOp::PRINT || !s.params.empty())
             unsupported("This input or output");
-        for (const auto &item : s.items) {
+        io_items(s.items);
+    }
+
+    void io_items(const IoList &items)
+    {
+        for (const auto &item : items) {
             std::visit(
                 [&](const auto &n) {
                     using T = std::decay_t<decltype(n)>;
@@ -467,7 +574,7 @@ private:
                     } else if constexpr (std::is_same_v<T, io::NewPage>) {
                         runtime("void", "algol_newpage", {});
                     } else {
-                        unsupported("A FOR in PRINT");
+                        for_loop(n.control, n.elements, [&] { io_items(n.body); });
                     }
                 },
                 item.node);

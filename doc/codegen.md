@@ -108,6 +108,14 @@ the temporary.
 - A switch is a function `void @S.<id>.<name>(ptr %frame, i64 %index, ptr %out)` writing
   the label value of element `index` to `out`; an index out of range is a run-time error.
 
+## FOR
+
+The body is generated once. Each element stores its number in a state cell and jumps to it;
+after the body a `switch` on the state goes back to the element. A step-until element
+follows the Revised Report: `V := A`; while not `(V − C) × sign(B) > 0`: the body, then
+`V := V + B`, with `B` and `C` evaluated again each time, in real when one of `V`, `B`, `C`
+is real. After the loop `V` keeps its last value.
+
 ## Arrays
 
 A descriptor takes `2 + 2·n` slots for `n` dimensions: the data pointer, the number of

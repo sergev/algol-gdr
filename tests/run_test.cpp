@@ -23,8 +23,8 @@ const std::string compiler = BUILD_DIR "/src/algc";
 
 // The programs the code generator handles so far.
 const std::vector<std::string> programs = {
-    "arith", "blocks",      "boolean", "comment", "empty",
-    "hello", "hello_algol", "pages",   "print",   "symbols",
+    "arith", "blocks", "cond",        "for",   "boolean", "comment",
+    "empty", "hello",  "hello_algol", "pages", "print",   "symbols",
 };
 
 std::vector<std::string> tokens(const std::string &text)
@@ -145,4 +145,18 @@ M: PRINT(S, I)
 _end _eop
 )"),
               "OK            55             11 \n");
+}
+
+TEST(Run, for_lists)
+{
+    EXPECT_EQ(run_text("for_lists", R"(_begin _integer I; _real X;
+  _for I := 1, 2 _step 2 _until 6, 10 _do PRINT(I);
+  X := 0;
+  _for X := X + 0.5 _while X < 2 _do PRINT(X);
+  PRINT(NEWLINE, I)
+_end _eop
+)"),
+              "             1              2              4              6             10 "
+              " 5.00000000000e-01    1.00000000000e+00    1.50000000000e+00   \n"
+              "            10 \n");
 }

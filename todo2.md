@@ -25,8 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E15** FOR: STEP-UNTIL (integer and real, the sign of the step known or not), WHILE,
-  plain elements, lists of elements; the control variable after the loop. Test for, for2.
 - **E16** Standard functions: `ABS`, `SIGN`, `SQRT`, `SIN`, `COS`, `ARCTAN`, `LN`, `EXP`,
   `ENTIER`, and the others pass 2 knows by number. Test stdfunc.
 - **E17** Arrays: descriptors (base, bounds, strides), dynamic bounds evaluated on block
