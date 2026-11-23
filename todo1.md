@@ -56,9 +56,10 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 - **B2.2a** 'COMMON' declarations, read by the lexer itself (*1155B in ag14504.asm, not run
   by any test program): add test programs, then translate.
-- **B2.6** Long listings: past a page, `dubna` shows two pages side by side (seen with a
-  127-line program without `setftn`); no test program has one yet. Add one, then match it.
-- **B2.7** `30 ERRORS , COMPILATION INTERRUPTED` and `HET ′EOP′ !`: add test programs.
+- **B2.6** Long listings: without `*call setftn:one`, ASMPRINT (12000–12322, shared with the
+  assembler) prints a page as two columns side by side, the second half of the page on the
+  right. `err_many` has such a page (its `30 ERRORS , COMPILATION INTERRUPTED` is in the right
+  column); the listing test skips it until then.
 
 ### B3. Pass 2
 

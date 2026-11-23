@@ -1,0 +1,13 @@
+*NAME ERR_NOEOP
+*PUNCH
+*FULL
+*ALGOL                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+           1. ′BEGIN′
+           2.     ′COMMENT′ NO EOP AT THE END;
+           3.     ′INTEGER′ I;
+           4.     I := 1
+           5. ′END′
+HET ′EOP′ !
+*END FILE

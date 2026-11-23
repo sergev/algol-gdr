@@ -1,0 +1,5 @@
+'BEGIN'
+    'COMMENT' NO EOP AT THE END;
+    'INTEGER' I;
+    I := 1
+'END'
