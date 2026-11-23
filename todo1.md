@@ -32,6 +32,11 @@ of constants, the slot numbers where they matter, frame offsets, register choice
 | `src/pass5.*` | G26260 | addresses, symbol rows, line table |
 | `src/pass6.*` | G26666, G30257 | `StdArray` and the summary line |
 
+**Hybrid by pass (decided after B2.2).** Pass 1 is translated by hand, like passes 5 and 6.
+Passes 2–4 are first generated from the overlay image by a translator (one C++ statement per
+instruction, a dispatch for computed jumps), so the whole pipeline works early; their
+routines are then replaced one by one with hand-written C++, the tests guarding each step.
+
 **Checking each pass on its own (A7.2).** Capture the stream the original writes at the end
 of each pass (`dubna -d m` traces of the stream helpers' writes; the prototype is the passes
 3–4 analysis script) and store it as expected output, like `.std`. Each C++ pass can then be
