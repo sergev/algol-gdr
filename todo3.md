@@ -16,9 +16,5 @@ expected output written by hand and checked against the Revised Report.
 
 ### Conformance
 
-- **F14** A conformance suite in `tests/a60/`: the examples of the Revised Report (Absmax,
-  Innerproduct, Euler, Step, …), Knuth's man or boy for k up to 12 (stack size noted),
-  Wichmann's Algol 60 test programs where available, and the dubna Algol examples; each with
-  its expected output, run on the three targets by `run_test`.
 - **F15** doc/deviations.md final: the deviations that remain, with the reason for each;
   Roadmap.md and README.md updated.

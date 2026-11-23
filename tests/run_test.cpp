@@ -59,15 +59,18 @@ const std::vector<std::string> programs = {
     "algol/test1",
     "algol/test2",
     "algol/test3",
+    "a60/classics",
     "a60/for",
     "a60/goto_arrays",
     "a60/ifip",
     "a60/intdiv",
+    "a60/man_or_boy",
     "a60/own",
     "a60/parameters",
-    "a60/publication",
-    "a60/units",
     "a60/program_form",
+    "a60/publication",
+    "a60/revised_report",
+    "a60/units",
 };
 // clang-format on
 

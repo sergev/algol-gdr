@@ -411,10 +411,33 @@ private:
     Cell var_cell(int id)
     {
         const Symbol &s = symbol(id);
-        Cell c{ address(id), s.type, {} };
-        if (s.kind == Symbol::FORMAL && !s.by_value && numeric(s.type))
-            c.tag = type_tag(fn_->load("i64", slot(s.owner, s.slot + 2)));
+        if (s.kind != Symbol::FORMAL || s.by_value || s.spec.kind != Spec::SIMPLE)
+            return Cell{ address(id), s.type, {} };
+        ir::Value tag = fn_->load("i64", slot(s.owner, s.slot + 2));
+        Cell c{ value_cell(address(id), tag), s.type, {} };
+        if (numeric(s.type))
+            c.tag = type_tag(tag);
         return c;
+    }
+
+    // The cell of an actual by name: for a procedure (its cell a pair {fn,
+    // sl}), a temporary with the value of a call of it.
+    ir::Value value_cell(const ir::Value &cell, const ir::Value &tag)
+    {
+        ir::Value kind = fn_->binop("lshr", tag, ir::i64(4));
+        auto *from     = fn_->block();
+        auto *by_call  = fn_->new_block("by.call");
+        auto *done     = fn_->new_block("by.cell");
+        fn_->cond_br(fn_->icmp("eq", kind, ir::i64(A_PROCEDURE)), by_call, done);
+        fn_->set_block(by_call);
+        ir::Value code = fn_->load("ptr", cell);
+        ir::Value sl   = fn_->load("ptr", fn_->gep("ptr", cell, ir::i64(1)));
+        ir::Value tmp  = temp(1);
+        fn_->store(fn_->call("i64", code.ref, { sl, ir::null() }), tmp);
+        auto *call_end = fn_->block();
+        fn_->br(done);
+        fn_->set_block(done);
+        return fn_->phi("ptr", { { cell, from }, { tmp, call_end } });
     }
 
     Cell element_cell(int id, const ExprList &subscripts)
@@ -1330,7 +1353,8 @@ private:
             case Spec::SIMPLE:
                 if (formal.by_value) {
                     Type t = formal.spec.type;
-                    Cell c{ call_thunk(pair), t, numeric(t) ? type_tag(tag) : ir::Value{} };
+                    Cell c{ value_cell(call_thunk(pair), tag), t,
+                            numeric(t) ? type_tag(tag) : ir::Value{} };
                     store(t, load(c), dest);
                 } else {
                     copy_words(pair, dest, ACTUAL);

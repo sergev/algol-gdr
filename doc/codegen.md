@@ -115,7 +115,9 @@ parameter, an element of a formal array, the result of a formal procedure) meets
 of the other numeric type, each access converts: a load by `sitofp` or rounding, a store
 back to the cell's type; the choice is a `select` on the type. So an `integer` variable
 serves a `real` formal, and calls through a formal procedure need no knowledge of its
-formals. An assignment to an expression parameter changes only the temporary.
+formals. A procedure as the actual of a simple formal (passed on through formals
+the checker cannot see) is called at each access: its cell is the pair `{fn, sl}` and the
+tag says so. An assignment to an expression parameter changes only the temporary.
 
 ## Labels and `goto`
 
