@@ -271,6 +271,7 @@ private:
     unsigned sp_{ STACK };
     Word zero_{};
     Word flgex_{};
+    std::map<unsigned, Word> rest_; // other memory
 
     // The item read: code (M1), count (M2), operand (M3).
     unsigned code_{}, count_{}, operand_{};
@@ -468,7 +469,13 @@ Word &Pass2::mem(unsigned a)
         zero_ = 0;
         return zero_;
     }
-    throw std::runtime_error("pass 2: no data at " + std::to_string(a));
+    // The rest: the overlay and the driver's cells, read after errors.
+    auto it = rest_.find(a);
+    if (it == rest_.end()) {
+        bool overlay = a >= tables::image_base && a < tables::image_base + tables::image_size;
+        it           = rest_.emplace(a, overlay ? tables::image[a - tables::image_base] : 0).first;
+    }
+    return it->second;
 }
 
 //
@@ -3211,10 +3218,15 @@ Pass2::Pass2(Context &ctx, const Stream &input)
            tables::image + (OWN_END - tables::image_base)),
       flgex_(ctx.flgex)
 {
-    operand_ = ctx.regs[3] & 077777;
-    desc_    = ctx.regs[4] & 077777;
-    type_    = ctx.regs[5] & 077777;
-    kind_    = ctx.regs[6] & 077777;
+    rest_[00521] = ctx.options.check();                               // CHECKFL*
+    rest_[00523] = (ctx.options.setftn_one ? 04000000000000000 : 0) | // *REGIM//
+                   (ctx.options.setftn_long ? 02000000000000000 : 0);
+    rest_[00705] = ctx.options.no_listing;                         // NOLISFL*
+    rest_[01730] = ctx.options.no_listing ? 0 : 06000000000000000; // the header is printed
+    operand_     = ctx.regs[3] & 077777;
+    desc_        = ctx.regs[4] & 077777;
+    type_        = ctx.regs[5] & 077777;
+    kind_        = ctx.regs[6] & 077777;
     register_handlers();
 }
 
