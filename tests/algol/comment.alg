@@ -7,5 +7,5 @@ _begin
         I := 2
     _end THIS TEXT AFTER END IS A COMMENT;
     ;;
-    PRINT(I); _comment AFTER A STATEMENT;
+    print(I, NEWLINE); _comment AFTER A STATEMENT;
 _end

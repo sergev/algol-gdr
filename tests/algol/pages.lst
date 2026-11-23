@@ -285,6 +285,6 @@ A L G O L - Г Д P
    282.         S := S + 278;
    283.         S := S + 279;
    284.         S := S + 280;
-   285.         PRINT(S)
+   285.         print(S, NEWLINE)
    286.     _end
 

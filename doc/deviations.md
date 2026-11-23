@@ -19,8 +19,8 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 - Standard identifiers are recognized only in their documented case: the functions of the
   Report and the IFIP procedures in lower case (`sqrt`, `outreal`), those of Algol-GDR and
   the X1 library in upper case (`NEWLINE`, `PRINTTEXT`), and X1's `print` and `read`. A
-  declaration of the same name hides them, as in the Report. `print` is the X1 procedure in the publication
-  form and Algol-GDR's `PRINT` in the `_keyword` form. `read` is X1's function, `READ` Algol-GDR's statement.
+  declaration of the same name hides them, as in the Report. `print` is one procedure, after X1's
+  (below). `read` is X1's function, `READ` Algol-GDR's statement.
 
 ## Language
 
@@ -29,7 +29,7 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 | A `goto` to a switch designator whose index is out of range stops the program; the Report (4.3.5) makes it a dummy statement | code generator | An error shows the bug where a silent dummy statement would hide it |
 | A formal parameter without a specification takes its kind and type from its uses in the body (below), not from each actual | checker | The code needs one kind per formal; real with conversion serves integer actuals too |
 | An array called by value keeps the element type of the actual, not the formal's | code generator | Accesses convert through the tag, so values are right; only a copy of another type would differ |
-| The standard identifiers of Algol-GDR (`PRINT`, `READ`, `NEWLINE`, `LOAD`, …), of IFIP and of the X1 library (`PRINTTEXT`, `FLOT`, `SUM`, …) are predeclared | checker | Programs of those systems use them; a declaration hides them |
+| The standard identifiers of Algol-GDR (`READ`, `NEWLINE`, `LOAD`, …), of IFIP and of the X1 library (`PRINTTEXT`, `FLOT`, `SUM`, …) are predeclared | checker | Programs of those systems use them; a declaration hides them |
 | Recursion is limited by the machine stack | — | Frames are on the stack (man or boy at k = 12 needs about 1 MB) |
 
 ## Run time
@@ -81,7 +81,7 @@ not deviations.
 - An unsigned integer as an actual parameter is a label when the formal is specified
   `label`; otherwise (through a formal procedure, to a `_code` procedure) it is a number.
 - Extensions of Algol-GDR (`_string` and `_bits` variables and arrays, substrings `s[i:j]`,
-  `_code`, `_algol` and `_common`, `PRINT`, `READ`, `_print` …) are not part of the
+  `_code`, `_algol` and `_common`, `READ`, `_print` …) are not part of the
   Report; programs that do not use them are not affected.
 
 ## The X1 library
@@ -101,3 +101,4 @@ prints what `x1sim` prints; none is skipped. Where it differs:
 | `stop` ends the program (IFIP); on the X1 it only made the next `XEEN` ask for the switches again | No example calls it; IFIP programs need theirs |
 | `TIMEOFDAY` is `$ALGC_TIMEOFDAY` when that is set | Tests of programs that use the time |
 | Lines are not broken at 144 positions, pages not at 60 lines (the X8 manual) | As `x1sim` |
+| `print` also takes strings, Booleans, bits (in octal), whole arrays, `NEWLINE` and `NEWPAGE` | One output procedure for all programs; numbers print as on the X1 |

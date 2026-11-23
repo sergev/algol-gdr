@@ -13,8 +13,7 @@
 void algol_error(const char *fmt, ...)
 {
     va_list ap;
-    algol_flush_output();
-    fflush(stdout);
+    algol_end_line();
     fputs("Error: ", stderr);
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
@@ -25,7 +24,7 @@ void algol_error(const char *fmt, ...)
 
 void algol_stop(void)
 {
-    algol_flush_output();
+    fflush(stdout);
     exit(0);
 }
 

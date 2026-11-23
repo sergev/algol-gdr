@@ -2,6 +2,6 @@ A L G O L - Г Д P
     (7.01.82)
 
      1.     _begin
-     2.         print(`Hello, Algol!');
+     2.         print(`Hello, Algol!', NEWLINE);
      3.     _end
 

@@ -6,12 +6,12 @@ A L G O L - Г Д P
      3.         _boolean A, B;
      4.         _integer I;
      5.         A := _true; B := _false;
-     6.         PRINT(A _and B, A _or B, _not A, A _impl B, A _equiv B);
-     7.         PRINT(_not A _or B _and A, _not (A _or B));
+     6.         print(A _and B, A _or B, _not A, A _impl B, A _equiv B, NEWLINE);
+     7.         print(_not A _or B _and A, _not (A _or B), NEWLINE);
      8.         I := 5;
-     9.         PRINT(I < 6, I _le 5, I = 5, I _ne 5, I _ge 6, I > 4);
-    10.         PRINT(I _less 6, I _greater 6, I _equal 5, I _notequal 5);
-    11.         PRINT(I _lt 6, I _gt 6, I _eq 5,
-    12.             I _notless 5, I _notgreater 4);
+     9.         print(I < 6, I _le 5, I = 5, I _ne 5, I _ge 6, I > 4, NEWLINE);
+    10.         print(I _less 6, I _greater 6, I _equal 5, I _notequal 5, NEWLINE);
+    11.         print(I _lt 6, I _gt 6, I _eq 5,
+    12.             I _notless 5, I _notgreater 4, NEWLINE);
     13.     _end
 

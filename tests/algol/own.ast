@@ -17,3 +17,4 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "N"}
+        - {kind: new_line}

@@ -10,11 +10,11 @@ A L G O L - Г Д P
      7.         I := I + 1;
      8.         _if I > 3 _then _goto DONE;
      9.         _goto S[I];
-    10.     A:  PRINT(1); _goto NEXT;
-    11.     B:  PRINT(2); _goto NEXT;
-    12.     C:  PRINT(3); _goto NEXT;
+    10.     A:  print(1, NEWLINE); _goto NEXT;
+    11.     B:  print(2, NEWLINE); _goto NEXT;
+    12.     C:  print(3, NEWLINE); _goto NEXT;
     13.     DONE:
     14.         _goto _if I = 4 _then E _else S[1];
-    15.     E:  PRINT(I)
+    15.     E:  print(I, NEWLINE)
     16.     _end
 

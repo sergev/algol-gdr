@@ -44,12 +44,12 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   itself (or `$ALGC_RUNTIME`); for `--target=T` in `../runtime/T` or `../lib/T`, built by
   CMake for each `/usr/T` sysroot (aarch64, riscv64). `run_test` runs the programs under
   qemu for those targets too.
-- `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
-  original compiler: `.out` run output under `dubna` (frozen); and ours, which
+- `tests/` — GoogleTest. `tests/algol/` holds the test programs of the original compiler
+  (Algol-GDR), with `.out` the output of their run, in the layout of `print` (the
+  original's runs under `dubna` are in git history and on `besm6`); and ours, which
   `ALGC_UPDATE_GOLDENS=1` rewrites: `.lst` listings (`algc --list`), `.ast` the AST, `.err` the messages; side files
   `.pre` (`*check`), `.in` (input of the run), `.env` (its environment), `.run` (the extra `dubna` cards of the run:
-  libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`). The goldens
-  from `dubna` are frozen: the tools that made them are on the `besm6` branch.
+  libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`).
   `listing_test` checks the `.lst` files, `ast_test` the `.ast` and `.err` files; `run_test`
   compiles the programs it lists natively and compares their output with `NAME.native.out`
   (where the native run differs for a reason) or `NAME.out`. `tests/a60/` holds the
@@ -116,6 +116,7 @@ standard identifiers only in their documented case: Report and IFIP lower case (
 sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
 `≡`, `÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`,
 strings `` `…' `` as in the other form (`.a60`, as x1-algol-compiler/examples). The X1 library procedures
-(`PRINTTEXT`, `FLOT`, `SUM`, `read`, …) are standard identifiers; `print` is X1's in the
-publication form, Algol-GDR's `PRINT` otherwise. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
+(`PRINTTEXT`, `FLOT`, `SUM`, `read`, …) are standard identifiers. `print` is one procedure in
+both forms, in X1's layout: values, strings, Booleans, whole arrays, `NEWLINE`, `NEWPAGE`.
+Algol-GDR's `PRINT` is gone. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
 first 6 characters.

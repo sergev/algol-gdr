@@ -37,6 +37,7 @@ block:
               items:
                 - kind: item
                   expr: {kind: var, type: real, decl: 3, name: "X"}
+                - {kind: new_line}
         - kind: io
           loc: 11/1
           op: print
@@ -44,6 +45,7 @@ block:
           items:
             - kind: item
               expr: {kind: var, type: integer, decl: 2, name: "X"}
+            - {kind: new_line}
     - kind: compound
       loc: 13/1
       body:
@@ -64,3 +66,4 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "X"}
+        - {kind: new_line}

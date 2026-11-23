@@ -22,7 +22,8 @@ _Noreturn void algol_stop(void);
 _Noreturn void algol_goto(void **frame, int64_t index);
 _Noreturn void algol_switch_error(int64_t index);
 
-// PRINT.
+// print: the values of one call, a blank between them.
+void algol_print_begin(void);
 void algol_print_integer(int64_t v);
 void algol_print_real(double v);
 void algol_print_boolean(_Bool v);
@@ -114,8 +115,6 @@ void algol_x1_prsym(int64_t code);
 void algol_x1_space(int64_t n);
 void algol_x1_tab(void);
 void algol_x1_nlcr(void);
-void algol_x1_print_integer(int64_t v);
-void algol_x1_print_real(double v);
 void algol_x1_flot(int64_t n, int64_t m, double x);
 void algol_x1_fixt(int64_t n, int64_t m, double x);
 void algol_x1_absfixt(int64_t n, int64_t m, double x);

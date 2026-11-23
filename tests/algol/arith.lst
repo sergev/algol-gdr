@@ -6,12 +6,12 @@ A L G O L - Г Д P
      3.         _integer I, J, K;
      4.         _real X, Y;
      5.         I := 7; J := 3;
-     6.         PRINT(I + J, I - J, I * J, I / J);
-     7.         PRINT(I + J * 2, (I + J) * 2, -I + J, I - J - 1);
-     8.         PRINT(I _power 2, 2 _power 10, 2.0 _power (-1));
+     6.         print(I + J, I - J, I * J, I / J, NEWLINE);
+     7.         print(I + J * 2, (I + J) * 2, -I + J, I - J - 1, NEWLINE);
+     8.         print(I _power 2, 2 _power 10, 2.0 _power (-1), NEWLINE);
      9.         X := 1.5; Y := -0.25;
-    10.         PRINT(X + Y, X * Y, X / Y, X - Y);
+    10.         print(X + Y, X * Y, X / Y, X - Y, NEWLINE);
     11.         K := X + 0.6;
-    12.         PRINT(K, X + I, 1.0⏨3, 2.5⏨-2);
+    12.         print(K, X + I, 1.0⏨3, 2.5⏨-2, NEWLINE);
     13.     _end
 

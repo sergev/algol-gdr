@@ -4,23 +4,23 @@ _begin
     _procedure P(N); _value N; _integer N;
     _begin
         _if N > 2 _then _goto OUT;
-        PRINT(N)
+        print(N, NEWLINE)
     _end;
     I := 0;
 AGAIN:
     I := I + 1;
     _if I < 3 _then _goto AGAIN;
-    PRINT(I);
+    print(I, NEWLINE);
     _begin _integer K;
         K := 5;
         _goto L1;
-        PRINT(-1);
-    L1: PRINT(K);
+        print(-1, NEWLINE);
+    L1: print(K, NEWLINE);
         _goto L2
     _end;
-    PRINT(-2);
+    print(-2, NEWLINE);
 L2: P(1); P(2); P(3);
-    PRINT(-3);
+    print(-3, NEWLINE);
 OUT:
-    PRINT(999)
+    print(999, NEWLINE)
 _end

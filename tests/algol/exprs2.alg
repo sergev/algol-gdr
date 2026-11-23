@@ -15,13 +15,13 @@ L: I := 1;
 M: X := 1;
   I := 1; J := 2; X := 2; B := _true;
   IA[1] := 1; IA[2] := 2; IA[3] := 3;
-  _for I := I+I _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := I+I _step 1 _until 2 _do X := 1; print(I, NEWLINE);
   _for I := _if B _then I _else X _step 1 _until 2 _do X := 1;
-  PRINT(I);
-  _for I := abs(I) _step 1 _until 2 _do X := 1; PRINT(I);
-  _for I := 1 _step I _until 2 _do X := 1; PRINT(I);
-  _for I := 1 _step IA[1] _until 2 _do X := 1; PRINT(I);
-  _for I := 1 _step IA[X] _until 2 _do X := 1; PRINT(I);
-  _for I := 1 _step 1 _until J _do X := 1; PRINT(I);
-  _for X := 1 _step 1 _until 2 _do I := 1; PRINT(X)
+  print(I, NEWLINE);
+  _for I := abs(I) _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := 1 _step I _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := 1 _step IA[1] _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := 1 _step IA[X] _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := 1 _step 1 _until J _do X := 1; print(I, NEWLINE);
+  _for X := 1 _step 1 _until 2 _do I := 1; print(X, NEWLINE)
 _end

@@ -20,12 +20,12 @@ _begin
     _real _procedure APPLY(F, X); _real _procedure F; _real X;
         APPLY := F(X);
     _procedure NOARGS;
-        PRINT(77);
+        print(77, NEWLINE);
     K := 1;
     INC(K); INCV(K);
-    PRINT(K, FACT(10));
+    print(K, FACT(10), NEWLINE);
     V[1] := 1; V[2] := 2; V[3] := 3;
-    PRINT(SUM(I, 1, 3, V[I] * V[I]));
-    PRINT(APPLY(SQ, 3.0));
+    print(SUM(I, 1, 3, V[I] * V[I]), NEWLINE);
+    print(APPLY(SQ, 3.0), NEWLINE);
     NOARGS
 _end

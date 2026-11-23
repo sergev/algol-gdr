@@ -1,2 +1,5 @@
- FALSE TRUE  FALSE FALSE FALSE FALSE FALSE TRUE  TRUE  TRUE  FALSE FALSE TRUE  TRUE  FALSE TRUE  FALSE TRUE  FALSE TRUE  TRUE
- FALSE
+false true false false false
+false false
+true true true false false true
+true false true false
+true false true true false

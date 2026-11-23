@@ -360,7 +360,6 @@ void Parser::skip_declaration()
 Program Parser::program()
 {
     Program p;
-    p.publication = lexer_.publication();
     try {
         advance();
         head(p);

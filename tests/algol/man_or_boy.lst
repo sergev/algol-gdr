@@ -14,6 +14,6 @@ A L G O L - Г Д P
     11.             a := _if k _le 0 _then x4 + x5
     12.                                _else b;
     13.         _end;
-    14.         print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0));
+    14.         print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0), NEWLINE);
     15.     _end
 

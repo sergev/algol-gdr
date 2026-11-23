@@ -34,6 +34,7 @@ block:
               items:
                 - kind: item
                   expr: {kind: int_const, type: integer, value: 100}
+                - {kind: new_line}
             else:
               kind: if
               loc: 7/1
@@ -51,6 +52,7 @@ block:
                 items:
                   - kind: item
                     expr: {kind: int_const, type: integer, value: 200}
+                  - {kind: new_line}
               else:
                 kind: io
                 loc: 8/1
@@ -59,6 +61,7 @@ block:
                 items:
                   - kind: item
                     expr: {kind: int_const, type: integer, value: 300}
+                  - {kind: new_line}
           - kind: if
             loc: 9/1
             condition:
@@ -75,6 +78,7 @@ block:
               items:
                 - kind: item
                   expr: {kind: var, type: integer, decl: 1, name: "I"}
+                - {kind: new_line}
           - kind: assign
             loc: 10/1
             targets:
@@ -118,3 +122,4 @@ block:
                     right: {kind: int_const, type: integer, value: 4}
                   then: {kind: real_const, type: real, value: 1.5}
                   else: {kind: real_const, type: real, value: 2.5}
+              - {kind: new_line}

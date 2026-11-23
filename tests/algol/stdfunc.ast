@@ -50,6 +50,7 @@ block:
             func: sign
             args:
               - {kind: real_const, type: real, value: 0.5}
+        - {kind: new_line}
     - kind: io
       loc: 4/1
       op: print
@@ -83,6 +84,7 @@ block:
             func: arctan
             args:
               - {kind: real_const, type: real, value: 0.0}
+        - {kind: new_line}
     - kind: io
       loc: 5/1
       op: print
@@ -119,3 +121,4 @@ block:
                 type: real
                 op: neg
                 operand: {kind: real_const, type: real, value: 2.5}
+        - {kind: new_line}

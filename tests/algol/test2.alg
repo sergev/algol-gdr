@@ -14,9 +14,9 @@ _begin
     _integer _array C[1:3];
     U := 1.5; V := -0.00225;
     SWAP(U, V);
-    PRINT(U, V, F(5.0), SUM(J, 1, 10, J*J));
-    PRINT(sqrt(2.0), sin(1.0), cos(1.0));
-    PRINT(arctan(1.0), ln(10.0), exp(1.0));
-    PRINT(abs(-3), sign(-2.0), entier(3.7));
-    C[2] := entier(7 / 2); PRINT(C[2], 7 / 2)
+    print(U, V, F(5.0), SUM(J, 1, 10, J*J), NEWLINE);
+    print(sqrt(2.0), sin(1.0), cos(1.0), NEWLINE);
+    print(arctan(1.0), ln(10.0), exp(1.0), NEWLINE);
+    print(abs(-3), sign(-2.0), entier(3.7), NEWLINE);
+    C[2] := entier(7 / 2); print(C[2], 7 / 2, NEWLINE)
 _end

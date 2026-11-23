@@ -56,6 +56,7 @@ block:
               items:
                 - kind: item
                   expr: {kind: var, type: integer, decl: 9, name: "V"}
+                - {kind: new_line}
           - kind: for
             loc: 7/1
             control: {kind: var, decl: 9, name: "V"}
@@ -77,6 +78,7 @@ block:
               items:
                 - kind: item
                   expr: {kind: var, type: integer, decl: 9, name: "V"}
+                - {kind: new_line}
   body:
     - kind: assign
       loc: 9/1
@@ -119,6 +121,7 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: boolean, decl: 5, name: "B"}
+        - {kind: new_line}
     - kind: assign
       loc: 11/1
       targets:
@@ -140,6 +143,7 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: boolean, decl: 5, name: "B"}
+        - {kind: new_line}
     - kind: if
       loc: 12/1
       condition:
@@ -160,6 +164,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 1}
+          - {kind: new_line}
       else:
         kind: io
         loc: 12/3
@@ -168,6 +173,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 2}
+          - {kind: new_line}
     - kind: if
       loc: 13/1
       condition:
@@ -188,6 +194,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 3}
+          - {kind: new_line}
       else:
         kind: io
         loc: 13/3
@@ -196,6 +203,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 4}
+          - {kind: new_line}
     - kind: if
       loc: 14/1
       condition:
@@ -216,6 +224,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 5}
+          - {kind: new_line}
       else:
         kind: io
         loc: 14/3
@@ -224,6 +233,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 6}
+          - {kind: new_line}
     - kind: call
       loc: 15/1
       proc: 8
@@ -280,3 +290,4 @@ block:
                 name: "A"
                 subscripts:
                   - {kind: int_const, type: integer, value: 1}
+            - {kind: new_line}

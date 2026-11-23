@@ -7,24 +7,24 @@ A L G O L - Г Д P
      4.         _procedure P(N); _value N; _integer N;
      5.         _begin
      6.             _if N > 2 _then _goto OUT;
-     7.             PRINT(N)
+     7.             print(N, NEWLINE)
      8.         _end;
      9.         I := 0;
     10.     AGAIN:
     11.         I := I + 1;
     12.         _if I < 3 _then _goto AGAIN;
-    13.         PRINT(I);
+    13.         print(I, NEWLINE);
     14.         _begin _integer K;
     15.             K := 5;
     16.             _goto L1;
-    17.             PRINT(-1);
-    18.         L1: PRINT(K);
+    17.             print(-1, NEWLINE);
+    18.         L1: print(K, NEWLINE);
     19.             _goto L2
     20.         _end;
-    21.         PRINT(-2);
+    21.         print(-2, NEWLINE);
     22.     L2: P(1); P(2); P(3);
-    23.         PRINT(-3);
+    23.         print(-3, NEWLINE);
     24.     OUT:
-    25.         PRINT(999)
+    25.         print(999, NEWLINE)
     26.     _end
 

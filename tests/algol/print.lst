@@ -2,14 +2,14 @@ A L G O L - Г Д P
     (7.01.82)
 
      1.     _begin
-     2.         _comment OUTPUT: PRINT OF NUMBERS, BOOLEANS AND STRINGS, NEW LINES;
-     3.         PRINT(0, 1, -1, 123456789);
-     4.         PRINT(0.0, 1.0, -1.0, 3.1415926, 1.0⏨18, 1.0⏨-18);
-     5.         PRINT(_true, _false);
-     6.         PRINT(`STRING ONE', `STRING TWO');
-     7.         PRINT(NEWLINE, `AFTER NEWLINE');
-     8.         PRINT(1, NEWLINE, 2);
-     9.         PRINT(NEWPAGE);
-    10.         PRINT(`LAST')
+     2.         _comment OUTPUT: print OF NUMBERS, BOOLEANS AND STRINGS, NEW LINES;
+     3.         print(0, 1, -1, 123456789);
+     4.         print(0.0, 1.0, -1.0, 3.1415926, 1.0⏨18, 1.0⏨-18);
+     5.         print(_true, _false);
+     6.         print(`STRING ONE', `STRING TWO');
+     7.         print(NEWLINE, `AFTER NEWLINE');
+     8.         print(1, NEWLINE, 2);
+     9.         print(NEWPAGE);
+    10.         print(`LAST')
     11.     _end
 

@@ -90,6 +90,6 @@ A L G O L - Г Д P
     87.         I := 40;
     88.         PROCNAME(1, _true);
     89.         IDENTIFIERLONG := 1;
-    90.         PRINT(I)
+    90.         print(I)
     91.     _end
 

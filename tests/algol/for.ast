@@ -38,6 +38,7 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 2, name: "S"}
+        - {kind: new_line}
     - kind: for
       loc: 8/1
       control: {kind: var, decl: 1, name: "I"}
@@ -58,6 +59,7 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: integer, decl: 1, name: "I"}
+          - {kind: new_line}
     - kind: for
       loc: 9/1
       control: {kind: var, decl: 1, name: "I"}
@@ -78,6 +80,7 @@ block:
               type: integer
               op: neg
               operand: {kind: int_const, type: integer, value: 1}
+          - {kind: new_line}
     - kind: assign
       loc: 10/1
       targets:
@@ -113,6 +116,7 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 2, name: "S"}
+        - {kind: new_line}
     - kind: for
       loc: 13/1
       control: {kind: var, decl: 1, name: "I"}
@@ -137,6 +141,7 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: integer, decl: 1, name: "I"}
+          - {kind: new_line}
     - kind: for
       loc: 14/1
       control: {kind: var, decl: 3, name: "X"}
@@ -153,6 +158,7 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: real, decl: 3, name: "X"}
+          - {kind: new_line}
     - kind: io
       loc: 15/1
       op: print
@@ -160,3 +166,4 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}
+        - {kind: new_line}

@@ -30,23 +30,23 @@ _begin _integer k, n, m; _real r; _integer _array ia[1:3];
 
     _comment An array and a label by value;
     _procedure zap(a); _value a; _integer _array a;
-    _begin a[1] := 99; PRINT(a[1]) _end;
+    _begin a[1] := 99; print(a[1], NEWLINE) _end;
     _procedure go(l); _value l; _label l; _goto l;
 
-    PRINT(sum(k, 1, 4, 1 / k), sum(k, 1, 4, k × k));
+    print(sum(k, 1, 4, 1 / k), sum(k, 1, 4, k × k), NEWLINE);
     n := 1; inc(n); r := 7.4; half(r);
-    PRINT(NEWLINE, n, r);
-    PRINT(NEWLINE, apply(sq, 3), apply(sq, 2.6));
+    print(n, r, NEWLINE);
+    print(apply(sq, 3), apply(sq, 2.6), NEWLINE);
     n := 1; m := 2; swap(n, m);
     ia[1] := 5; ia[2] := 6; ia[3] := 7;
-    PRINT(NEWLINE, n, m, first(ia));
+    print(n, m, first(ia), NEWLINE);
     k := 0; twice(bump); pass(bump);
-    PRINT(NEWLINE, k);
+    print(k, NEWLINE);
     jump(L1);
-    PRINT(`missed');
+    print(`missed', NEWLINE);
 L1: zap(ia);
-    PRINT(ia[1]);
+    print(ia[1], NEWLINE);
     go(L2);
-    PRINT(`missed');
-L2: PRINT(NEWLINE, `done')
+    print(`missed', NEWLINE);
+L2: print(`done', NEWLINE)
 _end

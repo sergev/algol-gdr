@@ -10,5 +10,5 @@ _begin
                 PRIME [K] := _false;
     _for N:=2 _step 1 _until 100 _do
         _if PRIME[N] _then
-            PRINT (N);
+            print (N, NEWLINE);
 _end

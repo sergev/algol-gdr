@@ -7,4 +7,4 @@ _end;
 
 _comment It calls its sibling;
 _procedure show(x); _value x; _real x;
-_begin _integer n; PRINT(x, sum(n, 1, 2, x × n)) _end;
+_begin _integer n; print(x, sum(n, 1, 2, x × n), NEWLINE) _end;

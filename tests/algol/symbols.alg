@@ -1,6 +1,6 @@
 _begin _comment SYMBOLS IN COMMENTS AND STRINGS;
   _integer I;
-  PRINT(`A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N');
+  print(`A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N', NEWLINE);
   I := 1;
   _comment ∧∨⊃¬≡ ≤≥ ×↑ @ ‘≠⏨ IN BOTH COLUMNS OF A PAGE;
   I := 2;
@@ -143,5 +143,5 @@ _begin _comment SYMBOLS IN COMMENTS AND STRINGS;
   I := 137;
   I := 138;
   I := 139;
-  PRINT(`@', I)
+  print(`@', I, NEWLINE)
 _end

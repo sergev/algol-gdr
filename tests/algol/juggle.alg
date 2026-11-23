@@ -21,7 +21,7 @@ _begin
 
     _procedure P(u);
         _string u;
-    print(u);
+    print(u, NEWLINE);
 
     _procedure sentence;
     _begin

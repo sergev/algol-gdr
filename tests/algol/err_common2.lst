@@ -11,6 +11,6 @@ A L G O L - Г Д P
      8.         _common /C/ F;
      9.         _integer _procedure F; F := 1;
     10.         X := 1;
-    11.         PRINT(X)
+    11.         print(X)
     12.     _end
 

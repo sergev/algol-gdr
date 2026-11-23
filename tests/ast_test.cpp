@@ -62,7 +62,7 @@ static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
 
 INSTANTIATE_TEST_SUITE_P(algol, AstGolden, ::testing::ValuesIn(program_names()), param_name);
 
-// _begin _real X; L: X := 1; PRINT(`A', X) _end
+// _begin _real X; L: X := 1; print(`A', X) _end
 TEST(Ast, print)
 {
     Program p;
@@ -202,7 +202,7 @@ TEST(Checker, scopes_and_conversions)
         << text;
 }
 
-// The X1 library: print is X1's in the publication form only.
+// The X1 library; print, in both forms.
 TEST(Checker, x1_library)
 {
     auto dump = [](const std::string &text) {
@@ -219,13 +219,15 @@ TEST(Checker, x1_library)
         "i := RESYM + EVEN(i) + XEEN(3);\n"
         "print(i, x); FLOT(5, x); PRINTTEXT(`a'); NLCR e̲n̲d̲");
     for (const char *s : { "func: read", "func: sum", "func: random", "func: timeofday",
-                           "func: resym", "func: even", "func: xeen", "proc: print", "proc: flot",
-                           "proc: printtext", "proc: nlcr" })
+                           "func: resym", "func: even", "func: xeen", "kind: io", "op: print",
+                           "proc: flot", "proc: printtext", "proc: nlcr" })
         EXPECT_NE(text.find(s), std::string::npos) << s;
     // FLOT(n, x) is FLOT(n, 2, x).
     EXPECT_NE(text.find("{kind: int_const, type: integer, value: 2}"), std::string::npos);
-    text = dump("_begin PRINT(1) _end");
-    EXPECT_NE(text.find("kind: io"), std::string::npos) << text;
+    text = dump("_begin print(`a', 1, _true, NEWLINE) _end");
+    EXPECT_NE(text.find("op: print"), std::string::npos) << text;
+    EXPECT_EQ(check_messages("_begin PRINT(1) _end"),
+              "x.alg:1:8: error: Undeclared identifier 'PRINT' (the standard one is 'print')\n");
 
     EXPECT_EQ(check_messages("b̲e̲g̲i̲n̲ r̲e̲a̲l̲ x;\n"
                              "x := SUM(x, 1, 2, x); PRINTTEXT(1); print(`a'); FLOT(1);\n"
@@ -233,8 +235,6 @@ TEST(Checker, x1_library)
               "x.alg:2:10: error: Type error in argument 1 of 'SUM': real instead of integer\n"
               "x.alg:2:33: error: Type error in argument 1 of 'PRINTTEXT': integer instead of "
               "string\n"
-              "x.alg:2:43: error: Type error in argument 1 of 'print': string instead of a "
-              "number\n"
               "x.alg:2:49: error: Wrong number of arguments of 'FLOT'\n"
               "x.alg:3:1: error: Illegal use of 'SUM'\n"
               "x.alg:3:11: error: Wrong number of arguments of 'EVEN'\n");

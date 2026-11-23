@@ -83,7 +83,7 @@ int64_t algol_insymbol(int64_t channel, const char *str)
 void algol_outterminator(int64_t channel)
 {
     output(channel);
-    algol_print_string(" ");
+    algol_out(" ");
 }
 
 void algol_outinteger(int64_t channel, int64_t v)
@@ -91,7 +91,7 @@ void algol_outinteger(int64_t channel, int64_t v)
     char buf[32];
     output(channel);
     snprintf(buf, sizeof(buf), "%" PRId64, v);
-    algol_print_string(buf);
+    algol_out(buf);
     algol_outterminator(channel);
 }
 
@@ -105,14 +105,14 @@ void algol_outreal(int64_t channel, double v)
         if (strtod(buf, NULL) == v)
             break;
     }
-    algol_print_string(buf);
+    algol_out(buf);
     algol_outterminator(channel);
 }
 
 void algol_outstring(int64_t channel, const char *s)
 {
     output(channel);
-    algol_print_string(s ? s : "");
+    algol_out(s ? s : "");
 }
 
 // Symbol n of the string, or the code -n.
@@ -137,13 +137,13 @@ void algol_outsymbol(int64_t channel, const char *str, int64_t n)
             buf[2] = (char)(0x80 | (c >> 6 & 0x3f));
             buf[3] = (char)(0x80 | (c & 0x3f));
         }
-        algol_print_string(buf);
+        algol_out(buf);
         return;
     }
     if (n < 1 || n > algol_string_length(str))
         algol_error("No symbol %lld in the string of outsymbol", (long long)n);
     char *sym = algol_string_slice(str, n, n);
-    algol_print_string(sym);
+    algol_out(sym);
     free(sym);
 }
 

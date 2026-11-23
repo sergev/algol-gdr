@@ -47,6 +47,7 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: string, decl: 7, name: "u"}
+          - {kind: new_line}
     - kind: procedure
       line: 26
       name: "sentence"

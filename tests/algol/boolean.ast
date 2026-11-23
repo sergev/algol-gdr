@@ -56,6 +56,7 @@ block:
             op: equiv
             left: {kind: var, type: boolean, decl: 1, name: "A"}
             right: {kind: var, type: boolean, decl: 2, name: "B"}
+        - {kind: new_line}
     - kind: io
       loc: 7/1
       op: print
@@ -88,6 +89,7 @@ block:
               op: or
               left: {kind: var, type: boolean, decl: 1, name: "A"}
               right: {kind: var, type: boolean, decl: 2, name: "B"}
+        - {kind: new_line}
     - kind: assign
       loc: 8/1
       targets:
@@ -140,6 +142,7 @@ block:
             op: gt
             left: {kind: var, type: integer, decl: 3, name: "I"}
             right: {kind: int_const, type: integer, value: 4}
+        - {kind: new_line}
     - kind: io
       loc: 10/1
       op: print
@@ -173,6 +176,7 @@ block:
             op: ne
             left: {kind: var, type: integer, decl: 3, name: "I"}
             right: {kind: int_const, type: integer, value: 5}
+        - {kind: new_line}
     - kind: io
       loc: 11/1
       op: print
@@ -213,3 +217,4 @@ block:
             op: le
             left: {kind: var, type: integer, decl: 3, name: "I"}
             right: {kind: int_const, type: integer, value: 4}
+        - {kind: new_line}

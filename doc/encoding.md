@@ -24,7 +24,6 @@ publication form; otherwise it is in the `_keyword` form. The file name does not
 | | `_keyword` form | Publication form |
 |---|---|---|
 | Keyword | `_begin`, `_BEGIN`, `_Begin`: `_` and letters and digits up to a blank or other character | underlined letters: `b̲e̲g̲i̲n̲`; `g̲o̲ t̲o̲` is one keyword; a doubled underline is accepted |
-| `print` | Algol-GDR's `PRINT` | the X1 procedure |
 
 Both forms take the same keywords, in any case:
 
@@ -109,8 +108,8 @@ All text a program reads and writes is UTF-8 (runtime/):
 
 - A string is a NUL-terminated UTF-8 C string; its indices (`s[i]`, `s[i:j]`, `length`)
   count code points from 1.
-- `PRINT` (Algol-GDR) writes fields of the original's widths, strings as they are
-  (runtime/print.c); `READ` reads words separated by white space (runtime/read.c).
+- `print` writes values with a blank between them, strings as they are (runtime/print.c);
+  `READ` reads words separated by white space (runtime/read.c).
 - The IFIP `outsymbol` and `insymbol` work in code points: a symbol's place in the string,
   or minus its code point.
 - `_write`, `_print`, `_read`, `_encode`, `_decode` with a Fortran format

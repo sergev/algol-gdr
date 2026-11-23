@@ -9,13 +9,13 @@ A L G O L - Г Д P
      6.             X := 2;
      7.             _begin _real X;
      8.                 X := 3.5;
-     9.                 PRINT(X)
+     9.                 print(X, NEWLINE)
     10.             _end;
-    11.             PRINT(X)
+    11.             print(X, NEWLINE)
     12.         _end;
     13.         _begin
     14.             X := X + 10
     15.         _end;
-    16.         PRINT(X)
+    16.         print(X, NEWLINE)
     17.     _end
 

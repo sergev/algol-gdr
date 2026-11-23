@@ -24,16 +24,16 @@ const char *const TYPE_NAMES[]     = { "integer", "real", "boolean", "string", "
 const char *const STD_FUNC_NAMES[] = { "abs",  "sign", "sqrt",   "sin",       "cos",  "arctan",
                                        "ln",   "exp",  "entier", "length",    "read", "resym",
                                        "xeen", "even", "random", "timeofday", "sum" };
-const char *const STD_PROC_NAMES[] = {
-    "stop",    "load",     "loadgo",     "assign",   "atos",      "stoa",      "ininteger",
-    "inreal",  "insymbol", "outinteger", "outreal",  "outstring", "outsymbol", "outterminator",
-    "fault",   "print",    "printtext",  "prsym",    "space",     "tab",       "nlcr",
-    "absfixt", "fixt",     "flot",       "setrandom"
-};
-const char *const IO_OP_NAMES[]  = { "print",  "punch",  "read",      "write",  "decode",
-                                     "encode", "rewind", "backspace", "endfile" };
-const char *const UNARY_NAMES[]  = { "neg", "not" };
-const char *const BINARY_NAMES[] = {
+const char *const STD_PROC_NAMES[] = { "stop",      "load",          "loadgo",    "assign",
+                                       "atos",      "stoa",          "ininteger", "inreal",
+                                       "insymbol",  "outinteger",    "outreal",   "outstring",
+                                       "outsymbol", "outterminator", "fault",     "printtext",
+                                       "prsym",     "space",         "tab",       "nlcr",
+                                       "absfixt",   "fixt",          "flot",      "setrandom" };
+const char *const IO_OP_NAMES[]    = { "print",  "punch",  "read",      "write",  "decode",
+                                       "encode", "rewind", "backspace", "endfile" };
+const char *const UNARY_NAMES[]    = { "neg", "not" };
+const char *const BINARY_NAMES[]   = {
     "add", "sub", "mul", "div", "intdiv", "power", "lt",   "le",
     "eq",  "ne",  "ge",  "gt",  "and",    "or",    "impl", "equiv"
 };

@@ -246,7 +246,7 @@ static void new_line(void)
         putc('\n', file);
     } else {
         put("\n", 1);
-        algol_print_string(line);
+        algol_out(line);
     }
     line_len = 0;
     put("", 0);

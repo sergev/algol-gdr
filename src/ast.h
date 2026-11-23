@@ -64,7 +64,6 @@ enum class StdProc {
     OUTTERMINATOR,
     FAULT,
     // X1
-    PRINT,
     PRINTTEXT,
     PRSYM,
     SPACE,

@@ -12,6 +12,7 @@ block:
       items:
         - kind: item
           expr: {kind: string_const, type: string, value: "A∧B∨C⊃D¬E≡F≤G≥H×I↑J@K‘L≠M⏨N"}
+        - {kind: new_line}
     - kind: assign
       loc: 4/1
       targets:
@@ -716,3 +717,4 @@ block:
           expr: {kind: string_const, type: string, value: "@"}
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}
+        - {kind: new_line}

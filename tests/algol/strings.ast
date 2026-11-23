@@ -67,6 +67,7 @@ block:
                 name: "A"
                 subscripts:
                   - {kind: int_const, type: integer, value: 1}
+        - {kind: new_line}
     - kind: for
       loc: 10/1
       control: {kind: var, decl: 4, name: "I"}
@@ -97,7 +98,6 @@ block:
       op: print
       params: []
       items:
-        - {kind: new_line}
         - kind: item
           expr: {kind: var, type: string, decl: 2, name: "T"}
         - kind: item
@@ -116,3 +116,4 @@ block:
             name: "A"
             subscripts:
               - {kind: int_const, type: integer, value: 2}
+        - {kind: new_line}

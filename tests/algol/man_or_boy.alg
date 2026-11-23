@@ -11,5 +11,5 @@ _begin
         a := _if k _le 0 _then x4 + x5
                            _else b;
     _end;
-    print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0));
+    print(a(10, 1.0, -1.0, -1.0, 1.0, 0.0), NEWLINE);
 _end

@@ -8,11 +8,11 @@
 
 #include <stdint.h>
 
-// Print the line in progress, if any.
-void algol_flush_output(void);
+// Text on stdout (print.c); flushed at once on a terminal.
+void algol_out(const char *s);
 
-// 0: the line in progress stays open at the end (the X1 library).
-extern int algol_final_newline;
+// Before a message: the line in progress ended, stdout flushed.
+void algol_end_line(void);
 
 // Element types of arrays, as ast::Type.
 enum { T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_BITS };

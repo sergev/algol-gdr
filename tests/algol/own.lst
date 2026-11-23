@@ -5,6 +5,6 @@ A L G O L - Г Д P
      2.         _comment AN OWN VARIABLE;
      3.         _own _integer N;
      4.         N := 1;
-     5.         PRINT(N)
+     5.         print(N, NEWLINE)
      6.     _end
 

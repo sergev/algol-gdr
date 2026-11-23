@@ -5,7 +5,7 @@ A L G O L - Г Д P
      2.     _begin _integer I, J, K; _boolean B;
      3.       _integer _array IA[-10:20];
      4.       _procedure SHOW;
-     5.       _begin _for K := -10 _step 1 _until 20 _do PRINT(IA[K]);
+     5.       _begin _for K := -10 _step 1 _until 20 _do print(IA[K], NEWLINE);
      6.         _for K := -10 _step 1 _until 20 _do IA[K] := 0
      7.       _end;
      8.       J := 1; B := _true;
@@ -19,10 +19,10 @@ A L G O L - Г Д P
     16.       _for I := 1 _step 1 _until 3 _do IA[3-I] := I+10;
     17.       _for I := 1 _step 1 _until 3 _do IA[1] := I; SHOW;
     18.       _for I := 1 _step 1 _until 3 _do _if B _then _goto L1;
-    19.     L1: PRINT(I);
+    19.     L1: print(I, NEWLINE);
     20.       _for I := 1 _step 1 _until 3 _do _goto L2;
-    21.     L2: PRINT(I);
-    22.       _for I := 1 _step 1 _until 3 _do I := I; PRINT(I);
+    21.     L2: print(I, NEWLINE);
+    22.       _for I := 1 _step 1 _until 3 _do I := I; print(I, NEWLINE);
     23.       _for I := 1 _step 1 _until 3 _do
     24.       _begin L3: IA[I] := IA[I] + 1;
     25.         _if IA[I] _lt 3 _then _goto L3

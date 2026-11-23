@@ -50,7 +50,6 @@ const std::vector<std::string> programs = {
     "algol/pages",
     "algol/print",
     "algol/proc",
-    "algol/quine",
     "algol/quinio",
     "algol/stdfunc",
     "algol/strings",
@@ -341,16 +340,19 @@ INSTANTIATE_TEST_SUITE_P(algol, CrossTest,
                                             ::testing::ValuesIn(programs)),
                          cross_name);
 
-// The exact layout of PRINT.
+// The exact layout of print: a blank between the values of one call, none
+// between calls; no newline added at the end.
 TEST(Run, print_layout)
 {
     EXPECT_EQ(run(TEST_DIR "/algol/print.alg", BUILD_DIR "/run_layout", false),
-              "             0              1             -1      123456789 "
-              " 0.00000000000e+00    1.00000000000e+00   -1.00000000000e+00   "
-              " 3.14159260000e+00    1.00000000000e+18    1.00000000000e-18   "
-              "true  false STRING ONESTRING TWO\n"
-              "AFTER NEWLINE             1 \n"
-              "             2 \fLAST\n");
+              "0 1 -1 123456789"
+              "0 1 -1 3.1415926 1e+18 1e-18"
+              "true false"
+              "STRING ONE STRING TWO\n"
+              "AFTER NEWLINE"
+              "1\n2"
+              "\f"
+              "LAST");
 }
 
 TEST(Run, compare_x1)
@@ -378,37 +380,35 @@ TEST(Run, control)
   I := 0; S := 0;
 L: I := I + 1;
   _if I _le 10 _then _begin S := S + I; _goto L _end;
-  _if S = 55 _then PRINT(`OK') _else PRINT(`BAD');
-  _if S > 100 _then PRINT(`BAD');
-  _begin _integer J; J := I; _if J = 11 _then _goto M; PRINT(`BAD') _end;
-M: PRINT(S, I)
+  _if S = 55 _then print(`OK', NEWLINE) _else print(`BAD', NEWLINE);
+  _if S > 100 _then print(`BAD', NEWLINE);
+  _begin _integer J; J := I; _if J = 11 _then _goto M; print(`BAD', NEWLINE) _end;
+M: print(S, I, NEWLINE)
 _end
 )"),
-              "OK            55             11 \n");
+              "OK\n55 11\n");
 }
 
 TEST(Run, for_lists)
 {
     EXPECT_EQ(run_text("for_lists", R"(_begin _integer I; _real X;
-  _for I := 1, 2 _step 2 _until 6, 10 _do PRINT(I);
+  _for I := 1, 2 _step 2 _until 6, 10 _do print(I, NEWLINE);
   X := 0;
-  _for X := X + 0.5 _while X < 2 _do PRINT(X);
-  PRINT(NEWLINE, I)
+  _for X := X + 0.5 _while X < 2 _do print(X, NEWLINE);
+  print(I, NEWLINE)
 _end
 )"),
-              "             1              2              4              6             10 "
-              " 5.00000000000e-01    1.00000000000e+00    1.50000000000e+00   \n"
-              "            10 \n");
+              "1\n2\n4\n6\n10\n0.5\n1\n1.5\n10\n");
 }
 
 TEST(Run, domain_error)
 {
     const std::string src = BUILD_DIR "/run_sqrt.alg";
-    std::ofstream(src) << "_begin PRINT(1); PRINT(sqrt(-1.0)) _end\n";
+    std::ofstream(src) << "_begin print(1); print(sqrt(-1.0)) _end\n";
     auto r =
         run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
     EXPECT_EQ(r.exit_code, 1);
-    EXPECT_EQ(r.output, "             1 \nError: Square root of a negative number -1\n");
+    EXPECT_EQ(r.output, "1\nError: Square root of a negative number -1\n");
 }
 
 // Non-local gotos free the arrays they leave: 32 GB otherwise.
@@ -430,7 +430,7 @@ TEST(Run, fault_and_stop)
                          " && " BUILD_DIR "/run_fault");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_EQ(r.output, "5 \nError: bad value 2.5\n");
-    EXPECT_EQ(run_text("stop", "_begin PRINT(1); STOP; PRINT(2) _end\n"), "             1 \n");
+    EXPECT_EQ(run_text("stop", "_begin print(1); STOP; print(2) _end\n"), "1");
 }
 
 // A goto through a switch is a longjmp, here into the same function: at -O2
@@ -443,10 +443,10 @@ TEST(Run, switch_goto_optimized)
                           "_begin _integer n; _switch s := again, done; n := 0;\n"
                           "again: _if x > 0 _then _begin x := x - 1; n := n + 1; _goto s[1] _end;\n"
                           "_goto s[2]; done: count := n _end;\n"
-                          "PRINT(count(5)) _end\n";
+                          "print(count(5)) _end\n";
     auto r = run_command(compiler + " -O2 -o " + exe + " " + src + " && timeout 10 " + exe);
     EXPECT_EQ(r.exit_code, 0);
-    EXPECT_EQ(r.output, "             5 \n");
+    EXPECT_EQ(r.output, "5");
 }
 
 // X1 input: at the end of the input, or a bad number, read stops the program;
@@ -492,7 +492,7 @@ TEST(Run, checks)
         { "_real x; x := maxreal; x := x × 10", "Real overflow" },
         { "_real x; x := 1000; x := exp(x)", "Real overflow" },
         { "_integer i; i := maxreal", "Real 1.79769e+308 too large for an integer" },
-        { "_string s; s := `abc'; PRINT(s[5])", "String index [5:5] out of range 1..3" },
+        { "_string s; s := `abc'; print(s[5])", "String index [5:5] out of range 1..3" },
         { "_switch w := L; _goto w[2]; L:", "Switch index 2 out of range" },
         { "_procedure p(a, b); _real a, b; ; _procedure q(f); _procedure f; f(1); q(p)",
           "Procedure p called with 1 parameters instead of 2" },
@@ -516,7 +516,7 @@ TEST(Run, checks)
 TEST(Run, division_by_zero)
 {
     const std::string src = BUILD_DIR "/run_idiv.alg";
-    std::ofstream(src) << "_begin _integer z; z := 0; PRINT(1 ÷ z) _end\n";
+    std::ofstream(src) << "_begin _integer z; z := 0; print(1 ÷ z) _end\n";
     auto r =
         run_command(compiler + " -o " BUILD_DIR "/run_idiv " + src + " && " BUILD_DIR "/run_idiv");
     EXPECT_EQ(r.exit_code, 1);
@@ -530,14 +530,12 @@ TEST(Run, arrays)
   _begin _integer _array A[0:N, -1:1];
     _for I := 0 _step 1 _until N _do
       _for J := -1 _step 1 _until 1 _do A[I, J] := 10 * I + J;
-    PRINT(A[2, -1], A[1, 1]);
-    PRINT(NEWLINE, A)
+    print(A[2, -1], A[1, 1], NEWLINE);
+    print(A, NEWLINE)
   _end
 _end
 )"),
-              "            19             11 \n"
-              "            -1              0              1              9             10 "
-              "            11             19             20             21 \n");
+              "19 11\n-1 0 1 9 10 11 19 20 21\n");
 }
 
 TEST(Run, bounds_check)
@@ -559,10 +557,10 @@ TEST(Run, procedures)
   _real _procedure HALF(X); _value X; _real X; HALF := X / 2;
   _for I := 1 _step 1 _until 3 _do A[I] := I;
   ZAP(A);
-  PRINT(A[1], FACT(10), HALF(3))
+  print(A[1], FACT(10), HALF(3), NEWLINE)
 _end
 )"),
-              "            99        3628800  1.50000000000e+00   \n");
+              "99 3628800 1.5\n");
 }
 
 // Jensen's device, assignment through a name parameter, a procedure and
@@ -578,16 +576,15 @@ TEST(Run, by_name)
   _procedure INC(X); _integer X; X := X + 1;
   _real _procedure TWICE(F, X); _real _procedure F; _real X; TWICE := F(F(X));
   _real _procedure SQ(Y); _value Y; _real Y; SQ := Y * Y;
-  _procedure SAY(W); _string W; PRINT(W);
+  _procedure SAY(W); _string W; print(W, NEWLINE);
   _for I := 1 _step 1 _until 4 _do A[I] := I;
   S := SUM(I, 1, 4, A[I] * A[I]);
-  PRINT(S);
-  I := 5; INC(I); PRINT(I);
-  PRINT(TWICE(SQ, 3));
+  I := 5; INC(I);
+  print(S, I, TWICE(SQ, 3), NEWLINE);
   T := `HI'; SAY(T); SAY(`THERE')
 _end
 )"),
-              " 3.00000000000e+01                6  8.10000000000e+01   HITHERE\n");
+              "30 6 81\nHI\nTHERE\n");
 }
 
 // juggle needs its _code procedures to run, but it compiles.
@@ -610,29 +607,29 @@ TEST(Run, far_goto)
     _end;
   N := 0;
   JUMP(L1);
-  PRINT(-1);
-L1: N := N + 1; PRINT(N);
+  print(-1, NEWLINE);
+L1: N := N + 1; print(N, NEWLINE);
   _if N = 1 _then PICK(SW, 2);
   _if N = 2 _then DEEP(5);
-  PRINT(-2);
+  print(-2, NEWLINE);
 L2: _if N < 2 _then _goto L1;
   _goto L1;
-L3: PRINT(`DONE')
+L3: print(`DONE', NEWLINE)
 _end
 )"),
-              "             1              2 DONE\n");
+              "1\n2\nDONE\n");
 }
 
 TEST(Run, strings)
 {
     EXPECT_EQ(run_text("strings2", R"(_begin _string S, T;
   S := `Счёт' + `-42';
-  PRINT(length(S), S[2], S[2:4], S[5:7]);
+  print(length(S), S[2], S[2:4], S[5:7], NEWLINE);
   T := S[1:4];
-  PRINT(T = `Счёт', T < `Сча', T _ne S, `ab' < `b')
+  print(T = `Счёт', T < `Сча', T _ne S, `ab' < `b', NEWLINE)
 _end
 )"),
-              "             7 ччёт-42true  false true  true  \n");
+              "7 ч чёт -42\ntrue false true true\n");
 }
 
 // _code procedures in C, and a _common block they share.
@@ -654,12 +651,11 @@ void show(int64_t *a, int64_t *n, double *x)
 _begin _real X; _integer _array A[1:3]; _integer N, M;
   _common /SHARED/ N, M;
   N := 7; M := 8; A[1] := 1; A[2] := 2; A[3] := 3;
-  X := twice(2.5); PRINT(X, NEWLINE);
+  X := twice(2.5); print(X, NEWLINE);
   show(A, N, X + 1)
 _end
 )";
-    EXPECT_EQ(run(src, BUILD_DIR "/run_code", false, "/dev/null", stub),
-              " 5.00000000000e+00   \n[1 2 3] 7 6 8\n");
+    EXPECT_EQ(run(src, BUILD_DIR "/run_code", false, "/dev/null", stub), "5\n[1 2 3] 7 6 8\n");
 }
 
 TEST(Run, format_and_read)

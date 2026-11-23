@@ -29,16 +29,9 @@ static const char *const x1_symbols[128] = {
     "⎕", "⎕", "⎕", "⎕", "⎕", "⎕", "\t", "\n", "⎕", "\"", "?", "⎕", "⎕",  "⎕", "⎕", "⎕", //
 };
 
-// Output to a terminal is flushed after each call: prompts and progress.
 static void out(const char *s)
 {
-    static int tty = -1;
-    algol_final_newline = 0;
-    algol_print_string(s);
-    if (tty < 0)
-        tty = isatty(1);
-    if (tty)
-        fflush(stdout);
+    algol_out(s);
 }
 
 void algol_x1_printtext(const char *s)
@@ -54,8 +47,7 @@ void algol_x1_prsym(int64_t code)
 void algol_x1_space(int64_t n)
 {
     for (; n > 0; n--)
-        algol_print_string(" ");
-    out("");
+        out(" ");
 }
 
 void algol_x1_tab(void)
@@ -66,21 +58,6 @@ void algol_x1_tab(void)
 void algol_x1_nlcr(void)
 {
     out("\n");
-}
-
-// print: an integer in decimal, a real in 13 digits.
-void algol_x1_print_integer(int64_t v)
-{
-    char buf[32];
-    snprintf(buf, sizeof(buf), "%" PRId64, v);
-    out(buf);
-}
-
-void algol_x1_print_real(double v)
-{
-    char buf[48];
-    snprintf(buf, sizeof(buf), "%.13Lg", (long double)v);
-    out(buf);
 }
 
 // The exact decimal digits of x > 0, as x = 0.d1d2… × 10^exp; their count.

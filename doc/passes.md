@@ -94,9 +94,8 @@ the AST of `ast.h`, after doc/ast.asdl:
   (doc/deviations.md has the rules).
 - Standard identifiers, in their documented case, unless declared (`SQRT` is undeclared,
   with a hint to `sqrt`): the functions (`sqrt`, `entier`, …),
-  Algol-GDR's (`PRINT`, `READ`, `NEWLINE`, …), the IFIP procedures, and the X1 library.
-  `print` is X1's in the publication form and Algol-GDR's in the `_keyword` form; `read` is
-  X1's function, `READ` Algol-GDR's statement. Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
+  Algol-GDR's (`READ`, `NEWLINE`, …), the IFIP procedures, and the X1 library (`print`,
+  `read`, `PRINTTEXT`, …). Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
   arguments checked.
 - A function that never assigns its result gets a warning.
 

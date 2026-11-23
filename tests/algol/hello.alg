@@ -1,3 +1,3 @@
 _begin
-    print(`Hello, World!');
+    print(`Hello, World!', NEWLINE);
 _end

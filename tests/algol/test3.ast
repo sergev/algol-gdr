@@ -245,6 +245,7 @@ block:
                 name: "X"
                 subscripts:
                   - {kind: var, type: integer, decl: 3, name: "K"}
+            - {kind: new_line}
     - kind: for
       loc: 20/1
       control: {kind: var, decl: 2, name: "I"}
@@ -281,6 +282,7 @@ block:
           expr: {kind: var, type: boolean, decl: 5, name: "C"}
         - kind: item
           expr: {kind: var, type: integer, decl: 3, name: "K"}
+        - {kind: new_line}
     - kind: io
       loc: 22/1
       op: print
@@ -288,3 +290,4 @@ block:
       items:
         - kind: item
           expr: {kind: string_const, type: string, value: "HELLO FROM ALGOL"}
+        - {kind: new_line}

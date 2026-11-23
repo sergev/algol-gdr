@@ -1,74 +1,98 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// Output of PRINT: printf on stdout, in the fields of the original (15
-// columns for an integer, 20 for a real, 6 for a Boolean).
+// Output on stdout, and print: its values in the layout of X1's print, one
+// blank between them; NEWLINE and NEWPAGE. An integer in decimal, a real in
+// 13 digits (%.13g), a Boolean as true or false, a string as it is, bits in
+// octal. Separate calls are not separated.
 //
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "algol.h"
 #include "internal.h"
 
 static int last_char = '\n'; // the last character written
+static int separate;         // a value of this print was written
 
-// The X1 library ends no line at the end, as x1sim.
-int algol_final_newline = 1;
-
-static void out(const char *s)
+// Text on stdout; on a terminal flushed at once, for prompts and progress.
+void algol_out(const char *s)
 {
-    size_t n = strlen(s);
+    static int tty = -1;
+    size_t n       = strlen(s);
     if (n == 0)
         return;
     fputs(s, stdout);
     last_char = (unsigned char)s[n - 1];
+    if (tty < 0)
+        tty = isatty(1);
+    if (tty)
+        fflush(stdout);
 }
 
-void algol_flush_output(void)
+// Before a message on stderr: the line in progress ended.
+void algol_end_line(void)
 {
-    if (last_char != '\n' && algol_final_newline)
-        out("\n");
+    if (last_char != '\n')
+        algol_out("\n");
     fflush(stdout);
+}
+
+void algol_print_begin(void)
+{
+    separate = 0;
+}
+
+// A value of print: a blank before all but the first.
+static void value(const char *s)
+{
+    if (separate)
+        algol_out(" ");
+    algol_out(s);
+    separate = 1;
 }
 
 void algol_print_integer(int64_t v)
 {
     char buf[32];
-    snprintf(buf, sizeof(buf), "%14" PRId64 " ", v);
-    out(buf);
+    snprintf(buf, sizeof(buf), "%" PRId64, v);
+    value(buf);
 }
 
 void algol_print_real(double v)
 {
     char buf[48];
-    snprintf(buf, sizeof(buf), "% .11e   ", v);
-    out(buf);
+    snprintf(buf, sizeof(buf), "%.13g", v);
+    value(buf);
 }
 
 void algol_print_boolean(_Bool v)
 {
-    out(v ? "true  " : "false ");
+    value(v ? "true" : "false");
 }
 
 void algol_print_bits(int64_t v)
 {
     char buf[32];
-    snprintf(buf, sizeof(buf), "%022" PRIo64 " ", (uint64_t)v);
-    out(buf);
+    snprintf(buf, sizeof(buf), "%" PRIo64, (uint64_t)v);
+    value(buf);
 }
 
 void algol_print_string(const char *s)
 {
-    out(s);
+    value(s ? s : "");
 }
 
 void algol_newline(void)
 {
-    out("\n");
+    algol_out("\n");
+    separate = 0;
 }
 
 void algol_newpage(void)
 {
-    out("\f");
+    algol_out("\f");
+    separate = 0;
 }

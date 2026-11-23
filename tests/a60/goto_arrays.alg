@@ -11,6 +11,6 @@ again: i := i + 1;
         c[1] := 5;
 more:   j := j + 1;
         _if j < 2000 _then _begin _real _array b[1:1000000]; b[1] := j; q _end;
-        PRINT(i, j, c[1])
+        print(i, j, c[1], NEWLINE)
     _end
 _end

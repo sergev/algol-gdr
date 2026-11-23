@@ -188,6 +188,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 77}
+          - {kind: new_line}
   body:
     - kind: assign
       loc: 24/1
@@ -221,6 +222,7 @@ block:
             name: "FACT"
             args:
               - {kind: int_const, type: integer, value: 10}
+        - {kind: new_line}
     - kind: assign
       loc: 27/1
       targets:
@@ -292,6 +294,7 @@ block:
                   name: "V"
                   subscripts:
                     - {kind: var, type: integer, decl: 1, name: "I"}
+        - {kind: new_line}
     - kind: io
       loc: 29/1
       op: print
@@ -306,6 +309,7 @@ block:
             args:
               - {kind: var, type: real, decl: 15, name: "SQ"}
               - {kind: real_const, type: real, value: 3.0}
+        - {kind: new_line}
     - kind: call
       loc: 30/1
       proc: 20

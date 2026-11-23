@@ -1779,16 +1779,6 @@ private:
             fn_->unreachable();
             return;
         }
-        case StdProc::PRINT:
-            for (size_t k = 0; k < p.args.size(); k++) {
-                if (k > 0)
-                    runtime("void", "algol_x1_space", { ir::i64(1) });
-                if (p.args[k]->type == Type::INTEGER)
-                    runtime("void", "algol_x1_print_integer", { arg(k) });
-                else
-                    runtime("void", "algol_x1_print_real", { arg(k) });
-            }
-            return;
         case StdProc::PRINTTEXT:
             runtime("void", "algol_x1_printtext", { arg(0) });
             return;
@@ -1848,6 +1838,7 @@ private:
         switch (s.op) {
         case IoOp::PRINT:
             io_mode_ = IoMode::PRINT;
+            runtime("void", "algol_print_begin", {});
             io_items(s.items);
             return;
         case IoOp::WRITE:

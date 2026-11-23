@@ -369,7 +369,6 @@ const std::map<std::string, Std> &standard_names()
         { "minreal", Std::MINREAL },
         { "maxint", Std::MAXINT },
         { "epsilon", Std::EPSILON },
-        { "PRINT", Std::PRINT },
         { "READ", Std::READ },
         { "NEWLINE", Std::NEWLINE },
         { "NEWPAGE", Std::NEWPAGE },
@@ -493,7 +492,6 @@ private:
     std::vector<Scope> scopes_;
     std::vector<int> functions_; // procedures whose bodies are being checked
     std::set<std::string> undeclared_;
-    bool x1_{}; // the publication form: print is X1's
 
     void error(Pos line, const std::string &message) { diag_.error(line, message); }
 
@@ -574,7 +572,6 @@ int Checker::lookup(const std::string &name) const
 Program Checker::program(const syn::Program &p)
 {
     Program out;
-    x1_ = p.publication;
     scopes_.emplace_back(); // the externals
     for (const auto &e : p.externals) {
         Symbol s;
@@ -1222,21 +1219,7 @@ StmtPtr Checker::std_stmt(SrcLoc loc, Std s, const std::string &nm, const syn::E
     size_t n = args ? args->size() : 0;
     switch (s) {
     case Std::PRINT: {
-        if (x1_) {
-            // X1: numbers, any number of them.
-            stmt::StdProc p;
-            p.proc = StdProc::PRINT;
-            for (size_t k = 0; k < n; k++) {
-                const syn::Expr &a = *(*args)[k];
-                ExprPtr e          = expr(a);
-                if (!numeric(e->type) && e->type != Type::NONE)
-                    error(a.line, "Type error in argument " + std::to_string(k + 1) + " of " +
-                                      quoted(nm) + ": " + to_string(e->type) +
-                                      " instead of a number");
-                p.args.push_back(std::move(e));
-            }
-            return make_stmt(loc, std::move(p));
-        }
+        // Values, whole arrays, NEWLINE and NEWPAGE.
         stmt::Io io;
         io.op = IoOp::PRINT;
         for (size_t k = 0; k < n; k++) {

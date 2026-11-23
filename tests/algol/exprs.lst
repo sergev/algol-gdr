@@ -18,18 +18,18 @@ A L G O L - Г Д P
     15.     M: X := 1;
     16.       I := 1; X := 2; B := _true;
     17.       IA[1] := 1; IA[2] := 2; IA[3] := 3;
-    18.       I := IA[X]; PRINT(I);
-    19.       I := _if B _then I _else X; PRINT(I);
-    20.       B := X _lt 1; PRINT(B);
-    21.       B := X _equal 1; PRINT(B);
-    22.       X := 2 _power I; PRINT(X);
-    23.       X := 2 _power IP(1); PRINT(X);
-    24.       PRINT(IA);
-    25.       _for I := I _step 1 _until 2 _do X := 1; PRINT(I);
-    26.       _for I := X _step 1 _until 2 _do X := 1; PRINT(I);
-    27.       _for I := IA[1] _step 1 _until 2 _do X := 1; PRINT(I);
-    28.       _for I := RP _step 1 _until 2 _do X := 1; PRINT(I);
-    29.       _for I := 1.5 _step 1 _until 2 _do X := 1; PRINT(I);
-    30.       _for I := -I _step 1 _until 2 _do X := 1; PRINT(I)
+    18.       I := IA[X]; print(I, NEWLINE);
+    19.       I := _if B _then I _else X; print(I, NEWLINE);
+    20.       B := X _lt 1; print(B, NEWLINE);
+    21.       B := X _equal 1; print(B, NEWLINE);
+    22.       X := 2 _power I; print(X, NEWLINE);
+    23.       X := 2 _power IP(1); print(X, NEWLINE);
+    24.       print(IA, NEWLINE);
+    25.       _for I := I _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+    26.       _for I := X _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+    27.       _for I := IA[1] _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+    28.       _for I := RP _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+    29.       _for I := 1.5 _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+    30.       _for I := -I _step 1 _until 2 _do X := 1; print(I, NEWLINE)
     31.     _end
 

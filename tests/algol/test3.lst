@@ -18,10 +18,10 @@ A L G O L - Г Д P
     15.         _for I := 1, 2, 5 _step 2 _until 9 _do K := K + 1;
     16.         _begin _integer _array X[1:K];
     17.             _for I := 1 _step 1 _until K _do X[I] := I * I;
-    18.             PRINT(X[K])
+    18.             print(X[K], NEWLINE)
     19.         _end;
     20.         _for I := 0 _step 1 _until 4 _do P(I, A);
-    21.         PRINT(A[4, 0], B, C, K);
-    22.         PRINT(`HELLO FROM ALGOL')
+    21.         print(A[4, 0], B, C, K, NEWLINE);
+    22.         print(`HELLO FROM ALGOL', NEWLINE)
     23.     _end
 

@@ -9,8 +9,8 @@ A L G O L - Г Д P
      6.         S := `ABCDEF';
      7.         T := S;
      8.         A[1] := `XY'; A[2] := S;
-     9.         PRINT(length(S), length(A[1]));
-    10.         _for I := 1 _step 1 _until length(S) _do PRINT(S[I]);
-    11.         PRINT(NEWLINE, T, A[1], A[2])
+     9.         print(length(S), length(A[1]), NEWLINE);
+    10.         _for I := 1 _step 1 _until length(S) _do print(S[I]);
+    11.         print(T, A[1], A[2], NEWLINE)
     12.     _end
 

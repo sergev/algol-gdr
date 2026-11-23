@@ -9,12 +9,12 @@ _begin _integer i;
     i := 0;
 10: i := i + 1;
     _goto s[i];
-20: PRINT(`twenty', i);
+20: print(`twenty', i, NEWLINE);
     _goto 10;
-30: PRINT(NEWLINE, `thirty', i);
+30: print(`thirty', i, NEWLINE);
     _goto 010;
-40: PRINT(NEWLINE, `forty', i);
+40: print(`forty', i, NEWLINE);
     jump(i) to: (50);
-    PRINT(`missed');
-50: PRINT(NEWLINE, ratio(3) over: (4), ratio(1, 8))
+    print(`missed', NEWLINE);
+50: print(ratio(3) over: (4), ratio(1, 8), NEWLINE)
 _end

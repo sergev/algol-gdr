@@ -80,6 +80,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 1}
+          - {kind: new_line}
     - kind: goto
       loc: 10/3
       target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
@@ -95,6 +96,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 2}
+          - {kind: new_line}
     - kind: goto
       loc: 11/3
       target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
@@ -110,6 +112,7 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 3}
+          - {kind: new_line}
     - kind: goto
       loc: 12/3
       target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
@@ -148,3 +151,4 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: integer, decl: 1, name: "I"}
+          - {kind: new_line}

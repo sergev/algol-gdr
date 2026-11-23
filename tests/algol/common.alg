@@ -9,5 +9,5 @@ _begin
     _boolean W;
     X := 1; Y[1] := 2; Z[2,3] := 3;
     N := 4; T[2, 2, 2] := 5; W := _true;
-    PRINT(X, Y[1], Z[2,3], N, T[2, 2, 2], W);
+    print(X, Y[1], Z[2,3], N, T[2, 2, 2], W, NEWLINE);
 _end

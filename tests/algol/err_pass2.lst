@@ -41,8 +41,8 @@ A L G O L - Г Д P
     38.       B := 1 _lt B;
     39.       B := 1 _lt P0;
     40.       X := B _power 2;
-    41.       PRINT(P0);
-    42.       PRINT(PP);
+    41.       print(P0);
+    42.       print(PP);
     43.       PUNCH(S);
     44.       I := length(I);
     45.       CP(P0);

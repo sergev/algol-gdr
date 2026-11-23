@@ -25,3 +25,4 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}
+        - {kind: new_line}

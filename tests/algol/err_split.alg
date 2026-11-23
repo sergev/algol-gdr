@@ -87,5 +87,5 @@ _begin _integer I;
     I := 40;
     PROCNAME(1, _true);
     IDENTIFIERLONG := 1;
-    PRINT(I)
+    print(I)
 _end

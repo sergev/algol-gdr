@@ -12,6 +12,6 @@ A L G O L - Г Д P
      9.         _boolean W;
     10.         X := 1; Y[1] := 2; Z[2,3] := 3;
     11.         N := 4; T[2, 2, 2] := 5; W := _true;
-    12.         PRINT(X, Y[1], Z[2,3], N, T[2, 2, 2], W);
+    12.         print(X, Y[1], Z[2,3], N, T[2, 2, 2], W, NEWLINE);
     13.     _end
 

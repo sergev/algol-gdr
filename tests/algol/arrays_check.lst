@@ -9,13 +9,13 @@ A L G O L - Г Д P
      6.         _integer _array B[0:2, -1:1];
      7.         _boolean _array F[1:2];
      8.         _for I := 1 _step 1 _until 5 _do A[I] := I / 2;
-     9.         PRINT(A[1], A[5]);
+     9.         print(A[1], A[5], NEWLINE);
     10.         _for I := 0 _step 1 _until 2 _do
     11.             _for J := -1 _step 1 _until 1 _do
     12.                 B[I, J] := 10 * I + J;
-    13.         PRINT(B[0, -1], B[2, 1], B[1, 0]);
+    13.         print(B[0, -1], B[2, 1], B[1, 0], NEWLINE);
     14.         F[1] := _true; F[2] := _not F[1];
-    15.         PRINT(F[1], F[2]);
+    15.         print(F[1], F[2], NEWLINE);
     16.         N := 4;
     17.         _begin
     18.             _array C[1:N, 1:N + 1];
@@ -24,7 +24,7 @@ A L G O L - Г Д P
     21.                 _for J := 1 _step 1 _until N + 1 _do
     22.                     C[I, J] := I * J;
     23.             D[2 * N] := N;
-    24.             PRINT(C[N, N + 1], D[8])
+    24.             print(C[N, N + 1], D[8], NEWLINE)
     25.         _end
     26.     _end
 

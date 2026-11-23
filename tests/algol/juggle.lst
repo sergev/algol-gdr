@@ -24,7 +24,7 @@ A L G O L - Г Д P
     21.
     22.         _procedure P(u);
     23.             _string u;
-    24.         print(u);
+    24.         print(u, NEWLINE);
     25.
     26.         _procedure sentence;
     27.         _begin

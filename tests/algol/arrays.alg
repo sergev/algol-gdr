@@ -6,13 +6,13 @@ _begin
     _integer _array B[0:2, -1:1];
     _boolean _array F[1:2];
     _for I := 1 _step 1 _until 5 _do A[I] := I / 2;
-    PRINT(A[1], A[5]);
+    print(A[1], A[5], NEWLINE);
     _for I := 0 _step 1 _until 2 _do
         _for J := -1 _step 1 _until 1 _do
             B[I, J] := 10 * I + J;
-    PRINT(B[0, -1], B[2, 1], B[1, 0]);
+    print(B[0, -1], B[2, 1], B[1, 0], NEWLINE);
     F[1] := _true; F[2] := _not F[1];
-    PRINT(F[1], F[2]);
+    print(F[1], F[2], NEWLINE);
     N := 4;
     _begin
         _array C[1:N, 1:N + 1];
@@ -21,6 +21,6 @@ _begin
             _for J := 1 _step 1 _until N + 1 _do
                 C[I, J] := I * J;
         D[2 * N] := N;
-        PRINT(C[N, N + 1], D[8])
+        print(C[N, N + 1], D[8], NEWLINE)
     _end
 _end

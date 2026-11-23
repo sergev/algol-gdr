@@ -60,6 +60,7 @@ block:
               type: real
               conv: int_to_real
               expr: {kind: var, type: integer, decl: 2, name: "J"}
+        - {kind: new_line}
     - kind: io
       loc: 7/1
       op: print
@@ -112,6 +113,7 @@ block:
               left: {kind: var, type: integer, decl: 1, name: "I"}
               right: {kind: var, type: integer, decl: 2, name: "J"}
             right: {kind: int_const, type: integer, value: 1}
+        - {kind: new_line}
     - kind: io
       loc: 8/1
       op: print
@@ -142,6 +144,7 @@ block:
               type: integer
               op: neg
               operand: {kind: int_const, type: integer, value: 1}
+        - {kind: new_line}
     - kind: assign
       loc: 9/1
       targets:
@@ -189,6 +192,7 @@ block:
             op: sub
             left: {kind: var, type: real, decl: 4, name: "X"}
             right: {kind: var, type: real, decl: 5, name: "Y"}
+        - {kind: new_line}
     - kind: assign
       loc: 11/1
       targets:
@@ -225,3 +229,4 @@ block:
           expr: {kind: real_const, type: real, value: 1000.0}
         - kind: item
           expr: {kind: real_const, type: real, value: 0.025}
+        - {kind: new_line}

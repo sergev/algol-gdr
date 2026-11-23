@@ -282,5 +282,5 @@ _begin
     S := S + 278;
     S := S + 279;
     S := S + 280;
-    PRINT(S)
+    print(S, NEWLINE)
 _end

@@ -180,6 +180,7 @@ block:
                 op: mul
                 left: {kind: var, type: integer, decl: 11, name: "J"}
                 right: {kind: var, type: integer, decl: 11, name: "J"}
+        - {kind: new_line}
     - kind: io
       loc: 18/1
       op: print
@@ -206,6 +207,7 @@ block:
             func: cos
             args:
               - {kind: real_const, type: real, value: 1.0}
+        - {kind: new_line}
     - kind: io
       loc: 19/1
       op: print
@@ -232,6 +234,7 @@ block:
             func: exp
             args:
               - {kind: real_const, type: real, value: 1.0}
+        - {kind: new_line}
     - kind: io
       loc: 20/1
       op: print
@@ -264,6 +267,7 @@ block:
             func: entier
             args:
               - {kind: real_const, type: real, value: 3.7}
+        - {kind: new_line}
     - kind: assign
       loc: 21/1
       targets:
@@ -318,3 +322,4 @@ block:
               type: real
               conv: int_to_real
               expr: {kind: int_const, type: integer, value: 2}
+        - {kind: new_line}

@@ -13,6 +13,6 @@ A L G O L - Г Д P
     10.                     PRIME [K] := _false;
     11.         _for N:=2 _step 1 _until 100 _do
     12.             _if PRIME[N] _then
-    13.                 PRINT (N);
+    13.                 print (N, NEWLINE);
     14.     _end
 

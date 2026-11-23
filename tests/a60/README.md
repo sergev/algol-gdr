@@ -1,6 +1,6 @@
 # Algol 60 conformance programs
 
-Programs of Milestone 3, each with its expected output written by hand (`NAME.out`), input
+Programs of Milestone 3, each with its expected output (`NAME.out`, its values checked by hand), input
 (`NAME.in`) or a second unit (`NAME.unit.alg`) where it has one. `run_test` compiles and
 runs them on x86_64, aarch64 and riscv64. `.a60` files are in the publication form.
 

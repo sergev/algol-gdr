@@ -89,6 +89,7 @@ block:
             name: "A"
             subscripts:
               - {kind: int_const, type: integer, value: 5}
+        - {kind: new_line}
     - kind: for
       loc: 10/1
       control: {kind: var, decl: 1, name: "I"}
@@ -166,6 +167,7 @@ block:
             subscripts:
               - {kind: int_const, type: integer, value: 1}
               - {kind: int_const, type: integer, value: 0}
+        - {kind: new_line}
     - kind: assign
       loc: 14/1
       targets:
@@ -215,6 +217,7 @@ block:
             name: "F"
             subscripts:
               - {kind: int_const, type: integer, value: 2}
+        - {kind: new_line}
     - kind: assign
       loc: 16/1
       targets:
@@ -333,3 +336,4 @@ block:
                 name: "D"
                 subscripts:
                   - {kind: int_const, type: integer, value: 8}
+            - {kind: new_line}

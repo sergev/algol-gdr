@@ -15,9 +15,9 @@ L3: B := I = 3 _and _not (I > 5) _or _false;
     _for I := 1, 2, 5 _step 2 _until 9 _do K := K + 1;
     _begin _integer _array X[1:K];
         _for I := 1 _step 1 _until K _do X[I] := I * I;
-        PRINT(X[K])
+        print(X[K], NEWLINE)
     _end;
     _for I := 0 _step 1 _until 4 _do P(I, A);
-    PRINT(A[4, 0], B, C, K);
-    PRINT(`HELLO FROM ALGOL')
+    print(A[4, 0], B, C, K, NEWLINE);
+    print(`HELLO FROM ALGOL', NEWLINE)
 _end

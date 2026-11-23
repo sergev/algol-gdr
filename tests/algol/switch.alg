@@ -7,10 +7,10 @@ NEXT:
     I := I + 1;
     _if I > 3 _then _goto DONE;
     _goto S[I];
-A:  PRINT(1); _goto NEXT;
-B:  PRINT(2); _goto NEXT;
-C:  PRINT(3); _goto NEXT;
+A:  print(1, NEWLINE); _goto NEXT;
+B:  print(2, NEWLINE); _goto NEXT;
+C:  print(3, NEWLINE); _goto NEXT;
 DONE:
     _goto _if I = 4 _then E _else S[1];
-E:  PRINT(I)
+E:  print(I, NEWLINE)
 _end

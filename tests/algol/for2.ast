@@ -55,6 +55,7 @@ block:
                     name: "IA"
                     subscripts:
                       - {kind: var, type: integer, decl: 3, name: "K"}
+                - {kind: new_line}
           - kind: for
             loc: 6/1
             control: {kind: var, decl: 3, name: "K"}
@@ -354,6 +355,7 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: integer, decl: 1, name: "I"}
+          - {kind: new_line}
     - kind: for
       loc: 20/1
       control: {kind: var, decl: 1, name: "I"}
@@ -378,6 +380,7 @@ block:
         items:
           - kind: item
             expr: {kind: var, type: integer, decl: 1, name: "I"}
+          - {kind: new_line}
     - kind: for
       loc: 22/1
       control: {kind: var, decl: 1, name: "I"}
@@ -399,6 +402,7 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}
+        - {kind: new_line}
     - kind: for
       loc: 23/1
       control: {kind: var, decl: 1, name: "I"}

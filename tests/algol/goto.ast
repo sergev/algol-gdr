@@ -34,6 +34,7 @@ block:
             items:
               - kind: item
                 expr: {kind: var, type: integer, decl: 3, name: "N"}
+              - {kind: new_line}
     - {kind: label, line: 10, name: "AGAIN", id: 4}
     - {kind: label, line: 22, name: "L2", id: 5}
     - {kind: label, line: 24, name: "OUT", id: 6}
@@ -77,6 +78,7 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}
+        - {kind: new_line}
     - kind: block
       loc: 14/1
       decls:
@@ -102,6 +104,7 @@ block:
                 type: integer
                 op: neg
                 operand: {kind: int_const, type: integer, value: 1}
+            - {kind: new_line}
         - kind: labeled
           loc: 18/1
           label: 8
@@ -114,6 +117,7 @@ block:
             items:
               - kind: item
                 expr: {kind: var, type: integer, decl: 7, name: "K"}
+              - {kind: new_line}
         - kind: goto
           loc: 19/1
           target: {kind: label_ref, type: none, label: 5, name: "L2"}
@@ -128,6 +132,7 @@ block:
             type: integer
             op: neg
             operand: {kind: int_const, type: integer, value: 2}
+        - {kind: new_line}
     - kind: labeled
       loc: 22/1
       label: 5
@@ -162,6 +167,7 @@ block:
             type: integer
             op: neg
             operand: {kind: int_const, type: integer, value: 3}
+        - {kind: new_line}
     - kind: labeled
       loc: 24/1
       label: 6
@@ -174,3 +180,4 @@ block:
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 999}
+          - {kind: new_line}

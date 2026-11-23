@@ -8,5 +8,5 @@ _begin
     _common /C/ F;
     _integer _procedure F; F := 1;
     X := 1;
-    PRINT(X)
+    print(X)
 _end

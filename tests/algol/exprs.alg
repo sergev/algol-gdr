@@ -15,17 +15,17 @@ L: I := 1;
 M: X := 1;
   I := 1; X := 2; B := _true;
   IA[1] := 1; IA[2] := 2; IA[3] := 3;
-  I := IA[X]; PRINT(I);
-  I := _if B _then I _else X; PRINT(I);
-  B := X _lt 1; PRINT(B);
-  B := X _equal 1; PRINT(B);
-  X := 2 _power I; PRINT(X);
-  X := 2 _power IP(1); PRINT(X);
-  PRINT(IA);
-  _for I := I _step 1 _until 2 _do X := 1; PRINT(I);
-  _for I := X _step 1 _until 2 _do X := 1; PRINT(I);
-  _for I := IA[1] _step 1 _until 2 _do X := 1; PRINT(I);
-  _for I := RP _step 1 _until 2 _do X := 1; PRINT(I);
-  _for I := 1.5 _step 1 _until 2 _do X := 1; PRINT(I);
-  _for I := -I _step 1 _until 2 _do X := 1; PRINT(I)
+  I := IA[X]; print(I, NEWLINE);
+  I := _if B _then I _else X; print(I, NEWLINE);
+  B := X _lt 1; print(B, NEWLINE);
+  B := X _equal 1; print(B, NEWLINE);
+  X := 2 _power I; print(X, NEWLINE);
+  X := 2 _power IP(1); print(X, NEWLINE);
+  print(IA, NEWLINE);
+  _for I := I _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := X _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := IA[1] _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := RP _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := 1.5 _step 1 _until 2 _do X := 1; print(I, NEWLINE);
+  _for I := -I _step 1 _until 2 _do X := 1; print(I, NEWLINE)
 _end

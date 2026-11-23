@@ -24,7 +24,7 @@ Write `hello.alg`:
 
 ```
 _begin
-    PRINT(`Hello, World!')
+    print(`Hello, World!')
 _end
 ```
 
@@ -40,13 +40,15 @@ Hello, World!
 
 - Keywords start with an underscore: `_begin`, `_end`, `_integer`, `_if`, `_then`.
 - Strings are in a backquote and an apostrophe: `` `text' ``. They nest: `` `a `b' c' ``.
-- Use `PRINT(...)` to print numbers and strings, and `NEWLINE` to start a new line; or the
-  standard Algol 60 procedures `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
+- Use `print(...)` to print numbers, strings, Booleans and whole arrays, with a blank
+  between them, and `NEWLINE` to start a new line; or the standard Algol 60 procedures
+  `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
+- Standard names are written as documented: `sqrt`, `print`, `outreal`, `NEWLINE`.
 
 ```
 _begin _integer i;
     _for i := 1 _step 1 _until 5 _do
-        PRINT(i, i * i, NEWLINE)
+        print(i, i * i, NEWLINE)
 _end
 ```
 

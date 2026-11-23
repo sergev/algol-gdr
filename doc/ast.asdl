@@ -84,17 +84,15 @@ module AST {
 
     -- Standard procedures used as statements.
     -- The IFIP procedures: the channel first; destinations are Var or Element.
-    -- The X1 library: Print (numbers, any number of them) is print of the
-    -- publication form; FLOT(n, x) is Flot(n, 2, x).
+    -- The X1 library: FLOT(n, x) is Flot(n, 2, x).
     StdProc = Stop | Load | LoadGo | Assign | Atos | Stoa
             | InInteger | InReal | InSymbol | OutInteger | OutReal | OutString
             | OutSymbol | OutTerminator | Fault
-            | Print | PrintText | PrSym | Space | Tab | Nlcr | AbsFixt | Fixt | Flot
+            | PrintText | PrSym | Space | Tab | Nlcr | AbsFixt | Fixt | Flot
             | SetRandom
 
-    -- I/O statements. The standard PRINT and READ are Print and Read (but
-    -- print is X1's in the publication form; read is X1's function);
-    -- the keywords _print and _write are Write.
+    -- I/O statements. The standard print and READ are Print and Read; the
+    -- keywords _print and _write are Write.
     -- The params come before the list:
     --   Print, Punch: none;
     --   Read, Write: a unit and optionally a second one;

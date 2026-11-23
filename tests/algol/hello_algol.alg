@@ -1,3 +1,3 @@
 _begin
-    print(`Hello, Algol!');
+    print(`Hello, Algol!', NEWLINE);
 _end

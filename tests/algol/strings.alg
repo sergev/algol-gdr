@@ -6,7 +6,7 @@ _begin
     S := `ABCDEF';
     T := S;
     A[1] := `XY'; A[2] := S;
-    PRINT(length(S), length(A[1]));
-    _for I := 1 _step 1 _until length(S) _do PRINT(S[I]);
-    PRINT(NEWLINE, T, A[1], A[2])
+    print(length(S), length(A[1]), NEWLINE);
+    _for I := 1 _step 1 _until length(S) _do print(S[I]);
+    print(T, A[1], A[2], NEWLINE)
 _end

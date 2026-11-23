@@ -6,12 +6,12 @@ A L G O L - Г Д P
      3.         _integer I, J;
      4.         _for I := 1 _step 1 _until 4 _do
      5.         _begin
-     6.             _if I = 1 _then PRINT(100)
-     7.             _else _if I = 2 _then PRINT(200)
-     8.             _else PRINT(300);
-     9.             _if I > 2 _then PRINT(I);
+     6.             _if I = 1 _then print(100, NEWLINE)
+     7.             _else _if I = 2 _then print(200, NEWLINE)
+     8.             _else print(300, NEWLINE);
+     9.             _if I > 2 _then print(I, NEWLINE);
     10.             J := _if I < 3 _then I * 10 _else -I;
-    11.             PRINT(J, _if I = 4 _then 1.5 _else 2.5)
+    11.             print(J, _if I = 4 _then 1.5 _else 2.5, NEWLINE)
     12.         _end
     13.     _end
 

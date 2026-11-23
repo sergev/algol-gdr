@@ -137,7 +137,6 @@ public:
     Token next();
 
     int line() const { return line_; }
-    bool publication() const { return publication_; }
 
 private:
     struct EndOfInput {};

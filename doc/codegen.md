@@ -205,35 +205,28 @@ integer `÷` by zero, overflow in `integer ↑ integer`.
 
 ## Output
 
-PRINT calls `algol_print_integer`, `algol_print_real`, `algol_print_boolean`,
-`algol_print_string`, `algol_newline`, `algol_newpage`: `printf` on `stdout`, no line buffer
-of its own.
+`print` calls `algol_print_begin`, then for each item `algol_print_integer`,
+`algol_print_real`, `algol_print_boolean`, `algol_print_bits`, `algol_print_string`,
+`algol_print_array` (its elements in order), `algol_newline`, `algol_newpage`
+(runtime/print.c). The layout is X1's: a blank between the values of one call, none
+between calls; no line buffer, and nothing is added at the end of the program.
 
 | Item | Format | Example |
 |---|---|---|
-| integer | `"%14" PRId64 " "` | `             -1 ` |
-| real | `"% .11e   "` | ` 1.00000000000e+00   ` |
-| Boolean | `"%-6s"` | `true  `, `false ` |
+| integer | `"%" PRId64` | `-1` |
+| real | `"%.13g"` | `0.5`, `1e+18`, `3.14159265359` |
+| Boolean | `true`, `false` | |
+| bits | `"%" PRIo64` | `777` |
 | string | as is | |
 | `NEWLINE`, `NEWPAGE` | `'\n'`, `'\f'` | |
 
-The fields are the original's (15, 20 and 6 columns), but there is no carriage-control
-column and no wrapping at column 126. At exit a last `'\n'` is written when the output does
-not end with one.
+All output goes through `algol_out`, flushed after each call when stdout is a terminal.
+Before a run-time error message a line in progress is ended.
 
-**Tests.** `run_test` compares the output with `NAME.out` from `dubna` by tokens (see
-tests/run_test.cpp). `NAME.native.out` replaces it where the output really differs:
-
-| Program | Why |
-|---|---|
-| hello, hello_algol | the original prints upper case only |
-| symbols | the original's printer shows `≤ ≥ @` as `⩽ ⩾ °` |
-| quine | the original's printer shows `'` as `′` |
-| quinio | upper case only; `-` lines are dubna's prompts for input |
-
-Reals are compared to about the last digit: BESM-6 rounding gives `-6.00000000001` where
-the host gives `-6.00000000000` (arith, mixed, test2, exprs2). The `_code` and `_algol`
-procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
+**Tests.** `run_test` compares the output of the programs of tests/algol and tests/a60 with
+`NAME.out` by tokens, reals to 1e-10 relative (tests/run_test.cpp); tests/x1 line by line.
+The `_code` and `_algol` procedures of quinio and bozp_ybyb are C in `NAME.c` next to the
+program.
 
 ## Input and output
 
@@ -264,13 +257,10 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
   parameters is Fortran's `ENCODE (n, format, buffer)`.
 - The X1 library (runtime/x1.c), as x1sim prints: `PRINTTEXT` is `algol_x1_printtext`,
   `PRSYM` `algol_x1_prsym` (by the X1 code), `SPACE`, `TAB`, `NLCR` `algol_x1_space`,
-  `algol_x1_tab`, `algol_x1_nlcr`; `print` calls `algol_x1_print_integer` or
-  `algol_x1_print_real` (`%.13g`) for each argument, a blank between them; `FIXT`,
+  `algol_x1_tab`, `algol_x1_nlcr`; `print` is above (Output); `FIXT`,
   `ABSFIXT`, `FLOT` are `algol_x1_fixt`, `algol_x1_absfixt`, `algol_x1_flot`. The formats
   round the exact decimal value of the double half up, the same on every target (x1sim
-  rounds an exact half either way, by the error of its `long double`). Output to a
-  terminal is flushed after each call. Once the X1 output is used, a line in progress
-  stays open at the end of the program, as in x1sim.
+  rounds an exact half either way, by the error of its `long double`).
 - X1 input from standard input: `read` is `algol_x1_read`, a number as C++ streams read
   it (`⏨` for `E`); the symbol after it is consumed, as in x1sim. On a terminal it asks
   `Enter number:` and again after a bad number; otherwise a bad number or the end of the
