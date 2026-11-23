@@ -5,7 +5,8 @@ procedures and run-time checks, and the remaining deviations documented.
 
 **Where we are.** `algc` compiles Algol-GDR (with `_keywords`) to native code on x86_64,
 arm64 and riscv64 (doc/codegen.md). The syntax it reads is doc/algol60.asdl, where `todo`
-marks what the Revised Report has and the parser does not read yet.
+marks what the Revised Report has and the parser does not read yet. Each task deletes
+its lines from doc/deviations.md.
 
 **Guards.** The goldens (`.lst`, `.ast`, `.err`) and `run_test` (the 32 dubna programs, on
 three targets) stay green. New programs of this milestone go to `tests/a60/`, with their
@@ -15,10 +16,6 @@ expected output written by hand and checked against the Revised Report.
 
 ### Language
 
-- **F1** doc/deviations.md: every way `algc` differs from the Revised Report, each with
-  where it is (parser, checker, code generator, runtime) and the task below that removes
-  it. Kept up to date by the other tasks; what is left at the end is the documented
-  deviations.
 - **F2** Integer division `÷` (also `_div`): lexer, parser (priority of `×` and `/`),
   checker (integer operands), code: `a ÷ b` = sign(a/b) × entier(|a/b|), so truncation
   toward zero; division by zero a run-time error. Tests.

@@ -56,7 +56,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   [runtime-abi.md](doc/runtime-abi.md) (what the run-time routines do),
   [encoding.md](doc/encoding.md); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the
   parser reads (Algol 60 with the Algol-GDR extensions); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
-  for its implementation; [codegen.md](doc/codegen.md) — data, frames, calling convention,
+  for its implementation; [deviations.md](doc/deviations.md) — how algc differs from the
+  Revised Report, and the task that removes each difference; [codegen.md](doc/codegen.md) — data, frames, calling convention,
   thunks, labels, arrays, runtime names; [ir.asdl](doc/ir.asdl) — the LLVM IR subset algc
   emits, as src/ir.h builds it.
 
