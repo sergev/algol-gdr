@@ -27,24 +27,28 @@ A new front end replaces passes 1 and 2 (E7.1a–d): a lexer, a parser to a synt
 checker that builds the AST, on real data structures (a scope tree of declarations,
 constants and strings as values) instead of D-list addresses, name slots, the cells at
 02000…/04000…/016111… and the continuation addresses of pass 2. The old passes stay as
-the reference until the new front end matches every golden, then go. `.lst` must not
-change, errors included; pass 2 runs after syntax errors too, so the checker works on a
-tree with the holes left by error recovery. The size limits of the original (hash table,
-constant page, D-list, string pool) go.
+the reference until the new front end matches the goldens of correct programs, then go.
+The size limits of the original (hash table, constant page, D-list, string pool) go.
 
-- **E7.1a** Lexer (`lexer.{h,cpp}`): tokens with their line from the cards (columns 1–72);
-  the card listing; the lexical errors and messages of today; 'COMMENT', the text after
-  END, strings, octal constants, numbers as host values (int64, double), 'COMMON' read
-  as one token with its block. A test compares it with the old lexer token by token on all
-  programs.
+Errors need not be those of the original: messages are in sentence case, GNU style
+(`file.alg:12: error: Undeclared identifier 'X'`), on stderr, with better recovery (report
+and go on at the next statement). The listing (`--list`) of a correct program stays as it
+is; error messages are no longer in it. Goldens `.err` hold the messages of the error
+programs.
+
+- **E7.1a** Lexer (`lexer.{h,cpp}`) and diagnostics (`diag.{h,cpp}`): tokens with their
+  line from the cards (columns 1–72, KOI-7 until E7.2); 'COMMENT', the text after END,
+  strings, octal constants, numbers as host values (int64, double), 'COMMON' read as one
+  token with its block; lexical errors reported, the lexer going on. A test compares it
+  with the old lexer token by token on the correct programs.
 - **E7.1b** Parser (`parser.cpp`) to a syntax tree (`syntax.h`): names unresolved, the
-  statement positions as the markers count them, error nodes where recovery skipped;
-  syntax errors, recovery, the 30-error limit and the listing as pass 1. A test checks the
-  listings of all programs up to the pass-2 messages.
-- **E7.1c** Checker (`checker.cpp`): scopes, declarations, types, conversions, the pass-2
-  messages in the original's order with their positions; it builds the AST. Every
-  `.lst` must match. Blocks without arrays get their own `Block` nodes and declarations
-  their positions: the `.ast` goldens change only there (diff reviewed).
+  statement positions (line, statement on the line), syntax errors with recovery at the
+  next statement. Tests: the listing of every correct program; `.err` for the error
+  programs (syntax part).
+- **E7.1c** Checker (`checker.cpp`): scopes, declarations, types, conversions, the
+  semantic errors; it builds the AST. Every correct program gives its `.ast` but for real
+  blocks (blocks without arrays get their own `Block` nodes) and declaration positions
+  (diff reviewed); `.err` complete for the error programs.
 - **E7.1d** Switch over: `algc` on the new front end; passes 1–2, `Tables`, `Symbols`,
   the stream items, `ast_builder` and the `.s1`/`.s2`/`.lex`/`.sym` goldens go; docs
   updated (doc/passes.md and doc/tables.md become history of the original).
