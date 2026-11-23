@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
+
 #include "source.h"
 
 #include <gtest/gtest.h>

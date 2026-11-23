@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Each pass on its own: for each tests/algol program and pass N with an
 // expected stream NAME.sN, run pass N on the expected stream of the previous
 // pass, with the workspace rebuilt from NAME.mem, and compare.

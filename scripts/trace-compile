@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Copyright (c) 2026 Serge Vakulenko. MIT license.
+#
 # Compile a program with the original Algol-GDR under dubna with an instruction
 # trace, and summarize which modules ran (see trace-passes.py).
 #

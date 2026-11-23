@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
+
 #include "pass2.h"
 
 #include <array>

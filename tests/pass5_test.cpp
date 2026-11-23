@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Pass 5 on the expected stream of pass 4, then pass 6 on its output: the object
 // must match NAME.std. The line table is checked by listing_test.
 //

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Serge Vakulenko. MIT license.
 """disasm-overlay.py - disassemble overlay ALGOL with its tables resolved.
 
     disasm-overlay.py [--m7 BASE] [--tape MONSYS9] FIRST-LAST...

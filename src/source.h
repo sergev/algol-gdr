@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
+
 #ifndef ALGOL_SOURCE_H
 #define ALGOL_SOURCE_H
 

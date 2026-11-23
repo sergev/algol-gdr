@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Passes 2-4 as a whole: besides the stream (pass_test), the words each leaves
 // in the workspace and on drum must be those of NAME.mem. The passes keep
 // their streams in vectors: the stream pages, their drum zones and cursors

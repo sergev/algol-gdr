@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Serge Vakulenko. MIT license.
 """trace-passes.py - which modules of ALGOL (and A/PRINTM) a dubna trace ran.
 
     trace-passes.py [--sequence | --coverage] OVERLAY.layout.py IMAGE.bin [...] -- TRACE...

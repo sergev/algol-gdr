@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Ported from dubna/arithmetic.cpp:
 // Copyright (c) 2022-2023 Leonid Broukhis, Serge Vakulenko. MIT license.
 //

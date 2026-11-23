@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Pass 6 on the expected stream of pass 5: the object must match NAME.std,
 // and the summary line the one in NAME.lst (in check mode, as the listing).
 //

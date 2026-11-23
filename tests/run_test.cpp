@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Run objects under dubna and compare the output with NAME.out.
 // Skipped when dubna is not installed, or our compiler is not ready.
 //

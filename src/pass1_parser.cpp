@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Parser of pass 1 (G13666 and the parser part of G14504): recursive descent
 // over the symbols of the lexer, writing the stream and the D-list.
 //

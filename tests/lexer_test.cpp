@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // The lexer of pass 1 on its own: the symbols it returns for each program
 // must be those of NAME.lex, captured from the original.
 //

@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Lexer of pass 1: AG15414 and the character reader AG16225, translated label
 // by label. Labels *nnnnB are offsets in os-dubna/algol/ag14504.asm.
 //

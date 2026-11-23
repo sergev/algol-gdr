@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // The workspace before the passes run, as `ADDR VALUE` lines in octal (the
 // nonzero words): the start memory of scripts/capture-streams.py.
 //

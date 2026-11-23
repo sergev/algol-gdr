@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Serge Vakulenko. MIT license.
 """capture-streams.py - pass streams and data from a dubna -d imer trace of Algol-GDR.
 
     capture-streams.py TRACE OUTBASE [DUMP_WORKSPACE]

@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Pass 1 as a whole: besides the stream (pass_test), the words it leaves in
 // the workspace and on drum must be those of NAME.mem.
 //

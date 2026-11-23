@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Copyright (c) 2026 Serge Vakulenko. MIT license.
+#
 # Run an object file (standard array cards) under dubna.
 #
 #   ref-run FILE.std

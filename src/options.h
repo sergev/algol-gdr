@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
+
 #ifndef ALGOL_OPTIONS_H
 #define ALGOL_OPTIONS_H
 

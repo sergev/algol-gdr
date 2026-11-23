@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Compile each tests/algol/*.alg with our compiler and compare the object
 // with the expected NAME.std from the original compiler.
 // Skipped while the compiler reports "not implemented".

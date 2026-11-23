@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
+
 #include "stdarray.h"
 
 #include <gtest/gtest.h>

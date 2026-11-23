@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Copyright (c) 2026 Serge Vakulenko. MIT license.
+#
 # Regenerate expected outputs of all test programs with the original compiler:
 # NAME.std, NAME.lst, NAME.full.lst, NAME.out, and the pass streams
 # NAME.s1 … NAME.s5, NAME.mem (capture-streams).

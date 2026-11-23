@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // Mnemonics from dubna/assembler.cpp (Leonid Broukhis, Serge Vakulenko, MIT).
 //
 #include "besm6.h"

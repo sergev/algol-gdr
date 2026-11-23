@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // The object listing of --full: our rows, laid out in pages as A/PRINTM
 // prints them, must be NAME.full.lst after the summary line (the original
 // with *call setftn:one,long, so in check mode).

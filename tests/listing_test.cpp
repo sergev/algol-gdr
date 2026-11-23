@@ -1,4 +1,6 @@
 //
+// Copyright (c) 2026 Serge Vakulenko. MIT license.
+//
 // The listing: the whole compiler in check mode must print NAME.lst (from
 // the original with *call setftn:one,long, which sets check mode) from the
 // banner up to *END FILE.
