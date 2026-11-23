@@ -165,7 +165,6 @@ private:
     unsigned common_slot(Word name);
     Word &cell(unsigned addr);
     void common_pack(Word &w, unsigned c);
-    static Word chclass(unsigned c);
     static unsigned unicode_operator(unsigned c);
 };
 
