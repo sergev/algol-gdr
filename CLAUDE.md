@@ -43,7 +43,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   `besm6` branch): [passes.md](doc/passes.md) (driver, passes 1–2, their streams),
   [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
   [runtime-abi.md](doc/runtime-abi.md) (what the run-time routines do),
-  [encoding.md](doc/encoding.md); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
+  [encoding.md](doc/encoding.md); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the
+  parser reads (Algol 60 with the Algol-GDR extensions); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
   for its implementation.
 
 Milestones (from README.md):

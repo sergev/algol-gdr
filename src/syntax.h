@@ -17,6 +17,7 @@
 //
 // The syntax tree of a program, as the parser reads it: names are not
 // resolved, expressions have no types. The checker makes the AST from it.
+// Its grammar: doc/algol60.asdl.
 //
 namespace syn {
 

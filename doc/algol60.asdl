@@ -1,0 +1,143 @@
+-- Abstract syntax of Algol 60, as the parser of algc reads it (src/parser.cpp,
+-- the syntax tree in src/syntax.h): the Revised Report on the Algorithmic
+-- Language Algol 60, with the extensions of Algol-GDR. Names are not resolved
+-- and expressions have no types yet; the checker makes the AST of
+-- doc/ast.asdl from this tree.
+--
+-- Marks in comments:
+--   GDR   an extension of Algol-GDR, not in the Revised Report;
+--   todo  in the Revised Report, not read by the parser yet (Milestone 3).
+--
+-- Concrete syntax, which the abstract syntax leaves out:
+--  * Source is UTF-8. Keywords are in quotes, in any case: 'begin', 'END'.
+--    Identifiers are Latin, Greek or Cyrillic letters and digits, of any
+--    length, case-sensitive. Blanks and line ends separate nothing outside
+--    strings: 'go to' and 'goto' are the same, and so are 'ab c' and 'abc'.
+--  * 'comment' … ; is skipped after ';' or 'begin'; text after 'end' is
+--    skipped up to ';', 'end', 'else' or 'eop'.
+--  * Strings: ''…'' or '('…')'; 'ddd' inside is a character by its octal
+--    code point. Strings do not nest, unlike the Revised Report's ‘…’.
+--  * Numbers: 12, 1.5, .5, 1⏨3, ⏨-2. A number ending in '.,' ends the
+--    statement ('.,' is also ';').
+--  * Operators, by priority from the lowest; all binary ones are left
+--    associative:
+--      1  ≡  'equiv'
+--      2  ⊃  'impl'
+--      3  ∨  'or'
+--      4  ∧  &  'and'
+--      5  ¬  'not'                        (prefix)
+--      6  < ≤ = ≠ ≥ >  'lt' 'le' 'eq' 'ne' 'ge' 'gt' ('less', 'notgreater',
+--         'equal', 'notequal', 'notless', 'greater')
+--      7  + -                             (also prefix)
+--      8  × * /                           (÷ todo)
+--      9  ↑ ^ ** 'power'
+--  * Brackets [ ] may also be written (/ /), and the bounds of an array
+--    declaration ( ).
+--  * A conditional expression as an operand must be in parentheses. After
+--    'then' there is no conditional statement, and a 'for' statement there
+--    has no 'else' after it: both must be in 'begin' 'end'.
+--  * The parameter delimiter ") letter string: (" of the Revised Report is
+--    a comma here (todo).
+--
+module Algol60 {
+    -- A program: 'code': and 'algol': lists of external procedures (GDR),
+    -- 'common' declarations (GDR), then a block or compound statement, maybe
+    -- labeled; or one procedure compiled alone (GDR). Then 'eop' (GDR).
+    Program = Program(External* externals, Decl* commons, Stmt body)
+            | Module(External* externals, Decl* commons, Decl procedure)
+
+    -- 'code': 'real' f, g;   'algol': p;   (GDR)
+    External = (identifier name, Type? type, ExternalKind kind)
+    ExternalKind = Code     -- in machine code (Madlen, Fortran, …)
+                 | Algol    -- compiled separately in Algol
+
+    Type = Integer
+         | Real
+         | Boolean
+         | String   -- GDR: a type of variables and arrays; in the Revised
+                    -- Report only a specifier
+         | Bits     -- GDR: octal words
+
+    -- Declarations, at the head of a block or of the program.
+    Decl = Vars(bool own, Type type, identifier* names)          -- own: todo
+         -- 'array' alone is 'real' 'array'
+         | Arrays(bool own, Type type, ArraySegment* segments)   -- own: todo
+         -- 'switch' s := L1, L2, …
+         | Switch(identifier name, Expr* elements)
+         -- [type] 'procedure' p(formals); 'value' …; specifications; body
+         | Procedure(Type? type, identifier name, identifier* formals,
+                     identifier* values, Specification* specs, Stmt body)
+         -- 'common' /block/ x, a(10, 20), …;   (GDR) sizes are constants
+         | Common(identifier block, CommonElement* elements)
+         attributes(int line)
+
+    -- Arrays with the same bounds: a, b[1 : n, 0 : 9]
+    ArraySegment = (identifier* names, BoundPair* bounds)
+    BoundPair = (Expr lower, Expr upper)
+
+    CommonElement = (identifier name, int* dims)   -- no dims: a variable
+
+    -- Every formal parameter is specified once (the Revised Report allows
+    -- leaving some out).
+    Specification = (Specifier specifier, identifier* names)
+    Specifier = Simple(Type type)        -- includes 'string'
+              | Array(Type type)         -- 'array' alone: 'real' 'array'
+              | Procedure(Type? type)
+              | Label
+              | Switch
+
+    Stmt = Block(Decl* decls, Stmt* body)        -- 'begin' decls; stmts 'end'
+         | Compound(Stmt* body)                  -- 'begin' stmts 'end'
+         -- labels are identifiers; unsigned integers as labels: todo
+         | Labeled(identifier label, Stmt stmt)
+         | Dummy
+         -- v := a[i] := e: targets are Var or Index; in a function body
+         -- the function's name is a target too
+         | Assign(Expr* targets, Expr value)
+         | Goto(Expr target)                     -- a designational expression
+         | If(Expr condition, Stmt then_stmt, Stmt? else_stmt)
+         -- the controlled variable is simple; a subscripted one: todo
+         | For(identifier var, ForElement* elements, Stmt body)
+         -- p, or p(args): Var or Call
+         | Call(Expr proc)
+         -- GDR: 'print' (params) items, or 'print' param, items
+         | Io(IoOp op, Expr* params, IoItem* items)
+         attributes(int line, int stmt)          -- stmt: its number on the line
+
+    ForElement = Value(Expr value)                              -- e
+               | StepUntil(Expr init, Expr step, Expr limit)    -- e 'step' e 'until' e
+               | While(Expr value, Expr condition)              -- e 'while' b
+
+    -- GDR: input and output.
+    IoOp = Read | Print | Punch | Write | Decode | Encode
+         | Rewind | Backspace | Endfile                         -- no items
+    IoItem = Item(Expr expr)
+           | ForItem(identifier var, ForElement* elements, IoItem item)  -- 'for' v := … 'do' item
+
+    -- Arithmetic, Boolean, string and designational expressions alike; an
+    -- actual parameter is any of them, or an array, switch or procedure name.
+    Expr = IntConst(int value)
+         | RealConst(float value)
+         | BitsConst(int value)          -- GDR: 'ddd', up to 16 octal digits
+         | BoolConst(bool value)         -- 'true', 'false'
+         | StringConst(string value)
+         -- a simple variable, a label, a function without parameters, or
+         -- an array, switch or procedure as an actual parameter
+         | Var(identifier name)
+         -- a[i, j]; a switch designator s[i]; GDR: a character of a string
+         | Index(identifier name, Expr* subscripts)
+         | Slice(identifier name, Expr first, Expr last)   -- GDR: s[i : j]
+         | Call(identifier name, Expr* args)               -- f(a, b)
+         | Unary(UnaryOp op, Expr operand)
+         | Binary(BinaryOp op, Expr left, Expr right)
+         | If(Expr condition, Expr then_expr, Expr else_expr)
+         attributes(int line)
+
+    UnaryOp = Plus | Minus | Not
+
+    BinaryOp = Add | Sub | Mul | Div
+             | IntDiv                    -- ÷: todo
+             | Power
+             | Lt | Le | Eq | Ne | Ge | Gt
+             | And | Or | Impl | Equiv
+}
