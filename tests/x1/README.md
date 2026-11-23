@@ -36,6 +36,23 @@ depends on the 27-bit integers of the X1.
 | quinio | five in a row against the computer (Meertens, 1964) |
 | bulls_and_cows, time | interactive, random; the time of day |
 
+Times in ms, on an i9-9900K: `x1sim` against algc at `-O1` and `-O2` (each program
+gives the same output at both). None needs more than the default stack; `man_or_boy` is
+k = 10.
+
+| Program | x1sim | -O1 | -O2 |
+|---|---:|---:|---:|
+| man_or_boy | 14 | 2 | 2 |
+| lisp | 4805 | 15 | 16 |
+| pentomino6x10 | 1265 | 2 | 3 |
+| pentomino5x12 | 1598 | 3 | 3 |
+| pentomino4x15 | 3718 | 4 | 4 |
+| pentomino3x20 | 8949 | 7 | 7 |
+| sieve | 8185 | 6 | 6 |
+| sqrt_test | 6058 | 10 | 10 |
+| whetstone | 234 | 2 | 2 |
+| palindromic_primes | 3083 | 5 | 5 |
+
 The numbers of `output` are exact in the 40-bit mantissa of an X1 real, and none is an
 exact half at the last printed digit: there `x1sim` rounds either way, by the error of
 its `long double`, and algc rounds half up.

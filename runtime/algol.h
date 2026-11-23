@@ -100,7 +100,7 @@ char *algol_string_element(const char *s, int64_t i);
 void algol_array_alloc(int64_t *desc, int64_t dims);
 void algol_array_free(int64_t *desc);
 void algol_array_alloc_own(int64_t *desc, int64_t dims);
-int64_t algol_array_mark(void);
+int64_t algol_array_mark(void *frame);
 void algol_array_unwind(int64_t mark);
 void algol_check_index(const int64_t *desc, int64_t dim, int64_t i);
 int64_t *algol_array_copy(const int64_t *src, int64_t dims);

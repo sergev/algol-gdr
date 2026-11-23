@@ -433,6 +433,22 @@ TEST(Run, fault_and_stop)
     EXPECT_EQ(run_text("stop", "_begin PRINT(1); STOP; PRINT(2) _end\n"), "             1 \n");
 }
 
+// A goto through a switch is a longjmp, here into the same function: at -O2
+// the values changed since the setjmp must be read again (lisp's equalf).
+TEST(Run, switch_goto_optimized)
+{
+    const std::string src = BUILD_DIR "/run_switch_O2.alg";
+    const std::string exe = BUILD_DIR "/run_switch_O2";
+    std::ofstream(src) << "_begin _integer _procedure count(x); _value x; _integer x;\n"
+                          "_begin _integer n; _switch s := again, done; n := 0;\n"
+                          "again: _if x > 0 _then _begin x := x - 1; n := n + 1; _goto s[1] _end;\n"
+                          "_goto s[2]; done: count := n _end;\n"
+                          "PRINT(count(5)) _end\n";
+    auto r = run_command(compiler + " -O2 -o " + exe + " " + src + " && timeout 10 " + exe);
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_EQ(r.output, "             5 \n");
+}
+
 // X1 input: at the end of the input, or a bad number, read stops the program;
 // RESYM gives 255.
 TEST(Run, x1_input_errors)

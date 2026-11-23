@@ -1117,8 +1117,10 @@ private:
         ir::Value jb = fn_->stack_alloc("i64", 64, 16);
         fn_->store(jb, slot(&f, SLOT_JMPBUF));
         // The arrays live at entry; a jump frees those allocated since,
-        // but for the arrays of the blocks around its label.
-        ir::Value mark = runtime("i64", "algol_array_mark", {});
+        // but for the arrays of the blocks around its label. The frame
+        // escapes here, before the setjmp, so that the optimizer does not
+        // keep its values across a longjmp.
+        ir::Value mark = runtime("i64", "algol_array_mark", { frame_ });
         module_.declare("i32", "_setjmp", "ptr", "returns_twice");
         ir::Value r = fn_->call("i32", "@_setjmp", { jb }, " returns_twice");
         auto *go    = fn_->new_block("far");

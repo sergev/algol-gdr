@@ -129,10 +129,12 @@ tag says so. An assignment to an expression parameter changes only the temporary
 - A function whose labels can be reached that way (a label used in a switch, as an actual
   parameter, in a thunk, or by a `goto` in a nested procedure) calls `setjmp` at entry, on a
   `jmp_buf` in its frame (`[64 x i64]`, 16-aligned), and on a return by `longjmp` switches
-  on slot 2 to the label. Its variables are in memory, so nothing is lost. Before the
-  label, `algol_array_unwind` frees the arrays allocated since the entry of the function
-  (`algol_array_mark`), but for those of the blocks around the label: the blocks and the
-  procedures the jump leaves.
+  on slot 2 to the label. Its variables are in memory, so nothing is lost: the frame is
+  passed to `algol_array_mark` before the `setjmp`, so that it escapes there and the
+  optimizer reads it again after a `longjmp` (otherwise GVN at `-O2` keeps the values
+  from before the `setjmp`). Before the label, `algol_array_unwind` frees the arrays
+  allocated since the entry of the function (`algol_array_mark`), but for those of the
+  blocks around the label: the blocks and the procedures the jump leaves.
 - A switch is a function `void @S.<id>.<name>(ptr %frame, i64 %index, ptr %out)` writing
   the label value of element `index` to `out`; an index out of range is a run-time error.
   A switch as a parameter is the pair `{fn, frame}`.

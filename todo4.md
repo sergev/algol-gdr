@@ -24,19 +24,6 @@ green.
 
 ## Tasks
 
-### Running the examples
-
-- **G7** The stress cases are correct and fast enough:
-  - `man_or_boy` and its stack;
-  - `lisp`, with the missionaries and cannibals in lisp.md;
-  - `pentomino`, with all four sizes;
-  - `sieve` (a million), `sqrt_test` (exact `sqrt`), `whetstone`, and `quine`, whose output
-    is its source except for the underlines.
-
-  Time each at `-O1` and `-O2` against `x1sim` and record the times in
-  `tests/x1/README.md`. A case that runs too long for `make test` runs only under a
-  separate label (`ctest -L slow`). Fix any codegen bug found; each fix gets its own test.
-
 ### Finish
 
 - **G8** Documentation:

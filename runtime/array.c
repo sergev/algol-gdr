@@ -87,8 +87,11 @@ void algol_array_free(int64_t *desc)
     desc[0] = 0;
 }
 
-int64_t algol_array_mark(void)
+// The frame a longjmp comes back to is passed here, before its setjmp: the
+// optimizer then reloads what the frame holds after the setjmp returns again.
+int64_t algol_array_mark(void *frame)
 {
+    (void)frame;
     return nlive;
 }
 
