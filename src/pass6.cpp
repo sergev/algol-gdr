@@ -63,7 +63,7 @@ StdArray pass6(Context &ctx, const Stream &input)
     const unsigned ncmd   = ws[D_CMD];
     if ((ncmd + nconst) & ~Word(077777)) {
         if (ctx.listing)
-            *ctx.listing << "PROGRAM TOO LONG\n";
+            ctx.listing->print("PROGRAM TOO LONG");
         return {};
     }
 

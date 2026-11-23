@@ -1,0 +1,70 @@
+*NAME ERR_SPLIT
+*PUNCH
+*FULL
+*ALGOL                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P                                                          61.     I := 14;
+    (7.01.82)                                                              62.     I := 15;
+                                                                           63.     I := 16;
+           1. ′COMMENT′ MESSAGES OF PASS 2 LONGER THAN 10 WO               64.     I := 17;
+               RDS, IN THE RIGHT COLUMN;                                   65.     I := 18;
+           2. ′BEGIN′ ′INTEGER′ I;                                         66.     I := 19;
+           3.   ′PROCEDURE′ PROCNAME(ABCDEF, GHIJKL);                      67.     I := 20;
+           4.   ′VALUE′ ABCDEF; ′INTEGER′ ABCDEF; ′REAL′ ′AR               68.     I := 21;
+               RAY′ GHIJKL;                                                69.     I := 22;
+           5.   I := ABCDEF;                                               70.     I := 23;
+           6.     I := 1;                                                  71.     I := 24;
+           7.     I := 2;                                                  72.     I := 25;
+           8.     I := 3;                                                  73.     I := 26;
+           9.     I := 4;                                                  74.     I := 27;
+          10.     I := 5;                                                  75.     I := 28;
+          11.     I := 6;                                                  76.     I := 29;
+          12.     I := 7;                                                  77.     I := 30;
+          13.     I := 8;                                                  78.     I := 31;
+          14.     I := 9;                                                  79.     I := 32;
+          15.     I := 10;                                                 80.     I := 33;
+          16.     I := 11;                                                 81.     I := 34;
+          17.     I := 12;                                                 82.     I := 35;
+          18.     I := 13;                                                 83.     I := 36;
+          19.     I := 14;                                                 84.     I := 37;
+          20.     I := 15;                                                 85.     I := 38;
+          21.     I := 16;                                                 86.     I := 39;
+          22.     I := 17;                                                 87.     I := 40;
+          23.     I := 18;                                                 88.     PROCNAME(1, ′TRUE′);
+          24.     I := 19;                                                 89.     IDENTIFIERLONG := 1;
+          25.     I := 20;                                                 90.     PRINT(I)
+          26.     I := 21;                                                 91. ′END′
+          27.     I := 22;                                                 92. ′EOP′
+          28.     I := 23;                                       IDENTIFIER ′IDENTI′ IS NOT DECLARED. NEXT STATEMENT IS   90/
+          29.     I := 24;                                                       1
+          30.     I := 25;                                       NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′CONSTANT′ AND ′GHIJ
+          31.     I := 26;                                                      KL′. NEXT STATEMENT IS   89/ 1
+          32.     I := 27;                                       NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′CONSTANT′ AND ′GHIJ
+          33.     I := 28;                                                      KL′. NEXT STATEMENT IS   47/ 1
+          34.     I := 29;                                        * * INCORRECT ALGOL PROGRAM * *
+          35.     I := 30;
+          36.     I := 31;
+          37.     I := 32;
+          38.     I := 33;
+          39.     I := 34;
+          40.     I := 35;
+          41.     I := 36;
+          42.     I := 37;
+          43.     I := 38;
+          44.     I := 39;
+          45.     I := 40;
+          46.     PROCNAME(1, ′TRUE′);
+          47.     IDENTIFIERLONG := 1;
+          48.     I := 1;
+          49.     I := 2;
+          50.     I := 3;
+          51.     I := 4;
+          52.     I := 5;
+          53.     I := 6;
+          54.     I := 7;
+          55.     I := 8;
+          56.     I := 9;
+          57.     I := 10;
+          58.     I := 11;
+          59.     I := 12;
+          60.     I := 13;
+*END FILE

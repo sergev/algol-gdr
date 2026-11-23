@@ -39,12 +39,27 @@ Checked with `hello` and `test3`:
 ### Listing output
 
 `ASMPRINT` (shared with the assembler, at 12000) prints the listing. The driver wraps it:
-- **01644 (`*0030B`)**: print a line. Its arguments are on the stack (address, length). At
-  the start of a page it prints the header with the date (`DATAPR*`, `*REGIM//`). The cells
-  `AD01736+0…3` hold its state.
-- **01713**: print an empty line, or flush.
+- **01644 (`*0030B`)**: print a text. Its arguments are on the stack: the first and the last
+  word; the value in A is lost. On the first call it prints the header with the date
+  (`DATAPR*`). Unless `*REGIM//` has both bits 48 and 47 (`setftn:one,long`), a text of 11
+  words or more is split: the first 10 words, then the rest without its trailing blank
+  words, indented by 15 (ASMPRINT gets the indent in A). The cells `AD01736+0…3` hold its
+  state.
+- **01713**: an empty line (ASMPRINT of one blank word).
 - `G44504` is a second entry of ASMPRINT. It ends the printout and returns to the address in
   register 13 (0425, the monitor).
+
+ASMPRINT gathers the rows of a page in `D45026` (67 rows of 11 words) and prints them
+through `*64` (the left cell, `GOST_SET_POSITION` 65, the right cell). As dubna shows it
+(`src/listing.*`, measured with long programs):
+- A page has two columns of 65 rows on the first page and 66 on the next ones. Each page
+  starts with a form feed and a header line: the date on the first page, empty after.
+- A row that is blank in both columns prints nothing.
+- A page with its left column only prints its rows as plain lines (all short listings).
+  Otherwise each row is the left cell padded to 65 characters and the right one, and the
+  form feed of the next page ends its last line.
+- With `setftn:one` there are no pages: rows print at once, blank ones too, and the printout
+  ends with an empty line.
 
 ### Data set up by the driver
 

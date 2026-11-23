@@ -1,0 +1,12 @@
+*NAME PAGES
+*-CM-*    PROGRA
+*EXECUTE
+≠
+         PROGRAM    01000                A/BPRI   E 02505                A/R*ISO  E 02655                PRINT8     03034
+         A/STOP     02305                A/SPRI   E 02514                STOP*      02710                SYSBACK*   03215
+         A/START  E 02311                A/LPRI   E 02531                EXIT     E 02711                CBOБOДHO   03225
+         A/DRUCK    02365                A/NLINE  E 02575                A/ARRD/K   02737
+         A/IPRI   E 02417                A/NPAGE  E 02577                A/ARRD/V E 02742
+         A/RPRI   E 02451                A/I*ISO  E 02652                STOPFLG* C 03033
+≠
+          39340

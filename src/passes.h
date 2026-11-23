@@ -7,6 +7,7 @@
 #include <string>
 
 #include "item.h"
+#include "listing.h"
 #include "options.h"
 #include "workspace.h"
 
@@ -15,9 +16,9 @@
 //
 struct Context {
     Options options;
-    std::string source;               // program text, UTF-8 (pass 1)
-    Workspace ws;                     // tables at their original addresses
-    std::ostream *listing{ nullptr }; // listing output, or none
+    std::string source;          // program text, UTF-8 (pass 1)
+    Workspace ws;                // tables at their original addresses
+    Listing *listing{ nullptr }; // listing output, or none
 
     // Index registers as the previous pass left them; some passes take data
     // in them (pass 6: M5 = number of symbol rows).
@@ -31,7 +32,7 @@ struct NotImplemented : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-// AG01713: an empty line in the listing; the printer shows it only with setftn:one.
+// AG01713: an empty line in the listing.
 void blank_line(const Context &ctx);
 
 //

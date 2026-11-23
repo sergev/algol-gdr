@@ -52,18 +52,12 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 
 ## Tasks
 
-### B2. Pass 1 (largest risk: the listing must match)
-
-- **B2.6** Long listings: without `*call setftn:one`, ASMPRINT (12000–12322, shared with the
-  assembler) prints a page as two columns side by side, the second half of the page on the
-  right. `err_many` has such a page (its `30 ERRORS , COMPILATION INTERRUPTED` is in the right
-  column); the listing test skips it until then.
-
 ### B3. Pass 2
 
 - **B3.1** Scopes and identifier binding; `TWICE DECLARED`, `IS NOT DECLARED`.
 - **B3.2** Type checking by recursive descent over the reversed stream; the messages in
-  reverse order with `NEXT STATEMENT IS l/s`.
+  reverse order with `NEXT STATEMENT IS l/s`. `err_split` has long ones on a page of two
+  columns (its listing test is skipped until then).
 - **B3.3** The output stream; array records; `* * INCORRECT ALGOL PROGRAM * *`.
 - Decode the rest of the pass-2 output codes along the way (an open point in passes.md).
 
@@ -91,4 +85,4 @@ Data that is not in the stream can be compared by dumping memory at the pass bou
 ## Order
 
 With the captured streams and `pass_test`, each pass can be written and tested on its own.
-Suggested order: B2, B3, B4, B5, and B7.2–B7.3 last.
+Suggested order: B3, B4, B5, and B7.2–B7.3 last.

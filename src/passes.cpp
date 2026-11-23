@@ -1,6 +1,5 @@
 #include "passes.h"
 
-#include <ostream>
 #include <string>
 
 #include "pass1.h"
@@ -8,8 +7,8 @@
 
 void blank_line(const Context &ctx)
 {
-    if (ctx.listing && !ctx.options.no_listing && ctx.options.setftn_one)
-        *ctx.listing << '\n';
+    if (ctx.listing && !ctx.options.no_listing)
+        ctx.listing->blank();
 }
 
 Stream run_pass(int n, Context &ctx, const Stream &input)
@@ -17,8 +16,10 @@ Stream run_pass(int n, Context &ctx, const Stream &input)
     switch (n) {
     case 1:
         // The driver's banner, then pass 1.
-        if (ctx.listing && !ctx.options.no_listing)
-            *ctx.listing << "A L G O L - Г Д P\n    (7.01.82)\n";
+        if (ctx.listing && !ctx.options.no_listing) {
+            ctx.listing->print("A L G O L - Г Д P");
+            ctx.listing->print("    (7.01.82)");
+        }
         return Pass1(ctx).run();
     case 5:
         return pass5(ctx, input);

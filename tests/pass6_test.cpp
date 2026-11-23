@@ -41,9 +41,12 @@ TEST_P(Pass6, object)
 
     std::ifstream lst(path(name, ".lst"));
     std::string line, summary;
-    while (std::getline(lst, line))
-        if (line.rfind("PROGRAM   ", 0) == 0)
-            summary = line;
+    while (std::getline(lst, line)) {
+        // On a page of two columns it may be in the right one.
+        auto at = line.find("PROGRAM   ДЛИHA");
+        if (at != std::string::npos)
+            summary = line.substr(at);
+    }
     EXPECT_EQ(summary_line(ctx), summary);
 }
 

@@ -42,7 +42,7 @@ unsigned rtname_addr(unsigned h)
 //
 class LineTable {
 public:
-    explicit LineTable(std::ostream *out) : out_(out) { clear(); }
+    explicit LineTable(Listing *out) : out_(out) { clear(); }
 
     // Line n starts at code address addr.
     void mark(unsigned n, unsigned addr)
@@ -69,11 +69,11 @@ public:
         for (unsigned i = 0; i < 8; i++)
             line += cells_[i] + " ";
         line.erase(line.find_last_not_of(' ') + 1);
-        *out_ << line << '\n';
+        out_->print(line);
     }
 
 private:
-    std::ostream *out_;
+    Listing *out_;
     unsigned first_{ 1 };
     std::string cells_[8];
 
@@ -94,11 +94,11 @@ void restore_rtnames(Workspace &ws)
 
 Stream pass5(Context &ctx, const Stream &input)
 {
-    Workspace &ws      = ctx.ws;
-    std::ostream *list = ctx.options.no_listing ? nullptr : ctx.listing;
+    Workspace &ws = ctx.ws;
+    Listing *list = ctx.options.no_listing ? nullptr : ctx.listing;
     if (list) {
         blank_line(ctx);
-        *list << HEADING << '\n';
+        list->print(HEADING);
     }
     LineTable lines(list);
 

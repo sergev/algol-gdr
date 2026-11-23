@@ -109,7 +109,7 @@ void Pass1::dpush(Word a)
 void Pass1::print_line(const std::string &line)
 {
     if (ctx_.listing)
-        *ctx_.listing << line << '\n';
+        ctx_.listing->print(line);
 }
 
 void Pass1::parse()
