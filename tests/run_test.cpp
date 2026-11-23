@@ -25,6 +25,8 @@ const std::string compiler = BUILD_DIR "/src/algc";
 // clang-format off
 const std::vector<std::string> programs = {
     "arith",
+    "arrays",
+    "arrays_check",
     "blocks",
     "boolean",
     "comment",
@@ -37,6 +39,7 @@ const std::vector<std::string> programs = {
     "print",
     "stdfunc",
     "symbols",
+    "test1",
 };
 // clang-format on
 
@@ -182,4 +185,31 @@ TEST(Run, domain_error)
         run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
     EXPECT_EQ(r.exit_code, 1);
     EXPECT_EQ(r.output, "             1 \nError: Square root of a negative number -1\n");
+}
+
+TEST(Run, arrays)
+{
+    EXPECT_EQ(run_text("arrays2", R"(_begin _integer N, I, J;
+  N := 2;
+  _begin _integer _array A[0:N, -1:1];
+    _for I := 0 _step 1 _until N _do
+      _for J := -1 _step 1 _until 1 _do A[I, J] := 10 * I + J;
+    PRINT(A[2, -1], A[1, 1]);
+    PRINT(NEWLINE, A)
+  _end
+_end _eop
+)"),
+              "            19             11 \n"
+              "            -1              0              1              9             10 "
+              "            11             19             20             21 \n");
+}
+
+TEST(Run, bounds_check)
+{
+    const std::string src = BUILD_DIR "/run_bounds.alg";
+    std::ofstream(src) << "_begin _array A[1:3]; _integer I; I := 4; A[I] := 1 _end _eop\n";
+    auto r = run_command(compiler + " --check -o " BUILD_DIR "/run_bounds " + src +
+                         " && " BUILD_DIR "/run_bounds");
+    EXPECT_EQ(r.exit_code, 1);
+    EXPECT_EQ(r.output, "Error: Subscript 4 out of bounds [1:3]\n");
 }

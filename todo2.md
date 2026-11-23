@@ -25,10 +25,6 @@ Semantics on the host (decided in E11, written in doc/codegen.md): `integer` is 
 `real` is `double`, `Boolean` is `i1` in registers and `i8` in memory, a string is a pointer
 to a NUL-terminated UTF-8 array.
 
-- **E17** Arrays: descriptors (base, bounds, strides), dynamic bounds evaluated on block
-  entry, storage freed on block exit (`stacksave`/`stackrestore` or the heap for large
-  ones), element access, `--check` bounds checks through the runtime. Test arrays,
-  arrays_check.
 - **E18** Procedures, by value: nested procedures as LLVM functions with a static link
   (pointer to the enclosing frame), function results, recursion, value parameters
   including arrays by reference. Test proc.

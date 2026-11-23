@@ -32,10 +32,12 @@ struct Symbol {
     enum Kind { VAR, ARRAY, PROC, LABEL, SWITCH, FORMAL, EXTERNAL } kind{};
     Type type{ Type::NONE };
     std::string name;
-    Func *owner{};      // the function whose frame or globals hold it
-    int slot{ -1 };     // in the owner's frame; -1 for a global
-    std::string global; // @V.id.name
-    ir::Block *block{}; // LABEL: its block in the owner's function
+    Func *owner{};                         // the function whose frame or globals hold it
+    int slot{ -1 };                        // in the owner's frame; -1 for a global
+    std::string global;                    // @V.id.name
+    ir::Block *block{};                    // LABEL: its block in the owner's function
+    int dims{};                            // ARRAY
+    std::vector<const stmt::Block *> path; // LABEL: the blocks it is in
 };
 
 // The memory type of a value type.
@@ -87,6 +89,14 @@ private:
     ir::Module module_;
     Func main_;
     std::map<int, Symbol> symbols_;
+    std::vector<const stmt::Block *> path_; // blocks being declared
+
+    // Blocks being generated, with the arrays they allocated.
+    struct Active {
+        const stmt::Block *block{};
+        std::vector<int> arrays;
+    };
+    std::vector<Active> active_;
 
     // Where code goes: the LLVM function, the Algol function whose frame
     // it works in, and the frame pointer there.
@@ -108,10 +118,12 @@ private:
             [&](const auto &n) {
                 using T = std::decay_t<decltype(n)>;
                 if constexpr (std::is_same_v<T, stmt::Block>) {
+                    path_.push_back(&n);
                     for (const auto &d : n.decls)
                         declare(f, *d);
                     for (const auto &b : n.body)
                         declare(f, *b);
+                    path_.pop_back();
                 } else if constexpr (std::is_same_v<T, stmt::Compound>) {
                     for (const auto &b : n.body)
                         declare(f, *b);
@@ -141,7 +153,11 @@ private:
                     s.name         = n.name;
                     s.owner        = &f;
                     s.block        = f.fn->new_block("L." + n.name);
+                    s.path         = path_;
                     symbols_[n.id] = s;
+                } else if constexpr (std::is_same_v<T, decl::Arrays>) {
+                    for (const auto &a : n.arrays)
+                        array(f, a.id, a.name, n.type, int(n.bounds.size()));
                 } else {
                     unsupported("This declaration");
                 }
@@ -165,6 +181,26 @@ private:
                            ", align 8");
         } else {
             s.slot = f.slots++;
+        }
+        symbols_[id] = s;
+    }
+
+    void array(Func &f, int id, const std::string &name, Type type, int dims)
+    {
+        Symbol s;
+        s.kind  = Symbol::ARRAY;
+        s.type  = type;
+        s.name  = name;
+        s.owner = &f;
+        s.dims  = dims;
+        int n   = 2 + 2 * dims;
+        if (&f == &main_) {
+            s.global = ir::global_name("V." + std::to_string(id) + "." + name);
+            module_.global(s.global + " = internal global [" + std::to_string(n) +
+                           " x i64] zeroinitializer, align 8");
+        } else {
+            s.slot = f.slots;
+            f.slots += n;
         }
         symbols_[id] = s;
     }
@@ -263,6 +299,8 @@ private:
                     return module_.string(n.value);
                 } else if constexpr (std::is_same_v<T, expr::Var>) {
                     return load(e.type, address(n.decl));
+                } else if constexpr (std::is_same_v<T, expr::Element>) {
+                    return load(e.type, element(n.array, n.subscripts));
                 } else if constexpr (std::is_same_v<T, expr::StdFunc>) {
                     return std_func(n);
                 } else if constexpr (std::is_same_v<T, expr::Unary>) {
@@ -290,7 +328,7 @@ private:
         // The functions of reals take an integer as a real.
         if (arg.type == Type::INTEGER && f.func != StdFunc::SIGN && f.func != StdFunc::ENTIER)
             x = convert(x, Type::INTEGER, Type::REAL);
-        auto libm       = [&](const char *name) {
+        auto libm = [&](const char *name) {
             module_.declare("double", name, "double");
             return fn_->call("double", std::string("@") + name, { x });
         };
@@ -430,7 +468,9 @@ private:
         std::visit(
             [&](const auto &n) {
                 using T = std::decay_t<decltype(n)>;
-                if constexpr (std::is_same_v<T, stmt::Block> || std::is_same_v<T, stmt::Compound>) {
+                if constexpr (std::is_same_v<T, stmt::Block>) {
+                    block(n);
+                } else if constexpr (std::is_same_v<T, stmt::Compound>) {
                     for (const auto &b : n.body)
                         statement(*b);
                 } else if constexpr (std::is_same_v<T, stmt::Dummy>) {
@@ -456,6 +496,78 @@ private:
             s.node);
     }
 
+    // A block: its arrays allocated on entry, freed on exit.
+    void block(const stmt::Block &b)
+    {
+        active_.push_back({ &b, {} });
+        for (const auto &d : b.decls) {
+            auto a = std::get_if<decl::Arrays>(&d->node);
+            if (!a)
+                continue;
+            std::vector<ir::Value> bounds;
+            for (const auto &bp : a->bounds) {
+                bounds.push_back(subscript(*bp.lower));
+                bounds.push_back(subscript(*bp.upper));
+            }
+            for (const auto &name : a->arrays) {
+                ir::Value desc = descriptor(name.id);
+                for (size_t k = 0; k < bounds.size(); k++)
+                    fn_->store(bounds[k], fn_->gep("i64", desc, ir::i64(int64_t(2 + k))));
+                runtime("void", "algol_array_alloc", { desc, ir::i64(int64_t(a->bounds.size())) });
+                active_.back().arrays.push_back(name.id);
+            }
+        }
+        for (const auto &s : b.body)
+            statement(*s);
+        if (fn_->open())
+            free_arrays(active_.back());
+        active_.pop_back();
+    }
+
+    void free_arrays(const Active &a)
+    {
+        for (auto it = a.arrays.rbegin(); it != a.arrays.rend(); ++it)
+            runtime("void", "algol_array_free", { descriptor(*it) });
+    }
+
+    // An integer subscript or bound; a real one is rounded.
+    ir::Value subscript(const Expr &e)
+    {
+        ir::Value v = expr(e);
+        return e.type == Type::REAL ? round(v) : v;
+    }
+
+    // The address of an array's descriptor.
+    ir::Value descriptor(int id)
+    {
+        const Symbol &s = symbol(id);
+        if (s.kind != Symbol::ARRAY)
+            unsupported("This array");
+        if (s.slot < 0)
+            return { "ptr", s.global };
+        return slot(s.owner, s.slot);
+    }
+
+    // The address of an element: row-major, 8-byte cells.
+    ir::Value element(int id, const ExprList &subscripts)
+    {
+        std::vector<ir::Value> subs(subscripts.size());
+        std::transform(subscripts.begin(), subscripts.end(), subs.begin(),
+                       [this](const ExprPtr &e) { return subscript(*e); });
+        ir::Value desc  = descriptor(id);
+        ir::Value index = ir::i64(0);
+        for (size_t k = 0; k < subs.size(); k++) {
+            if (opt_.check)
+                runtime("void", "algol_check_index", { desc, ir::i64(int64_t(k)), subs[k] });
+            ir::Value lo = fn_->load("i64", fn_->gep("i64", desc, ir::i64(int64_t(2 + 2 * k))));
+            ir::Value hi = fn_->load("i64", fn_->gep("i64", desc, ir::i64(int64_t(3 + 2 * k))));
+            ir::Value n  = fn_->binop("add", fn_->binop("sub", hi, lo), ir::i64(1));
+            index = fn_->binop("add", fn_->binop("mul", index, n), fn_->binop("sub", subs[k], lo));
+        }
+        ir::Value data = fn_->load("ptr", desc);
+        return fn_->gep("i64", data, index);
+    }
+
     void if_stmt(const stmt::If &s)
     {
         ir::Value cond = expr(*s.condition);
@@ -479,7 +591,11 @@ private:
         auto ref = std::get_if<expr::LabelRef>(&target.node);
         if (!ref || symbol(ref->label).owner != scope_ || fn_ != scope_->fn)
             unsupported("This goto");
-        fn_->br(symbol(ref->label).block);
+        const Symbol &label = symbol(ref->label);
+        for (auto it = active_.rbegin(); it != active_.rend(); ++it)
+            if (std::find(label.path.begin(), label.path.end(), it->block) == label.path.end())
+                free_arrays(*it);
+        fn_->br(label.block);
     }
 
     //
@@ -578,7 +694,7 @@ private:
     {
         if (auto v = std::get_if<left::Var>(&control))
             return symbol(v->decl).type;
-        unsupported("An element as the control variable");
+        return symbol(std::get<left::Element>(control).array).type;
     }
 
     // The left parts first, from left to right, then the value.
@@ -596,7 +712,8 @@ private:
     {
         if (auto v = std::get_if<left::Var>(&lp))
             return { address(v->decl), symbol(v->decl).type };
-        unsupported("An element as a left part");
+        const auto &el = std::get<left::Element>(lp);
+        return { element(el.array, el.subscripts), symbol(el.array).type };
     }
 
     void io(const stmt::Io &s)
@@ -628,6 +745,12 @@ private:
 
     void print(const Expr &e)
     {
+        auto var = std::get_if<expr::Var>(&e.node);
+        if (var && symbol(var->decl).kind == Symbol::ARRAY) {
+            runtime("void", "algol_print_array",
+                    { descriptor(var->decl), ir::i64(int64_t(e.type)) });
+            return;
+        }
         ir::Value v = expr(e);
         switch (e.type) {
         case Type::INTEGER:
