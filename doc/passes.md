@@ -95,8 +95,8 @@ the AST of `ast.h`, after doc/ast.asdl:
 - Standard identifiers, in their documented case, unless declared (`SQRT` is undeclared,
   with a hint to `sqrt`): the functions (`sqrt`, `entier`, …),
   Algol-GDR's (`NEWLINE`, `LOAD`, …), the IFIP procedures, and the X1 library (`print`,
-  `read`, `PRINTTEXT`, …; `read` with arguments is a statement). Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
-  arguments checked.
+  `read`, `PRINTTEXT`, …). Each becomes a `StdFunc`, a `StdProc` or an `Io` node with its
+  arguments checked: `print` and `read` with arguments are `Io` statements.
 - A function that never assigns its result gets a warning.
 
 ## Code generator
@@ -126,6 +126,7 @@ The driver (`driver.cpp`) writes the IR of each Algol file to a temporary `NAME.
   `libalgol.a` and `-lm`. The runtime is found in `../runtime` or `../lib` from `algc` (for
   `--target=T`, in `T/` there), or in `$ALGC_RUNTIME`.
 
-The runtime (`runtime/`, C) has `main`, which calls the program's `algol_main` and then ends
-the output; the input and output of Algol-GDR (`print.c`, `read.c`, `format.c`, on stdin through `input.c`), IFIP
-(`ifip.c`) and the X1 (`x1.c`); strings, arrays, arithmetic and the checks.
+The runtime (`runtime/`, C) has `main`, which calls the program's `algol_main` and then
+flushes the output; `print` and `read` (`print.c`, `read.c`), the formatted input and
+output of Algol-GDR (`format.c`), IFIP (`ifip.c`) and the X1 (`x1.c`), all reading standard
+input through `input.c`; strings, arrays, arithmetic and the checks.

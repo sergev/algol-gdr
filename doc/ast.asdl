@@ -91,11 +91,11 @@ module AST {
             | PrintText | PrSym | Space | Tab | Nlcr | AbsFixt | Fixt | Flot
             | SetRandom
 
-    -- I/O statements. The standard print and read(…) are Print and Read; the
-    -- keywords _print and _write are Write.
+    -- I/O statements. The standard print and read(…) are Print and Read, as
+    -- is the keyword _read; the keywords _print and _write are Write.
     -- The params come before the list:
     --   Print, Punch: none;
-    --   Read, Write: a unit and optionally a second one;
+    --   Read, Write: a unit and optionally a second one (none for read(…));
     --   Decode, Encode: three expressions; Rewind, Backspace, Endfile: the unit.
     IoOp = Print | Punch | Read | Write | Decode | Encode | Rewind | Backspace | Endfile
 

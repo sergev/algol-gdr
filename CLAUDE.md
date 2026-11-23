@@ -56,16 +56,16 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   conformance programs (outputs by hand); `tests/x1/` the X1 examples with their `x1sim`
   outputs (frozen, made by `tests/x1/goldens.sh`), compared line by line.
 - `doc/` — [passes.md](doc/passes.md) (the passes of algc, what each gives),
-  [encoding.md](doc/encoding.md) (source characters and symbols, text at run time); findings
-  about the original compiler (history: the code they describe, and the original passes.md
-  and encoding.md, are on the `besm6` branch): [tables.md](doc/tables.md),
-  [symbols.md](doc/symbols.md), [runtime-abi.md](doc/runtime-abi.md) (what the run-time
-  routines do); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the
-  parser reads (Algol 60 with the Algol-GDR extensions); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
-  for its implementation; [deviations.md](doc/deviations.md) — how algc differs from the
-  Revised Report, and the task that removes each difference; [codegen.md](doc/codegen.md) — data, frames, calling convention,
-  thunks, labels, arrays, runtime names; [ir.asdl](doc/ir.asdl) — the LLVM IR subset algc
-  emits, as src/ir.h builds it.
+  [encoding.md](doc/encoding.md) (source characters and symbols, text at run time),
+  [symbols.md](doc/symbols.md) (the lexer's symbols and how each is written),
+  [tables.md](doc/tables.md) (keywords, standard identifiers and what each becomes, I/O
+  statements, type and kind codes), [runtime-abi.md](doc/runtime-abi.md) (every routine of
+  `libalgol.a`); [algol60.asdl](doc/algol60.asdl) — the abstract syntax the parser reads
+  (Algol 60 with the Algol-GDR extensions); [ast.asdl](doc/ast.asdl) — the AST of `algc`,
+  the reference for its implementation; [deviations.md](doc/deviations.md) — how algc
+  differs from the Revised Report and from `x1sim`; [codegen.md](doc/codegen.md) — data,
+  frames, calling convention, thunks, labels, arrays, runtime names;
+  [ir.asdl](doc/ir.asdl) — the LLVM IR subset algc emits, as src/ir.h builds it.
 
 Milestones (all done; the history is in README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
@@ -103,21 +103,23 @@ Milestones (all done; the history is in README.md):
 
 ## Source language
 
-UTF-8 text. Keywords are `_` and a word, in any case (`_begin`); a
-blank ends a keyword (`_real_array` is two, `_integer i` needs the blank). Strings in
-`` `…' `` or `‘…’`, nested, the inner quotes kept; in `` `…' `` an apostrophe is `` '` ``
-(`` `it'`s' ``). The Algol-GDR `''…''` and `'('…')'` and strings in `"…"` are errors, each
-skipped whole (`′` is a quote too). Octal constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the AST give
-keywords in lower case, messages as `_begin`. Blanks are ignored inside names and numbers
-(`noun phrase` is `nounphrase`). The original wrote keywords in quotes: `'BEGIN'`. Identifiers:
-Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as written;
-standard identifiers only in their documented case: Report and IFIP lower case (`sqrt`,
-`outreal`), Algol-GDR and X1 upper case (`NEWLINE`, `PRINTTEXT`), and `print`, `read`. Lines have no column limit. The exponent
-sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
-`≡`, `÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`,
-strings `` `…' `` as in the other form (`.a60`, as x1-algol-compiler/examples). The X1 library procedures
-(`PRINTTEXT`, `FLOT`, `SUM`, `read`, …) are standard identifiers. `print` is one procedure in
-both forms, in X1's layout: values, strings, Booleans, whole arrays, `NEWLINE`, `NEWPAGE`.
-`read` is X1's function, and with arguments a statement reading each variable by its type;
-Algol-GDR's `PRINT` and `READ` are gone. The original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
+UTF-8 text. Keywords are `_` and a word, in any case (`_begin`); a blank ends a keyword
+(`_real_array` is two, `_integer i` needs the blank). Strings in `` `…' `` or `‘…’`, nested,
+the inner quotes kept; in `` `…' `` an apostrophe is `` '` `` (`` `it'`s' ``). The Algol-GDR
+`''…''` and `'('…')'` and strings in `"…"` are errors, each skipped whole (`′` is a quote
+too). Octal constants `'777'`, word operators like `_le`, `_and`, `_power`. Messages and the
+AST give keywords in lower case, messages as `_begin`. Blanks are ignored inside names and
+numbers (`noun phrase` is `nounphrase`). Keywords in quotes (`'BEGIN'`, as the original
+wrote them) are an error. Identifiers: Latin, Greek or Cyrillic letters and digits, any
+length, case-sensitive, kept as written; standard identifiers only in their documented
+case: Report and IFIP lower case (`sqrt`, `outreal`), Algol-GDR and X1 upper case
+(`NEWLINE`, `PRINTTEXT`), and `print`, `read`. Lines have no column limit. The exponent sign
+is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`, `≡`,
+`÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`, strings
+`` `…' `` as in the other form (`.a60`, as x1-algol-compiler/examples). The X1 library
+procedures (`PRINTTEXT`, `FLOT`, `SUM`, …) are standard identifiers in both forms. `print`
+is one procedure, in X1's layout: values, strings, Booleans, whole arrays, `NEWLINE`,
+`NEWPAGE`; it does not end the line. `read` is X1's function, and with arguments a
+statement reading each variable by its type; Algol-GDR's `PRINT` and `READ` are gone. The
+original (on `besm6`) read KOI-7 cards, columns 1–72, upper case only, names by their
 first 6 characters.

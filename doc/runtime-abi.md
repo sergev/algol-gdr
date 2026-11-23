@@ -1,174 +1,175 @@
-# Run-time library of the original
+# Run-time library
 
-What the run-time routines of Algol-GDR (7.01.82) do, as found in the BESM-6 library: the
-specification for the runtime of `algc`. The generated BESM-6 code is described on the
-`besm6` branch.
+The interface of `libalgol.a` (runtime/, C11): every routine the generated code calls,
+declared in runtime/algol.h. doc/codegen.md has the data representation and how the code
+uses them; doc/tables.md which Algol name calls which routine.
 
-## Sources and notation
+## Conventions
 
-- Run-time library: `os-dubna/besmmons/system1.txt` (S1) and `system2.txt` (S2).
-- Register numbers are decimal, addresses octal.
-- **V**: verified by a run, a trace or an object listing. **I**: inferred from the run-time
-  source.
+- The routines are plain C functions with the C calling convention of the target
+  (x86_64, aarch64, riscv64). Their names start with `algol_`; the X1 library's with
+  `algol_x1_`.
+- Algol types in C: integer `int64_t`, real `double`, Boolean `_Bool`, bits `int64_t`,
+  string `const char *` (NUL-terminated UTF-8; null is the empty string). A new string is
+  a `char *` from `malloc`, never freed.
+- An array is passed as its descriptor, `int64_t *`: the data pointer, the number of
+  elements, the number of dimensions, then the lower and upper bound of each dimension.
+  Elements are 8-byte cells, row-major. Routines that take a whole array also take the type
+  of its elements (`T_INTEGER` 0, `T_REAL` 1, `T_BOOLEAN` 2, `T_STRING` 3, `T_BITS` 4).
+- `main` (runtime/main.c) calls the program's `void algol_main(void)`, then `algol_stop`.
+- An error writes `Error: ` and the message to stderr and exits with status 1. A line of
+  output in progress is ended first, so the message starts a line.
+- All output goes to stdout through `algol_out` (runtime/print.c), flushed at once when
+  stdout is a terminal. All input from stdin goes through runtime/input.c, so the routines
+  that read it can be mixed: a byte one of them put back is the next for all.
 
----
+## Program and control (main.c)
 
-## A. Run-time interface
+| Routine | What |
+|---|---|
+| `void algol_main(void)` | the program, made by `algc` |
+| `_Noreturn void algol_stop(void)` | flushes stdout, exits with status 0 |
+| `_Noreturn void algol_error(const char *fmt, ...)` | the message, as `printf`; exit status 1 |
+| `_Noreturn void algol_goto(void **frame, int64_t index)` | a `goto` to a label of another function: stores `index` in `frame[2]`, `_longjmp` to the `jmp_buf` at `frame[1]`; an error when that is null |
+| `_Noreturn void algol_switch_error(int64_t index)` | `Switch index N out of range` |
 
-### A.0 General conventions
+## print (print.c, array.c)
 
-**Value formats** (V)
-- Integer: an unnormalized real with exponent field 0150, so the 41-bit two's-complement
-  mantissa is the integer. `6400000000000005` = 5, `6437777777777777` = −1.
-- Real: a normalized BESM-6 float. `4050000000000000` = 1.0, `4010000000000000` = 0.5.
-- Boolean: FALSE = 0, TRUE = `0020000000000000` (bit 41). Any non-zero word counts as true.
-- String: the 15-bit address of its text, or a *short string* when
-  `A & 7760000000000000 ≠ 0`.
+| Routine | What |
+|---|---|
+| `void algol_print_begin(void)` | a call of `print` starts: no blank before its first value |
+| `void algol_print_integer(int64_t)` | decimal |
+| `void algol_print_real(double)` | `%.13g` |
+| `void algol_print_boolean(_Bool)` | `true` or `false` |
+| `void algol_print_bits(int64_t)` | octal |
+| `void algol_print_string(const char *)` | as it is |
+| `void algol_print_array(const int64_t *desc, int64_t type)` | the elements in order, as above |
+| `void algol_newline(void)`, `void algol_newpage(void)` | `\n`, `\f`; the next value gets no blank |
 
-**Mode register.** R = 6 at the entry and exit of every routine and at every statement
-boundary (Madlen §14.1). Integer `+` and `−` run with R = 3. (V)
+Each value but the first of a call is preceded by a blank. Nothing is added at the end of
+the program.
 
-**Linkage** (V)
-- Most routines are called with `13 VJM` and return with `13 UJ`.
-- `A/AND`, `A/NOT`, `A/EQUIV`, `A/RTOI`, the `A/PARxxx` routines and `A/ARRD/x` are called
-  with `14 VJM`.
-- A call returns to the next word, so a `VJM` in a left half has `UTC 0` (`02200000`) in its
-  right half.
+## read and _read without a format (read.c)
 
-**Operands.** One argument goes in A. With two, the left one is pushed with `XTS` and the
-right one is in A. Routines pop their stack operands. (V)
+| Routine | What |
+|---|---|
+| `int64_t algol_read_integer(void)` | the next word, a decimal integer |
+| `double algol_read_real(void)` | the next word, a number for `strtod`; `⏨` is taken as `e` |
+| `_Bool algol_read_boolean(void)` | `true` or `false`, in any case |
+| `char *algol_read_string(void)` | the next word, a new string |
+| `void algol_read_array(int64_t *desc, int64_t type)` | the elements in order, each by its type |
 
-**`A/I0` and `A/MINUS` are data words**, not routines (S2:4876, set at S2:4911):
-`A/I0` = `6400000000000000`, `A/MINUS` = `0020000000000000`. Code reads them through a short
-reference such as `A+X 4003`. (V)
+Words are separated by white space; stdout is flushed before reading. The end of the input
+is `End of the input`; a word of the wrong kind is an error (`Not an integer in the input:
+W`).
 
-**External names.** Names of at most 4 characters get symbol type 0430; longer names get
-0630 plus a long-name row. Rows are added in the order of first reference in the code. (V)
+## Formatted input and output (format.c)
 
-### A.1 Table
+| Routine | What |
+|---|---|
+| `void algol_format_begin(int64_t unit, const char *format)` | `_write`, `_print`, `_punch`: a statement starts |
+| `void algol_format_integer(int64_t)`, `_real(double)`, `_boolean(_Bool)`, `_string(const char *)` | an item, by the next data edit of the format |
+| `void algol_format_array(const int64_t *desc, int64_t type)` | the elements, each an item |
+| `void algol_format_end(void)` | the statement ends: the edits up to the next data edit, the record written |
+| `void algol_encode_begin(const char *format)` | `_encode`: output into a string |
+| `char *algol_encode_end(int64_t count)` | the text, `count` characters, padded with blanks or cut |
+| `void algol_fread_begin(int64_t unit, const char *format)` | `_read` with a format: a statement starts |
+| `void algol_decode_begin(const char *format, const char *s, int64_t count)` | `_decode`: input from the first `count` characters of `s` |
+| `int64_t algol_fread_integer(void)`, `double …_real`, `_Bool …_boolean`, `char *…_string` | an item, by the next data edit |
+| `void algol_fread_array(int64_t *desc, int64_t type)` | the elements, each an item |
+| `void algol_fread_end(void)` | the statement ends; the next one starts a new record |
+| `void algol_rewind(int64_t unit)`, `algol_backspace`, `algol_endfile` | `_rewind`, `_backspace` (to the start of the record before), `_endfile` (the file ends here) |
 
-| Routine | Call | In | Out | Notes |
-|---|---|---|---|---|
-| A/START | `7 VTM consts; 13 VJM` | M7 | M6 = M15 = frame base | the first instruction (V) |
-| A/STOP | UJ | – | – | flushes the print line, then STOP* (V) |
-| A/IPRI | 13 | A = int | – | 15-column field (V) |
-| A/RPRI | 13 | A = real | – | 20-column field (V) |
-| A/BPRI | 13 | A = bool | – | `TRUE`/`FALSE` (V) |
-| A/SPRI | 13 | A = string | – | no padding (V) |
-| A/LPRI | 13 | A | – | octal; not used by the tests (I) |
-| A/NLINE, A/NPAGE | 13 | – | – | new line, new page (V) |
-| A/AND, A/EQUIV | 14 | stack = left, A = right | A | (V) |
-| A/NOT | 14 | A | A ∈ {0, TRUE} | (V) |
-| A/IMPL | **13** | stack = left, A = right | A | copies M13 to M14 itself (V) |
-| A/RTOI | 14 | A = real | A = int, ⌊x + ½⌋ | real-to-integer assignment (V) |
-| ENTIER* | 13 | A = real | A = int, ⌊x⌋ | (V) |
-| A/SIGN | 13 | A | A = −1, 0 or 1 | (V) |
-| A/RHOCHI | 13 | stack = real base, A = int exponent | A = real | (V) |
-| A/IHOCHI | 13 | stack = int base, A = int exponent | A = int | uses cell 021 (V) |
-| POWER | 13 | stack = base, A = real exponent | A = real | extracodes *55/*56 (V) |
-| SQRT*, SIN*, COS*, ARCTAN*, LN*, EXP* | 13 | A | A = real | (V) |
-| ABS | inline `AMX 0` | | | (V) |
-| A/ARRD/K, A/ARRD/V | 14 | stack = bounds; M11, M12, M13 | descriptors | (V) |
-| A/SUBCH | 13 | A = descriptor, M12 = address | – | bounds check (I) |
-| A/OPTLIN | 13 | M12, M14, M13 | steps in cells 020+r | (V/I) |
-| A/VLM1 | 13 | stack = init, A = end, M14 = exit | M11 = count | (V) |
-| A/CALLP | 13 | A = s, M14 = entry | A = result | procedure with parameters (V) |
-| A/CALLS | 13 | M14 = entry | A = result | procedure without parameters (V) |
-| A/PROCRT | UJ | A = result | – | return from a procedure or thunk (V) |
-| A/PARVAL | 14 | [M15−1] = s, A = value | A = s | (V) |
-| A/PARVAR, PARCON, PARSTR, PARPAR, PAREXP, PARLAB | 14, then inline half `r UTC a` | A = s | A = s | (V) |
-| LENGTH | 13 | A = string | A = int | (V) |
-| A/SEQS, SNES, SGTS, SLTS, SGES, SLES | 13 | stack = left, A = right | A ∈ {0, TRUE} | string relations (V) |
-| A/SPLUSS | 13 | stack = left, A = right | A = string | concatenation in the heap (V) |
-| A/SLICE | 13 | stack = i1, i2; A = string | A = string | `S[i]` passes i1 = i2 (V) |
-| 'CODE' procedures | 13 | argument addresses pushed with ITS, the last in A | A | Madlen §14.2 (V) |
+Edits: `Iw`, `Fw.d`, `Ew.d`, `Gw.d`, `Aw`, `Lw`, `nX`, `nH…`, `'…'`, `/`, repeat counts and
+groups. Unit 54 is the terminal (stdin, stdout); unit `n` is the file `$ALGC_UNITn`, else
+`fort.n`. doc/codegen.md has the details.
 
-### A.2 Notes per routine
+## IFIP (ifip.c)
 
-**A/START** (S1:2609, V)
-- Sets bit 48 of cell 044, which marks an Algol program.
-- Takes the stack base from cell 017.
-- Stores `(ret<<24)|oldsp` at [M6−2].
-- Sets M15 = M6 = base + 2 (01742 in the trace).
+| Routine | What |
+|---|---|
+| `int64_t algol_ininteger(int64_t channel)` | as `algol_read_integer` |
+| `double algol_inreal(int64_t channel)` | as `algol_read_real` |
+| `int64_t algol_insymbol(int64_t channel, const char *str)` | the next character: its place in `str` from 1, or minus its code point |
+| `void algol_outinteger(int64_t channel, int64_t)` | decimal, then a blank |
+| `void algol_outreal(int64_t channel, double)` | `%g` with the fewest of 15–17 digits that read back the same, then a blank |
+| `void algol_outstring(int64_t channel, const char *)` | as it is |
+| `void algol_outsymbol(int64_t channel, const char *str, int64_t n)` | character `n` of `str`; for `n < 0`, the code point `−n` |
+| `void algol_outterminator(int64_t channel)` | a blank |
+| `_Noreturn void algol_fault(const char *s, double r)` | an error: `s` and `r` |
 
-**A/STOP** (S1:2587). If `STOPFLG*` is set, it flushes the print line first. (V/I)
+Channel 0 is stdin, 1 stdout; another is an error.
 
-**Printing** (A/DRUCK, S1:1006–1300, V)
-- Each entry saves M8–M13 on the stack, so the argument is at [M15−7].
-- The column counter REKZ starts at −126.
-- If the field does not fit (17 columns for an integer, 24 for a real, 6 for a boolean),
-  the line is printed first.
-- `A/SPRI` prints 8-bit bytes from the high end of each word, 6 per word, up to the first
-  zero byte.
+## The X1 library (x1.c)
 
-**Booleans** (S1:509–534, V)
-- AND: a right operand of 0 gives 0; otherwise the left operand.
-- EQUIV: a non-zero right operand gives the left operand; otherwise NOT left.
-- NOT: 0 gives TRUE, anything else gives 0.
-- IMPL: a right operand of 0 gives NOT left; otherwise TRUE.
+| Routine | What |
+|---|---|
+| `void algol_x1_printtext(const char *)` | `PRINTTEXT`: the string |
+| `void algol_x1_prsym(int64_t code)` | `PRSYM`: the symbol of an X1 code, `⎕` for an unused one |
+| `void algol_x1_space(int64_t n)`, `algol_x1_tab(void)`, `algol_x1_nlcr(void)` | `n` blanks, a tab, a new line |
+| `void algol_x1_fixt(int64_t n, int64_t m, double x)` | `FIXT`: the sign, `n` digits, the point, `m` digits; a blank after |
+| `void algol_x1_absfixt(int64_t n, int64_t m, double x)` | `ABSFIXT`: as `FIXT`, a blank for the sign |
+| `void algol_x1_flot(int64_t n, int64_t m, double x)` | `FLOT`: `n` digits of mantissa, `m` of exponent after `⏨` |
+| `double algol_x1_read(void)` | `read`: the next number; on a terminal it asks `Enter number:`, and again after a bad one |
+| `int64_t algol_x1_resym(void)` | `RESYM`: the X1 code of the next character, 255 at the end |
+| `int64_t algol_x1_xeen(int64_t mask)` | `XEEN`: the console switches (a line of binary digits, read once), masked |
+| `double algol_x1_random(void)` | `RANDOM`: SplitMix64, in [0, 1) |
+| `void algol_x1_setrandom(double seed)` | `SETRANDOM`: seeds it with the bits of `seed` |
+| `double algol_x1_timeofday(void)` | `TIMEOFDAY`: local seconds since midnight, or `$ALGC_TIMEOFDAY` |
 
-**A/RTOI** is `A+X 0.5; NTR 3; A+X A/I0; NTR 2; 14 UJ`. **ENTIER*** is the same without the
-0.5, and returns with `13 UJ`; ENTIER(−2.5) = −3. (V)
+`FIXT`, `ABSFIXT` and `FLOT` round the exact decimal value half up, and print as `FLOT(13,
+3, x)` when the number does not fit.
 
-**A/SIGN** (S1:578) does `A+X 0; NTR 7`. It returns `A/I0` for zero, otherwise ±1. (V)
+## Arithmetic (arith.c)
 
-**A/RHOCHI, A/IHOCHI** (S1:547/569). RHOCHI multiplies repeatedly, and for a negative
-exponent divides into 1.0. IHOCHI keeps its return address in cell 021 and converts the
-result to an integer. (V)
-
-**POWER** (S2:5267, V/I)
-- `x↑0` = 1.0, and `0↑0` is an error.
-- An integral exponent with a negative base gives |a|^b with the sign from the parity of b.
-- Otherwise the result is `exp(b·ln a)`.
-
-**Standard functions** (S2:7489, V). Each entry is one word, `14 VTM k; UJ *50`, with
-`*50: A+X 0; 14 *50; 13 UJ`. The codes are SQRT 0, SIN 1, COS 2, ARCTAN 3, LN 5, EXP 6.
-
-**A/ARRD/K, A/ARRD/V** (S1:594–700, V)
-- Inputs:
-  - the bound pairs pushed in declaration order, with the last upper bound in A;
-  - M11 = number of dimensions;
-  - M12 = number of arrays with these bounds;
-  - M13 = address of the first descriptor.
-- K: the top-level address vector is already reserved in the frame. V: everything goes on
-  the stack.
-- Descriptor word: bits 1–15 the virtual origin, bits 16–30 the element count, bits 31–45
-  the start address.
-- Example: A[1:5] gives `0022300000502227`.
-
-**A/SUBCH** (S2:2695, V). The subscript check: start ≤ M12 < start + count, otherwise
-error 4. Pass 4 emits a call after each subscript computation in `*CHECK` mode (and in
-some cases without it, as in quinio).
-
-**A/OPTLIN** (S1:1676, V/I). Strength reduction of subscripts that are linear in the loop
-variable.
-- The first call pushes the index registers.
-- The second call stores the step of each register in cell 020 + r.
-- The loop body then steps a register with `WTC 032; 10 UTM 0`.
-
-**A/VLM1** (S1:2718, V). Sets M11 = init − end, and the body repeats with `11 VLM`. It is
-used when the loop variable only indexes arrays, and it does not update the loop variable.
-
-**Procedure calls** (S1:720–870, V)
-- CALLP does `ATI 15`, then falls into CALLS.
-- CALLS pushes the return address and M1–M7 (8 words), then `14 UJ`.
-- PROCRT pops them and returns with `13 UJ`, with the result in A.
-
-**Parameter cells** (V). Each actual parameter is a 2-word cell at the top of the stack:
-
-| Routine | cell[0] | cell[1] |
+| Routine | What | Errors |
 |---|---|---|
-| PARVAL | `11 UJ 0 / 0` | the value |
-| PARVAR | `UTC 0 / 12 VTM addr` | `12 XTA 0 / 13 UJ` |
-| PARCON | `12 VTM 66666 / 11 VTM addr` | `11 XTA 0 / 13 UJ` |
-| PARSTR | `UTC 0 / 14 VTM addr` | `ITA 14 / 13 UJ` |
-| PAREXP, PARLAB | `11 VTM irp / 12 VTM s` | `14 VTM body / UJ PARBEG` |
-| PARPAR | a copy of the 2 words at M[r] + a | |
+| `int64_t algol_idiv(int64_t a, int64_t b)` | `a ÷ b`, truncated toward zero | division by zero |
+| `int64_t algol_ipow(int64_t, int64_t)` | `integer ↑ integer` | a negative exponent, `0 ↑ 0`, overflow |
+| `double algol_rpow(double, int64_t)` | `real ↑ integer`; a negative exponent divides into 1 | `0 ↑ 0` |
+| `double algol_power(double x, double y)` | `↑ real`: 1 for `y = 0`; an integral `y` of a negative `x` takes its sign from the parity; else `exp(y × ln x)` | `0 ↑ 0`, a negative `x` to a fractional power, 0 to a negative power |
+| `int64_t algol_bits_shift(int64_t, int64_t n)` | `bits ↑ n`: shifted left by `n`, right for `n < 0` | |
+| `double algol_sqrt(double)`, `double algol_ln(double)` | `sqrt`, `ln` | a negative argument; for `ln`, one not above 0 |
 
-`addr` = M[r] + a, taken from the inline half-word after the call; PARCON and PARSTR always
-use M7 as the base. PARBEG (S1:746) saves the registers, restores the caller's environment
-registers, and jumps into the thunk body, which ends with `UJ A/PROCRT`.
+## Checks of --check (arith.c, check.c, array.c)
 
-**'CODE' procedures** (V). Each argument is pushed with `15 ATX 0`. Its address is formed
-through a type-0400 description-table row holding `=77777` (`15 UTC 74nnn; 14 VTM 0`) and
-pushed with `ITS 14`. Then `13 VJM`. Why 77777 needs its own row is not known.
+| Routine | Checks |
+|---|---|
+| `void algol_check_overflow(_Bool)` | integer overflow, from `llvm.s*.with.overflow` |
+| `void algol_check_divisor(double)` | a real divisor of 0 |
+| `double algol_check_real(double)` | a finite result; returns it |
+| `void algol_check_round(double)` | a real that fits in an integer |
+| `void algol_check_index(const int64_t *desc, int64_t dim, int64_t i)` | subscript `i` of dimension `dim` (from 0) in its bounds |
+| `void algol_check_actuals(void **args, int64_t n, const char *spec, const char *name)` | the number of actuals (the word before `args`), and the kind and type of each from its tag, against `spec` (doc/tables.md) |
+
+The code calls them only with `--check`.
+
+## Strings (string.c)
+
+| Routine | What |
+|---|---|
+| `int64_t algol_string_length(const char *)` | the number of characters (code points) |
+| `int64_t algol_string_compare(const char *, const char *)` | −1, 0 or 1, by bytes |
+| `char *algol_string_concat(const char *, const char *)` | a new string |
+| `char *algol_string_slice(const char *s, int64_t first, int64_t last)` | `s[first:last]`, a new string; an index out of range is an error |
+| `char *algol_string_element(const char *s, int64_t i)` | `s[i]` |
+
+## Arrays (array.c)
+
+| Routine | What |
+|---|---|
+| `void algol_array_alloc(int64_t *desc, int64_t dims)` | the element count from the bounds in `desc`; zeroed data; the array on the stack of live arrays |
+| `void algol_array_free(int64_t *desc)` | frees it at block exit |
+| `void algol_array_alloc_own(int64_t *desc, int64_t dims)` | an `own` array: not on the stack, never freed |
+| `int64_t algol_array_mark(void *frame)` | the height of the stack; `frame` is passed so that it escapes before a `setjmp` |
+| `void algol_array_unwind(int64_t mark)` | frees the arrays above `mark`: after a non-local `goto` |
+| `int64_t *algol_array_copy(const int64_t *src, int64_t dims)` | a new descriptor and data with the bounds and elements of `src`: an array by value |
+| `void algol_array_release(int64_t *desc)` | frees a copy and its descriptor |
+| `void algol_array_bind(int64_t *desc, int64_t dims, int64_t *data)` | an array of a `_common` block: its elements at `data` |
+
+## Environment
+
+| Variable | Use |
+|---|---|
+| `ALGC_UNITn` | the file of unit `n` of the formatted statements (default `fort.n`) |
+| `ALGC_TIMEOFDAY` | the value of `TIMEOFDAY`, for tests |

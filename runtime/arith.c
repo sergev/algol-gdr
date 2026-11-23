@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
-// Integer division; exponentiation, after the original's A/IHOCHI, A/RHOCHI and POWER.
+// Integer division; exponentiation; sqrt and ln with their domains.
 //
 #include <math.h>
 

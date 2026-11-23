@@ -24,7 +24,7 @@ Write `hello.alg`:
 
 ```
 _begin
-    print(`Hello, World!')
+    print(`Hello, World!', NEWLINE)
 _end
 ```
 
@@ -40,9 +40,10 @@ Hello, World!
 
 - Keywords start with an underscore: `_begin`, `_end`, `_integer`, `_if`, `_then`.
 - Strings are in a backquote and an apostrophe: `` `text' ``. They nest: `` `a `b' c' ``.
+  An apostrophe inside is written `` '` ``: `` `it'`s' ``.
 - Use `print(...)` to print numbers, strings, Booleans and whole arrays, with a blank
-  between them, and `NEWLINE` to start a new line; or the standard Algol 60 procedures
-  `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
+  between them. It does not end the line: `NEWLINE` does. Or use the standard Algol 60
+  procedures `outinteger(1, ...)`, `outreal(1, ...)`, `outstring(1, ...)`.
 - `read(...)` reads variables, array elements and whole arrays, each by its type, from
   standard input; `x := read` reads one number.
 - Standard names are written as documented: `sqrt`, `print`, `outreal`, `NEWLINE`.
@@ -58,9 +59,9 @@ The `tests/algol/` directory has more examples.
 
 ## Programs in the publication form
 
-A file with underlined keywords, as Algol 60 was printed, is read in that form, with the
-procedures of the Electrologica X1 library (`PRINTTEXT`, `print`, `NLCR`, `FIXT`, `FLOT`,
-`read`, `SUM`, …). Write `hello.a60`:
+A file with underlined keywords, as Algol 60 was printed, is read in that form. The
+procedures of the Electrologica X1 library (`PRINTTEXT`, `NLCR`, `FIXT`, `FLOT`, `SUM`, …)
+can be used in either form. Write `hello.a60`:
 
 ```
 b̲e̲g̲i̲n̲

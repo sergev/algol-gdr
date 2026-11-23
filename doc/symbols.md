@@ -1,85 +1,84 @@
-# Symbol names
+# Symbols
 
-> History: this describes the original compiler and its C++ rewrite on the `besm6` branch;
-> `algc` on `main` has a new front end (src/lexer.cpp, parser.cpp, checker.cpp).
+The basic symbols of the language as the lexer gives them to the parser: the `Sym` codes of
+src/lexer.h, how each is written in the source, and how messages name it (`to_string(Sym)`
+in src/lexer.cpp). doc/encoding.md has the characters; doc/algol60.asdl the syntax built
+from these symbols.
 
-Suggested names for the entry points and tables of the original compiler, from the analysis in
-`doc/passes.md` on the `besm6` branch and [tables.md](tables.md). The Madlen sources in `os-dubna/algol` still
-use address names (`AG15414`). The names here can go into `os-dubna/algol/algol.sym`; that is
-not done yet, because the `.sym` files drive `make asm`, which regenerates the sources there.
+## Values
 
-Names are at most 8 characters, the Madlen limit. Kinds: C = code, D = data.
-
-## Driver (algol.asm)
-
-| Address | Name | Kind | Role |
+| Sym | Written | In messages | Token value |
 |---|---|---|---|
-| 01614 | ALGOL | C | driver: banner, then the passes |
-| 01644 | PRLINE | C | print a listing line (page header, date) |
-| 01713 | PRNL | C | print an empty line, or flush |
-| 01716 | FINISH | C | end the compilation, return to the monitor at 0425 |
+| `IDENT` | a letter, then letters and digits; blanks inside are dropped | identifier | the name, UTF-8, as written |
+| `INTEGER_CONST` | digits, up to 2⁶³ − 1 | integer constant | `int64_t` |
+| `REAL_CONST` | `1.5`, `.5`, `1⏨3`, `⏨-2` | real constant | `double` |
+| `BITS_CONST` | `'777'`, up to 16 octal digits | octal constant | the bits |
+| `STRING_CONST` | `` `…' ``, `‘…’`, nested; `` '` `` an apostrophe | string | the text, UTF-8, the inner quotes kept |
+| `COMMON` | `_common /NAME/ elements;`, the whole declaration | `_common` | the block: its name and elements |
 
-## Pass 1 (ag13666, ag14504)
+A `_common` declaration is read whole by the lexer, so the parser gets one symbol for it.
 
-| Address | Name | Kind | Role |
-|---|---|---|---|
-| 13666 | PASS1 | C | init and the program head |
-| 13742 | RETSTK | C | return through the stack |
-| 14020 | BLOCK | C | block or compound statement |
-| 14114 | IFSTMT | C | IF statement |
-| 14137 | GOTOST | C | GOTO statement |
-| 14141 | ASGNST | C | assignment or procedure statement |
-| 14262 | DECLS | C | declarations |
-| 14510 | PROCHEAD | C | procedure heading |
-| 14655 | FORSTMT | C | FOR statement |
-| 14716 | IOELEM | C | I/O list element |
-| 14762 | EXPR | C | expression (recursive) |
-| 15037 | DESIGN | C | designator: subscripts, parameters |
-| 15102 | SETRES | C | set the error-resume point |
-| 15104 | STMARK | C | emit a statement marker |
-| 15114 | DPUSH | C | push onto the D-list |
-| 15120 | EMIT1 | C | emit a stream item |
-| 15146 | SYMATTR | D | symbol attribute table |
-| 15414 | LEXER | C | next symbol into 02000 |
-| 16225 | NEXTCH | C | next character; reads cards |
-| 16465 | NOEOP | C | source ended without 'EOP' |
-| 16514 | CHCLASS | D | character class table |
-| 17015 | SYNERR | C | syntax error report and recovery |
-| 17066 | EOPERR | C | `↑EOP↑ BEFORE END OF PROGRAM` |
-| 17166 | ERRCLASS | D | error class table |
+## Operators
 
-## Pass 2 (ag17223)
+| Sym | Written | In messages |
+|---|---|---|
+| `PLUS`, `MINUS` | `+`, `-` | `'+'`, `'-'` |
+| `TIMES` | `×`, `*` | `'*'` |
+| `SLASH` | `/` | `'/'` |
+| `INTDIV` | `÷`, `_div` | `_div` |
+| `POWER` | `↑`, `^`, `**`, `_power` | `'**'` |
+| `LT` | `<`, `_lt`, `_less` | `'<'` |
+| `LE` | `≤`, `⩽`, `_le`, `_notgreater` | `'<='` |
+| `EQ` | `=`, `_eq`, `_equal` | `'='` |
+| `NE` | `≠`, `_ne`, `_notequal` | `'!='` |
+| `GE` | `≥`, `⩾`, `_ge`, `_notless` | `'>='` |
+| `GT` | `>`, `_gt`, `_greater` | `'>'` |
+| `NOT` | `¬`, `_not` | `_not` |
+| `AND` | `∧`, `&`, `_and` | `_and` |
+| `OR` | `∨`, `_or` | `_or` |
+| `IMPL` | `⊃`, `_impl` | `_impl` |
+| `EQUIV` | `≡`, `_equiv` | `_equiv` |
 
-| Address | Name | Kind | Role |
-|---|---|---|---|
-| 17223 | PASS2 | C | entry; 'COMMON' check |
-| 17352 | P2READ | C | read and split an item |
-| 17377 | LOOKUP | C | identifier lookup |
-| 17416 | UNDECL | C | undeclared identifier |
-| 17454 | OPENSC | C | open a scope (at END) |
-| 17475 | CLOSESC | C | close a scope (at BEGIN) |
-| 17652 | TYPEERR | C | type error |
-| 21720 | P2DISP | D | dispatch table by item code |
-| 22027 | P2END | C | link array records, finish |
+## Delimiters
 
-## Helpers
+| Sym | Written |
+|---|---|
+| `LPAREN`, `RPAREN` | `(`, `)` |
+| `LBRACKET`, `RBRACKET` | `[`, `]`; also `(/`, `/)` |
+| `COMMA`, `COLON` | `,`, `:` |
+| `SEMICOLON` | `;`, `.,` |
+| `ASSIGN` | `:=` |
 
-| Address | Name | Kind | Role |
-|---|---|---|---|
-| 27114 | SWHB | C | stream: write a half, backward |
-| 27126 | SWHF | C | stream: write a half, forward |
-| 27137 | SWWB | C | stream: write a word, backward |
-| 27143 | SRHB | C | stream: read a half, backward |
-| 27154 | SRHF | C | stream: read a half, forward |
-| 27165 | SRWB | C | stream: read a word, backward |
-| 27173 | SPAGE | C | stream: page I/O on drum |
-| 27220 | STRPUT | C | put a word into the string pool |
-| 27245 | COMTAB | D | 'COMMON' / external-symbol table |
-| 27645 | CLOCK1 | C | read the clock |
-| 27646 | CLOCK2 | C | read the clock (second cell) |
-| 27652 | PRSRC | C | print the current source line |
-| 27733 | PRFMT | C | print a formatted line |
-| 30001 | ITOA6 | C | integer to 6 decimal characters |
-| 30034 | ISOTEXT | C | ISO name to TEXT code |
-| 30120 | RTNAMES | C | restore the run-time name table |
-| 30257 | SUMMARY | C | `PROGRAM ДЛИHA: …` line |
+## Keywords
+
+A keyword is `_` and a word in any case (`_begin`, `_BEGIN`), or the word underlined in the
+publication form (`b̲e̲g̲i̲n̲`). Messages give it as `_begin`. Several words may give one symbol:
+
+| Sym | Words |
+|---|---|
+| `GOTO` | `goto` (`g̲o̲ t̲o̲` in the publication form) |
+| `IF`, `THEN`, `ELSE` | `if`, `then`, `else` |
+| `FOR`, `DO`, `STEP`, `UNTIL`, `WHILE` | `for`, `do`, `step`, `until`, `while` |
+| `BEGIN`, `END` | `begin`, `end` |
+| `OWN`, `BOOLEAN`, `INTEGER`, `REAL` | `own`, `boolean`, `integer`, `real` |
+| `STRING`, `BITS` | `string`, `bits` (Algol-GDR) |
+| `ARRAY`, `SWITCH`, `PROCEDURE` | `array`, `switch`, `procedure` |
+| `LABEL`, `VALUE` | `label`, `value` |
+| `TRUE`, `FALSE` | `true`, `false` |
+| `ALGOL`, `CODE` | `algol`, `code`: external procedures (Algol-GDR) |
+| `READ`, `PRINT`, `PUNCH`, `WRITE` | `read`, `print`, `punch`, `write`: the formatted I/O statements of Algol-GDR |
+| `DECODE`, `ENCODE` | `decode`, `encode` |
+| `REWIND`, `BACKSPACE`, `ENDFILE` | `rewind`, `backspace`, `endfile` |
+
+The operator words (`div`, `power`, `lt`, `and`, …) are in the tables above. `_comment`
+starts a comment, which the lexer skips; it gives no symbol. `_read` and `_print` are
+keywords; the standard procedures `read` and `print` are identifiers (doc/tables.md).
+
+## Others
+
+| Sym | Meaning |
+|---|---|
+| `ERROR` | a lexical error, already reported; the parser does not report it again |
+| `END_OF_FILE` | no more lines: the end of the program |
+
+`EOP` is the old end-of-program keyword: the parser reports it and stops reading there.

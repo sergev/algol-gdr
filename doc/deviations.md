@@ -11,17 +11,18 @@ The reference language is printed with underlined keywords and symbols that a ke
 not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60.asdl):
 
 - Keywords are `_word` in any case; strings are `` `…' `` or `‘…’`, nested, the inner
-  quotes kept, an apostrophe `` '` `` in `` `…' `` (the Algol-GDR `''…''` and `'('…')'`
-  are errors); the
-  ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ÷ ↑` have ASCII and word forms.
+  quotes kept, an apostrophe `` '` `` in `` `…' `` (the Algol-GDR `''…''` and `'('…')'`,
+  and `"…"`, are errors); the ten is `⏨`; `≤ ≥ ≠ ¬ ∧ ∨ ⊃ ≡ × ÷ ↑` have ASCII and word
+  forms.
 - A file with an underlined letter (U+0332) is in the publication form: keywords are
   underlined words (`b̲e̲g̲i̲n̲`, `g̲o̲ t̲o̲`). Both forms read the same symbols otherwise.
 - Standard identifiers are recognized only in their documented case: the functions of the
   Report and the IFIP procedures in lower case (`sqrt`, `outreal`), those of Algol-GDR and
   the X1 library in upper case (`NEWLINE`, `PRINTTEXT`), and X1's `print` and `read`. A
-  declaration of the same name hides them, as in the Report. `print` is one procedure, after X1's
-  (below). `read` is X1's function, and with arguments a statement: `read(i, x, A)` reads
-  each variable by its type. Algol-GDR's `READ` is gone.
+  declaration of the same name hides them, as in the Report. `print` is one procedure,
+  after X1's (below). `read` is X1's function, and with arguments a statement:
+  `read(i, x, A)` reads each variable by its type. Algol-GDR's `PRINT` and `READ` are
+  gone.
 
 ## Language
 
@@ -35,9 +36,10 @@ not have. `algc` reads a hardware representation instead (CLAUDE.md, doc/algol60
 
 ## Run time
 
-The Report leaves input and output to implementations. `algc` has the procedures of the
-IFIP Modified Report and those of Algol-GDR (doc/codegen.md); channels are 0 (input) and 1
-(output), units are files.
+The Report leaves input and output to implementations. `algc` has `print` and `read`,
+the procedures of the IFIP Modified Report, the formatted statements of Algol-GDR and the
+X1 library (doc/codegen.md); IFIP channels are 0 (input) and 1 (output), Algol-GDR units
+are files.
 
 | Deviation | Where | Reason |
 |---|---|---|
@@ -104,3 +106,4 @@ source). Where it differs:
 | `TIMEOFDAY` is `$ALGC_TIMEOFDAY` when that is set | Tests of programs that use the time |
 | Lines are not broken at 144 positions, pages not at 60 lines (the X8 manual) | As `x1sim` |
 | `print` also takes strings, Booleans, bits (in octal), whole arrays, `NEWLINE` and `NEWPAGE` | One output procedure for all programs; numbers print as on the X1 |
+| `read(v, …)` with arguments reads each variable, element or whole array by its type | One input procedure for all programs; `x := read` is as on the X1 |

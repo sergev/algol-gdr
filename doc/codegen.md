@@ -21,8 +21,8 @@ globals; strings made at run time (concatenation, slices) are allocated with `ma
 never freed, as on the original's heap.
 
 Conversions: integer to real is `sitofp`. Real to integer (an assignment or a value
-parameter) rounds as `A/RTOI`: ⌊x + ½⌋. `/` always gives a real; `÷` is `algol_idiv`, truncating toward zero, an error
-when dividing by zero.
+parameter) rounds: ⌊x + ½⌋. `/` always gives a real; `÷` is `algol_idiv`, truncating toward
+zero, an error when dividing by zero.
 
 ## Functions and frames
 
@@ -196,10 +196,10 @@ integer `÷` by zero, overflow in `integer ↑ integer`.
 
 ## Standard functions and operators
 
-- `sqrt`, `sin`, `cos`, `arctan`, `ln`, `exp`: libm (`sqrt`, `sin`, `cos`, `atan`, `log`,
-  `exp`); `abs`, `sign`, `entier`: inline.
+- `sin`, `cos`, `arctan`, `exp`: libm (`sin`, `cos`, `atan`, `exp`); `sqrt`, `ln`:
+  `algol_sqrt`, `algol_ln`, an error outside their domain; `abs`, `sign`, `entier`: inline.
 - `↑`: integer↑integer `algol_ipow`, real↑integer `algol_rpow`, any↑real `algol_power`,
-  after `A/IHOCHI`, `A/RHOCHI` and `POWER` (doc/runtime-abi.md).
+  (doc/runtime-abi.md).
 - Strings: `algol_string_compare`, `algol_string_concat`, `algol_string_slice`,
   `algol_string_length`; indices count characters (code points), from 1.
 

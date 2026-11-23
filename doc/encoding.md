@@ -82,11 +82,12 @@ Any other character outside a string or comment is an error: `Illegal character 
 
 ## Strings
 
-- A string is in `` `…' `` or in `‘…’` (U+2018, U+2019). 
-  Quotes of the same kind nest, and the inner ones
-  belong to the string: `` `Hello, `Algol'' `` is ``Hello, `Algol'``.
-- A lone apostrophe in `` `…' `` is `` '` ``.
-  Or the whole string in `‘…’`, where `'` is a plain character: `‘it's’`.
+- A string is in `` `…' `` or in `‘…’` (U+2018, U+2019). Quotes of the same kind nest,
+  and the inner ones belong to the string: `` `Hello, `Algol'' `` is ``Hello, `Algol'``.
+- A lone apostrophe in `` `…' `` is `` '` ``: `` `it'`s' ``. Or the whole string is in
+  `‘…’`, where `'` is a plain character: `‘it's’`.
+- The strings of Algol-GDR, `''…''` and `'('…')'`, and strings in `"…"` are errors:
+  ``Strings in '' are not supported: write `text'``. The string is skipped whole.
 - Inside a string every character counts, blanks and line ends too; the text is kept as
   UTF-8, in its case.
 
