@@ -291,7 +291,7 @@ L1547: {
 }
 }
 
-Pass1::Pass1(Context &ctx) : ctx_(ctx), ws_(ctx.ws), cards_(read_cards(ctx.source))
+Pass1::Pass1(Context &ctx) : ctx_(ctx), ws_(ctx.ws), strings_(ctx.strings), cards_(read_cards(ctx.source))
 {
     // From the start of AG13666.
     ws_[D_LIST] = ctx.options.list ? 1 : 0;
@@ -321,7 +321,7 @@ void Pass1::print_card()
 }
 
 // G27220: put a word into the string pool; a full sector of 256 words goes
-// to drum 027 zone 034.
+// to the string pool on drum.
 void Pass1::pool_put(Word w)
 {
     ws_[ws_[D_POOL] & R15] = w;
@@ -329,9 +329,8 @@ void Pass1::pool_put(Word w)
     if ((ws_[D_POOL] << 40) & MASK48)
         return;
     ws_[D_POOL] = arx(ws_[D_POOL], 037777400);
-    unsigned n  = pool_sectors_++;
     for (unsigned i = 0; i < 256; i++)
-        ws_.drum(027, 034 + n / 4, (n % 4) * 256 + i) = ws_[04000 + i];
+        strings_.push_back(ws_[04000 + i]);
 }
 
 // *1102B: a word of a string to the pool.

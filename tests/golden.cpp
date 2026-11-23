@@ -24,6 +24,22 @@ std::string path(const std::string &name, const std::string &ext)
     return TEST_DIR "/algol/" + name + ext;
 }
 
+Word *drum_word(Context &ctx, unsigned unit, unsigned zone, unsigned offset)
+{
+    auto at = [](std::vector<Word> &v, size_t i) {
+        if (v.size() <= i)
+            v.resize(i + 1);
+        return &v[i];
+    };
+    if (unit == 026 && zone == 0)
+        return at(ctx.saved_names, offset);
+    if (unit == 027 && zone == 033)
+        return at(ctx.constants, 01777 - offset);
+    if (unit == 027 && zone >= 034)
+        return at(ctx.strings, (zone - 034) * 1024 + offset);
+    return nullptr;
+}
+
 void load_mem(Context &ctx, const std::string &filename, int pass)
 {
     std::ifstream in(filename);
@@ -46,7 +62,8 @@ void load_mem(Context &ctx, const std::string &filename, int pass)
             unsigned unit, zone;
             fields >> word >> unit >> zone >> addr >> value;
             ASSERT_TRUE(fields) << filename << ": " << line;
-            ctx.ws.drum(unit, zone, addr) = value;
+            if (Word *w = drum_word(ctx, unit, zone, addr))
+                *w = value;
         } else if (line.rfind("reg ", 0) == 0) {
             fields >> word >> addr >> value;
             ASSERT_TRUE(fields && addr < ctx.regs.size()) << filename << ": " << line;
@@ -54,7 +71,8 @@ void load_mem(Context &ctx, const std::string &filename, int pass)
         } else {
             fields >> addr >> value;
             ASSERT_TRUE(fields) << filename << ": " << line;
-            ctx.ws[addr] = value;
+            if (!stream_page(addr))
+                ctx.ws[addr] = value;
         }
     }
 }

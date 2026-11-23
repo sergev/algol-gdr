@@ -47,7 +47,7 @@ static bool stream_part(int pass, const std::string &line)
         return true;
     if (pass == 4 && addr == 02007) // the template cursor of the original
         return true;
-    return addr == 02000 || addr == 02001 || (addr >= 06000 && addr < 012000);
+    return addr == 02000 || addr == 02001 || stream_page(addr);
 }
 
 TEST_P(PassMem, workspace)
@@ -82,7 +82,10 @@ TEST_P(PassMem, workspace)
             std::string word;
             unsigned unit, zone;
             f >> word >> unit >> zone >> addr >> want;
-            got = ctx.ws.drum(unit, zone, addr);
+            const Word *w = drum_word(ctx, unit, zone, addr);
+            if (!w)
+                continue;
+            got = *w;
         } else {
             f >> addr >> want;
             got = ctx.ws[addr];

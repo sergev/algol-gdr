@@ -40,7 +40,10 @@ TEST_P(Pass1Mem, workspace)
             unsigned unit, zone;
             std::string word;
             f >> word >> unit >> zone >> addr >> want;
-            got = ctx.ws.drum(unit, zone, addr);
+            const Word *w = drum_word(ctx, unit, zone, addr);
+            if (!w)
+                continue;
+            got = *w;
         } else {
             f >> addr >> want;
             // The listing state, the card and the lexer's scratch cells differ
@@ -48,7 +51,7 @@ TEST_P(Pass1Mem, workspace)
             if (addr < Pass1::NAMES && addr != Pass1::D_CONST && addr != Pass1::D_STRINGS)
                 continue;
             // The stream pages: the stream is checked by pass_test.
-            if (addr >= 06000 && addr < 012000)
+            if (stream_page(addr))
                 continue;
             got = ctx.ws[addr];
         }

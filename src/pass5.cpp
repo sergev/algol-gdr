@@ -17,7 +17,6 @@ constexpr unsigned CONSTS      = 03777; // constants, downward
 constexpr unsigned ROWS        = 03000; // description table
 constexpr unsigned RTNAMES     = 02400; // run-time names, then their rows
 constexpr unsigned LONG_NAMES  = 04000;
-constexpr unsigned PAGE        = 04000; // page read from drum 026 zone 0
 constexpr unsigned COMTAB      = 027246;
 
 constexpr Word BIT48 = 04000000000000000;
@@ -118,15 +117,12 @@ Stream pass5(Context &ctx, const Stream &input)
     }
     LineTable lines(list);
 
-    // Constants to the top of the page saved by pass 2, which goes to drum 027 zone 033.
-    for (unsigned i = 0; i < 1024; i++)
-        ws[PAGE + i] = ws.drum(026, 0, i);
+    // The numbers to drum (the original puts them at the end of the page of names).
     const unsigned nconst = 01633 - ws[D_CONST_LIM];
     ws[D_CONST]           = nconst;
+    ctx.constants.clear();
     for (unsigned i = 0; i < nconst; i++)
-        ws[PAGE + 01777 - i] = ws[CONSTS - i];
-    for (unsigned i = 0; i < 1024; i++)
-        ws.drum(027, 033, i) = ws[PAGE + i];
+        ctx.constants.push_back(ws[CONSTS - i]);
     restore_rtnames(ws);
     for (unsigned a = 04400; a < 05777; a++)
         ws[a] = 0;

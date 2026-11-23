@@ -37,7 +37,7 @@ constexpr unsigned BLOCK       = 02030; // the innermost open block
 constexpr unsigned BOUNDS      = 02031; // constant bounds of an array segment, or 0
 constexpr unsigned ARRAYS_END  = 02032; // end of the array records at 04000
 constexpr unsigned NAMES       = 02144; // slot i at NAMES + i
-constexpr unsigned NAMES_PAGE  = 02000; // the page saved to drum 26 zone 0
+constexpr unsigned NAMES_PAGE  = 02000; // the page saved to drum
 constexpr unsigned ARRAYS      = 04000;
 constexpr unsigned DLIST_END   = 06000;
 constexpr unsigned COMMON      = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
@@ -469,7 +469,6 @@ private:
     Word &top(unsigned k = 1) { return stack_.at(sp_ - k - STACK); }
     Word &name(unsigned slot) { return mem(NAMES + slot); }
     Word saved_name(unsigned slot);
-    void swap_out();
 
     // Streams.
     void read();
@@ -639,22 +638,15 @@ Word &Pass2::mem(unsigned a)
 }
 
 //
-// The names of the slots, saved to drum 26 zone 0 at the start (the slots
-// are cleared then): a message about a name swaps the page out to zone 1,
-// reads the name from zone 0, and swaps the page back.
+// The names of the slots, saved at the start (the slots are cleared then).
+// The original swaps the page out to read a name for a message.
 //
 Word Pass2::saved_name(unsigned slot)
 {
     unsigned a = (NAMES + slot) & 077777;
     if (a >= NAMES_PAGE && a < NAMES_PAGE + 1024)
-        return ctx_.ws.drum(026, 0, a - NAMES_PAGE);
+        return ctx_.saved_names.at(a - NAMES_PAGE);
     return mem(a);
-}
-
-void Pass2::swap_out()
-{
-    for (unsigned i = 0; i < 1024; i++)
-        ctx_.ws.drum(026, 1, i) = ctx_.ws[NAMES_PAGE + i];
 }
 
 //
@@ -788,7 +780,6 @@ Word Pass2::message(const Format &format)
 // *0175B: the message of the format about the name of slot operand_.
 Word Pass2::message_name(const Format &format)
 {
-    swap_out();
     mem(ARGS)     = saved_name(operand_);
     mem(ARGS + 1) = 0;
     return message(format);
@@ -976,8 +967,7 @@ unsigned Pass2::start()
 
     mem(FREE_SAVED) = mem(FREE_CONST);
     mem(ARRAYS_END) = ARRAYS;
-    for (unsigned i = 0; i < 1024; i++)
-        ctx_.ws.drum(026, 0, i) = ctx_.ws[NAMES_PAGE + i];
+    ctx_.saved_names.assign(&ctx_.ws[NAMES_PAGE], &ctx_.ws[NAMES_PAGE] + 1024);
     for (unsigned k = addr(mem(FREE_CONST)); k;)
         name(--k) = 0;
     store(operand_, DLIST_END);
@@ -2559,7 +2549,6 @@ unsigned Pass2::mismatch()
 {
     if (mem(REPORTED))
         return actual_count();
-    swap_out();
     mem(ARGS)      = saved_name(addr(mem(formal_)));
     mem(ARGS2)     = saved_name(addr(mem(desc_)));
     mem(ARGS + 1)  = 0;

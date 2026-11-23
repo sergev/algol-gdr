@@ -18,4 +18,14 @@ void load_options(Options &opt, const std::string &name);
 // Set the workspace, drums and registers as at the start of `pass`, from NAME.mem.
 void load_mem(Context &ctx, const std::string &filename, int pass);
 
+// The word of ctx for a drum word of NAME.mem (created zero), or none: the
+// stream zones and the page pass 2 swaps out are not kept.
+Word *drum_word(Context &ctx, unsigned unit, unsigned zone, unsigned offset);
+
+// A workspace address of NAME.mem that ctx does not keep: the stream pages.
+inline bool stream_page(unsigned addr)
+{
+    return addr >= 06000 && addr < 012000;
+}
+
 #endif

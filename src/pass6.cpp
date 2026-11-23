@@ -73,11 +73,11 @@ StdArray pass6(Context &ctx, const Stream &input)
         out.push_back(ws[LONG_NAMES + k - 1]);
     for (unsigned r = nrows; r > 0; r--)
         out.push_back(row(r - 1));
-    const unsigned end = 1024 + nstr; // zone 033, then zone 034
-    for (unsigned i = 1; i <= nconst; i++) {
-        unsigned pos = end - i;
-        out.push_back(pos < 1024 ? ws.drum(027, 033, pos) : ws.drum(027, 034, pos - 1024));
-    }
+    auto at = [](const std::vector<Word> &v, size_t i) { return i < v.size() ? v[i] : 0; };
+    for (unsigned i = nstr; i > 0; i--)
+        out.push_back(at(ctx.strings, i - 1));
+    for (unsigned i = 0; i < nconst - nstr; i++)
+        out.push_back(at(ctx.constants, i));
 
     // Code: the stream of pass 5, backward, a right half first.
     unsigned addr = ncmd; // words left to write

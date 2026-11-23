@@ -21,6 +21,11 @@ The `SET` directives at the end of `algol.asm` fill `AD02000`, `AD02166`, `AD037
 `AD05754` before the passes run. Each pass reuses the pages for its own data (see the data
 flow in [passes.md](passes.md)).
 
+In the C++ `Workspace` holds 01736–05777 and 27245–27644. The streams are vectors; pass 4
+keeps its copy of the names at 06000 itself. What the original keeps on the scratch drums is
+in `Context`: `saved_names` (drum 26 zone 0), `constants` (drum 27 zone 33, from its end)
+and `strings` (drum 27 zones 34…).
+
 ## Keyword hash table (02166…)
 
 Each keyword is two words: the keyword in ISO code (its first 6 characters), then

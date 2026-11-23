@@ -1,5 +1,6 @@
 #include "pass4.h"
 
+#include <algorithm>
 #include <array>
 #include <functional>
 #include <initializer_list>
@@ -18,7 +19,7 @@ namespace {
 // Cells of the workspace.
 constexpr unsigned LABELS      = 02004; // the next label number
 constexpr unsigned EMIT_MODE   = 02022; // set by 0037.0002: the next half starts a word
-constexpr unsigned NAMES       = 06000; // the names, from drum 26 zone 0
+constexpr unsigned NAMES       = 06000; // the names saved by pass 2
 constexpr unsigned EXT_NAMES   = 027245; // external table: 3 words per name
 
 // Addresses of the original: continuations, kept on the stack as return
@@ -462,6 +463,7 @@ private:
     std::map<unsigned, Handler> handlers_;
 
     std::array<Word, STACK_SIZE> stack_{};
+    std::array<Word, 1024> names_{}; // at NAMES
     unsigned sp_{ STACK };
     Word zero_{};
 
@@ -634,6 +636,8 @@ Word &Pass4::mem(unsigned addr)
         return ctx_.ws[addr];
     if (addr >= STACK && addr < STACK + STACK_SIZE)
         return stack_[addr - STACK];
+    if (addr >= NAMES && addr < NAMES + 1024)
+        return names_[addr - NAMES];
     if (!addr) {
         zero_ = 0;
         return zero_;
@@ -792,7 +796,7 @@ unsigned Pass4::main_loop()
 
 //
 // 23523: init. The return address is pushed; external table entries get
-// their numbers (ext_count_ counts them), the names of drum 26 zone 0
+// their numbers (ext_count_ counts them), the names saved by pass 2
 // (06000) used as externals lose their marks; then the outer block: the
 // main program (named MAIN_NAME) gets the prologue (template 23612: 7 VTM,
 // 13 VJM A/START, 15 UTM frame), a procedure ('CODE', 'ALGOL' module) its
@@ -840,8 +844,8 @@ unsigned Pass4::start()
     unsigned list = head & 077777;
     mem(02015)    = head;
     store(list, 05760);
-    for (unsigned i = 0; i < 1024; i++) // drum 26 zone 0
-        mem(NAMES + i) = ctx_.ws.drum(026, 0, i);
+    std::copy_n(ctx_.saved_names.begin(), std::min<size_t>(1024, ctx_.saved_names.size()),
+                names_.begin());
     mem(02010)     = cyclic_add(mem(02003) ^ WORD_MASK, CONST_BASE);
     acc_cell_      = 0;
     mem(02006)     = 0;

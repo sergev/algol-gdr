@@ -81,9 +81,9 @@ public:
 private:
     Context &ctx_;
     Workspace &ws_;
+    std::vector<Word> &strings_; // the string pool on drum
     std::vector<Card> cards_;
     size_t next_card_{};
-    unsigned pool_sectors_{}; // sectors of the string pool written to drum
 
     // Index registers of the original where they carry state.
     unsigned m4_{};        // symbol code
