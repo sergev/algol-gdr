@@ -6,8 +6,8 @@
 
 #include <algorithm>
 #include <array>
-#include <iterator>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -27,25 +27,25 @@ constexpr unsigned TABLE   = 02144; // constant slot i at TABLE + i
 constexpr unsigned LAST    = 01634; // the constant search ends here (04000)
 
 // The rewrite of a FOR loop: AD02000+n of the source.
-constexpr unsigned D14    = 02016; // end of the preamble list (from 02454)
-constexpr unsigned D15    = 02017; // end of the body list (from 02702)
-constexpr unsigned D16    = 02020; // end of the increments list (from 02120)
-constexpr unsigned D17    = 02021; // 0: no register for the step
-constexpr unsigned D18    = 02022; // the step's value when a constant
-constexpr unsigned D19    = 02023; // 0: the step is not a constant
-constexpr unsigned D20    = 02024; // nonzero: a subscript needs the step
-constexpr unsigned D23    = 02027; // the item checked by check_operand
-constexpr unsigned D24    = 02030; // the step item
-constexpr unsigned D25    = 02031; // the next 0160 item: register load, 010000 apart
-constexpr unsigned D27    = 02033; // registers taken in the body
-constexpr unsigned D28    = 02034; // registers taken in the preamble, from the top
-constexpr unsigned D29    = 02035; // c<<12 of a subscript for the increment
-constexpr unsigned D30    = 02036; // the initial value item
-constexpr unsigned OPND   = 02037; // the descriptor of the operand parsed last
-constexpr unsigned D32    = 02040; // the initial value as a 045 item, or 0
-constexpr unsigned D33    = 02041; // depth of IF; 077777 after a label of the loop
-constexpr unsigned D35    = 02043; // the until item
-constexpr unsigned VALUES = 02143; // the value stack, from VALUES+1
+constexpr unsigned D14             = 02016; // end of the preamble list (from 02454)
+constexpr unsigned D15             = 02017; // end of the body list (from 02702)
+constexpr unsigned D16             = 02020; // end of the increments list (from 02120)
+constexpr unsigned D17             = 02021; // 0: no register for the step
+constexpr unsigned D18             = 02022; // the step's value when a constant
+constexpr unsigned D19             = 02023; // 0: the step is not a constant
+constexpr unsigned D20             = 02024; // nonzero: a subscript needs the step
+constexpr unsigned D23             = 02027; // the item checked by check_operand
+constexpr unsigned D24             = 02030; // the step item
+constexpr unsigned D25             = 02031; // the next 0160 item: register load, 010000 apart
+constexpr unsigned D27             = 02033; // registers taken in the body
+constexpr unsigned D28             = 02034; // registers taken in the preamble, from the top
+constexpr unsigned D29             = 02035; // c<<12 of a subscript for the increment
+constexpr unsigned D30             = 02036; // the initial value item
+constexpr unsigned OPND            = 02037; // the descriptor of the operand parsed last
+constexpr unsigned D32             = 02040; // the initial value as a 045 item, or 0
+constexpr unsigned D33             = 02041; // depth of IF; 077777 after a label of the loop
+constexpr unsigned D35             = 02043; // the until item
+constexpr unsigned VALUES          = 02143; // the value stack, from VALUES+1
 constexpr unsigned PREAMBLE_LIST   = 02454;
 constexpr unsigned BODY_LIST       = 02702;
 constexpr unsigned INCREMENTS_LIST = 02120;
@@ -87,21 +87,21 @@ constexpr Word FIRST_ONE = 0'0000'0000'0010'0000;
 constexpr Word CONTROL_C = 0'4000'0100'0000'0000; // the control variable: c = 1
 constexpr Word INTEGER   = 0'6400'0000'0000'0000; // exponent of an integer
 
-constexpr Word ASSIGNED   = 0'0000'0400'0000'0000; // a descriptor: assigned in the loop
-constexpr Word UNMARK     = 0'7777'7377'7777'7777;
-constexpr Word STEP_ONE   = 01000000; // the control variable: a constant step
-constexpr Word BLOCK_MARK = 0'1000'0000'0000'0000;
-constexpr Word STEP_FLAGS = 0'7000'0077'7777'7777;
-constexpr Word REG_BITS   = 07600;
-constexpr Word C_FIELD12  = 077770000;
-constexpr Word HEAD_MASK  = 077777600;
-constexpr Word C_ONE      = 0'6400'0000'0000'0001; // the integer 1
-constexpr Word C_LOW      = 0'6400'0000'0000'3777;
-constexpr Word C_HIGH     = 0'6400'0000'0007'7677;
-constexpr Word TRUNCATE   = 0'7740'0000'0007'7777;
-constexpr Word REG_STEP   = 0100000; // loop flags: step 1, not 1, registers
-constexpr Word REG_STEP_N = 0200000;
-constexpr Word REG_LOOP   = 0400000;
+constexpr Word ASSIGNED      = 0'0000'0400'0000'0000; // a descriptor: assigned in the loop
+constexpr Word UNMARK        = 0'7777'7377'7777'7777;
+constexpr Word STEP_ONE      = 01000000; // the control variable: a constant step
+constexpr Word BLOCK_MARK    = 0'1000'0000'0000'0000;
+constexpr Word STEP_FLAGS    = 0'7000'0077'7777'7777;
+constexpr Word REG_BITS      = 07600;
+constexpr Word C_FIELD12     = 077770000;
+constexpr Word HEAD_MASK     = 077777600;
+constexpr Word C_ONE         = 0'6400'0000'0000'0001; // the integer 1
+constexpr Word C_LOW         = 0'6400'0000'0000'3777;
+constexpr Word C_HIGH        = 0'6400'0000'0007'7677;
+constexpr Word TRUNCATE      = 0'7740'0000'0007'7777;
+constexpr Word REG_STEP      = 0100000; // loop flags: step 1, not 1, registers
+constexpr Word REG_STEP_N    = 0200000;
+constexpr Word REG_LOOP      = 0400000;
 constexpr unsigned STD_FIRST = 6; // standard procedures allowed in a loop: 6–8
 constexpr unsigned STD_LAST  = 8;
 
@@ -164,14 +164,14 @@ const uint8_t FOR_CLASS[0200] = {
 // Class of each item code in the rewrite (22365, 6 bits per code): the index
 // of its handler in classify. Codes 0160… read the words after the table.
 const uint8_t PARSE_CLASS[0200] = {
-    0, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5, // 000
-    0, 0, 0, 7, 18, 0, 15, 19, 9, 0, 0, 0, 2, 0, 0, 0, // 020
-    0, 0, 0, 3, 10, 8, 11, 4, 0, 0, 1, 21, 21, 0, 0, 0, // 040
-    0, 0, 0, 4, 4, 0, 0, 12, 6, 4, 0, 0, 0, 0, 14, 13, // 060
-    0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 100
-    0, 0, 0, 0, 0, 0, 0, 0, 20, 20, 20, 20, 20, 0, 16, 17, // 120
-    0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 4, 4, 0, 0, 0, 0, // 140
-    1, 0, 40, 18, 10, 16, 8, 0, 14, 0, 34, 0, 0, 0, 0, 16, // 160
+    0, 3, 3,  3,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3, 3,  5,  // 000
+    0, 0, 0,  7,  18, 0,  15, 19, 9,  0,  0,  0,  2,  0, 0,  0,  // 020
+    0, 0, 0,  3,  10, 8,  11, 4,  0,  0,  1,  21, 21, 0, 0,  0,  // 040
+    0, 0, 0,  4,  4,  0,  0,  12, 6,  4,  0,  0,  0,  0, 14, 13, // 060
+    0, 0, 0,  0,  0,  3,  3,  0,  0,  0,  0,  0,  0,  0, 0,  0,  // 100
+    0, 0, 0,  0,  0,  0,  0,  0,  20, 20, 20, 20, 20, 0, 16, 17, // 120
+    0, 0, 0,  0,  0,  0,  0,  3,  3,  3,  4,  4,  0,  0, 0,  0,  // 140
+    1, 0, 40, 18, 10, 16, 8,  0,  14, 0,  34, 0,  0,  0, 0,  16, // 160
 };
 
 // Index register codes for loop subscripts (23154), from 1: R5, R4, R3, R2,
@@ -205,8 +205,8 @@ private:
     size_t rd_{};
     std::vector<Word> *dst_{ &out_ };
     size_t wr_{};
-    size_t start_{};   // the output after the FOR being scanned
-    size_t resume_{};  // the input after the loop rewritten
+    size_t start_{};  // the output after the FOR being scanned
+    size_t resume_{}; // the input after the loop rewritten
 
     std::array<Word, STACK_SIZE> stack_{};
     unsigned sp_{ STACK };
@@ -570,9 +570,9 @@ unsigned Pass3::classify()
 // last) to list_…, zeroing them; moved_ = the last one moved.
 void Pass3::move_items(Word range)
 {
-    last_     = range & 077777;
-    first_    = (range >> 15) & 077777;
-    moved_    = (list_ - 1) & 077777;
+    last_      = range & 077777;
+    first_     = (range >> 15) & 077777;
+    moved_     = (list_ - 1) & 077777;
     unsigned p = first_;
     for (;;) {
         if (Word w = mem(p)) {
@@ -719,12 +719,12 @@ Word Pass3::load_register(unsigned list, unsigned k)
 {
     list_ = mem(list) & 077777;
     move_items(mem(OPND));
-    mem(list_)      = (mem(list_) & 07777) | FLAGS;
-    list_           = moved_; // the last item moved: the head
-    moved_          = (moved_ + 2) & 077777;
-    mem(list)       = moved_;
-    mem(list_)      = (mem(list_) & HEAD_MASK) ^ 0162;
-    Word reg        = REGS.at(mem(k) & 077777);
+    mem(list_)     = (mem(list_) & 07777) | FLAGS;
+    list_          = moved_; // the last item moved: the head
+    moved_         = (moved_ + 2) & 077777;
+    mem(list)      = moved_;
+    mem(list_)     = (mem(list_) & HEAD_MASK) ^ 0162;
+    Word reg       = REGS.at(mem(k) & 077777);
     mem(list_ + 1) = reg;
     return reg;
 }
@@ -785,13 +785,13 @@ unsigned Pass3::begin_rewrite()
     src_ = &out_;
     rd_  = start_;
     scratch_.clear();
-    dst_      = &scratch_;
-    wr_       = 0;
-    mem(D14)  = PREAMBLE_LIST;
-    mem(D15)  = BODY_LIST;
-    mem(D16)  = INCREMENTS_LIST;
-    mem(D17)  = INCREMENTS_LIST;
-    mem(D25)  = 0160;
+    dst_     = &scratch_;
+    wr_      = 0;
+    mem(D14) = PREAMBLE_LIST;
+    mem(D15) = BODY_LIST;
+    mem(D16) = INCREMENTS_LIST;
+    mem(D17) = INCREMENTS_LIST;
+    mem(D25) = 0160;
     for (unsigned a : { D18, D33, D32, D30, D20 })
         mem(a) = 0;
     mem(D27) = cyclic_add(Word(depth_) ^ WORD_MASK, 5);
@@ -867,11 +867,10 @@ unsigned Pass3::until_parsed()
 // block) stops register steps: D33 = 077777; else D17 = 0.
 unsigned Pass3::label()
 {
-    Word n    = mem(CUR) >> 12;
-    mem(ITEM) = n;
-    bool inside =
-        !(unit_sub(RAW, n, mem(LVAR)) & NEGATIVE) &&
-        (unit_rsub(RAW, mem(mem(LVAR) & 077777) & 07777, n) & NEGATIVE);
+    Word n      = mem(CUR) >> 12;
+    mem(ITEM)   = n;
+    bool inside = !(unit_sub(RAW, n, mem(LVAR)) & NEGATIVE) &&
+                  (unit_rsub(RAW, mem(mem(LVAR) & 077777) & 07777, n) & NEGATIVE);
     if (inside)
         mem(D33) = 077777;
     else
@@ -969,15 +968,15 @@ unsigned Pass3::element_done(Word d)
 //
 unsigned Pass3::element()
 {
-    Word item     = mem(CUR);
-    unsigned arr  = (item >> 12) & 077777;
-    nsubs_        = (item >> 7) & 037;
-    Word first    = mem((sp_ - nsubs_) & 077777);
-    mem(OPND)     = (cyclic_add(first, 0'7777'7777'7767'7777) & FIRST) | vs_;
+    Word item    = mem(CUR);
+    unsigned arr = (item >> 12) & 077777;
+    nsubs_       = (item >> 7) & 037;
+    Word first   = mem((sp_ - nsubs_) & 077777);
+    mem(OPND)    = (cyclic_add(first, 0'7777'7777'7767'7777) & FIRST) | vs_;
     if (!mem(D30))
         return NO_REG;
     unsigned p = (sp_ - 1) & 077777, stepped = 0, varying = 0;
-    last_      = 0;
+    last_ = 0;
     for (unsigned n = nsubs_; n; n--) {
         Word d = mem(p);
         if (d & BIT48) {
@@ -1050,9 +1049,9 @@ unsigned Pass3::int_op_3()
     }
     Word item = intern(v);
     // The left operand's items replaced by the new constant.
-    unsigned p                = (top(1) >> 15) & 077777;
+    unsigned p            = (top(1) >> 15) & 077777;
     mem((p - 1) & 077777) = item;
-    unsigned end              = mem(OPND) & 077777;
+    unsigned end          = mem(OPND) & 077777;
     for (;;) {
         mem(p)    = 0;
         bool done = p == end;
@@ -1242,10 +1241,10 @@ unsigned Pass3::end_loop()
 
 void Pass3::register_rewrite()
 {
-    auto &n        = handlers_;
-    n[MAIN_LOOP]   = [this] { return dispatch(get()); };
-    n[REWRITE]     = [this] { return begin_rewrite(); };
-    n[STATEMENT]   = [this] { // a statement is done
+    auto &n      = handlers_;
+    n[MAIN_LOOP] = [this] { return dispatch(get()); };
+    n[REWRITE]   = [this] { return begin_rewrite(); };
+    n[STATEMENT] = [this] { // a statement is done
         check_operand(mem(OPND));
         flush_stack();
         return parse(STATEMENT);
@@ -1254,9 +1253,9 @@ void Pass3::register_rewrite()
     n[022426] = [this] {
         check_operand(mem(OPND));
         if (mem(D23)) {
-            Word d             = mem(OPND);
-            first_             = (d >> 15) & 077777;
-            mem(OPND)          = (((d >> 15) << 15) & WORD_MASK) | first_;
+            Word d                     = mem(OPND);
+            first_                     = (d >> 15) & 077777;
+            mem(OPND)                  = (((d >> 15) << 15) & WORD_MASK) | first_;
             mem((first_ - 1) & 077777) = 0;
         }
         return ret();
@@ -1265,17 +1264,17 @@ void Pass3::register_rewrite()
         mem(mem(LVAR) & 077777) |= STEP_ONE;
         return read_parse(022442);
     };
-    n[022441] = [this] { return read_parse(022442); }; // step-until (034)
-    n[022442] = [this] { return initial_parsed(); };
-    n[022457] = [this] { return step_parsed(); };
-    n[022471] = [this] { return until_parsed(); };
-    n[022507] = [this] { return label(); };
+    n[022441]      = [this] { return read_parse(022442); }; // step-until (034)
+    n[022442]      = [this] { return initial_parsed(); };
+    n[022457]      = [this] { return step_parsed(); };
+    n[022471]      = [this] { return until_parsed(); };
+    n[022507]      = [this] { return label(); };
     n[AFTER_LABEL] = [this] {
         pop();
         flush_stack();
         return read_parse(STATEMENT);
     };
-    n[022522] = [this] { return read_parse(BINARY_2); }; // a binary operator
+    n[022522]   = [this] { return read_parse(BINARY_2); }; // a binary operator
     n[BINARY_2] = [this] {
         push(mem(OPND));
         return parse(022525);
@@ -1305,7 +1304,7 @@ void Pass3::register_rewrite()
         mem(D20) = 1;
         return NO_REG;
     };
-    n[NO_REG] = [this] { return element_done(mem(OPND) | FLAGS); };
+    n[NO_REG]  = [this] { return element_done(mem(OPND) | FLAGS); };
     n[GIVE_UP] = [this] {
         mem(D17) = 0;
         return NO_REG;
@@ -1316,10 +1315,10 @@ void Pass3::register_rewrite()
             push(op);
             return read_parse(022671);
         };
-    n[022671] = [this] { return int_op_2(); };
-    n[022676] = [this] { return int_op_3(); };
+    n[022671]  = [this] { return int_op_2(); };
+    n[022676]  = [this] { return int_op_3(); };
     n[PRE_REG] = [this] { return preamble_access(); };
-    n[023073] = [this] { // IF (027): vs_ kept; the condition
+    n[023073]  = [this] { // IF (027): vs_ kept; the condition
         push(vs_);
         return read_parse(023075);
     };

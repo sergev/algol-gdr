@@ -21,10 +21,10 @@
 namespace {
 
 // Cells of the workspace.
-constexpr unsigned LABELS      = 02004; // the next label number
-constexpr unsigned EMIT_MODE   = 02022; // set by 0037.0002: the next half starts a word
-constexpr unsigned NAMES       = 06000; // the names saved by pass 2
-constexpr unsigned EXT_NAMES   = 027245; // external table: 3 words per name
+constexpr unsigned LABELS    = 02004;  // the next label number
+constexpr unsigned EMIT_MODE = 02022;  // set by 0037.0002: the next half starts a word
+constexpr unsigned NAMES     = 06000;  // the names saved by pass 2
+constexpr unsigned EXT_NAMES = 027245; // external table: 3 words per name
 
 // Addresses of the original: continuations, kept on the stack as return
 // addresses, and handlers.
@@ -51,8 +51,8 @@ constexpr Word ON_STACK   = 074000000; // 15 ATX: the value saved on the stack
 constexpr Word DROPPED    = 074030000; // never emitted
 constexpr Word ALIGN      = 0370002;   // the next half starts a word
 constexpr Word ALIGN_END  = 0370003;
-constexpr Word ALIGN_FILL = 0370006;              // written before a half that does not fit
-constexpr Word FITS_CMD   = 01014000000;          // by bits 20–16 of a command half
+constexpr Word ALIGN_FILL = 0370006;               // written before a half that does not fit
+constexpr Word FITS_CMD   = 01014000000;           // by bits 20–16 of a command half
 constexpr Word FITS_OP    = 0'0003'7400'0002'7413; // by bits 18–13 of others
 constexpr Word EXTERNAL   = 04131;                 // address of a call of an external
 constexpr Word EXT_HALF   = 02000000;              // the number of an external name
@@ -69,35 +69,35 @@ constexpr Word FRAME_MAIN = 030000000;
 constexpr Word FRAME_PROC = 034000000;
 constexpr Word CONST_BASE = 033777777;
 
-constexpr Word LABEL_U1A   = 02600000;  // U1A to label n
-constexpr Word LABEL_U1A2  = 02700000;
-constexpr Word LABEL_UJ    = 03000000;  // UJ to label n
-constexpr Word LABEL_DEF   = 02100000;  // label n defined here
-constexpr Word NEW_WORD    = 02000000;
-constexpr Word SWITCH_UJ   = 042400000;
-constexpr Word PREV_LABEL  = 02777777; // added to a label: the one after
-constexpr Word FORMAL      = 0'4000'0000'7407'7777; // a formal's descriptor
-constexpr Word BY_NAME     = 0'4000'0000'7400'0000; // a pushed address
-constexpr Word REG_STORE   = 060440000;             // its address to register n
-constexpr Word STACK_ATX1  = 074000001;
-constexpr Word ASN         = 0360000;
-constexpr Word DIV_1       = 074010001; // real division, both on the stack
-constexpr Word DIV_2       = 074160002;
+constexpr Word LABEL_U1A  = 02600000; // U1A to label n
+constexpr Word LABEL_U1A2 = 02700000;
+constexpr Word LABEL_UJ   = 03000000; // UJ to label n
+constexpr Word LABEL_DEF  = 02100000; // label n defined here
+constexpr Word NEW_WORD   = 02000000;
+constexpr Word SWITCH_UJ  = 042400000;
+constexpr Word PREV_LABEL = 02777777;              // added to a label: the one after
+constexpr Word FORMAL     = 0'4000'0000'7407'7777; // a formal's descriptor
+constexpr Word BY_NAME    = 0'4000'0000'7400'0000; // a pushed address
+constexpr Word REG_STORE  = 060440000;             // its address to register n
+constexpr Word STACK_ATX1 = 074000001;
+constexpr Word ASN        = 0360000;
+constexpr Word DIV_1      = 074010001; // real division, both on the stack
+constexpr Word DIV_2      = 074160002;
 
-constexpr Word TYPE        = 0'0360'0000'0000'0000;
-constexpr Word OFFSET_CLR  = 0'7777'7777'0370'0000; // a descriptor without its offset
-constexpr Word HEAD_KEEP   = 0'7400'0000'7777'7777;
-constexpr Word HEAD_KIND   = 0'1400'0000'0000'0000;
-constexpr Word TEXT_HEAD   = 0'1200'0000'0000'0000;
-constexpr Word DOPE_INIT   = 0'2021'0000'0000'0000; // a dope word not yet set
-constexpr Word DOPE_MASK   = 074007777;
-constexpr Word FRAME_STEP  = 010000;
-constexpr Word FRAME_BASE  = 0'7777'7777'7377'7777; // added to the frame of a procedure
-constexpr Word LINE_HEAD   = 03300000;              // 0330.n: line n
-constexpr Word PROC_LABEL  = 036400000;
-constexpr Word FRAME_REG   = 0100000;
-constexpr Word RETURN_1    = 0440017;
-constexpr Word RETURN_2    = 03004020;
+constexpr Word TYPE       = 0'0360'0000'0000'0000;
+constexpr Word OFFSET_CLR = 0'7777'7777'0370'0000; // a descriptor without its offset
+constexpr Word HEAD_KEEP  = 0'7400'0000'7777'7777;
+constexpr Word HEAD_KIND  = 0'1400'0000'0000'0000;
+constexpr Word TEXT_HEAD  = 0'1200'0000'0000'0000;
+constexpr Word DOPE_INIT  = 0'2021'0000'0000'0000; // a dope word not yet set
+constexpr Word DOPE_MASK  = 074007777;
+constexpr Word FRAME_STEP = 010000;
+constexpr Word FRAME_BASE = 0'7777'7777'7377'7777; // added to the frame of a procedure
+constexpr Word LINE_HEAD  = 03300000;              // 0330.n: line n
+constexpr Word PROC_LABEL = 036400000;
+constexpr Word FRAME_REG  = 0100000;
+constexpr Word RETURN_1   = 0440017;
+constexpr Word RETURN_2   = 03004020;
 
 constexpr Word INDEX_A     = 062400000; // the half that indexes by A
 constexpr Word INDEX_REG   = 02400000;  // … by register r<<20
@@ -246,93 +246,93 @@ enum Template : unsigned {
 };
 
 const char *const TEMPLATE_TEXT[] = {
-    "7 VTM *; 13 VJM 4014; 15 UTM *", // PROGRAM_START
-    "UTC *; 14 VTM 0; ITA 16", // STRING_ADDRESS
-    "UTC *; 14 VTM 0; ITS 16", // STRING_ADDRESS_SAVED
-    "ITA 14; 15 ATX 0", // PUSH_ADDRESS
-    "XTA *; 13 VJM 4114; *20 0", // CHECK_SUBSCRIPT
-    "WTC *", // INDEX
-    "ITA 17; 15 UTM 10; *20 0", // CALL_FRAME
-    "ITS 17; 15 UTM 10; *20 0", // CALL_FRAME_SAVED
-    "12 VTM *; 14 VTM 4066; 13 VJM 4010; *20 0", // STD_FUNCTION_CALL
-    "14 VTM *; 13 VJM 4007; *20 0", // CALL_NO_PARAMETERS
-    "14 VTM *; 13 VJM 4010", // CALL_PARAMETERS
-    "ATI 17; UTC *; 13 VJM 0; *20 0", // CALL_ON_STACK
-    "14 VJM 4017; UTC *", // ARG_THUNK
-    "14 VJM 4011; UTC *", // ARG_CONSTANT
-    "14 VJM 4012; UTC *", // ARG_VARIABLE
-    "14 VJM 4013; UTC *", // ARG_ADDRESS
-    "14 VJM 4015; UTC *", // ARG_PROCEDURE
-    "14 VJM 4016; *20 0", // ARG_EXPRESSION
-    "14 VJM 4027; UTC *", // ARG_STRING
-    "UTC *; 14 VTM 0; ITS 16", // PASS_ADDRESS
-    "XTS *; ASN 136", // PASS_ARRAY
-    "WTC *; 14 VTM 0; ITS 16", // PASS_INDIRECT
+    "7 VTM *; 13 VJM 4014; 15 UTM *",                       // PROGRAM_START
+    "UTC *; 14 VTM 0; ITA 16",                              // STRING_ADDRESS
+    "UTC *; 14 VTM 0; ITS 16",                              // STRING_ADDRESS_SAVED
+    "ITA 14; 15 ATX 0",                                     // PUSH_ADDRESS
+    "XTA *; 13 VJM 4114; *20 0",                            // CHECK_SUBSCRIPT
+    "WTC *",                                                // INDEX
+    "ITA 17; 15 UTM 10; *20 0",                             // CALL_FRAME
+    "ITS 17; 15 UTM 10; *20 0",                             // CALL_FRAME_SAVED
+    "12 VTM *; 14 VTM 4066; 13 VJM 4010; *20 0",            // STD_FUNCTION_CALL
+    "14 VTM *; 13 VJM 4007; *20 0",                         // CALL_NO_PARAMETERS
+    "14 VTM *; 13 VJM 4010",                                // CALL_PARAMETERS
+    "ATI 17; UTC *; 13 VJM 0; *20 0",                       // CALL_ON_STACK
+    "14 VJM 4017; UTC *",                                   // ARG_THUNK
+    "14 VJM 4011; UTC *",                                   // ARG_CONSTANT
+    "14 VJM 4012; UTC *",                                   // ARG_VARIABLE
+    "14 VJM 4013; UTC *",                                   // ARG_ADDRESS
+    "14 VJM 4015; UTC *",                                   // ARG_PROCEDURE
+    "14 VJM 4016; *20 0",                                   // ARG_EXPRESSION
+    "14 VJM 4027; UTC *",                                   // ARG_STRING
+    "UTC *; 14 VTM 0; ITS 16",                              // PASS_ADDRESS
+    "XTS *; ASN 136",                                       // PASS_ARRAY
+    "WTC *; 14 VTM 0; ITS 16",                              // PASS_INDIRECT
     "11 VTM *; 12 VTM *; UTC *; 13 VTM 0; 14 VJM *; *20 0", // BLOCK_ARRAYS
-    "UJ *; *20 0", // JUMP
-    "UTC *; 15 VTM 0", // FRAME_RESET
-    "WTC *; 15 VTM 0", // FRAME_RESET_INDIRECT
-    "*21 *; 15 MTJ *; 15 UTM *", // PROCEDURE_ENTRY
-    "UTC *; 13 VJM 0; *20 0; A+X 0; ATX *", // VALUE_REAL
-    "UTC *; 13 VJM 0; *20 0; ATX *", // VALUE
-    "*21 *; 8 UJ *; *20 0", // SWITCH
-    "14 VTM *; ITA 16; ATX *", // SAVE_FRAME
-    "AVX *", // SIGN_TEST
-    "UJ *; *21 *; XTA *", // STEP_START
-    "A+X *; *21 *; ATX *", // LOOP_STEP
-    "ARX *; *21 *; ATX *", // LOOP_STEP_CYCLIC
-    "NTR 3; A+X *; NTR 2; *21 *; ATX *", // LOOP_STEP_INTEGER
-    "ATX *; 14 VTM *; ITA 16; ATX *; *21 *", // STEP_TEMPORARY
+    "UJ *; *20 0",                                          // JUMP
+    "UTC *; 15 VTM 0",                                      // FRAME_RESET
+    "WTC *; 15 VTM 0",                                      // FRAME_RESET_INDIRECT
+    "*21 *; 15 MTJ *; 15 UTM *",                            // PROCEDURE_ENTRY
+    "UTC *; 13 VJM 0; *20 0; A+X 0; ATX *",                 // VALUE_REAL
+    "UTC *; 13 VJM 0; *20 0; ATX *",                        // VALUE
+    "*21 *; 8 UJ *; *20 0",                                 // SWITCH
+    "14 VTM *; ITA 16; ATX *",                              // SAVE_FRAME
+    "AVX *",                                                // SIGN_TEST
+    "UJ *; *21 *; XTA *",                                   // STEP_START
+    "A+X *; *21 *; ATX *",                                  // LOOP_STEP
+    "ARX *; *21 *; ATX *",                                  // LOOP_STEP_CYCLIC
+    "NTR 3; A+X *; NTR 2; *21 *; ATX *",                    // LOOP_STEP_INTEGER
+    "ATX *; 14 VTM *; ITA 16; ATX *; *21 *",                // STEP_TEMPORARY
     "WTC *; UJ 0; *21 *; 14 VTM *; ITS 16; ATX *; XTA *; UJ *; *21 *; 15 ATX 0", // STEP_IN_TEMPORARY
-    "NTR 3; A+X 4006; NTR 2", // INTEGER_ROUND
-    "13 VJM 4100; *20 0", // STRING_SLICE
-    "WTC *; UTM *", // STEP_REGISTER
-    "XTA *; UJ *; *21 *; XTA *; ARX *; *21 *; ATX *; X-A *; U1A *; NTR 6", // PREAMBLE_CYCLIC
+    "NTR 3; A+X 4006; NTR 2",                                                    // INTEGER_ROUND
+    "13 VJM 4100; *20 0",                                                        // STRING_SLICE
+    "WTC *; UTM *",                                                              // STEP_REGISTER
+    "XTA *; UJ *; *21 *; XTA *; ARX *; *21 *; ATX *; X-A *; U1A *; NTR 6",       // PREAMBLE_CYCLIC
     "XTA *; UJ *; *21 *; XTA *; A+X *; *21 *; ATX *; X-A *; AVX *; U1A *; NTR 6", // PREAMBLE
-    "*21 *; 12 VTM *; 14 VTM *; 13 VJM 4115; *20 0", // PREAMBLE_END
-    "XTA *; XTS *; XTS *; 14 VTM *; 13 VJM 4117; *21 *", // LOOP_CALL_3
-    "XTA *; XTS *; 14 VTM *; 13 VJM 4116; *21 *", // LOOP_CALL_2
-    "UTC *; 13 VJM 0; *20 0", // CALL_INDIRECT
-    "13 VJM *; *20 0", // CALL
-    "AVX 4000", // NEGATE
-    "NTR 3; AVX 4000; NTR 2", // NEGATE_INTEGER
-    "14 VJM 4001; *20 0", // NOT
-    "ATX *", // STORE
-    "AMX 0", // ABS
-    "A+X 0", // TO_REAL
-    "14 VJM 4002; *20 0", // TO_INTEGER
-    "14 VJM 4120; *20 0", // NOT_OCTAL
-    "XTS *", // PUSH
-    "XTA *", // LOAD
-    "A+X *", // ADD
-    "A*X *", // MULTIPLY
-    "AEX *; 14 VJM 4001; *20 0", // EQUAL
-    "AEX *", // NOT_EQUAL
-    "AOX *", // OR
-    "XTS *; 14 VJM 4004; *20 0", // AND_CALL
-    "XTS *; 14 VJM 4005; *20 0", // EQUIV
-    "NTR 3; A+X *; NTR 2", // ADD_INTEGER
+    "*21 *; 12 VTM *; 14 VTM *; 13 VJM 4115; *20 0",                              // PREAMBLE_END
+    "XTA *; XTS *; XTS *; 14 VTM *; 13 VJM 4117; *21 *",                          // LOOP_CALL_3
+    "XTA *; XTS *; 14 VTM *; 13 VJM 4116; *21 *",                                 // LOOP_CALL_2
+    "UTC *; 13 VJM 0; *20 0",                                                     // CALL_INDIRECT
+    "13 VJM *; *20 0",                                                            // CALL
+    "AVX 4000",                                                                   // NEGATE
+    "NTR 3; AVX 4000; NTR 2",                                                     // NEGATE_INTEGER
+    "14 VJM 4001; *20 0",                                                         // NOT
+    "ATX *",                                                                      // STORE
+    "AMX 0",                                                                      // ABS
+    "A+X 0",                                                                      // TO_REAL
+    "14 VJM 4002; *20 0",                                                         // TO_INTEGER
+    "14 VJM 4120; *20 0",                                                         // NOT_OCTAL
+    "XTS *",                                                                      // PUSH
+    "XTA *",                                                                      // LOAD
+    "A+X *",                                                                      // ADD
+    "A*X *",                                                                      // MULTIPLY
+    "AEX *; 14 VJM 4001; *20 0",                                                  // EQUAL
+    "AEX *",                                                                      // NOT_EQUAL
+    "AOX *",                                                                      // OR
+    "XTS *; 14 VJM 4004; *20 0",                                                  // AND_CALL
+    "XTS *; 14 VJM 4005; *20 0",                                                  // EQUIV
+    "NTR 3; A+X *; NTR 2",                                                        // ADD_INTEGER
     "A*X *; NTR 3; A+X 4006; NTR 2", // MULTIPLY_INTEGER
-    "A-X *; 14 VJM 4001; *20 0", // EQUAL_MIXED
-    "A-X *; AEX 0", // NOT_EQUAL_MIXED
-    "AAX *", // AND
-    "A-X *", // SUBTRACT
-    "X-A *", // SUBTRACT_FROM
-    "A/X *", // DIVIDE
-    "XTS *; 15 A/X 0", // DIVIDE_INTO
-    "X-A *; AAX 4000", // SIGN_FROM
-    "A-X *; AAX 4000", // SIGN
-    "A-X *; AAX 4000; AEX 4000", // NOT_SIGN
-    "X-A *; AAX 4000; AEX 4000", // NOT_SIGN_FROM
-    "NTR 3; A-X *; NTR 2", // SUBTRACT_INTEGER
-    "NTR 3; X-A *; NTR 2", // SUBTRACT_FROM_INTEGER
-    "AEX *", // STRING_COMPARE
-    "X-A *; UZA *", // JUMP_ZERO_FROM
-    "A-X *; UZA *", // JUMP_ZERO
-    "X-A *; U1A *", // JUMP_NONZERO_FROM
-    "A-X *; U1A *", // JUMP_NONZERO
-    "*21 *", // LABEL
-    "UJ 4047; *20 0; *21 *", // PROGRAM_END
+    "A-X *; 14 VJM 4001; *20 0",     // EQUAL_MIXED
+    "A-X *; AEX 0",                  // NOT_EQUAL_MIXED
+    "AAX *",                         // AND
+    "A-X *",                         // SUBTRACT
+    "X-A *",                         // SUBTRACT_FROM
+    "A/X *",                         // DIVIDE
+    "XTS *; 15 A/X 0",               // DIVIDE_INTO
+    "X-A *; AAX 4000",               // SIGN_FROM
+    "A-X *; AAX 4000",               // SIGN
+    "A-X *; AAX 4000; AEX 4000",     // NOT_SIGN
+    "X-A *; AAX 4000; AEX 4000",     // NOT_SIGN_FROM
+    "NTR 3; A-X *; NTR 2",           // SUBTRACT_INTEGER
+    "NTR 3; X-A *; NTR 2",           // SUBTRACT_FROM_INTEGER
+    "AEX *",                         // STRING_COMPARE
+    "X-A *; UZA *",                  // JUMP_ZERO_FROM
+    "A-X *; UZA *",                  // JUMP_ZERO
+    "X-A *; U1A *",                  // JUMP_NONZERO_FROM
+    "A-X *; U1A *",                  // JUMP_NONZERO
+    "*21 *",                         // LABEL
+    "UJ 4047; *20 0; *21 *",         // PROGRAM_END
 };
 static_assert(std::size(TEMPLATE_TEXT) == TEMPLATE_COUNT);
 
@@ -356,17 +356,17 @@ const std::vector<unsigned> &halves(Template t)
 // An operator not commutative (24113…) and a compare-and-jump (26052…): the
 // template for A op stack (left) and the one when the right operand is in A.
 enum Pair : unsigned {
-    MINUS, // 014 real -
-    DIVIDE_PAIR, // 016 /
-    GREATER, // 010 >
-    LESS, // 005 <
+    MINUS,         // 014 real -
+    DIVIDE_PAIR,   // 016 /
+    GREATER,       // 010 >
+    LESS,          // 005 <
     GREATER_EQUAL, // 007 >=
-    LESS_EQUAL, // 006 <=
+    LESS_EQUAL,    // 006 <=
     MINUS_INTEGER, // 076 integer -
-    JUMP_0133, // 0133
-    JUMP_0130, // 0130
-    JUMP_0131, // 0131
-    JUMP_0132, // 0132
+    JUMP_0133,     // 0133
+    JUMP_0130,     // 0130
+    JUMP_0131,     // 0131
+    JUMP_0132,     // 0132
 };
 
 struct TemplatePair {
@@ -388,6 +388,7 @@ const TemplatePair PAIRS[] = {
 };
 
 // The handler of each item code (26056…, two per word).
+// clang-format off
 const unsigned HANDLERS[0200] = {
     000000, 025335, 024052, 024053, 024023, 024107, 024111, 024110, // 000
     024106, 024050, 024051, 024046, 024075, 024047, 024076, 024000, // 010
@@ -406,6 +407,7 @@ const unsigned HANDLERS[0200] = {
     025370, 025363, 025460, 025365, 025375, 025400, 025433, 025412, // 160
     002005, 020066, 026156, 002020, 000000, PROGRAM_END, 023734, 000000, // 170
 };
+// clang-format on
 
 // The name of the main program, as TEXT (23611).
 const Word MAIN_NAME = utf8_to_text("PROGRAM");
@@ -659,7 +661,7 @@ Word Pass4::read()
 // The next label.
 Word Pass4::new_label()
 {
-    Word n         = mem(LABELS);
+    Word n      = mem(LABELS);
     mem(LABELS) = cyclic_add(n, 1);
     return n;
 }
@@ -1326,7 +1328,7 @@ unsigned Pass4::compare_jump(Pair pair)
 
 unsigned Pass4::compare_jump_3()
 {
-    bool left  = comparison_operands();
+    bool left        = comparison_operands();
     const auto &pair = PAIRS[top(3)];
     Template t       = left ? pair.left : pair.right;
     acc_cell_        = 0;
@@ -1545,9 +1547,9 @@ bool Pass4::array_dope(unsigned &p)
 //
 void Pass4::block_entry(unsigned list)
 {
-    mem(05777)    = 04067;
-    mem(05773)    = 04047;
-    Word saved15  = mem(02015);
+    mem(05777)   = 04067;
+    mem(05773)   = 04047;
+    Word saved15 = mem(02015);
     push(0); // the end of the inner blocks
     Word head     = mem(list);
     mem(02011)    = head & ADDR;
@@ -1563,10 +1565,10 @@ void Pass4::block_entry(unsigned list)
         }
         break;
     case 1: { // the body of a procedure: its frame
-        mem(02012)  = head;
-        Word size   = (mem(p - 1) & 03700000) >> 14;
-        Word frame  = cyclic_add(mem(02014) & ON_STACK, FRAME_BASE);
-        mem(02007)  = frame;
+        mem(02012) = head;
+        Word size  = (mem(p - 1) & 03700000) >> 14;
+        Word frame = cyclic_add(mem(02014) & ON_STACK, FRAME_BASE);
+        mem(02007) = frame;
         mem(02013) = mem(02014) = frame ^ size;
         mem(02015)              = p;
         set_offset(p, frame);
@@ -1979,7 +1981,7 @@ void Pass4::register_arrays()
     };
     // Items made by pass 3: an element through index register R (attr) at
     // offset d (value).
-    n[025363] = [this] { return give(cyclic_add(value_, mem(02027))); }; // 0161
+    n[025363] = [this] { return give(cyclic_add(value_, mem(02027))); };        // 0161
     n[025365] = [this] { return give(cyclic_add(Word(attr_) << 20, value_)); }; // 0163
     n[025370] = [this] { // 0160: d + 02027 loaded, the half kept
         push(cyclic_add(value_, mem(02027)));
@@ -2099,8 +2101,8 @@ unsigned Pass4::for_end()
 //
 unsigned Pass4::element_item(unsigned k)
 {
-    top(1)       = k;
-    Word regs    = loop_descriptor() & BY_REGISTERS;
+    top(1)    = k;
+    Word regs = loop_descriptor() & BY_REGISTERS;
     if (regs) // 25475: the control variable, then the elements
         return operand((regs & 0100000) ? 025477 : 025507);
     if (Word j = top(2))
@@ -2204,7 +2206,7 @@ unsigned Pass4::step_in_acc_2()
     operand_done();
     Word temp = cyclic_add(top(7) & DESC_MASK, 1);
     Word l1 = top(9), l2 = top(8), cv = top(5), kind = top(1);
-    top(4)    = ON_STACK;
+    top(4) = ON_STACK;
     for (Word w : { l2, l1, cv, temp, l2, l1, temp })
         push(w);
     return by_kind(STEP_IN_TEMPORARY, kind);
@@ -2405,9 +2407,11 @@ unsigned Pass4::pass_value(bool result)
 
 void Pass4::register_procedures()
 {
-    auto &n   = handlers_;
-    n[024361] = [this] { // a call with parameters starts (0110): the frame
-        Template t = CALL_FRAME; // of the arguments (CALL_FRAME_SAVED with A saved)
+    auto &n = handlers_;
+    // A call with parameters starts (0110): the frame of the arguments
+    // (CALL_FRAME_SAVED with A saved).
+    n[024361] = [this] {
+        Template t = CALL_FRAME;
         if (acc_cell_) {
             mem(acc_cell_) = ON_STACK;
             acc_cell_      = 0;
@@ -2458,8 +2462,9 @@ void Pass4::register_procedures()
         emit(RETURN_2);
         return DISPATCH_NEXT;
     };
-    n[024755] = [this] { // a jump around procedure bodies (0146): UJ to a
-        Word label = new_label(); // new label, pushed twice
+    // A jump around procedure bodies (0146): UJ to a new label, pushed twice.
+    n[024755] = [this] {
+        Word label = new_label();
         push(label);
         push(label);
         emit_template(JUMP);
@@ -2491,7 +2496,7 @@ void Pass4::register_procedures()
         return DISPATCH_NEXT;
     };
     n[024503] = [this] { return push_argument(mem(value_) & DESC_MASK, 024565); }; // 0122
-    n[024531] = [this] { return push_argument(constant_address(), 024565); };     // 066
+    n[024531] = [this] { return push_argument(constant_address(), 024565); };      // 066
     n[024516] = [this] { return push_argument(address_of(mem(value_)), 024602); }; // 0123
     n[024507] = [this] { // an expression (0125), passed by 24603
         push(count_);
@@ -2530,7 +2535,8 @@ void Pass4::register_procedures()
     };
     n[024547] = [this] { return code_call(mem(value_) & ADDR, count_); }; // 0126
     n[024551] = [this] { return code_call(value_ + 04030, count_); };     // 073
-    n[024562] = [this] { // 065: one result fewer
+    // 065: one result fewer.
+    n[024562] = [this] {
         Word count = count_;
         count_     = (count_ - 1) & 077777;
         return code_call(mem(value_) & ADDR, count);
@@ -2555,9 +2561,9 @@ void Pass4::register_procedures()
 
 Pass4::Pass4(Context &ctx, const Stream &input) : ctx_(ctx), in_(input)
 {
-    auto &n         = handlers_;
-    n[MAIN_LOOP]     = [this] { return main_loop(); };
-    n[023627]        = [this] { // an expression statement: its value loaded
+    auto &n      = handlers_;
+    n[MAIN_LOOP] = [this] { return main_loop(); };
+    n[023627]    = [this] { // an expression statement: its value loaded
         operand_done();
         mem(02021) = pop();
         return MAIN_LOOP;

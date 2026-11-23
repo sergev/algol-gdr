@@ -9,8 +9,8 @@
 namespace {
 
 // Latin-1 range, from dubna/encoding.cpp.
+// clang-format off
 const unsigned char tab0[256] = {
-    // clang-format off
     0,    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
     0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
@@ -27,46 +27,18 @@ const unsigned char tab0[256] = {
     0,    0,    0,    0,    0,    0,    0,    0x06, 0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0x1a, 0,    0,    0,    0,    0,    0,    0,    0,
-    // clang-format on
 };
+// clang-format on
 
 // Cyrillic 0x0410-0x044f, upper and lower case alike, from dubna/encoding.cpp.
+// clang-format off
 const unsigned char cyrillic[32] = {
-    // А    Б     В    Г     Д     Е    Ж     З     И     Й     К    Л     М    Н    О    П
-    'A',
-    0x62,
-    'B',
-    0x67,
-    0x64,
-    'E',
-    0x76,
-    0x7a,
-    0x69,
-    0x6a,
-    'K',
-    0x6c,
-    'M',
-    'H',
-    'O',
-    0x70,
-    // Р  С    Т    У    Ф     Х    Ц     Ч     Ш     Щ     Ъ     Ы     Ь     Э     Ю     Я
-    'P',
-    'C',
-    'T',
-    'Y',
-    0x66,
-    'X',
-    0x63,
-    0x7e,
-    0x7b,
-    0x7d,
-    0x05,
-    0x79,
-    0x78,
-    0x7c,
-    0x60,
-    0x71,
+//  А    Б     В    Г     Д     Е    Ж     З     И     Й     К    Л     М    Н    О    П
+    'A', 0x62, 'B', 0x67, 0x64, 'E', 0x76, 0x7a, 0x69, 0x6a, 'K', 0x6c, 'M', 'H', 'O', 0x70,
+//  Р    С    Т    У    Ф     Х    Ц     Ч     Ш     Щ     Ъ     Ы     Ь     Э     Ю     Я
+    'P', 'C', 'T', 'Y', 0x66, 'X', 0x63, 0x7e, 0x7b, 0x7d, 0x05, 0x79, 0x78, 0x7c, 0x60, 0x71,
 };
+// clang-format on
 
 unsigned utf8_next(const std::string &s, size_t &i)
 {

@@ -113,8 +113,9 @@ static std::vector<std::string> cases()
 {
     auto all = program_names();
     std::vector<std::string> names;
-    std::copy_if(all.begin(), all.end(), std::back_inserter(names),
-                 [](const std::string &name) { return bool(std::ifstream(path(name, ".full.lst"))); });
+    std::copy_if(all.begin(), all.end(), std::back_inserter(names), [](const std::string &name) {
+        return bool(std::ifstream(path(name, ".full.lst")));
+    });
     return names;
 }
 

@@ -177,9 +177,8 @@ public:
     // first instruction, then the value row.
     void word(unsigned base, unsigned i, const std::string &first, const std::string &second)
     {
-        bool full = i == 0 || rows.size() % 64 == 0;
-        std::string addr =
-            full ? " " + octal(base + i, 5) : "    " + octal((base + i) & 077, 2);
+        bool full        = i == 0 || rows.size() % 64 == 0;
+        std::string addr = full ? " " + octal(base + i, 5) : "    " + octal((base + i) & 077, 2);
         rows.push_back(rtrim(addr + "  " + first));
         rows.push_back(rtrim(std::string(8, ' ') + second));
     }

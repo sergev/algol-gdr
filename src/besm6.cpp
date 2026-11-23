@@ -63,8 +63,9 @@ unsigned besm6_assemble(const std::string &text)
         f.push_back(w);
     if (f.size() < 2 || f.size() > 3)
         throw std::invalid_argument("bad instruction: " + text);
-    unsigned reg = f.size() == 3 ? std::stoul(f[0]) : 0;
-    const std::string &name = f[f.size() - 2], &a = f.back();
+    unsigned reg            = f.size() == 3 ? std::stoul(f[0]) : 0;
+    const std::string &name = f[f.size() - 2];
+    const std::string &a    = f.back();
     unsigned addr           = a == "*" ? 04444 : std::stoul(a, nullptr, 8);
     for (unsigned op = 0; op < 0400; op++) {
         if (op >= 0100 && (op < 0200 || (op & 7)))

@@ -47,10 +47,10 @@ constexpr unsigned DLIST_END   = 06000;
 constexpr unsigned COMMON      = 027245; // 3 words per element: name, D3<<36 | slot<<24, size
 constexpr unsigned FLGEX       = 00702;
 
-constexpr unsigned ONE            = 01632; // the slot of the constant 1
-constexpr unsigned TRUE_SLOT      = 01625;
-constexpr unsigned FALSE_SLOT     = 01624;
-constexpr unsigned STD_PROC       = 05776; // the standard procedure with an expression argument
+constexpr unsigned ONE        = 01632; // the slot of the constant 1
+constexpr unsigned TRUE_SLOT  = 01625;
+constexpr unsigned FALSE_SLOT = 01624;
+constexpr unsigned STD_PROC   = 05776; // the standard procedure with an expression argument
 
 // Per item code 0-0105 (TYPES at 21720…): the handler (a UJ in the high
 // half) and the classes of the code in some contexts.
@@ -141,39 +141,53 @@ const CodeAttr CODES[0106] = {
 // The same table read by the type field of a descriptor (bits 44-41): its
 // type (3 bits), a formal's type (4 bits); by kind_index(); by the packed
 // kind bits of a formal (its class in CORRESPONDENCE).
-const unsigned TYPE_OF[020]        = { 0, 1, 2, 5, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0 };
-const unsigned FORMAL_TYPE_OF[020] = { 00, 01, 02, 05, 03, 00, 00, 00, 04, 00, 00, 00, 010, 00, 00, 00 };
-const unsigned KIND_OF[040]        = { 00, 00, 01, 00, 02, 03, 00, 00, 00, 01, 00, 00, 04, 03, 00, 00, 00, 05, 01, 00, 06, 07, 00, 00, 00, 05, 01, 00, 06, 07, 00, 00 };
-const unsigned FORMAL_CLASS[0100]  = { 00, 02, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 04, 012, 00, 014, 016, 00, 00, 00, 06, 00, 00, 00, 00, 00, 00, 00, 010, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00 };
+// clang-format off
+const unsigned TYPE_OF[020] = {
+    0, 1, 2, 5, 3, 0, 0, 0,   4, 0, 0, 0, 0, 0, 0, 0,
+};
+const unsigned FORMAL_TYPE_OF[020] = {
+    00, 01, 02, 05, 03, 00, 00, 00,   04, 00, 00, 00, 010, 00, 00, 00,
+};
+const unsigned KIND_OF[040] = {
+    00, 00, 01, 00, 02, 03, 00, 00,   00, 01, 00, 00, 04, 03, 00, 00,
+    00, 05, 01, 00, 06, 07, 00, 00,   00, 05, 01, 00, 06, 07, 00, 00,
+};
+const unsigned FORMAL_CLASS[0100] = {
+    00,  02,  00,  00,  00,  00,  00,  00,   00,  00,  00,  00,  00,  00,  00,  00,
+    00,  00,  00,  00,  00,  00,  00,  00,   00,  00,  00,  00,  00,  00,  00,  00,
+    00,  04,  012, 00,  014, 016, 00,  00,   00,  06,  00,  00,  00,  00,  00,  00,
+    00,  010, 00,  00,  00,  00,  00,  00,   00,  00,  00,  00,  00,  00,  00,  00,
+};
+// clang-format on
 constexpr Word FORMAL_BITS = 01017400000000000; // packed for FORMAL_CLASS
 
 // How a type combines with another (TYPE_PAIRS, 17667…): 0 the same, 1 or 2
 // an integer and a real, 3 an error. Rows 6, 7 are other words there.
 const unsigned TYPE_COMBINE[8][8] = {
-    { 0, 3, 3, 3, 3, 3, 0, 0, }, // 0
-    { 3, 0, 2, 3, 3, 3, 0, 0, }, // 1
-    { 3, 1, 0, 3, 3, 3, 0, 0, }, // 2
-    { 3, 3, 3, 0, 3, 3, 0, 0, }, // 3
-    { 3, 3, 3, 3, 0, 3, 0, 0, }, // 4
-    { 3, 3, 3, 3, 3, 0, 0, 0, }, // 5
-    { 0, 0, 0, 0, 0, 0, 0, 0, }, // 6
-    { 2, 0, 0, 0, 0, 0, 0, 2, }, // 7
+    { 0, 3, 3, 3, 3, 3, 0, 0 }, // 0
+    { 3, 0, 2, 3, 3, 3, 0, 0 }, // 1
+    { 3, 1, 0, 3, 3, 3, 0, 0 }, // 2
+    { 3, 3, 3, 0, 3, 3, 0, 0 }, // 3
+    { 3, 3, 3, 3, 0, 3, 0, 0 }, // 4
+    { 3, 3, 3, 3, 3, 0, 0, 0 }, // 5
+    { 0, 0, 0, 0, 0, 0, 0, 0 }, // 6
+    { 2, 0, 0, 0, 0, 0, 0, 2 }, // 7
 };
 
 // Actual of kind k (row) for a formal of class c (column c/2): which marks
 // they exchange and what must agree (CORRESPONDENCE, 21075…).
 const unsigned CORRESPONDENCE[013][8] = {
-    { 00, 00, 00, 00, 00, 010, 010, 010, }, // 000
-    { 00, 00, 010, 010, 010, 01, 010, 010, }, // 001
-    { 00, 00, 010, 010, 010, 010, 01, 010, }, // 002
-    { 00, 00, 05, 010, 03, 010, 02, 00, }, // 003
-    { 00, 00, 07, 010, 06, 010, 01, 06, }, // 004
-    { 00, 00, 03, 04, 03, 010, 010, 010, }, // 005
-    { 00, 00, 07, 010, 06, 010, 01, 06, }, // 006
-    { 00, 00, 07, 010, 03, 010, 02, 00, }, // 007
-    { 00, 00, 05, 010, 00, 010, 010, 010, }, // 010
-    { 00, 00, 03, 03, 03, 010, 010, 010, }, // 011
-    { 00, 00, 07, 010, 03, 010, 02, 00, }, // 012
+    { 00, 00, 00, 00, 00, 010, 010, 010 },   // 000
+    { 00, 00, 010, 010, 010, 01, 010, 010 }, // 001
+    { 00, 00, 010, 010, 010, 010, 01, 010 }, // 002
+    { 00, 00, 05, 010, 03, 010, 02, 00 },    // 003
+    { 00, 00, 07, 010, 06, 010, 01, 06 },    // 004
+    { 00, 00, 03, 04, 03, 010, 010, 010 },   // 005
+    { 00, 00, 07, 010, 06, 010, 01, 06 },    // 006
+    { 00, 00, 07, 010, 03, 010, 02, 00 },    // 007
+    { 00, 00, 05, 010, 00, 010, 010, 010 },  // 010
+    { 00, 00, 03, 03, 03, 010, 010, 010 },   // 011
+    { 00, 00, 07, 010, 03, 010, 02, 00 },    // 012
 };
 
 // The relations of an integer and a real, by relation code 5-012 (20405…).
@@ -184,31 +198,41 @@ const bool NUMERIC[8] = { false, true, true, false, false, false, true, true };
 
 // The last item of a STEP element by the type of the step (21614…): 0140
 // real, 034 integer; the others are other words there.
-const Word STEP_KINDS[8] = { 05642160003017364, 0140, 034, 010202434122646, 0262162334102444, 0230203000150000, 0230203002200000, 01000074100000 };
+// clang-format off
+const Word STEP_KINDS[8] = {
+    05642160003017364, 0140,             034,              010202434122646,
+    0262162334102444,  0230203000150000, 0230203002200000, 01000074100000,
+};
+// clang-format on
 
 // The arithmetic operators + - * / (20142…): the item for integers at bits
 // 35-30, for reals at 29-24; their texts are OP_TEXT.
 // The low bits hold the operator's index.
-const Word OPS[] = { 067'13'00000000, 076'14'00000000 | 1, 077'15'00000000 | 2, 000'16'00000000 | 3 };
+const Word OPS[] = {
+    067'13'00000000,
+    076'14'00000000 | 1,
+    077'15'00000000 | 2,
+    000'16'00000000 | 3,
+};
 
 // Items and constants of the module.
-constexpr Word STRING_PLUS   = 070157;              // + on strings
-constexpr Word SLICE_CODE    = 050;
-constexpr Word STRING_DESC   = 0363400000000000;    // a string's descriptor under STRING_MASK
-constexpr Word STRING_MASK   = 0200400000000000;
+constexpr Word STRING_PLUS     = 070157; // + on strings
+constexpr Word SLICE_CODE      = 050;
+constexpr Word STRING_DESC     = 0363400000000000; // a string's descriptor under STRING_MASK
+constexpr Word STRING_MASK     = 0200400000000000;
 constexpr unsigned STRING_TYPE = 4;
-constexpr Word STD_PROC_BITS = 0340000000000;       // bits 39-37
-constexpr Word IO_ITEM       = 0270072;             // I/O items
-constexpr Word IO_ITEM_NAME  = 0300071;
-constexpr Word IO_ITEM_ARRAY = 0310071;
-constexpr Word IO_073        = 0320072;
-constexpr Word IO_101        = 016300024;
-constexpr Word IO_TWO_0101   = 060673;
-constexpr Word IO_TWO_0102   = 0630673;
-constexpr Word INTEGER       = 06400000000000000;   // an integer's exponent
-constexpr Word MINUS_4       = 07777777777777773;   // cyclic -4
-constexpr Word MINUS_0127    = 07777777777777650;   // cyclic -0127
-constexpr Word LEVEL_DOWN    = 07777777777767777;   // cyclic -(1 << 12)
+constexpr Word STD_PROC_BITS   = 0340000000000; // bits 39-37
+constexpr Word IO_ITEM         = 0270072;       // I/O items
+constexpr Word IO_ITEM_NAME    = 0300071;
+constexpr Word IO_ITEM_ARRAY   = 0310071;
+constexpr Word IO_073          = 0320072;
+constexpr Word IO_101          = 016300024;
+constexpr Word IO_TWO_0101     = 060673;
+constexpr Word IO_TWO_0102     = 0630673;
+constexpr Word INTEGER         = 06400000000000000; // an integer's exponent
+constexpr Word MINUS_4         = 07777777777777773; // cyclic -4
+constexpr Word MINUS_0127      = 07777777777777650; // cyclic -0127
+constexpr Word LEVEL_DOWN      = 07777777777767777; // cyclic -(1 << 12)
 
 // Message formats (G27733): ISO text, 0200+k inserts data word k.
 using Format = std::vector<Word>;
@@ -218,20 +242,21 @@ Format iso_format(std::string_view text)
     return iso_words(text);
 }
 
-const Format UNDECLARED        = iso_format("IDENTIFIER ′\200′ IS NOT DECLARED\202");
-const Format ILLEGAL_USE       = iso_format("ILLEGAL USE OF IDENTIFIER ′\200′\202");
-const Format TWICE             = iso_format("TWICE DECLARED IDENTIFIER ′\200′\202");
-const Format TYPE_ERROR        = iso_format("TYPE ERROR IN CONNECTION WITH \200\202");
-const Format NO_ASSIGNMENT     = iso_format("NO ASSIGNMENT TO ′\200′\202");
-const Format BAD_LEFT          = iso_format("ILLEGAL LEFT PART OR INPUT ELEMENT\202");
-const Format IO_ERROR          = iso_format("ILLEGAL ARGUMENT OF I/O STATEMENT\202");
-const Format BAD_INPUT         = iso_format("ILLEGAL INPUT OF ′\200′\202");
-const Format NO_CORRESPONDENCE = iso_format("NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′\210′ AND ′\200′\202");
-const Format LABEL_ARG         = iso_format("LABEL AS ARGUMENT OF NON-ALGOL CALL \202");
-const Format BAD_VALUE         = iso_format("ILLEGAL VALUE PARAMETER ′\200′\202");
-const Format BAD_LENGTH        = iso_format("ILLEGAL ARGUMENT OF LENGTH\202");
-const Format BAD_PRINT         = iso_format("ILLEGAL ARGUMENT OF PRINT\202");
-const Format INCORRECT         = iso_format(" * * INCORRECT ALGOL PROGRAM * * ");
+const Format UNDECLARED    = iso_format("IDENTIFIER ′\200′ IS NOT DECLARED\202");
+const Format ILLEGAL_USE   = iso_format("ILLEGAL USE OF IDENTIFIER ′\200′\202");
+const Format TWICE         = iso_format("TWICE DECLARED IDENTIFIER ′\200′\202");
+const Format TYPE_ERROR    = iso_format("TYPE ERROR IN CONNECTION WITH \200\202");
+const Format NO_ASSIGNMENT = iso_format("NO ASSIGNMENT TO ′\200′\202");
+const Format BAD_LEFT      = iso_format("ILLEGAL LEFT PART OR INPUT ELEMENT\202");
+const Format IO_ERROR      = iso_format("ILLEGAL ARGUMENT OF I/O STATEMENT\202");
+const Format BAD_INPUT     = iso_format("ILLEGAL INPUT OF ′\200′\202");
+const Format NO_CORRESPONDENCE =
+    iso_format("NO ACTUAL-FORMAL CORRESPONDENCE BETWEEN ′\210′ AND ′\200′\202");
+const Format LABEL_ARG  = iso_format("LABEL AS ARGUMENT OF NON-ALGOL CALL \202");
+const Format BAD_VALUE  = iso_format("ILLEGAL VALUE PARAMETER ′\200′\202");
+const Format BAD_LENGTH = iso_format("ILLEGAL ARGUMENT OF LENGTH\202");
+const Format BAD_PRINT  = iso_format("ILLEGAL ARGUMENT OF PRINT\202");
+const Format INCORRECT  = iso_format(" * * INCORRECT ALGOL PROGRAM * * ");
 
 // The position of the next statement (copied to POSITION, 6 words): the
 // format, then the texts of the line and the statement number.
@@ -254,16 +279,16 @@ const Format NOT_DECLARED = blank_padded("**HECOOTBETCTBИE B OПИCAHИЯX COMM
 const Format WRONG_ORDER  = blank_padded("*****ПEPEПYTAH ПOPЯДOK B OПИCAHИЯX COMMON ЭЛ-TA");
 
 // Arguments of TYPE ERROR IN CONNECTION WITH (one word; two for some).
-const Word GOTO_TEXT      = iso_word("GOTO\0 "sv);
-const Word INDEX_TEXT     = iso_word("INDEX\0"sv);
-const Word POWER_TEXT     = iso_word("′**′\0 "sv);
-const Word IF_TEXT        = iso_word("′IF′\0 "sv);
-const Word FOR_TEXT       = iso_word("′FOR′\0"sv);
-const Word SWITCH_TEXT    = iso_word("SWITCH");
-const Word ASSIGN_TEXT    = iso_word("′:=′\0 "sv);
-const Format BOOL_TEXT    = iso_format("BOOLEAN OP\0 "sv);
-const Format REL_TEXT     = iso_format("RELATION\0   "sv);
-const Word OP_TEXT[]      = {
+const Word GOTO_TEXT   = iso_word("GOTO\0 "sv);
+const Word INDEX_TEXT  = iso_word("INDEX\0"sv);
+const Word POWER_TEXT  = iso_word("′**′\0 "sv);
+const Word IF_TEXT     = iso_word("′IF′\0 "sv);
+const Word FOR_TEXT    = iso_word("′FOR′\0"sv);
+const Word SWITCH_TEXT = iso_word("SWITCH");
+const Word ASSIGN_TEXT = iso_word("′:=′\0 "sv);
+const Format BOOL_TEXT = iso_format("BOOLEAN OP\0 "sv);
+const Format REL_TEXT  = iso_format("RELATION\0   "sv);
+const Word OP_TEXT[]   = {
     iso_word("′+′\0  "sv),
     iso_word("′-′\0  "sv),
     iso_word("′*′\0  "sv),
@@ -753,7 +778,7 @@ void Pass2::format_line(const Format &format, unsigned data)
 // A message of the 'COMMON' check: the text with the element's name.
 void Pass2::common_message(const Format &text, Word element)
 {
-    flgex_ = cyclic_add(flgex_, 1);
+    flgex_   = cyclic_add(flgex_, 1);
     Format w = text;
     w.push_back(element);
     print_words(w);
@@ -1400,7 +1425,7 @@ unsigned Pass2::power_item()
             parse_sub(020270);
             emit_code_ = type_ == 2 ? 0153 : 0152;
             if (type_ == 5) {
-                Word e     = top(1) ? raw_rsub(top(2), INTEGER | 64) : raw_add(top(2), INTEGER | 64);
+                Word e = top(1) ? raw_rsub(top(2), INTEGER | 64) : raw_add(top(2), INTEGER | 64);
                 emit_code_ = 0352;
                 emit_shifted(e);
                 sp_ -= 2;
@@ -3336,8 +3361,7 @@ void Pass2::register_handlers()
 }
 
 Pass2::Pass2(Context &ctx, const Stream &input)
-    : ctx_(ctx), in_(input), pos_(input.size()),
-      flgex_(ctx.flgex)
+    : ctx_(ctx), in_(input), pos_(input.size()), flgex_(ctx.flgex)
 {
     operand_ = ctx.regs[3] & 077777;
     desc_    = ctx.regs[4] & 077777;
