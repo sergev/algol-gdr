@@ -1,14 +1,13 @@
 externals: []
 block:
   kind: block
-  loc: 2/2
+  loc: 2/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: var, name: "X", id: 2, type: real}
-    - {kind: var, name: "B", id: 3, type: boolean}
-    - {kind: label, name: "L", id: 22}
-    - {kind: label, name: "M", id: 23}
+    - {kind: var, line: 2, name: "I", id: 1, type: integer}
+    - {kind: var, line: 2, name: "X", id: 2, type: real}
+    - {kind: var, line: 2, name: "B", id: 3, type: boolean}
     - kind: arrays
+      line: 3
       type: integer
       arrays:
         - {name: "IA", id: 4}
@@ -16,6 +15,7 @@ block:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 3}
     - kind: arrays
+      line: 3
       type: real
       arrays:
         - {name: "RA", id: 5}
@@ -23,6 +23,7 @@ block:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 3}
     - kind: arrays
+      line: 4
       type: boolean
       arrays:
         - {name: "BA", id: 6}
@@ -30,12 +31,14 @@ block:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 3}
     - kind: switch
+      line: 5
       name: "S"
       id: 7
       elements:
         - {kind: label_ref, type: none, label: 22, name: "L"}
         - {kind: label_ref, type: none, label: 23, name: "M"}
     - kind: procedure
+      line: 6
       name: "IP"
       id: 8
       type: integer
@@ -48,6 +51,7 @@ block:
           - {kind: var, decl: 8, name: "IP"}
         value: {kind: var, type: integer, decl: 9, name: "N"}
     - kind: procedure
+      line: 7
       name: "RP"
       id: 10
       type: real
@@ -63,6 +67,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: procedure
+      line: 8
       name: "BP"
       id: 11
       type: boolean
@@ -74,12 +79,14 @@ block:
           - {kind: var, decl: 11, name: "BP"}
         value: {kind: bool_const, type: boolean, value: true}
     - kind: procedure
+      line: 9
       name: "P0"
       id: 12
       type: none
       formals: []
-      body: {kind: dummy, loc: 8/2}
+      body: {kind: dummy, loc: 9/1}
     - kind: procedure
+      line: 10
       name: "PP"
       id: 13
       type: none
@@ -91,17 +98,22 @@ block:
         - {name: "A5", id: 18, spec: label, by_value: false}
         - {name: "A6", id: 19, spec: procedure, by_value: false}
         - {name: "A7", id: 20, spec: simple, type: string, by_value: false}
-        - {name: "A8", id: 21, spec: array, by_value: false}
+        - {name: "A8", id: 21, spec: switch, by_value: false}
       body:
-        kind: assign
-        loc: 13/3
-        targets:
-          - {kind: var, decl: 15, name: "A2"}
-        value:
-          kind: convert
-          type: real
-          conv: int_to_real
-          expr: {kind: var, type: integer, decl: 14, name: "A1"}
+        kind: compound
+        loc: 13/1
+        body:
+          - kind: assign
+            loc: 13/2
+            targets:
+              - {kind: var, decl: 15, name: "A2"}
+            value:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: var, type: integer, decl: 14, name: "A1"}
+    - {kind: label, line: 14, name: "L", id: 22}
+    - {kind: label, line: 15, name: "M", id: 23}
   body:
     - kind: labeled
       loc: 14/1
@@ -109,7 +121,7 @@ block:
       name: "L"
       stmt:
         kind: assign
-        loc: 14/1
+        loc: 14/2
         targets:
           - {kind: var, decl: 1, name: "I"}
         value: {kind: int_const, type: integer, value: 1}
@@ -119,7 +131,7 @@ block:
       name: "M"
       stmt:
         kind: assign
-        loc: 15/1
+        loc: 15/2
         targets:
           - {kind: var, decl: 2, name: "X"}
         value:
@@ -335,7 +347,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: io
-      loc: 25/4
+      loc: 25/3
       op: print
       params: []
       items:
@@ -364,7 +376,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: io
-      loc: 26/4
+      loc: 26/3
       op: print
       params: []
       items:
@@ -395,7 +407,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: io
-      loc: 27/4
+      loc: 27/3
       op: print
       params: []
       items:
@@ -429,7 +441,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: io
-      loc: 28/4
+      loc: 28/3
       op: print
       params: []
       items:
@@ -458,7 +470,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: io
-      loc: 29/4
+      loc: 29/3
       op: print
       params: []
       items:
@@ -487,7 +499,7 @@ block:
           conv: int_to_real
           expr: {kind: int_const, type: integer, value: 1}
     - kind: io
-      loc: 30/4
+      loc: 30/3
       op: print
       params: []
       items:

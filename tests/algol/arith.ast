@@ -1,13 +1,13 @@
 externals: []
 block:
   kind: block
-  loc: 5/1
+  loc: 1/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: var, name: "J", id: 2, type: integer}
-    - {kind: var, name: "K", id: 3, type: integer}
-    - {kind: var, name: "X", id: 4, type: real}
-    - {kind: var, name: "Y", id: 5, type: real}
+    - {kind: var, line: 3, name: "I", id: 1, type: integer}
+    - {kind: var, line: 3, name: "J", id: 2, type: integer}
+    - {kind: var, line: 3, name: "K", id: 3, type: integer}
+    - {kind: var, line: 4, name: "X", id: 4, type: real}
+    - {kind: var, line: 4, name: "Y", id: 5, type: real}
   body:
     - kind: assign
       loc: 5/1
@@ -136,17 +136,12 @@ block:
             kind: binary
             type: real
             op: power
-            left:
-              kind: binary
-              type: real
-              op: div
-              left:
-                kind: convert
-                type: real
-                conv: int_to_real
-                expr: {kind: int_const, type: integer, value: 1}
-              right: {kind: real_const, type: real, value: 2.0}
-            right: {kind: int_const, type: integer, value: 1}
+            left: {kind: real_const, type: real, value: 2.0}
+            right:
+              kind: unary
+              type: integer
+              op: neg
+              operand: {kind: int_const, type: integer, value: 1}
     - kind: assign
       loc: 9/1
       targets:
@@ -207,7 +202,7 @@ block:
           type: real
           op: add
           left: {kind: var, type: real, decl: 4, name: "X"}
-          right: {kind: real_const, type: real, value: 0.6000000000003638}
+          right: {kind: real_const, type: real, value: 0.6}
     - kind: io
       loc: 12/1
       op: print
@@ -221,8 +216,12 @@ block:
             type: real
             op: add
             left: {kind: var, type: real, decl: 4, name: "X"}
-            right: {kind: var, type: integer, decl: 1, name: "I"}
+            right:
+              kind: convert
+              type: real
+              conv: int_to_real
+              expr: {kind: var, type: integer, decl: 1, name: "I"}
         - kind: item
           expr: {kind: real_const, type: real, value: 1000.0}
         - kind: item
-          expr: {kind: real_const, type: real, value: 0.025000000000005684}
+          expr: {kind: real_const, type: real, value: 0.025}

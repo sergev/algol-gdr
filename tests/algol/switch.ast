@@ -1,16 +1,11 @@
 externals: []
 block:
   kind: block
-  loc: 3/1
+  loc: 1/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: label, name: "NEXT", id: 3}
-    - {kind: label, name: "A", id: 4}
-    - {kind: label, name: "B", id: 5}
-    - {kind: label, name: "C", id: 6}
-    - {kind: label, name: "DONE", id: 7}
-    - {kind: label, name: "E", id: 8}
+    - {kind: var, line: 3, name: "I", id: 1, type: integer}
     - kind: switch
+      line: 4
       name: "S"
       id: 2
       elements:
@@ -26,6 +21,12 @@ block:
             right: {kind: int_const, type: integer, value: 2}
           then: {kind: label_ref, type: none, label: 6, name: "C"}
           else: {kind: label_ref, type: none, label: 4, name: "A"}
+    - {kind: label, line: 6, name: "NEXT", id: 3}
+    - {kind: label, line: 10, name: "A", id: 4}
+    - {kind: label, line: 11, name: "B", id: 5}
+    - {kind: label, line: 12, name: "C", id: 6}
+    - {kind: label, line: 13, name: "DONE", id: 7}
+    - {kind: label, line: 15, name: "E", id: 8}
   body:
     - kind: assign
       loc: 5/1
@@ -38,7 +39,7 @@ block:
       name: "NEXT"
       stmt:
         kind: assign
-        loc: 6/1
+        loc: 7/1
         targets:
           - {kind: var, decl: 1, name: "I"}
         value:
@@ -73,14 +74,14 @@ block:
       name: "A"
       stmt:
         kind: io
-        loc: 10/1
+        loc: 10/2
         op: print
         params: []
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 1}
     - kind: goto
-      loc: 10/2
+      loc: 10/3
       target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
     - kind: labeled
       loc: 11/1
@@ -88,14 +89,14 @@ block:
       name: "B"
       stmt:
         kind: io
-        loc: 11/1
+        loc: 11/2
         op: print
         params: []
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 2}
     - kind: goto
-      loc: 11/2
+      loc: 11/3
       target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
     - kind: labeled
       loc: 12/1
@@ -103,36 +104,33 @@ block:
       name: "C"
       stmt:
         kind: io
-        loc: 12/1
+        loc: 12/2
         op: print
         params: []
         items:
           - kind: item
             expr: {kind: int_const, type: integer, value: 3}
     - kind: goto
-      loc: 12/2
+      loc: 12/3
       target: {kind: label_ref, type: none, label: 3, name: "NEXT"}
     - kind: labeled
       loc: 13/1
       label: 7
       name: "DONE"
       stmt:
-        kind: if
-        loc: 13/1
-        condition:
-          kind: binary
-          type: boolean
-          op: eq
-          left: {kind: var, type: integer, decl: 1, name: "I"}
-          right: {kind: int_const, type: integer, value: 4}
-        then:
-          kind: goto
-          loc: 13/1
-          target: {kind: label_ref, type: none, label: 8, name: "E"}
-        else:
-          kind: goto
-          loc: 13/1
-          target:
+        kind: goto
+        loc: 14/1
+        target:
+          kind: cond
+          type: none
+          condition:
+            kind: binary
+            type: boolean
+            op: eq
+            left: {kind: var, type: integer, decl: 1, name: "I"}
+            right: {kind: int_const, type: integer, value: 4}
+          then: {kind: label_ref, type: none, label: 8, name: "E"}
+          else:
             kind: switch_element
             type: none
             switch: 2
@@ -144,7 +142,7 @@ block:
       name: "E"
       stmt:
         kind: io
-        loc: 15/1
+        loc: 15/2
         op: print
         params: []
         items:

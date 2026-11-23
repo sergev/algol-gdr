@@ -1,21 +1,23 @@
 externals: []
 block:
   kind: block
-  loc: 1/2
+  loc: 1/1
   decls:
-    - {kind: var, name: "I", id: 2, type: integer}
-    - {kind: var, name: "J", id: 3, type: integer}
-    - {kind: var, name: "Q", id: 4, type: string}
-    - {kind: var, name: "R", id: 5, type: string}
-    - {kind: var, name: "S", id: 6, type: string}
     - kind: arrays
+      line: 1
       type: string
       arrays:
         - {name: "L", id: 1}
       bounds:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 7}
+    - {kind: var, line: 1, name: "I", id: 2, type: integer}
+    - {kind: var, line: 1, name: "J", id: 3, type: integer}
+    - {kind: var, line: 1, name: "Q", id: 4, type: string}
+    - {kind: var, line: 1, name: "R", id: 5, type: string}
+    - {kind: var, line: 1, name: "S", id: 6, type: string}
     - kind: procedure
+      line: 2
       name: "P"
       id: 7
       type: none
@@ -23,10 +25,10 @@ block:
         - {name: "S", id: 8, spec: simple, type: string, by_value: false}
       body:
         kind: compound
-        loc: 2/3
+        loc: 2/1
         body:
           - kind: for
-            loc: 2/3
+            loc: 2/2
             control: {kind: var, decl: 3, name: "J"}
             elements:
               - kind: step_until
@@ -65,24 +67,24 @@ block:
                         left:
                           kind: string_element
                           type: string
-                          string: {kind: var, type: integer, decl: 3, name: "J"}
-                          index: {kind: var, type: string, decl: 8, name: "S"}
+                          string: {kind: var, type: string, decl: 8, name: "S"}
+                          index: {kind: var, type: integer, decl: 3, name: "J"}
                         right: {kind: string_const, type: string, value: "/"}
                     then: {kind: var, type: string, decl: 4, name: "Q"}
                     else:
                       kind: string_element
                       type: string
-                      string: {kind: var, type: integer, decl: 3, name: "J"}
-                      index: {kind: var, type: string, decl: 8, name: "S"}
+                      string: {kind: var, type: string, decl: 8, name: "S"}
+                      index: {kind: var, type: integer, decl: 3, name: "J"}
           - kind: io
-            loc: 4/2
+            loc: 4/1
             op: print
             params: []
             items:
               - {kind: new_line}
   body:
     - kind: assign
-      loc: 4/4
+      loc: 4/2
       targets:
         - {kind: var, decl: 5, name: "R"}
       value: {kind: string_const, type: string, value: "1234567"}
@@ -179,7 +181,7 @@ block:
             subscripts:
               - {kind: var, type: integer, decl: 2, name: "I"}
     - kind: for
-      loc: 12/5
+      loc: 12/4
       control: {kind: var, decl: 2, name: "I"}
       elements:
         - kind: value
@@ -208,8 +210,8 @@ block:
             expr:
               kind: string_element
               type: string
-              string: {kind: var, type: integer, decl: 2, name: "I"}
-              index: {kind: var, type: string, decl: 5, name: "R"}
+              string: {kind: var, type: string, decl: 5, name: "R"}
+              index: {kind: var, type: integer, decl: 2, name: "I"}
           - kind: item
             expr: {kind: string_const, type: string, value: "]:="}
           - kind: item
@@ -232,7 +234,7 @@ block:
             expr: {kind: string_const, type: string, value: ";"}
           - {kind: new_line}
     - kind: for
-      loc: 14/2
+      loc: 14/1
       control: {kind: var, decl: 2, name: "I"}
       elements:
         - kind: value
@@ -243,7 +245,7 @@ block:
           value: {kind: int_const, type: integer, value: 7}
       body:
         kind: call
-        loc: 14/3
+        loc: 14/2
         proc: 7
         name: "P"
         args:

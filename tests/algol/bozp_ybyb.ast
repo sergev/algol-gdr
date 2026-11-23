@@ -4,16 +4,17 @@ externals:
   - {kind: algol, name: "YBYB", id: 3}
 block:
   kind: block
-  loc: 4/2
+  loc: 4/1
   decls:
-    - {kind: var, name: "I", id: 5, type: integer}
     - kind: arrays
+      line: 5
       type: real
       arrays:
         - {name: "A", id: 4}
       bounds:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 10}
+    - {kind: var, line: 6, name: "I", id: 5, type: integer}
   body:
     - kind: for
       loc: 8/1
@@ -46,7 +47,6 @@ block:
       loc: 11/1
       op: write
       params:
-        - {kind: int_const, type: integer, value: 51}
         - {kind: string_const, type: string, value: "(10F7.3)"}
       items:
         - kind: item
@@ -62,7 +62,6 @@ block:
       loc: 15/1
       op: write
       params:
-        - {kind: int_const, type: integer, value: 51}
         - {kind: string_const, type: string, value: "(10F7.3)"}
       items:
         - kind: item
@@ -78,7 +77,6 @@ block:
       loc: 19/1
       op: write
       params:
-        - {kind: int_const, type: integer, value: 51}
         - {kind: string_const, type: string, value: "(10F7.3)"}
       items:
         - kind: item

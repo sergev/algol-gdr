@@ -1,57 +1,33 @@
 externals: []
 block:
   kind: block
-  loc: 1/2
+  loc: 1/1
   decls:
-    - kind: common
-      name: "ABC"
-      elements:
-        - {name: "X", decl: 2, size: 1}
-        - {name: "Y", decl: 3, size: 10}
-        - {name: "Z", decl: 4, size: 6}
-    - kind: common
-      name: "DATA"
-      elements:
-        - {name: "N", decl: 6, size: 1}
-        - {name: "T", decl: 7, size: 8}
-    - kind: common
-      name: "S"
-      elements:
-        - {name: "W", decl: 9, size: 1}
+    - {kind: var, line: 5, name: "X", id: 1, type: real}
     - kind: arrays
+      line: 5
       type: real
       arrays:
-        - {name: "X", id: 2}
-      bounds:
-        - lower: {kind: int_const, type: integer, value: 1}
-          upper: {kind: int_const, type: integer, value: 1}
-    - kind: arrays
-      type: real
-      arrays:
-        - {name: "Y", id: 3}
+        - {name: "Y", id: 2}
       bounds:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 10}
     - kind: arrays
+      line: 5
       type: integer
       arrays:
-        - {name: "Z", id: 4}
+        - {name: "Z", id: 3}
       bounds:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 2}
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 3}
+    - {kind: var, line: 7, name: "N", id: 4, type: integer}
     - kind: arrays
-      type: integer
-      arrays:
-        - {name: "N", id: 6}
-      bounds:
-        - lower: {kind: int_const, type: integer, value: 1}
-          upper: {kind: int_const, type: integer, value: 1}
-    - kind: arrays
+      line: 7
       type: real
       arrays:
-        - {name: "T", id: 7}
+        - {name: "T", id: 5}
       bounds:
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 2}
@@ -59,22 +35,30 @@ block:
           upper: {kind: int_const, type: integer, value: 2}
         - lower: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 2}
-    - kind: arrays
-      type: boolean
-      arrays:
-        - {name: "W", id: 9}
-      bounds:
-        - lower: {kind: int_const, type: integer, value: 1}
-          upper: {kind: int_const, type: integer, value: 1}
+    - {kind: var, line: 9, name: "W", id: 6, type: boolean}
+    - kind: common
+      line: 4
+      name: "ABC"
+      elements:
+        - {name: "X", decl: 1, size: 1}
+        - {name: "Y", decl: 2, size: 10}
+        - {name: "Z", decl: 3, size: 6}
+    - kind: common
+      line: 6
+      name: "DATA"
+      elements:
+        - {name: "N", decl: 4, size: 1}
+        - {name: "T", decl: 5, size: 8}
+    - kind: common
+      line: 8
+      name: "S"
+      elements:
+        - {name: "W", decl: 6, size: 1}
   body:
     - kind: assign
       loc: 10/1
       targets:
-        - kind: element
-          array: 2
-          name: "X"
-          subscripts:
-            - {kind: int_const, type: integer, value: 1}
+        - {kind: var, decl: 1, name: "X"}
       value:
         kind: convert
         type: real
@@ -84,7 +68,7 @@ block:
       loc: 10/2
       targets:
         - kind: element
-          array: 3
+          array: 2
           name: "Y"
           subscripts:
             - {kind: int_const, type: integer, value: 1}
@@ -97,7 +81,7 @@ block:
       loc: 10/3
       targets:
         - kind: element
-          array: 4
+          array: 3
           name: "Z"
           subscripts:
             - {kind: int_const, type: integer, value: 2}
@@ -106,17 +90,13 @@ block:
     - kind: assign
       loc: 11/1
       targets:
-        - kind: element
-          array: 6
-          name: "N"
-          subscripts:
-            - {kind: int_const, type: integer, value: 1}
+        - {kind: var, decl: 4, name: "N"}
       value: {kind: int_const, type: integer, value: 4}
     - kind: assign
       loc: 11/2
       targets:
         - kind: element
-          array: 7
+          array: 5
           name: "T"
           subscripts:
             - {kind: int_const, type: integer, value: 2}
@@ -130,11 +110,7 @@ block:
     - kind: assign
       loc: 11/3
       targets:
-        - kind: element
-          array: 9
-          name: "W"
-          subscripts:
-            - {kind: int_const, type: integer, value: 1}
+        - {kind: var, decl: 6, name: "W"}
       value: {kind: bool_const, type: boolean, value: true}
     - kind: io
       loc: 12/1
@@ -142,18 +118,12 @@ block:
       params: []
       items:
         - kind: item
-          expr:
-            kind: element
-            type: real
-            array: 2
-            name: "X"
-            subscripts:
-              - {kind: int_const, type: integer, value: 1}
+          expr: {kind: var, type: real, decl: 1, name: "X"}
         - kind: item
           expr:
             kind: element
             type: real
-            array: 3
+            array: 2
             name: "Y"
             subscripts:
               - {kind: int_const, type: integer, value: 1}
@@ -161,34 +131,22 @@ block:
           expr:
             kind: element
             type: integer
-            array: 4
+            array: 3
             name: "Z"
             subscripts:
               - {kind: int_const, type: integer, value: 2}
               - {kind: int_const, type: integer, value: 3}
         - kind: item
-          expr:
-            kind: element
-            type: integer
-            array: 6
-            name: "N"
-            subscripts:
-              - {kind: int_const, type: integer, value: 1}
+          expr: {kind: var, type: integer, decl: 4, name: "N"}
         - kind: item
           expr:
             kind: element
             type: real
-            array: 7
+            array: 5
             name: "T"
             subscripts:
               - {kind: int_const, type: integer, value: 2}
               - {kind: int_const, type: integer, value: 2}
               - {kind: int_const, type: integer, value: 2}
         - kind: item
-          expr:
-            kind: element
-            type: boolean
-            array: 9
-            name: "W"
-            subscripts:
-              - {kind: int_const, type: integer, value: 1}
+          expr: {kind: var, type: boolean, decl: 6, name: "W"}

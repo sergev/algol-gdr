@@ -2,8 +2,7 @@
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
 // The parser on every program: its listing is that of the original up to
-// the messages there; its messages are NAME.err (none when the file is
-// absent). With ALGC_UPDATE_GOLDENS set, NAME.err is written instead.
+// the messages there.
 //
 #include "parser.h"
 
@@ -45,16 +44,7 @@ TEST_P(ParserTest, listing_and_messages)
                                                                  << got.substr(n, 200);
     }
 
-    const std::string err_file = path(name, ".err");
-    if (std::getenv("ALGC_UPDATE_GOLDENS")) {
-        if (err.str().empty())
-            std::remove(err_file.c_str());
-        else
-            std::ofstream(err_file) << err.str();
-        return;
-    }
-    std::ifstream in(err_file);
-    EXPECT_EQ(err.str(), in ? file_contents(err_file) : "");
+    // The messages are checked with the AST (ast_test).
 }
 
 static std::string param_name(const ::testing::TestParamInfo<std::string> &p)

@@ -3,3 +3,5 @@ err_common.alg:4: error: 'COMMON': ',' or ';' expected
 err_common.alg:5: error: 'COMMON': ',' or ';' expected
 err_common.alg:6: error: 'COMMON': ',' or ';' expected
 err_common.alg:8: error: Expected a statement, found 'REAL'
+err_common.alg:7: error: Undeclared identifier 'W'
+err_common.alg:9: error: Undeclared identifier 'X'

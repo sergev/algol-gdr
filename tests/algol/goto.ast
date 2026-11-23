@@ -1,15 +1,11 @@
 externals: []
 block:
   kind: block
-  loc: 3/1
+  loc: 1/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: label, name: "AGAIN", id: 4}
-    - {kind: var, name: "K", id: 5, type: integer}
-    - {kind: label, name: "L1", id: 6}
-    - {kind: label, name: "L2", id: 7}
-    - {kind: label, name: "OUT", id: 8}
+    - {kind: var, line: 3, name: "I", id: 1, type: integer}
     - kind: procedure
+      line: 4
       name: "P"
       id: 2
       type: none
@@ -17,7 +13,7 @@ block:
         - {name: "N", id: 3, spec: simple, type: integer, by_value: true}
       body:
         kind: compound
-        loc: 6/1
+        loc: 5/1
         body:
           - kind: if
             loc: 6/1
@@ -30,7 +26,7 @@ block:
             then:
               kind: goto
               loc: 6/2
-              target: {kind: label_ref, type: none, label: 8, name: "OUT"}
+              target: {kind: label_ref, type: none, label: 6, name: "OUT"}
           - kind: io
             loc: 7/1
             op: print
@@ -38,6 +34,9 @@ block:
             items:
               - kind: item
                 expr: {kind: var, type: integer, decl: 3, name: "N"}
+    - {kind: label, line: 10, name: "AGAIN", id: 4}
+    - {kind: label, line: 22, name: "L2", id: 5}
+    - {kind: label, line: 24, name: "OUT", id: 6}
   body:
     - kind: assign
       loc: 9/1
@@ -50,7 +49,7 @@ block:
       name: "AGAIN"
       stmt:
         kind: assign
-        loc: 10/1
+        loc: 11/1
         targets:
           - {kind: var, decl: 1, name: "I"}
         value:
@@ -78,40 +77,46 @@ block:
       items:
         - kind: item
           expr: {kind: var, type: integer, decl: 1, name: "I"}
-    - kind: assign
-      loc: 15/1
-      targets:
-        - {kind: var, decl: 5, name: "K"}
-      value: {kind: int_const, type: integer, value: 5}
-    - kind: goto
-      loc: 16/1
-      target: {kind: label_ref, type: none, label: 6, name: "L1"}
-    - kind: io
-      loc: 17/1
-      op: print
-      params: []
-      items:
-        - kind: item
-          expr:
-            kind: unary
-            type: integer
-            op: neg
-            operand: {kind: int_const, type: integer, value: 1}
-    - kind: labeled
-      loc: 18/1
-      label: 6
-      name: "L1"
-      stmt:
-        kind: io
-        loc: 18/1
-        op: print
-        params: []
-        items:
-          - kind: item
-            expr: {kind: var, type: integer, decl: 5, name: "K"}
-    - kind: goto
-      loc: 19/1
-      target: {kind: label_ref, type: none, label: 7, name: "L2"}
+    - kind: block
+      loc: 14/1
+      decls:
+        - {kind: var, line: 14, name: "K", id: 7, type: integer}
+        - {kind: label, line: 18, name: "L1", id: 8}
+      body:
+        - kind: assign
+          loc: 15/1
+          targets:
+            - {kind: var, decl: 7, name: "K"}
+          value: {kind: int_const, type: integer, value: 5}
+        - kind: goto
+          loc: 16/1
+          target: {kind: label_ref, type: none, label: 8, name: "L1"}
+        - kind: io
+          loc: 17/1
+          op: print
+          params: []
+          items:
+            - kind: item
+              expr:
+                kind: unary
+                type: integer
+                op: neg
+                operand: {kind: int_const, type: integer, value: 1}
+        - kind: labeled
+          loc: 18/1
+          label: 8
+          name: "L1"
+          stmt:
+            kind: io
+            loc: 18/2
+            op: print
+            params: []
+            items:
+              - kind: item
+                expr: {kind: var, type: integer, decl: 7, name: "K"}
+        - kind: goto
+          loc: 19/1
+          target: {kind: label_ref, type: none, label: 5, name: "L2"}
     - kind: io
       loc: 21/1
       op: print
@@ -125,23 +130,23 @@ block:
             operand: {kind: int_const, type: integer, value: 2}
     - kind: labeled
       loc: 22/1
-      label: 7
+      label: 5
       name: "L2"
       stmt:
         kind: call
-        loc: 22/1
+        loc: 22/2
         proc: 2
         name: "P"
         args:
           - {kind: int_const, type: integer, value: 1}
     - kind: call
-      loc: 22/2
+      loc: 22/3
       proc: 2
       name: "P"
       args:
         - {kind: int_const, type: integer, value: 2}
     - kind: call
-      loc: 22/3
+      loc: 22/4
       proc: 2
       name: "P"
       args:
@@ -159,11 +164,11 @@ block:
             operand: {kind: int_const, type: integer, value: 3}
     - kind: labeled
       loc: 24/1
-      label: 8
+      label: 6
       name: "OUT"
       stmt:
         kind: io
-        loc: 24/1
+        loc: 25/1
         op: print
         params: []
         items:

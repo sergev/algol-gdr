@@ -447,6 +447,9 @@ StmtList Parser::statements()
             return list;
         }
         report(tok_.line, "Expected ';' or 'END', found " + found());
+        // The statement before is incomplete: not checked.
+        if (!std::holds_alternative<stmt::Labeled>(list.back()->node))
+            list.back()->node = stmt::Error{};
         if (tok_.sym == Sym::ELSE)
             advance();
         skip_statement();

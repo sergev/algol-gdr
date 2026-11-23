@@ -1,24 +1,22 @@
 externals: []
 block:
   kind: block
-  loc: 1/2
+  loc: 1/1
   decls:
-    - {kind: var, name: "I", id: 2, type: integer}
-    - {kind: var, name: "K", id: 3, type: integer}
-    - {kind: var, name: "B", id: 4, type: boolean}
-    - {kind: var, name: "C", id: 5, type: boolean}
-    - {kind: label, name: "L0", id: 10}
-    - {kind: label, name: "L1", id: 11}
-    - {kind: label, name: "L2", id: 12}
-    - {kind: label, name: "L3", id: 13}
     - kind: switch
+      line: 3
       name: "S"
       id: 1
       elements:
         - {kind: label_ref, type: none, label: 11, name: "L1"}
         - {kind: label_ref, type: none, label: 12, name: "L2"}
         - {kind: label_ref, type: none, label: 13, name: "L3"}
+    - {kind: var, line: 4, name: "I", id: 2, type: integer}
+    - {kind: var, line: 4, name: "K", id: 3, type: integer}
+    - {kind: var, line: 4, name: "B", id: 4, type: boolean}
+    - {kind: var, line: 4, name: "C", id: 5, type: boolean}
     - kind: arrays
+      line: 5
       type: real
       arrays:
         - {name: "A", id: 6}
@@ -32,6 +30,7 @@ block:
             operand: {kind: int_const, type: integer, value: 1}
           upper: {kind: int_const, type: integer, value: 1}
     - kind: procedure
+      line: 6
       name: "P"
       id: 7
       type: none
@@ -52,8 +51,16 @@ block:
           kind: binary
           type: real
           op: add
-          left: {kind: var, type: integer, decl: 8, name: "N"}
+          left:
+            kind: convert
+            type: real
+            conv: int_to_real
+            expr: {kind: var, type: integer, decl: 8, name: "N"}
           right: {kind: real_const, type: real, value: 0.5}
+    - {kind: label, line: 9, name: "L0", id: 10}
+    - {kind: label, line: 10, name: "L1", id: 11}
+    - {kind: label, line: 11, name: "L2", id: 12}
+    - {kind: label, line: 12, name: "L3", id: 13}
   body:
     - kind: assign
       loc: 8/1
@@ -66,7 +73,7 @@ block:
       name: "L0"
       stmt:
         kind: goto
-        loc: 9/1
+        loc: 9/2
         target:
           kind: switch_element
           type: none
@@ -79,7 +86,7 @@ block:
       name: "L1"
       stmt:
         kind: assign
-        loc: 10/1
+        loc: 10/2
         targets:
           - {kind: var, decl: 2, name: "I"}
         value:
@@ -89,7 +96,7 @@ block:
           left: {kind: var, type: integer, decl: 2, name: "I"}
           right: {kind: int_const, type: integer, value: 1}
     - kind: goto
-      loc: 10/2
+      loc: 10/3
       target: {kind: label_ref, type: none, label: 10, name: "L0"}
     - kind: labeled
       loc: 11/1
@@ -97,7 +104,7 @@ block:
       name: "L2"
       stmt:
         kind: assign
-        loc: 11/1
+        loc: 11/2
         targets:
           - {kind: var, decl: 2, name: "I"}
         value:
@@ -107,7 +114,7 @@ block:
           left: {kind: var, type: integer, decl: 2, name: "I"}
           right: {kind: int_const, type: integer, value: 1}
     - kind: goto
-      loc: 11/2
+      loc: 11/3
       target: {kind: label_ref, type: none, label: 10, name: "L0"}
     - kind: labeled
       loc: 12/1
@@ -115,7 +122,7 @@ block:
       name: "L3"
       stmt:
         kind: assign
-        loc: 12/1
+        loc: 12/2
         targets:
           - {kind: var, decl: 4, name: "B"}
         value:
@@ -191,9 +198,10 @@ block:
           left: {kind: var, type: integer, decl: 3, name: "K"}
           right: {kind: int_const, type: integer, value: 1}
     - kind: block
-      loc: 16/2
+      loc: 16/1
       decls:
         - kind: arrays
+          line: 16
           type: integer
           arrays:
             - {name: "X", id: 14}

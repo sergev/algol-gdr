@@ -36,10 +36,6 @@ and go on at the next statement). The listing (`--list`) of a correct program st
 is; error messages are no longer in it. Goldens `.err` hold the messages of the error
 programs.
 
-- **E7.1c** Checker (`checker.cpp`): scopes, declarations, types, conversions, the
-  semantic errors; it builds the AST. Every correct program gives its `.ast` but for real
-  blocks (blocks without arrays get their own `Block` nodes) and declaration positions
-  (diff reviewed); `.err` complete for the error programs.
 - **E7.1d** Switch over: `algc` on the new front end; passes 1–2, `Tables`, `Symbols`,
   the stream items, `ast_builder` and the `.s1`/`.s2`/`.lex`/`.sym` goldens go; docs
   updated (doc/passes.md and doc/tables.md become history of the original).

@@ -1,9 +1,9 @@
 externals: []
 block:
   kind: block
-  loc: 4/1
+  loc: 1/1
   decls:
-    - {kind: var, name: "S", id: 1, type: integer}
+    - {kind: var, line: 3, name: "S", id: 1, type: integer}
   body:
     - kind: assign
       loc: 4/1

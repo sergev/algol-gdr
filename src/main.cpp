@@ -8,8 +8,10 @@
 #include <iostream>
 
 #include "ast.h"
-#include "ast_builder.h"
+#include "checker.h"
+#include "diag.h"
 #include "options.h"
+#include "parser.h"
 #include "passes.h"
 #include "source.h"
 #include "version.h"
@@ -18,7 +20,7 @@ static const char *prog_name = "algc";
 
 static void print_usage(std::ostream &out)
 {
-    out << "Algol-GDR compiler, Version " << version_string() << "\n"
+    out << "Algol 60 compiler, Version " << version_string() << "\n"
         << "Usage:\n"
         << "    " << prog_name << " [options...] file.alg\n"
         << "Options:\n"
@@ -91,6 +93,16 @@ int main(int argc, char *argv[])
     }
 
     try {
+        if (opt.dump_ast) {
+            // The new front end.
+            Diagnostics diag(opt.source_file, std::cerr);
+            auto tree    = parse(read_source(opt.source_file), diag);
+            auto program = check(tree, diag);
+            if (diag.errors())
+                return EXIT_FAILURE;
+            ast::print(std::cout, program);
+            return EXIT_SUCCESS;
+        }
         Context ctx;
         ctx.options = opt;
         ctx.source  = read_source(opt.source_file);
@@ -101,15 +113,10 @@ int main(int argc, char *argv[])
             write_stream(std::cout, stream);
             return EXIT_SUCCESS;
         }
-        // With --dump-ast the listing goes to stderr.
-        Listing listing(opt.dump_ast ? std::cerr : std::cout);
+        Listing listing(std::cout);
         ctx.listing = &listing;
         Stream stream;
-        if (!compile(ctx, stream))
-            return EXIT_FAILURE;
-        if (opt.dump_ast)
-            ast::print(std::cout, build_ast(ctx, stream));
-        return EXIT_SUCCESS;
+        return compile(ctx, stream) ? EXIT_SUCCESS : EXIT_FAILURE;
     } catch (const std::exception &e) {
         std::cerr << prog_name << ": " << e.what() << "\n";
         return EXIT_FAILURE;

@@ -1,17 +1,18 @@
 externals: []
 block:
   kind: block
-  loc: 2/2
+  loc: 2/1
   decls:
-    - {kind: var, name: "N", id: 2, type: integer}
-    - {kind: var, name: "K", id: 3, type: integer}
     - kind: arrays
+      line: 3
       type: boolean
       arrays:
         - {name: "PRIME", id: 1}
       bounds:
         - lower: {kind: int_const, type: integer, value: 2}
           upper: {kind: int_const, type: integer, value: 100}
+    - {kind: var, line: 4, name: "N", id: 2, type: integer}
+    - {kind: var, line: 4, name: "K", id: 3, type: integer}
   body:
     - kind: for
       loc: 5/1

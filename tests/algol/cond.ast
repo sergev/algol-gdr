@@ -1,10 +1,10 @@
 externals: []
 block:
   kind: block
-  loc: 4/1
+  loc: 1/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: var, name: "J", id: 2, type: integer}
+    - {kind: var, line: 3, name: "I", id: 1, type: integer}
+    - {kind: var, line: 3, name: "J", id: 2, type: integer}
   body:
     - kind: for
       loc: 4/1
@@ -16,7 +16,7 @@ block:
           until: {kind: int_const, type: integer, value: 4}
       body:
         kind: compound
-        loc: 6/1
+        loc: 5/1
         body:
           - kind: if
             loc: 6/1

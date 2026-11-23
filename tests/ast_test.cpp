@@ -5,40 +5,51 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
 
-#include "ast_builder.h"
+#include "checker.h"
+#include "diag.h"
 #include "golden.h"
-#include "passes.h"
+#include "parser.h"
 #include "source.h"
 #include "util.h"
 
 using namespace ast;
 
 //
-// The AST of each program that compiles must print as NAME.ast. With
-// ALGC_UPDATE_GOLDENS set, NAME.ast is written instead.
+// The new front end on each program: its messages are NAME.err, and the AST
+// of a program without errors prints as NAME.ast. A golden that is absent
+// means none. With ALGC_UPDATE_GOLDENS set, the goldens are written instead.
 //
 class AstGolden : public ::testing::TestWithParam<std::string> {};
+
+static void golden(const std::string &file, const std::string &text)
+{
+    if (std::getenv("ALGC_UPDATE_GOLDENS")) {
+        if (text.empty())
+            std::remove(file.c_str());
+        else
+            std::ofstream(file) << text;
+        return;
+    }
+    std::ifstream in(file);
+    EXPECT_EQ(text, in ? file_contents(file) : "") << file;
+}
 
 TEST_P(AstGolden, yaml)
 {
     const std::string &name = GetParam();
-    Context ctx;
-    load_options(ctx.options, name);
-    ctx.source = read_source(path(name, ".alg"));
-    Stream stream;
-    if (!compile(ctx, stream))
-        GTEST_SKIP() << "errors";
-    std::ostringstream out;
-    print(out, build_ast(ctx, stream));
-    if (std::getenv("ALGC_UPDATE_GOLDENS")) {
-        std::ofstream(path(name, ".ast")) << out.str();
-        return;
-    }
-    EXPECT_EQ(out.str(), file_contents(path(name, ".ast")));
+    std::ostringstream err, out;
+    Diagnostics diag(name + ".alg", err);
+    auto tree    = parse(read_source(path(name, ".alg")), diag);
+    auto program = check(tree, diag);
+    if (!diag.errors())
+        print(out, program);
+    golden(path(name, ".err"), err.str());
+    golden(path(name, ".ast"), out.str());
 }
 
 static std::string param_name(const ::testing::TestParamInfo<std::string> &p)
@@ -123,4 +134,47 @@ TEST(Ast, real_text)
     std::ostringstream out;
     print(out, p);
     EXPECT_NE(out.str().find("value: 2.0}"), std::string::npos) << out.str();
+}
+
+static std::string check_messages(const std::string &text)
+{
+    std::ostringstream err;
+    Diagnostics diag("x.alg", err);
+    check(parse(text, diag), diag);
+    return err.str();
+}
+
+TEST(Checker, messages)
+{
+    EXPECT_EQ(check_messages("'BEGIN' 'INTEGER' I; 'BOOLEAN' B;\n"
+                             "I := B; J := 1; 'GOTO' I\n'END' 'EOP'"),
+              "x.alg:2: error: Type error in the value of ':=': boolean instead of integer\n"
+              "x.alg:2: error: Undeclared identifier 'J'\n"
+              "x.alg:2: error: A label is expected in 'GOTO'\n");
+    EXPECT_EQ(check_messages("'BEGIN' 'REAL' 'PROCEDURE' F; ; F 'END' 'EOP'"),
+              "x.alg:1: error: Function 'F' does not assign its result\n");
+    EXPECT_EQ(check_messages("'BEGIN' 'PROCEDURE' P(X); 'INTEGER' X; X := 1;\n"
+                             "'REAL' Y; P(Y); P(Y + 1) 'END' 'EOP'"),
+              "x.alg:2: error: Argument 1 of 'P' does not match formal parameter 'X'\n");
+}
+
+TEST(Checker, scopes_and_conversions)
+{
+    std::ostringstream err, out;
+    Diagnostics diag("x.alg", err);
+    auto program = check(parse("'BEGIN' 'REAL' X; 'INTEGER' I;\n"
+                               "L: X := I + 1; 'BEGIN' 'INTEGER' X; X := 2.5 'END';\n"
+                               "'GOTO' L 'END' 'EOP'",
+                               diag),
+                         diag);
+    ASSERT_EQ(err.str(), "");
+    print(out, program);
+    const std::string text = out.str();
+    // X := I + 1 converted to real; the inner X rounded.
+    EXPECT_NE(text.find("conv: int_to_real"), std::string::npos) << text;
+    EXPECT_NE(text.find("conv: real_to_int"), std::string::npos) << text;
+    EXPECT_NE(text.find("{kind: label, line: 2, name: \"L\", id: 3}"), std::string::npos) << text;
+    EXPECT_NE(text.find("{kind: var, line: 2, name: \"X\", id: 4, type: integer}"),
+              std::string::npos)
+        << text;
 }

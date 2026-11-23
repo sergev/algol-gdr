@@ -515,7 +515,7 @@ private:
         auto head = [&d](const char *kind, bool flow = false) {
             Node m = mapping(kind, flow);
             if (d.loc.line)
-                m.add("loc", loc(d.loc));
+                m.add("line", scalar(number(d.loc.line)));
             return m;
         };
         std::visit(overloaded{

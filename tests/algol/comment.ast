@@ -1,20 +1,23 @@
 externals: []
 block:
   kind: block
-  loc: 5/1
+  loc: 2/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
+    - {kind: var, line: 4, name: "I", id: 1, type: integer}
   body:
     - kind: assign
       loc: 5/1
       targets:
         - {kind: var, decl: 1, name: "I"}
       value: {kind: int_const, type: integer, value: 1}
-    - kind: assign
-      loc: 7/1
-      targets:
-        - {kind: var, decl: 1, name: "I"}
-      value: {kind: int_const, type: integer, value: 2}
+    - kind: compound
+      loc: 6/1
+      body:
+        - kind: assign
+          loc: 7/1
+          targets:
+            - {kind: var, decl: 1, name: "I"}
+          value: {kind: int_const, type: integer, value: 2}
     - kind: io
       loc: 10/1
       op: print

@@ -1,0 +1,2 @@
+err_common2.alg:6: error: 'COMMON' element 'V' is not declared in its block
+err_common2.alg:8: error: 'COMMON' element 'F' is not a variable or an array

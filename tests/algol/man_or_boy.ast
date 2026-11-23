@@ -1,9 +1,10 @@
 externals: []
 block:
   kind: block
-  loc: 2/1
+  loc: 1/1
   decls:
     - kind: procedure
+      line: 2
       name: "A"
       id: 1
       type: real
@@ -16,16 +17,17 @@ block:
         - {name: "X5", id: 7, spec: simple, type: real, by_value: false}
       body:
         kind: block
-        loc: 11/1
+        loc: 5/1
         decls:
           - kind: procedure
+            line: 6
             name: "B"
             id: 8
             type: real
             formals: []
             body:
               kind: compound
-              loc: 8/1
+              loc: 7/1
               body:
                 - kind: assign
                   loc: 8/1
@@ -49,7 +51,11 @@ block:
                     name: "A"
                     args:
                       - {kind: var, type: integer, decl: 2, name: "K"}
-                      - {kind: var, type: real, decl: 8, name: "B"}
+                      - kind: call
+                        type: real
+                        proc: 8
+                        name: "B"
+                        args: []
                       - {kind: var, type: real, decl: 3, name: "X1"}
                       - {kind: var, type: real, decl: 4, name: "X2"}
                       - {kind: var, type: real, decl: 5, name: "X3"}

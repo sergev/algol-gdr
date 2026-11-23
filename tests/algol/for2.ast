@@ -1,16 +1,14 @@
 externals: []
 block:
   kind: block
-  loc: 2/2
+  loc: 2/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: var, name: "J", id: 2, type: integer}
-    - {kind: var, name: "K", id: 3, type: integer}
-    - {kind: var, name: "B", id: 4, type: boolean}
-    - {kind: label, name: "L1", id: 7}
-    - {kind: label, name: "L2", id: 8}
-    - {kind: label, name: "L3", id: 9}
+    - {kind: var, line: 2, name: "I", id: 1, type: integer}
+    - {kind: var, line: 2, name: "J", id: 2, type: integer}
+    - {kind: var, line: 2, name: "K", id: 3, type: integer}
+    - {kind: var, line: 2, name: "B", id: 4, type: boolean}
     - kind: arrays
+      line: 3
       type: integer
       arrays:
         - {name: "IA", id: 5}
@@ -22,16 +20,17 @@ block:
             operand: {kind: int_const, type: integer, value: 10}
           upper: {kind: int_const, type: integer, value: 20}
     - kind: procedure
+      line: 4
       name: "SHOW"
       id: 6
       type: none
       formals: []
       body:
         kind: compound
-        loc: 5/3
+        loc: 5/1
         body:
           - kind: for
-            loc: 5/3
+            loc: 5/2
             control: {kind: var, decl: 3, name: "K"}
             elements:
               - kind: step_until
@@ -44,7 +43,7 @@ block:
                 until: {kind: int_const, type: integer, value: 20}
             body:
               kind: io
-              loc: 5/4
+              loc: 5/3
               op: print
               params: []
               items:
@@ -78,6 +77,9 @@ block:
                   subscripts:
                     - {kind: var, type: integer, decl: 3, name: "K"}
               value: {kind: int_const, type: integer, value: 0}
+    - {kind: label, line: 19, name: "L1", id: 7}
+    - {kind: label, line: 21, name: "L2", id: 8}
+    - {kind: label, line: 24, name: "L3", id: 9}
   body:
     - kind: assign
       loc: 8/1
@@ -158,7 +160,7 @@ block:
           subscripts:
             - {kind: var, type: integer, decl: 1, name: "I"}
     - kind: call
-      loc: 11/4
+      loc: 11/3
       proc: 6
       name: "SHOW"
       args: []
@@ -248,7 +250,7 @@ block:
           left: {kind: var, type: integer, decl: 1, name: "I"}
           right: {kind: int_const, type: integer, value: 20}
     - kind: call
-      loc: 14/4
+      loc: 14/3
       proc: 6
       name: "SHOW"
       args: []
@@ -320,7 +322,7 @@ block:
               - {kind: int_const, type: integer, value: 1}
         value: {kind: var, type: integer, decl: 1, name: "I"}
     - kind: call
-      loc: 17/4
+      loc: 17/3
       proc: 6
       name: "SHOW"
       args: []
@@ -346,7 +348,7 @@ block:
       name: "L1"
       stmt:
         kind: io
-        loc: 19/1
+        loc: 19/2
         op: print
         params: []
         items:
@@ -370,7 +372,7 @@ block:
       name: "L2"
       stmt:
         kind: io
-        loc: 21/1
+        loc: 21/2
         op: print
         params: []
         items:
@@ -391,7 +393,7 @@ block:
           - {kind: var, decl: 1, name: "I"}
         value: {kind: var, type: integer, decl: 1, name: "I"}
     - kind: io
-      loc: 22/4
+      loc: 22/3
       op: print
       params: []
       items:
@@ -407,10 +409,10 @@ block:
           until: {kind: int_const, type: integer, value: 3}
       body:
         kind: compound
-        loc: 24/3
+        loc: 24/1
         body:
           - kind: labeled
-            loc: 24/3
+            loc: 24/2
             label: 9
             name: "L3"
             stmt:
@@ -547,7 +549,7 @@ block:
                   right: {kind: int_const, type: integer, value: 2}
         value: {kind: var, type: integer, decl: 1, name: "I"}
     - kind: call
-      loc: 31/4
+      loc: 31/3
       proc: 6
       name: "SHOW"
       args: []
@@ -611,7 +613,7 @@ block:
                   right: {kind: int_const, type: integer, value: 5}
           value: {kind: var, type: integer, decl: 1, name: "I"}
     - kind: call
-      loc: 33/5
+      loc: 33/4
       proc: 6
       name: "SHOW"
       args: []
@@ -712,7 +714,7 @@ block:
           left: {kind: var, type: integer, decl: 1, name: "I"}
           right: {kind: int_const, type: integer, value: 20}
     - kind: call
-      loc: 36/4
+      loc: 36/3
       proc: 6
       name: "SHOW"
       args: []
@@ -839,7 +841,7 @@ block:
           left: {kind: var, type: integer, decl: 1, name: "I"}
           right: {kind: int_const, type: integer, value: 30}
     - kind: call
-      loc: 41/1
+      loc: 40/3
       proc: 6
       name: "SHOW"
       args: []

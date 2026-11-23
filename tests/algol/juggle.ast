@@ -3,33 +3,37 @@ externals:
   - {kind: code, name: "TERIN", id: 2}
 block:
   kind: block
-  loc: 14/1
+  loc: 3/1
   decls:
-    - {kind: var, name: "RR", id: 3, type: real}
-    - {kind: var, name: "INPUT", id: 4, type: integer}
-    - {kind: label, name: "NZ", id: 30}
+    - {kind: var, line: 14, name: "RR", id: 3, type: real}
+    - {kind: var, line: 15, name: "INPUT", id: 4, type: integer}
     - kind: procedure
+      line: 17
       name: "R"
       id: 5
       type: real
       formals: []
       body:
-        kind: assign
-        loc: 19/1
-        targets:
-          - {kind: var, decl: 5, name: "R"}
-          - {kind: var, decl: 3, name: "RR"}
-        value:
-          kind: call
-          type: real
-          proc: 1
-          name: "RNDM"
-          args:
-            - kind: unary
-              type: integer
-              op: neg
-              operand: {kind: int_const, type: integer, value: 1}
+        kind: compound
+        loc: 18/1
+        body:
+          - kind: assign
+            loc: 19/1
+            targets:
+              - {kind: var, decl: 5, name: "R"}
+              - {kind: var, decl: 3, name: "RR"}
+            value:
+              kind: call
+              type: real
+              proc: 1
+              name: "RNDM"
+              args:
+                - kind: unary
+                  type: integer
+                  op: neg
+                  operand: {kind: int_const, type: integer, value: 1}
     - kind: procedure
+      line: 22
       name: "P"
       id: 6
       type: none
@@ -44,23 +48,24 @@ block:
           - kind: item
             expr: {kind: var, type: string, decl: 7, name: "U"}
     - kind: procedure
-      name: "SENTEN"
+      line: 26
+      name: "SENTENCE"
       id: 8
       type: none
       formals: []
       body:
         kind: compound
-        loc: 28/1
+        loc: 27/1
         body:
           - kind: call
             loc: 28/1
             proc: 11
-            name: "SUBJEC"
+            name: "SUBJECT"
             args: []
           - kind: call
             loc: 29/1
             proc: 16
-            name: "PREDIC"
+            name: "PREDICATE"
             args: []
           - kind: if
             loc: 30/1
@@ -74,34 +79,36 @@ block:
                 proc: 5
                 name: "R"
                 args: []
-              right: {kind: real_const, type: real, value: 0.20000000000004547}
+              right: {kind: real_const, type: real, value: 0.2}
             then:
               kind: call
-              loc: 32/1
+              loc: 31/1
               proc: 9
-              name: "NEXTSE"
+              name: "NEXTSENTENCE"
               args: []
     - kind: procedure
-      name: "NEXTSE"
+      line: 34
+      name: "NEXTSENTENCE"
       id: 9
       type: none
       formals: []
       body:
         kind: compound
-        loc: 36/1
+        loc: 35/1
         body:
           - kind: call
             loc: 36/1
             proc: 10
-            name: "CONNEC"
+            name: "CONNECTIVE"
             args: []
           - kind: call
-            loc: 38/1
+            loc: 37/1
             proc: 8
-            name: "SENTEN"
+            name: "SENTENCE"
             args: []
     - kind: procedure
-      name: "CONNEC"
+      line: 40
+      name: "CONNECTIVE"
       id: 10
       type: none
       formals: []
@@ -118,7 +125,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.3000000000001819}
+          right: {kind: real_const, type: real, value: 0.3}
         then:
           kind: call
           loc: 42/1
@@ -134,7 +141,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.5500000000001819}
+            right: {kind: real_const, type: real, value: 0.55}
           then:
             kind: call
             loc: 44/1
@@ -150,7 +157,7 @@ block:
               type: boolean
               op: lt
               left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.8000000000001819}
+              right: {kind: real_const, type: real, value: 0.8}
             then:
               kind: call
               loc: 46/1
@@ -166,7 +173,8 @@ block:
               args:
                 - {kind: string_const, type: string, value: " THOUGH"}
     - kind: procedure
-      name: "SUBJEC"
+      line: 50
+      name: "SUBJECT"
       id: 11
       type: none
       formals: []
@@ -183,10 +191,10 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.8000000000001819}
+          right: {kind: real_const, type: real, value: 0.8}
         then:
           kind: call
-          loc: 53/1
+          loc: 52/1
           proc: 12
           name: "SUBST"
           args: []
@@ -194,26 +202,27 @@ block:
           kind: call
           loc: 54/1
           proc: 22
-          name: "SUBNAM"
+          name: "SUBNAME"
           args: []
     - kind: procedure
+      line: 56
       name: "SUBST"
       id: 12
       type: none
       formals: []
       body:
         kind: compound
-        loc: 58/1
+        loc: 57/1
         body:
           - kind: call
             loc: 58/1
             proc: 25
-            name: "ARTICL"
+            name: "ARTICLE"
             args: []
           - kind: call
             loc: 59/1
             proc: 14
-            name: "NOUNPH"
+            name: "NOUNPHRASE"
             args: []
           - kind: if
             loc: 60/1
@@ -227,15 +236,16 @@ block:
                 proc: 5
                 name: "R"
                 args: []
-              right: {kind: real_const, type: real, value: 0.20000000000004547}
+              right: {kind: real_const, type: real, value: 0.2}
             then:
               kind: call
-              loc: 62/1
+              loc: 61/1
               proc: 13
-              name: "PROPER"
+              name: "PROPERTY"
               args: []
     - kind: procedure
-      name: "PROPER"
+      line: 64
+      name: "PROPERTY"
       id: 13
       type: none
       formals: []
@@ -278,7 +288,7 @@ block:
               - {kind: string_const, type: string, value: " IN A MINK COAT"}
           else:
             kind: compound
-            loc: 71/1
+            loc: 70/1
             body:
               - kind: call
                 loc: 71/1
@@ -346,7 +356,8 @@ block:
                       args:
                         - {kind: string_const, type: string, value: " CLEVELAND (OHIO)"}
     - kind: procedure
-      name: "NOUNPH"
+      line: 82
+      name: "NOUNPHRASE"
       id: 14
       type: none
       formals: []
@@ -366,7 +377,7 @@ block:
           right: {kind: real_const, type: real, value: 0.25}
         then:
           kind: compound
-          loc: 85/1
+          loc: 84/1
           body:
             - kind: call
               loc: 85/1
@@ -374,18 +385,19 @@ block:
               name: "ADJE"
               args: []
             - kind: call
-              loc: 87/1
+              loc: 86/1
               proc: 14
-              name: "NOUNPH"
+              name: "NOUNPHRASE"
               args: []
         else:
           kind: call
           loc: 89/1
           proc: 15
-          name: "NOUNPA"
+          name: "NOUNPART"
           args: []
     - kind: procedure
-      name: "NOUNPA"
+      line: 91
+      name: "NOUNPART"
       id: 15
       type: none
       formals: []
@@ -405,7 +417,7 @@ block:
           right: {kind: real_const, type: real, value: 0.25}
         then:
           kind: compound
-          loc: 94/1
+          loc: 93/1
           body:
             - kind: call
               loc: 94/1
@@ -413,9 +425,9 @@ block:
               name: "NOUN"
               args: []
             - kind: call
-              loc: 96/1
+              loc: 95/1
               proc: 18
-              name: "RELSEN"
+              name: "RELSENTENCE"
               args: []
         else:
           kind: call
@@ -424,7 +436,8 @@ block:
           name: "NOUN"
           args: []
     - kind: procedure
-      name: "PREDIC"
+      line: 100
+      name: "PREDICATE"
       id: 16
       type: none
       formals: []
@@ -441,20 +454,20 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.20000000000004547}
+          right: {kind: real_const, type: real, value: 0.2}
         then:
           kind: compound
-          loc: 103/1
+          loc: 102/1
           body:
             - kind: call
               loc: 103/1
               proc: 24
-              name: "MODIFI"
+              name: "MODIFIER"
               args: []
             - kind: call
-              loc: 105/1
+              loc: 104/1
               proc: 17
-              name: "MODPRE"
+              name: "MODPREDICATE"
               args: []
         else:
           kind: if
@@ -467,24 +480,25 @@ block:
             right: {kind: real_const, type: real, value: 0.5}
           then:
             kind: call
-            loc: 108/1
+            loc: 107/1
             proc: 20
-            name: "QUALIT"
+            name: "QUALITY"
             args: []
           else:
             kind: call
             loc: 109/1
             proc: 17
-            name: "MODPRE"
+            name: "MODPREDICATE"
             args: []
     - kind: procedure
-      name: "MODPRE"
+      line: 111
+      name: "MODPREDICATE"
       id: 17
       type: none
       formals: []
       body:
         kind: compound
-        loc: 113/1
+        loc: 112/1
         body:
           - kind: call
             loc: 113/1
@@ -492,18 +506,19 @@ block:
             name: "VERB"
             args: []
           - kind: call
-            loc: 115/1
+            loc: 114/1
             proc: 19
             name: "OBJECT"
             args: []
     - kind: procedure
-      name: "RELSEN"
+      line: 117
+      name: "RELSENTENCE"
       id: 18
       type: none
       formals: []
       body:
         kind: compound
-        loc: 119/1
+        loc: 118/1
         body:
           - kind: call
             loc: 119/1
@@ -523,18 +538,18 @@ block:
                 proc: 5
                 name: "R"
                 args: []
-              right: {kind: real_const, type: real, value: 0.40000000000009095}
+              right: {kind: real_const, type: real, value: 0.4}
             then:
               kind: compound
-              loc: 122/1
+              loc: 121/1
               body:
                 - kind: call
                   loc: 122/1
                   proc: 11
-                  name: "SUBJEC"
+                  name: "SUBJECT"
                   args: []
                 - kind: call
-                  loc: 124/1
+                  loc: 123/1
                   proc: 29
                   name: "VERB"
                   args: []
@@ -546,20 +561,21 @@ block:
                 type: boolean
                 op: lt
                 left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.6000000000003638}
+                right: {kind: real_const, type: real, value: 0.6}
               then:
                 kind: call
-                loc: 127/1
+                loc: 126/1
                 proc: 20
-                name: "QUALIT"
+                name: "QUALITY"
                 args: []
               else:
                 kind: call
-                loc: 129/1
+                loc: 128/1
                 proc: 16
-                name: "PREDIC"
+                name: "PREDICATE"
                 args: []
     - kind: procedure
+      line: 131
       name: "OBJECT"
       id: 19
       type: none
@@ -577,10 +593,10 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.8000000000001819}
+          right: {kind: real_const, type: real, value: 0.8}
         then:
           kind: call
-          loc: 134/1
+          loc: 133/1
           proc: 12
           name: "SUBST"
           args: []
@@ -588,16 +604,17 @@ block:
           kind: call
           loc: 135/1
           proc: 23
-          name: "OBJNAM"
+          name: "OBJNAME"
           args: []
     - kind: procedure
-      name: "QUALIT"
+      line: 137
+      name: "QUALITY"
       id: 20
       type: none
       formals: []
       body:
         kind: compound
-        loc: 139/1
+        loc: 138/1
         body:
           - kind: if
             loc: 139/1
@@ -611,7 +628,7 @@ block:
                 proc: 5
                 name: "R"
                 args: []
-              right: {kind: real_const, type: real, value: 0.4499999999998181}
+              right: {kind: real_const, type: real, value: 0.45}
             then:
               kind: call
               loc: 140/1
@@ -638,20 +655,21 @@ block:
                 proc: 5
                 name: "R"
                 args: []
-              right: {kind: real_const, type: real, value: 0.40000000000009095}
+              right: {kind: real_const, type: real, value: 0.4}
             then:
               kind: call
-              loc: 145/1
+              loc: 144/1
               proc: 21
               name: "ADJE"
               args: []
             else:
               kind: call
-              loc: 147/1
+              loc: 146/1
               proc: 19
               name: "OBJECT"
               args: []
     - kind: procedure
+      line: 149
       name: "ADJE"
       id: 21
       type: none
@@ -669,10 +687,10 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.20000000000004547}
+          right: {kind: real_const, type: real, value: 0.2}
         then:
           kind: compound
-          loc: 152/1
+          loc: 151/1
           body:
             - kind: call
               loc: 152/1
@@ -680,18 +698,19 @@ block:
               name: "ADVERB"
               args: []
             - kind: call
-              loc: 154/1
+              loc: 153/1
               proc: 27
-              name: "ADJECT"
+              name: "ADJECTIVE"
               args: []
         else:
           kind: call
           loc: 156/1
           proc: 27
-          name: "ADJECT"
+          name: "ADJECTIVE"
           args: []
     - kind: procedure
-      name: "SUBNAM"
+      line: 158
+      name: "SUBNAME"
       id: 22
       type: none
       formals: []
@@ -708,7 +727,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.20000000000004547}
+          right: {kind: real_const, type: real, value: 0.2}
         then:
           kind: call
           loc: 160/1
@@ -724,7 +743,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.40000000000009095}
+            right: {kind: real_const, type: real, value: 0.4}
           then:
             kind: call
             loc: 162/1
@@ -740,7 +759,7 @@ block:
               type: boolean
               op: lt
               left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.6000000000003638}
+              right: {kind: real_const, type: real, value: 0.6}
             then:
               kind: call
               loc: 164/1
@@ -756,7 +775,7 @@ block:
                 type: boolean
                 op: lt
                 left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.8000000000001819}
+                right: {kind: real_const, type: real, value: 0.8}
               then:
                 kind: call
                 loc: 166/1
@@ -772,7 +791,7 @@ block:
                   type: boolean
                   op: lt
                   left: {kind: var, type: real, decl: 3, name: "RR"}
-                  right: {kind: real_const, type: real, value: 0.8999999999996362}
+                  right: {kind: real_const, type: real, value: 0.9}
                 then:
                   kind: call
                   loc: 168/1
@@ -788,7 +807,8 @@ block:
                   args:
                     - {kind: string_const, type: string, value: " THE WORLD FAMOUS X8 COMPUTER"}
     - kind: procedure
-      name: "OBJNAM"
+      line: 172
+      name: "OBJNAME"
       id: 23
       type: none
       formals: []
@@ -805,7 +825,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.20000000000004547}
+          right: {kind: real_const, type: real, value: 0.2}
         then:
           kind: call
           loc: 174/1
@@ -821,7 +841,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.40000000000009095}
+            right: {kind: real_const, type: real, value: 0.4}
           then:
             kind: call
             loc: 176/1
@@ -837,7 +857,7 @@ block:
               type: boolean
               op: lt
               left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.6000000000003638}
+              right: {kind: real_const, type: real, value: 0.6}
             then:
               kind: call
               loc: 178/1
@@ -853,7 +873,7 @@ block:
                 type: boolean
                 op: lt
                 left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.8000000000001819}
+                right: {kind: real_const, type: real, value: 0.8}
               then:
                 kind: call
                 loc: 180/1
@@ -869,7 +889,7 @@ block:
                   type: boolean
                   op: lt
                   left: {kind: var, type: real, decl: 3, name: "RR"}
-                  right: {kind: real_const, type: real, value: 0.9500000000007276}
+                  right: {kind: real_const, type: real, value: 0.95}
                 then:
                   kind: call
                   loc: 182/1
@@ -885,7 +905,8 @@ block:
                   args:
                     - {kind: string_const, type: string, value: " A COMPUTER"}
     - kind: procedure
-      name: "MODIFI"
+      line: 186
+      name: "MODIFIER"
       id: 24
       type: none
       formals: []
@@ -902,7 +923,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.330000000000382}
+          right: {kind: real_const, type: real, value: 0.33}
         then:
           kind: call
           loc: 188/1
@@ -918,7 +939,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.6700000000000728}
+            right: {kind: real_const, type: real, value: 0.67}
           then:
             kind: call
             loc: 190/1
@@ -934,7 +955,8 @@ block:
             args:
               - {kind: string_const, type: string, value: " NEVER"}
     - kind: procedure
-      name: "ARTICL"
+      line: 194
+      name: "ARTICLE"
       id: 25
       type: none
       formals: []
@@ -951,7 +973,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.34999999999990905}
+          right: {kind: real_const, type: real, value: 0.35}
         then:
           kind: call
           loc: 196/1
@@ -983,7 +1005,7 @@ block:
               type: boolean
               op: lt
               left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.8699999999998909}
+              right: {kind: real_const, type: real, value: 0.87}
             then:
               kind: call
               loc: 200/1
@@ -999,6 +1021,7 @@ block:
               args:
                 - {kind: string_const, type: string, value: " THAT"}
     - kind: procedure
+      line: 204
       name: "NOUN"
       id: 26
       type: none
@@ -1016,7 +1039,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.17000000000007276}
+          right: {kind: real_const, type: real, value: 0.17}
         then:
           kind: call
           loc: 206/1
@@ -1032,7 +1055,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.330000000000382}
+            right: {kind: real_const, type: real, value: 0.33}
           then:
             kind: call
             loc: 208/1
@@ -1064,7 +1087,7 @@ block:
                 type: boolean
                 op: lt
                 left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.6700000000000728}
+                right: {kind: real_const, type: real, value: 0.67}
               then:
                 kind: call
                 loc: 212/1
@@ -1080,7 +1103,7 @@ block:
                   type: boolean
                   op: lt
                   left: {kind: var, type: real, decl: 3, name: "RR"}
-                  right: {kind: real_const, type: real, value: 0.8299999999999272}
+                  right: {kind: real_const, type: real, value: 0.83}
                 then:
                   kind: call
                   loc: 214/1
@@ -1096,7 +1119,8 @@ block:
                   args:
                     - {kind: string_const, type: string, value: " LAMB"}
     - kind: procedure
-      name: "ADJECT"
+      line: 218
+      name: "ADJECTIVE"
       id: 27
       type: none
       formals: []
@@ -1113,7 +1137,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.20000000000004547}
+          right: {kind: real_const, type: real, value: 0.2}
         then:
           kind: call
           loc: 220/1
@@ -1129,7 +1153,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.40000000000009095}
+            right: {kind: real_const, type: real, value: 0.4}
           then:
             kind: call
             loc: 222/1
@@ -1145,7 +1169,7 @@ block:
               type: boolean
               op: lt
               left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.6000000000003638}
+              right: {kind: real_const, type: real, value: 0.6}
             then:
               kind: call
               loc: 224/1
@@ -1161,7 +1185,7 @@ block:
                 type: boolean
                 op: lt
                 left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.8000000000001819}
+                right: {kind: real_const, type: real, value: 0.8}
               then:
                 kind: call
                 loc: 226/1
@@ -1177,6 +1201,7 @@ block:
                 args:
                   - {kind: string_const, type: string, value: " BAD"}
     - kind: procedure
+      line: 230
       name: "ADVERB"
       id: 28
       type: none
@@ -1194,7 +1219,7 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.40000000000009095}
+          right: {kind: real_const, type: real, value: 0.4}
         then:
           kind: call
           loc: 232/1
@@ -1210,7 +1235,7 @@ block:
             type: boolean
             op: lt
             left: {kind: var, type: real, decl: 3, name: "RR"}
-            right: {kind: real_const, type: real, value: 0.6000000000003638}
+            right: {kind: real_const, type: real, value: 0.6}
           then:
             kind: call
             loc: 234/1
@@ -1226,6 +1251,7 @@ block:
             args:
               - {kind: string_const, type: string, value: " RATHER"}
     - kind: procedure
+      line: 238
       name: "VERB"
       id: 29
       type: none
@@ -1243,191 +1269,198 @@ block:
             proc: 5
             name: "R"
             args: []
-          right: {kind: real_const, type: real, value: 0.4499999999998181}
+          right: {kind: real_const, type: real, value: 0.45}
         then:
-          kind: if
-          loc: 241/1
-          condition:
-            kind: binary
-            type: boolean
-            op: lt
-            left:
-              kind: call
-              type: real
-              proc: 5
-              name: "R"
-              args: []
-            right: {kind: real_const, type: real, value: 0.20000000000004547}
-          then:
-            kind: call
-            loc: 242/1
-            proc: 6
-            name: "P"
-            args:
-              - {kind: string_const, type: string, value: " SAW"}
-          else:
-            kind: if
-            loc: 243/1
-            condition:
-              kind: binary
-              type: boolean
-              op: lt
-              left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.40000000000009095}
-            then:
-              kind: call
-              loc: 244/1
-              proc: 6
-              name: "P"
-              args:
-                - {kind: string_const, type: string, value: " LIKED"}
-            else:
-              kind: if
-              loc: 245/1
+          kind: compound
+          loc: 240/1
+          body:
+            - kind: if
+              loc: 241/1
               condition:
                 kind: binary
                 type: boolean
                 op: lt
-                left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.6000000000003638}
+                left:
+                  kind: call
+                  type: real
+                  proc: 5
+                  name: "R"
+                  args: []
+                right: {kind: real_const, type: real, value: 0.2}
               then:
                 kind: call
-                loc: 246/1
+                loc: 242/1
                 proc: 6
                 name: "P"
                 args:
-                  - {kind: string_const, type: string, value: " DREAMT ABOUT"}
+                  - {kind: string_const, type: string, value: " SAW"}
               else:
                 kind: if
-                loc: 247/1
+                loc: 243/1
                 condition:
                   kind: binary
                   type: boolean
                   op: lt
                   left: {kind: var, type: real, decl: 3, name: "RR"}
-                  right: {kind: real_const, type: real, value: 0.6999999999998181}
+                  right: {kind: real_const, type: real, value: 0.4}
                 then:
                   kind: call
-                  loc: 248/1
+                  loc: 244/1
                   proc: 6
                   name: "P"
                   args:
-                    - {kind: string_const, type: string, value: " SMELLED"}
+                    - {kind: string_const, type: string, value: " LIKED"}
                 else:
                   kind: if
-                  loc: 249/1
+                  loc: 245/1
                   condition:
                     kind: binary
                     type: boolean
                     op: lt
                     left: {kind: var, type: real, decl: 3, name: "RR"}
-                    right: {kind: real_const, type: real, value: 0.8000000000001819}
+                    right: {kind: real_const, type: real, value: 0.6}
                   then:
                     kind: call
-                    loc: 250/1
+                    loc: 246/1
                     proc: 6
                     name: "P"
                     args:
-                      - {kind: string_const, type: string, value: " ATE"}
+                      - {kind: string_const, type: string, value: " DREAMT ABOUT"}
                   else:
-                    kind: call
-                    loc: 252/1
-                    proc: 6
-                    name: "P"
-                    args:
-                      - {kind: string_const, type: string, value: " HAD"}
+                    kind: if
+                    loc: 247/1
+                    condition:
+                      kind: binary
+                      type: boolean
+                      op: lt
+                      left: {kind: var, type: real, decl: 3, name: "RR"}
+                      right: {kind: real_const, type: real, value: 0.7}
+                    then:
+                      kind: call
+                      loc: 248/1
+                      proc: 6
+                      name: "P"
+                      args:
+                        - {kind: string_const, type: string, value: " SMELLED"}
+                    else:
+                      kind: if
+                      loc: 249/1
+                      condition:
+                        kind: binary
+                        type: boolean
+                        op: lt
+                        left: {kind: var, type: real, decl: 3, name: "RR"}
+                        right: {kind: real_const, type: real, value: 0.8}
+                      then:
+                        kind: call
+                        loc: 250/1
+                        proc: 6
+                        name: "P"
+                        args:
+                          - {kind: string_const, type: string, value: " ATE"}
+                      else:
+                        kind: call
+                        loc: 252/1
+                        proc: 6
+                        name: "P"
+                        args:
+                          - {kind: string_const, type: string, value: " HAD"}
         else:
-          kind: if
-          loc: 256/1
-          condition:
-            kind: binary
-            type: boolean
-            op: lt
-            left:
-              kind: call
-              type: real
-              proc: 5
-              name: "R"
-              args: []
-            right: {kind: real_const, type: real, value: 0.20000000000004547}
-          then:
-            kind: call
-            loc: 257/1
-            proc: 6
-            name: "P"
-            args:
-              - {kind: string_const, type: string, value: " SEES"}
-          else:
-            kind: if
-            loc: 258/1
-            condition:
-              kind: binary
-              type: boolean
-              op: lt
-              left: {kind: var, type: real, decl: 3, name: "RR"}
-              right: {kind: real_const, type: real, value: 0.40000000000009095}
-            then:
-              kind: call
-              loc: 259/1
-              proc: 6
-              name: "P"
-              args:
-                - {kind: string_const, type: string, value: " LIKES"}
-            else:
-              kind: if
-              loc: 260/1
+          kind: compound
+          loc: 255/1
+          body:
+            - kind: if
+              loc: 256/1
               condition:
                 kind: binary
                 type: boolean
                 op: lt
-                left: {kind: var, type: real, decl: 3, name: "RR"}
-                right: {kind: real_const, type: real, value: 0.6000000000003638}
+                left:
+                  kind: call
+                  type: real
+                  proc: 5
+                  name: "R"
+                  args: []
+                right: {kind: real_const, type: real, value: 0.2}
               then:
                 kind: call
-                loc: 261/1
+                loc: 257/1
                 proc: 6
                 name: "P"
                 args:
-                  - {kind: string_const, type: string, value: " DREAMS ABOUT"}
+                  - {kind: string_const, type: string, value: " SEES"}
               else:
                 kind: if
-                loc: 262/1
+                loc: 258/1
                 condition:
                   kind: binary
                   type: boolean
                   op: lt
                   left: {kind: var, type: real, decl: 3, name: "RR"}
-                  right: {kind: real_const, type: real, value: 0.6999999999998181}
+                  right: {kind: real_const, type: real, value: 0.4}
                 then:
                   kind: call
-                  loc: 263/1
+                  loc: 259/1
                   proc: 6
                   name: "P"
                   args:
-                    - {kind: string_const, type: string, value: " EATS"}
+                    - {kind: string_const, type: string, value: " LIKES"}
                 else:
                   kind: if
-                  loc: 264/1
+                  loc: 260/1
                   condition:
                     kind: binary
                     type: boolean
                     op: lt
                     left: {kind: var, type: real, decl: 3, name: "RR"}
-                    right: {kind: real_const, type: real, value: 0.8000000000001819}
+                    right: {kind: real_const, type: real, value: 0.6}
                   then:
                     kind: call
-                    loc: 265/1
+                    loc: 261/1
                     proc: 6
                     name: "P"
                     args:
-                      - {kind: string_const, type: string, value: " SMELLS"}
+                      - {kind: string_const, type: string, value: " DREAMS ABOUT"}
                   else:
-                    kind: call
-                    loc: 267/1
-                    proc: 6
-                    name: "P"
-                    args:
-                      - {kind: string_const, type: string, value: " HAS"}
+                    kind: if
+                    loc: 262/1
+                    condition:
+                      kind: binary
+                      type: boolean
+                      op: lt
+                      left: {kind: var, type: real, decl: 3, name: "RR"}
+                      right: {kind: real_const, type: real, value: 0.7}
+                    then:
+                      kind: call
+                      loc: 263/1
+                      proc: 6
+                      name: "P"
+                      args:
+                        - {kind: string_const, type: string, value: " EATS"}
+                    else:
+                      kind: if
+                      loc: 264/1
+                      condition:
+                        kind: binary
+                        type: boolean
+                        op: lt
+                        left: {kind: var, type: real, decl: 3, name: "RR"}
+                        right: {kind: real_const, type: real, value: 0.8}
+                      then:
+                        kind: call
+                        loc: 265/1
+                        proc: 6
+                        name: "P"
+                        args:
+                          - {kind: string_const, type: string, value: " SMELLS"}
+                      else:
+                        kind: call
+                        loc: 267/1
+                        proc: 6
+                        name: "P"
+                        args:
+                          - {kind: string_const, type: string, value: " HAS"}
+    - {kind: label, line: 269, name: "NZ", id: 30}
   body:
     - kind: labeled
       loc: 269/1
@@ -1435,9 +1468,9 @@ block:
       name: "NZ"
       stmt:
         kind: call
-        loc: 269/1
+        loc: 270/1
         proc: 8
-        name: "SENTEN"
+        name: "SENTENCE"
         args: []
     - kind: io
       loc: 271/1

@@ -1,11 +1,11 @@
 externals: []
 block:
   kind: block
-  loc: 5/1
+  loc: 1/1
   decls:
-    - {kind: var, name: "A", id: 1, type: boolean}
-    - {kind: var, name: "B", id: 2, type: boolean}
-    - {kind: var, name: "I", id: 3, type: integer}
+    - {kind: var, line: 3, name: "A", id: 1, type: boolean}
+    - {kind: var, line: 3, name: "B", id: 2, type: boolean}
+    - {kind: var, line: 4, name: "I", id: 3, type: integer}
   body:
     - kind: assign
       loc: 5/1

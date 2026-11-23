@@ -1,1 +1,2 @@
 err_own.alg:3: error: 'OWN' is not supported
+err_own.alg:4: error: Undeclared identifier 'N'

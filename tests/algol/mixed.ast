@@ -1,14 +1,15 @@
 externals: []
 block:
   kind: block
-  loc: 3/3
+  loc: 3/1
   decls:
-    - {kind: var, name: "I", id: 1, type: integer}
-    - {kind: var, name: "J", id: 2, type: integer}
-    - {kind: var, name: "N", id: 3, type: integer}
-    - {kind: var, name: "X", id: 4, type: real}
-    - {kind: var, name: "B", id: 5, type: boolean}
+    - {kind: var, line: 3, name: "I", id: 1, type: integer}
+    - {kind: var, line: 3, name: "J", id: 2, type: integer}
+    - {kind: var, line: 3, name: "N", id: 3, type: integer}
+    - {kind: var, line: 3, name: "X", id: 4, type: real}
+    - {kind: var, line: 3, name: "B", id: 5, type: boolean}
     - kind: procedure
+      line: 4
       name: "Q"
       id: 6
       type: none
@@ -24,8 +25,13 @@ block:
           type: real
           op: add
           left: {kind: var, type: real, decl: 7, name: "Z"}
-          right: {kind: real_const, type: real, value: 1.0}
+          right:
+            kind: convert
+            type: real
+            conv: int_to_real
+            expr: {kind: int_const, type: integer, value: 1}
     - kind: procedure
+      line: 5
       name: "R"
       id: 8
       type: none
@@ -34,17 +40,17 @@ block:
         - {name: "W", id: 10, spec: simple, type: integer, by_value: false}
       body:
         kind: compound
-        loc: 6/3
+        loc: 6/1
         body:
           - kind: for
-            loc: 6/3
+            loc: 6/2
             control: {kind: var, decl: 9, name: "V"}
             elements:
               - kind: value
                 value: {kind: var, type: integer, decl: 10, name: "W"}
             body:
               kind: io
-              loc: 6/4
+              loc: 6/3
               op: print
               params: []
               items:
@@ -226,9 +232,10 @@ block:
         - {kind: var, type: integer, decl: 1, name: "I"}
         - {kind: var, type: integer, decl: 2, name: "J"}
     - kind: block
-      loc: 16/2
+      loc: 16/1
       decls:
         - kind: arrays
+          line: 16
           type: real
           arrays:
             - {name: "A", id: 11}

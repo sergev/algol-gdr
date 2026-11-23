@@ -1,0 +1,32 @@
+err_pass2.alg:18: error: 'PP' needs arguments
+err_pass2.alg:19: error: Illegal use of 'IA'
+err_pass2.alg:20: error: Procedure 'AP' has no value
+err_pass2.alg:21: error: Type error in the value of ':=': boolean instead of integer
+err_pass2.alg:23: error: Argument 1 of 'IP' does not match formal parameter 'N'
+err_pass2.alg:24: error: Type error in a subscript: boolean instead of integer
+err_pass2.alg:25: error: Wrong number of subscripts of 'IA'
+err_pass2.alg:26: error: Type error in the value of ':=': string instead of integer
+err_pass2.alg:27: error: Illegal left part of an assignment
+err_pass2.alg:28: error: Cannot assign to 'IA'
+err_pass2.alg:29: error: Illegal use of 'LENGTH'
+err_pass2.alg:30: error: Left parts of different types
+err_pass2.alg:31: error: Type error in an element of 'FOR': boolean instead of integer
+err_pass2.alg:32: error: The variable of 'FOR' must be a simple integer or real variable
+err_pass2.alg:33: error: A label is expected in 'GOTO'
+err_pass2.alg:34: error: Procedure 'P0' has no value
+err_pass2.alg:35: error: Type error in '+': boolean and integer
+err_pass2.alg:36: error: Type error in '+': boolean and integer
+err_pass2.alg:37: error: Type error in '<': boolean and integer
+err_pass2.alg:38: error: Type error in '<': integer and boolean
+err_pass2.alg:39: error: Procedure 'P0' has no value
+err_pass2.alg:40: error: Type error in '**': boolean and integer
+err_pass2.alg:41: error: Procedure 'P0' has no value
+err_pass2.alg:42: error: 'PP' needs arguments
+err_pass2.alg:43: error: Undeclared identifier 'PUNCH'
+err_pass2.alg:44: error: The argument of 'LENGTH' must be a string
+err_pass2.alg:47: error: The argument of 'SIN' must be a number
+err_pass2.alg:48: error: Type error in '-': boolean
+err_pass2.alg:49: error: 'STOP' has no arguments
+err_pass2.alg:50: error: 'ASSIGN' needs two arguments
+err_pass2.alg:51: error: Argument 2 of 'PP' does not match formal parameter 'A2'
+err_pass2.alg:52: error: Argument 5 of 'PP' does not match formal parameter 'A5'
