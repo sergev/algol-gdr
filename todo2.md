@@ -31,9 +31,17 @@ to a NUL-terminated UTF-8 array.
   globals of the outer block), arithmetic with integer/real conversion, `/` and `**` (the
   runtime's `A/RHOCHI`, `A/IHOCHI`, `POWER` rules), relations, Boolean operators,
   conditional expressions, multiple left parts, real-to-integer rounding (`A/RTOI`).
-- **E13** PRINT and the output format: integers in 15 columns, reals in 20 (`±d.ddddddddddd±ee`),
-  `TRUE`/`FALSE`, strings, `NEWLINE`, `NEWPAGE`, the line width of the original; output
-  buffered and flushed at exit. Test print, exprs, exprs2, arith, boolean.
+- **E13** PRINT with `printf` on `stdout`, no line buffer of our own: integer `"%14" PRId64 " "`
+  (15 columns as the original, wider for big values), real `"% .11e   "` (C's `e` kept:
+  ` 1.00000000000e+00   `), boolean `"%-6s"` in lower case (`true  `, `false `), string as
+  is, `NEWLINE` `'\n'`, `NEWPAGE` `'\f'`. No carriage-control blank, no wrapping at column
+  126, trailing blanks kept. At exit a final `'\n'` when the last character written was not
+  one; `stdout` flushed before reading input. `run_test` compares tokens, not text: both
+  outputs split on white space, the original's `d.ddd±ee` read as `d.ddde±ee` and
+  `TRUE`/`FALSE` as lower case, a difference in the last digit of a real accepted (BESM-6
+  rounding); `NAME.native.out` only where the output really differs (upper case only in the
+  original). Unit tests of the runtime for the exact layout. Test print, exprs, exprs2,
+  arith, boolean.
 - **E14** Control flow: statement sequences, IF, GOTO to local labels, compound statements,
   blocks. Test cond, goto, blocks, empty.
 - **E15** FOR: STEP-UNTIL (integer and real, the sign of the step known or not), WHILE,
