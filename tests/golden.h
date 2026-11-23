@@ -12,7 +12,7 @@ std::vector<std::string> program_names();
 // Path of an expected output: tests/algol/NAME.EXT.
 std::string path(const std::string &name, const std::string &ext);
 
-// Options from NAME.pre (*call setftn:...).
+// Options from NAME.pre (*check).
 void load_options(Options &opt, const std::string &name);
 
 // Set the workspace, drums and registers as at the start of `pass`, from NAME.mem.

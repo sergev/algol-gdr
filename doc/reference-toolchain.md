@@ -7,8 +7,10 @@ scripts/ref-compile [--full] FILE.alg [OUTDIR]   # → NAME.std, NAME.lst (NAME.
 scripts/ref-run FILE.std                         # → job output on stdout
 ```
 
-`ref-compile` exits with status 1 and writes no `.std` file when the program has errors; the
-`.lst` file then holds the diagnostics.
+`ref-compile` runs two jobs: the object comes from the job as given, the listing from the same
+job with `*call setftn:one,long` (one column, long lines, the only form our compiler prints;
+it also sets check mode). It exits with status 1 and writes no `.std` file when the program
+has errors; the `.lst` file then holds the diagnostics.
 
 ## Side files
 
@@ -16,7 +18,7 @@ A program `NAME.alg` may come with:
 
 | File | Use |
 | --- | --- |
-| `NAME.pre` | control cards after `*name`, in both jobs (e.g. `*call setftn:one,long`, `*check`); our compiler takes them as `--setftn=…`, `--check` |
+| `NAME.pre` | control cards after `*name` in the compile job (`*check`); our compiler takes them as `--check` |
 | `NAME.run` | cards before `*execute` in the run job: `*library:…`, or other modules (`*ftn`, `*assem` sections) |
 | `NAME.in` | terminal input of the program, fed to `dubna` as stdin (default: empty) |
 | `NAME.norun` | the program is compiled but never run (the file says why) |
@@ -88,6 +90,5 @@ The script keeps a shadow of memory and drums from the start of pass 1 (traced w
 transfers) and checks it against every traced read, so the dumps are exact.
 
 `make goldens` runs it for every program. Pass 3 is skipped (no `.s3`) for the programs with
-a `NAME.pre`: `*call setftn` and `*check` set `CHECKFL*` (cell 0521), so they are compiled in
-check mode. `arrays_check` and `for2_check` are `arrays` and `for2` with `*check`.
+a `NAME.pre`: `*check` sets `CHECKFL*` (cell 0521), so they are compiled in check mode. `arrays_check` and `for2_check` are `arrays` and `for2` with `*check`.
 After errors in pass 1 or 2 only the streams up to that pass exist.

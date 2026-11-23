@@ -1561,7 +1561,7 @@ unsigned Pass4::element_store()
     if (k == 0)
         return assign(pop());
     emit_element(k);
-    if (ctx_.options.check()) {
+    if (ctx_.options.check_mode) {
         if (Word r = mem(02021))
             emit(((r << 20) & WORD_MASK) | CHECK_REG);
         push(address_of(mem(value_)));

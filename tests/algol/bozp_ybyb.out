@@ -1,51 +1,30 @@
 *NAME BOZP_YBYB
-*CALL SETFTN:ONE,LONG
 *-CM-*    PROGRA
 *LIBRARY:1,3
 *EXECUTE
       *LIBRA:01 = RNDM
       *LIBRA:03 = BOZP        YBYB
 ≠
-         PROGRAM    01000                A/PARVAL E 03335
-         A/STOP     01107                A/PAREXP E 03342
-         A/START  E 01113                A/PARLAB E 03353
-         A/ARRD/K   01167                A/PARSTR E 03362
-         A/ARRD/V E 01172                BOZP       03373
-         A/SUBCH    01263                YBYB       03450
-         RNDM       01275                STOP*      03525
-         RNDM1    E 01315                EXIT     E 03526
-         BCDWRIT*   01374                A/DRUCK    03554
-         FT*621   E 01374                A/IPRI   E 03606
-         BCDENC*  E 01400                A/RPRI   E 03640
-         FT*611   E 01400                A/BPRI   E 03674
-         FT*571   E 01402                A/SPRI   E 03703
-         FT*561   E 01405                A/LPRI   E 03720
-         NEXTLET* E 01412                A/NLINE  E 03764
-         RK*      E 01454                A/NPAGE  E 03766
-         WSY*     E 01712                A/I*ISO  E 04041
-         I/O*ERR  E 02152                A/R*ISO  E 04044
-         A/GETARR   02177                STOPFLG* C 04077
-         A/PUTARR E 02206                SYSBACK*   04100
-         IOCONT*    02215                BCDBEG*    04110
-         IOAC*    E 02246                FT2*     E 04415
-         FT*722   E 02261                KONV1*   E 04430
-         FT*642   E 02261                PRINT8     04524
-         FT*002   E 02261                TTPRINT    04705
-         FD*642   E 02262                BCDPUN     04744
-         FD*722   E 02262                EBCDPUN  E 04770
-         FC*722   E 02262                ISOTCOSY   05153
-         FC*642   E 02262                ISOTCOS1 E 05224
-         FC*002   E 02262                FMRTAPE    05244
-         IOEND*   E 02267                OCTTDEC    06173
-         FT*643   E 02267                LUNMUN   C 06226
-         FT*723   E 02267                JERRIO*  C 06227
-         FT*003   E 02267                CARD2    C 06230
-         A/CALLP    03255                ISOICTTR   06255
-         A/CALLS  E 03256                REVCARD    06312
-         A/PROCRT E 03263                *ICHECK* C 06337
-         A/PARCON E 03306                *ПEPФOPA   06345
-         A/PARVAR E 03315                KOД*CDC  E 06346
-         A/PARPAR E 03326                CBOБOДHO   06406
+         PROGRAM    01000                IOCONT*    02215                A/PARVAL E 03335                BCDBEG*    04110
+         A/STOP     01107                IOAC*    E 02246                A/PAREXP E 03342                FT2*     E 04415
+         A/START  E 01113                FT*722   E 02261                A/PARLAB E 03353                KONV1*   E 04430
+         A/ARRD/K   01167                FT*642   E 02261                A/PARSTR E 03362                PRINT8     04524
+         A/ARRD/V E 01172                FT*002   E 02261                BOZP       03373                TTPRINT    04705
+         A/SUBCH    01263                FD*642   E 02262                YBYB       03450                BCDPUN     04744
+         RNDM       01275                FD*722   E 02262                STOP*      03525                EBCDPUN  E 04770
+         RNDM1    E 01315                FC*722   E 02262                EXIT     E 03526                ISOTCOSY   05153
+         BCDWRIT*   01374                FC*642   E 02262                A/DRUCK    03554                ISOTCOS1 E 05224
+         FT*621   E 01374                FC*002   E 02262                A/IPRI   E 03606                FMRTAPE    05244
+         BCDENC*  E 01400                IOEND*   E 02267                A/RPRI   E 03640                OCTTDEC    06173
+         FT*611   E 01400                FT*643   E 02267                A/BPRI   E 03674                LUNMUN   C 06226
+         FT*571   E 01402                FT*723   E 02267                A/SPRI   E 03703                JERRIO*  C 06227
+         FT*561   E 01405                FT*003   E 02267                A/LPRI   E 03720                CARD2    C 06230
+         NEXTLET* E 01412                A/CALLP    03255                A/NLINE  E 03764                ISOICTTR   06255
+         RK*      E 01454                A/CALLS  E 03256                A/NPAGE  E 03766                REVCARD    06312
+         WSY*     E 01712                A/PROCRT E 03263                A/I*ISO  E 04041                *ICHECK* C 06337
+         I/O*ERR  E 02152                A/PARCON E 03306                A/R*ISO  E 04044                *ПEPФOPA   06345
+         A/GETARR   02177                A/PARVAR E 03315                STOPFLG* C 04077                KOД*CDC  E 06346
+         A/PUTARR E 02206                A/PARPAR E 03326                SYSBACK*   04100                CBOБOДHO   06406
 ≠
   0.943  0.976  0.069  0.428  0.557  0.324  0.223  0.854  0.786  0.850
   0.069  0.223  0.324  0.428  0.557  0.786  0.850  0.854  0.943  0.976

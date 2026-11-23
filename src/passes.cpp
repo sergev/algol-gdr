@@ -45,7 +45,7 @@ bool compile(Context &ctx, StdArray &object)
     if (!ctx.finished) {
         stream = run_pass(2, ctx, stream);
         if (!ctx.flgex) {
-            if (!ctx.options.check())
+            if (!ctx.options.check_mode)
                 stream = run_pass(3, ctx, stream);
             stream = run_pass(4, ctx, stream);
             stream = run_pass(5, ctx, stream);
@@ -53,9 +53,10 @@ bool compile(Context &ctx, StdArray &object)
             made   = !object.words.empty();
             if (made && ctx.listing && !ctx.options.no_listing)
                 ctx.listing->print(summary_line(ctx));
+            // G44504; after errors in passes 1-2 the driver skips it.
+            if (ctx.listing)
+                ctx.listing->finish();
         }
     }
-    if (ctx.listing)
-        ctx.listing->finish();
     return made && !ctx.flgex;
 }

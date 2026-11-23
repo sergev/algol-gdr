@@ -1,5 +1,4 @@
 *NAME QUINIO
-*CALL SETFTN:ONE,LONG
 *-CM-*    PROGRA
 *FTN                                             04 ИЮЛ 24 23.45
  Ф O P T P A H - Г Д P
@@ -41,9 +40,7 @@
   034               RETURN
   035               END
 
-
   STATEMENT    RELATIVE ADDRESSES OF STATEMENTS (OCTAL)
-
    00001        :00000  :00003  :00003  :00005  :00007
    00006        :00011  :00013  :00021  :00021  :00022
    00011        :00026  :00026  :00033  :00033  :00036
@@ -51,11 +48,8 @@
    00021        :00054  :00057  :00060  :00064  :00064
    00026        :00071  :00074   00076  :00077  :00103
    00031        :00103  :00110  :00113  :00116   00116
-
      *** ENTRIES ***   >LOCATION<
-
     XEEN    >00000<
-
  >> XEEN   <<    LENGTH: 00116 00164B   INPUT CARDS: 00035                                             04 ИЮЛ 24 23.45
  Ф O P T P A H - Г Д P
       (09.07.81)
@@ -80,20 +74,15 @@
   016               RETURN
   017               END
 
-
   STATEMENT    RELATIVE ADDRESSES OF STATEMENTS (OCTAL)
-
    00001        :00000  :00003  :00003  :00003  :00003
    00006        :00003  :00015  :00015  :00027  :00027
    00011        :00037  :00043  :00047  :00061  :00072
    00016        :00072   00072
-
      *** ENTRIES ***   >LOCATION<
-
     DRAW    >00000<
-
  >> DRAW   <<    LENGTH: 00106 00152B   INPUT CARDS: 00019
-*ASSEM
+*ASSEM                                             04 ИЮЛ 24 23.45
  ABTOKOД  MADLEN
    (1.10.72)
                     AVAILA  :  , NAME,
@@ -110,65 +99,36 @@
  ЧИCЛO ПEPФ. 0011      ЧИCЛO OШИБ. OПEPATOPOB  0000
 *EXECUTE
 ≠
-         PROGRAM    01000                STOP*      05576
-         A/STOP     02736                EXIT     E 05577
-         A/START  E 02742                A/DRUCK    05625
-         A/ARRD/K   03016                A/IPRI   E 05657
-         A/ARRD/V E 03021                A/RPRI   E 05711
-         A/AND      03112                A/BPRI   E 05745
-         A/EQUIV  E 03115                A/SPRI   E 05754
-         A/NOT    E 03116                A/LPRI   E 05771
-         A/IMPL   E 03121                A/NLINE  E 06035
-         A/RTOI   E 03124                A/NPAGE  E 06037
-         ENTIER*  E 03127                A/I*ISO  E 06112
-         A/RHOCHI E 03131                A/R*ISO  E 06115
-         A/IHOCHI E 03144                STOPFLG* C 06150
-         A/SIGN   E 03151                SYSBACK*   06151
-         A/CALLP    03161                BCDBEG*    06161
-         A/CALLS  E 03162                FT2*     E 06466
-         A/PROCRT E 03167                KONV1*   E 06501
-         A/PARCON E 03212                PRINT8     06575
-         A/PARVAR E 03221                TTPRINT    06756
-         A/PARPAR E 03232                BCDPUN     07015
-         A/PARVAL E 03241                EBCDPUN  E 07041
-         A/PAREXP E 03246                ISOTCOSY   07224
-         A/PARLAB E 03257                ISOTCOS1 E 07275
-         A/PARSTR E 03266                FMRTAPE    07315
-         BCDWRIT*   03277                OCTTDEC    10244
-         FT*621   E 03277                LUNMUN   C 10277
-         BCDENC*  E 03303                JERRIO*  C 10300
-         FT*611   E 03303                F/START    10301
-         FT*571   E 03305                F/FSTART E 10301
-         FT*561   E 03310                F/SNOSV  E 10303
-         NEXTLET* E 03315                F/NOSVR  E 10305
-         RK*      E 03357                F/FNOSV  E 10310
-         WSY*     E 03615                F/SSTART E 10312
-         I/O*ERR  E 04055                F/SAVER  E 10314
-         IOCONT*    04102                F/FRETNR E 10326
-         IOAC*    E 04133                F/FRET   E 10327
-         FT*722   E 04146                F/SRET   E 10330
-         FT*642   E 04146                F/SRETNR E 10334
-         FT*002   E 04146                R*TO*INT   10337
-         FD*642   E 04147                R*TO*I   E 10340
-         FD*722   E 04147                BCDREAD*   10352
-         FC*722   E 04147                FT*521   E 10352
-         FC*642   E 04147                BCDDEC*  E 10356
-         FC*002   E 04147                FT*531   E 10356
-         IOEND*   E 04154                FT*541   E 10360
-         FT*643   E 04154                CARD2    C 10647
-         FT*723   E 04154                ISOICTTR   10674
-         FT*003   E 04154                REVCARD    10731
-         AVAILA     05142                *ICHECK* C 10756
-         SIN*       05147                READ*      10764
-         COS*     E 05150                TTREAD     11012
-         SQRT*    E 05151                *ПEPФOPA   11050
-         LN*      E 05152                KOД*CDC  E 11051
-         ARCTAN*  E 05153                MONREAD*   11111
-         EXP*     E 05154                READ*ERR E 11171
-         A/SUBCH    05157                DRUMTAP*   11215
-         DRAW       05171                COSYTISO   11246
-         POWER      05343                CHKWORD* C 11322
-         XEEN       05412                CBOБOДHO   11323
+         PROGRAM    01000                NEXTLET* E 03315                EXIT     E 05577                F/FNOSV  E 10310
+         A/STOP     02736                RK*      E 03357                A/DRUCK    05625                F/SSTART E 10312
+         A/START  E 02742                WSY*     E 03615                A/IPRI   E 05657                F/SAVER  E 10314
+         A/ARRD/K   03016                I/O*ERR  E 04055                A/RPRI   E 05711                F/FRETNR E 10326
+         A/ARRD/V E 03021                IOCONT*    04102                A/BPRI   E 05745                F/FRET   E 10327
+         A/AND      03112                IOAC*    E 04133                A/SPRI   E 05754                F/SRET   E 10330
+         A/EQUIV  E 03115                FT*722   E 04146                A/LPRI   E 05771                F/SRETNR E 10334
+         A/NOT    E 03116                FT*642   E 04146                A/NLINE  E 06035                R*TO*INT   10337
+         A/IMPL   E 03121                FT*002   E 04146                A/NPAGE  E 06037                R*TO*I   E 10340
+         A/RTOI   E 03124                FD*642   E 04147                A/I*ISO  E 06112                BCDREAD*   10352
+         ENTIER*  E 03127                FD*722   E 04147                A/R*ISO  E 06115                FT*521   E 10352
+         A/RHOCHI E 03131                FC*722   E 04147                STOPFLG* C 06150                BCDDEC*  E 10356
+         A/IHOCHI E 03144                FC*642   E 04147                SYSBACK*   06151                FT*531   E 10356
+         A/SIGN   E 03151                FC*002   E 04147                BCDBEG*    06161                FT*541   E 10360
+         A/CALLP    03161                IOEND*   E 04154                FT2*     E 06466                CARD2    C 10647
+         A/CALLS  E 03162                FT*643   E 04154                KONV1*   E 06501                ISOICTTR   10674
+         A/PROCRT E 03167                FT*723   E 04154                PRINT8     06575                REVCARD    10731
+         A/PARCON E 03212                FT*003   E 04154                TTPRINT    06756                *ICHECK* C 10756
+         A/PARVAR E 03221                AVAILA     05142                BCDPUN     07015                READ*      10764
+         A/PARPAR E 03232                SIN*       05147                EBCDPUN  E 07041                TTREAD     11012
+         A/PARVAL E 03241                COS*     E 05150                ISOTCOSY   07224                *ПEPФOPA   11050
+         A/PAREXP E 03246                SQRT*    E 05151                ISOTCOS1 E 07275                KOД*CDC  E 11051
+         A/PARLAB E 03257                LN*      E 05152                FMRTAPE    07315                MONREAD*   11111
+         A/PARSTR E 03266                ARCTAN*  E 05153                OCTTDEC    10244                READ*ERR E 11171
+         BCDWRIT*   03277                EXP*     E 05154                LUNMUN   C 10277                DRUMTAP*   11215
+         FT*621   E 03277                A/SUBCH    05157                JERRIO*  C 10300                COSYTISO   11246
+         BCDENC*  E 03303                DRAW       05171                F/START    10301                CHKWORD* C 11322
+         FT*611   E 03303                POWER      05343                F/FSTART E 10301                CBOБOДHO   11323
+         FT*571   E 03305                XEEN       05412                F/SNOSV  E 10303
+         FT*561   E 03310                STOP*      05576                F/NOSVR  E 10305
 ≠
 
 

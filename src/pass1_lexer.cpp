@@ -156,9 +156,7 @@ void Pass1::read_card()
 }
 
 //
-// AG27652: the card in the listing. Normally columns 73-80, the line number,
-// columns 1-46, and on a second line columns 47-72; with *call setftn:one,long
-// the line number and all 80 columns on one line.
+// AG27652: the card in the listing: the line number and all 80 columns.
 //
 void Pass1::print_card()
 {
@@ -167,18 +165,9 @@ void Pass1::print_card()
     Word card[CARD_WORDS];
     for (unsigned i = 0; i < CARD_WORDS; i++)
         card[i] = ws_[CARD + i];
-    unsigned line = ws_[D_LINE] & 077777777;
     char num[16];
-    if (ctx_.options.setftn_one && ctx_.options.setftn_long) {
-        std::snprintf(num, sizeof(num), "%6u.     ", line);
-        print_line(rtrim(num + listing_text(card, 0, 80)));
-        return;
-    }
-    std::snprintf(num, sizeof(num), "%4u. ", line % 10000);
-    print_line(rtrim(listing_text(card, 72, 80) + num + listing_text(card, 0, 46)));
-    std::string rest = rtrim(listing_text(card, 46, 72));
-    if (!rest.empty())
-        print_line(std::string(15, ' ') + rest);
+    std::snprintf(num, sizeof(num), "%6u.     ", unsigned(ws_[D_LINE] & 077777777));
+    print_line(num + listing_text(card, 0, 80));
 }
 
 // G27220: put a word into the string pool; a full sector of 256 words goes

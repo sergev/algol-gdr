@@ -1,152 +1,156 @@
 *NAME EXPRS
+*CALL SETFTN:ONE,LONG
 *PUNCH
 *FULL
-*ALGOL                                             04 ИЮЛ 24 23.45
+*ALGOL
+                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
-           1. ′COMMENT′ FOR LIST ELEMENTS, CONDITIONAL AND P
-               OWER EXPRESSIONS;
-           2. ′BEGIN′ ′INTEGER′ I; ′REAL′ X; ′BOOLEAN′ B;
-           3.   ′INTEGER′ ′ARRAY′ IA[1:3]; ′REAL′ ′ARRAY′ RA
-               [1:3];
-           4.   ′BOOLEAN′ ′ARRAY′ BA[1:3];
-           5.   ′SWITCH′ S := L, M;
-           6.   ′INTEGER′ ′PROCEDURE′ IP(N); ′VALUE′ N; ′INT
-               EGER′ N; IP := N;
-           7.   ′REAL′ ′PROCEDURE′ RP; RP := 1;
-           8.   ′BOOLEAN′ ′PROCEDURE′ BP; BP := ′TRUE′;
-           9.   ′PROCEDURE′ P0; ;
-          10.   ′PROCEDURE′ PP(A1, A2, A3, A4, A5, A6, A7, A
-               8);
-          11.     ′VALUE′ A1; ′INTEGER′ A1; ′REAL′ A2; ′BOOL
-               EAN′ A3; ′ARRAY′ A4;
-          12.     ′LABEL′ A5; ′PROCEDURE′ A6; ′STRING′ A7; ′
-               SWITCH′ A8;
-          13.   ′BEGIN′ A2 := A1 ′END′;
-          14. L: I := 1;
-          15. M: X := 1;
-          16.   I := 1; X := 2; B := ′TRUE′;
-          17.   IA[1] := 1; IA[2] := 2; IA[3] := 3;
-          18.   I := IA[X]; PRINT(I);
-          19.   I := ′IF′ B ′THEN′ I ′ELSE′ X; PRINT(I);
-          20.   B := X ′LT′ 1; PRINT(B);
-          21.   B := X ′EQUAL′ 1; PRINT(B);
-          22.   X := 2 ′POWER′ I; PRINT(X);
-          23.   X := 2 ′POWER′ IP(1); PRINT(X);
-          24.   PRINT(IA);
-          25.   ′FOR′ I := I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1;
-                PRINT(I);
-          26.   ′FOR′ I := X ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1;
-                PRINT(I);
-          27.   ′FOR′ I := IA[1] ′STEP′ 1 ′UNTIL′ 2 ′DO′ X :
-               = 1; PRINT(I);
-          28.   ′FOR′ I := RP ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1
-               ; PRINT(I);
-          29.   ′FOR′ I := 1.5 ′STEP′ 1 ′UNTIL′ 2 ′DO′ X :=
-               1; PRINT(I);
-          30.   ′FOR′ I := -I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1
-               ; PRINT(I)
-          31. ′END′
-          32. ′EOP′
+
+     1.     ′COMMENT′ FOR LIST ELEMENTS, CONDITIONAL AND POWER EXPRESSIONS;
+     2.     ′BEGIN′ ′INTEGER′ I; ′REAL′ X; ′BOOLEAN′ B;
+     3.       ′INTEGER′ ′ARRAY′ IA[1:3]; ′REAL′ ′ARRAY′ RA[1:3];
+     4.       ′BOOLEAN′ ′ARRAY′ BA[1:3];
+     5.       ′SWITCH′ S := L, M;
+     6.       ′INTEGER′ ′PROCEDURE′ IP(N); ′VALUE′ N; ′INTEGER′ N; IP := N;
+     7.       ′REAL′ ′PROCEDURE′ RP; RP := 1;
+     8.       ′BOOLEAN′ ′PROCEDURE′ BP; BP := ′TRUE′;
+     9.       ′PROCEDURE′ P0; ;
+    10.       ′PROCEDURE′ PP(A1, A2, A3, A4, A5, A6, A7, A8);
+    11.         ′VALUE′ A1; ′INTEGER′ A1; ′REAL′ A2; ′BOOLEAN′ A3; ′ARRAY′ A4;
+    12.         ′LABEL′ A5; ′PROCEDURE′ A6; ′STRING′ A7; ′SWITCH′ A8;
+    13.       ′BEGIN′ A2 := A1 ′END′;
+    14.     L: I := 1;
+    15.     M: X := 1;
+    16.       I := 1; X := 2; B := ′TRUE′;
+    17.       IA[1] := 1; IA[2] := 2; IA[3] := 3;
+    18.       I := IA[X]; PRINT(I);
+    19.       I := ′IF′ B ′THEN′ I ′ELSE′ X; PRINT(I);
+    20.       B := X ′LT′ 1; PRINT(B);
+    21.       B := X ′EQUAL′ 1; PRINT(B);
+    22.       X := 2 ′POWER′ I; PRINT(X);
+    23.       X := 2 ′POWER′ IP(1); PRINT(X);
+    24.       PRINT(IA);
+    25.       ′FOR′ I := I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    26.       ′FOR′ I := X ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    27.       ′FOR′ I := IA[1] ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    28.       ′FOR′ I := RP ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    29.       ′FOR′ I := 1.5 ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    30.       ′FOR′ I := -I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I)
+    31.     ′END′
+    32.     ′EOP′
+
 CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
-   1 -       00001                   00023 00027 00033
-   9 - 00037                   00041       00046 00050
-  17 - 00053 00056 00062 00071 00074 00100 00104 00113
-  25 - 00114 00124 00135 00145 00156 00167       00202
-PROGRAM   ДЛИHA:  143 00217B BPEMЯ:  0.00 CEK. KAPT:  32
- 40000   7 VTM 40203             40040  15 MTJ  0005             40100   7 XTA  0000             40140   6 A+X  0017
-        13 VJM 74001                    15 UTM 00020                     6 XTS  0017                       NTR  0006
-    01  15 UTM 00022                41   5 XTA  0001                01  13 VJM 74011                41   6 ATX  0017
-         7 XTA  0012                       A+X  0000                       UTC 00000                     7 X-A  0011
-    02   7 XTS  0003                42   5 WTC 00002                02   6 ATX  0016                42     U1A 40144
-        11 VTM 00001                       ATX  0000                     6 XTA  0016                     7 XTA  0001
-    03  12 VTM 00001                43   5 MTJ  0017                03  13 VJM 74012                43   6 ATX  0016
-         6 UTC 00011                       UJ  74003                       UTC 00000                       UJ  40137
-    04  13 VTM 00000                44   6 WTC 00000                04   7 XTA  0000                44   6 XTA  0017
-        14 VJM 74002                    15 VTM 00000                       ITS  0017                    13 VJM 74005
-    05   7 XTA  0012                45   7 XTA  0012                05  15 UTM 00010                45  14 VTM 40026
-         7 XTS  0003                     6 ATX  0017                       UTC 00000                    13 VJM 74016
-    06  11 VTM 00001                46   6 WTC 00000                06   7 XTS  0012                46  14 VJM 74004
-        12 VTM 00001                    15 VTM 00000                    14 VJM 74013                       UTC 00000
-    07   6 UTC 00005                47   7 XTA  0001                07  14 VTM 40022                47     UJ  40152
-        13 VTM 00000                     6 ATX  0016                    13 VJM 74014                       UTC 00000
-    10  14 VJM 74002                50   7 XTA  0012                10  13 VJM 74011                50   7 XTA  0012
-           UTC 00000                     6 ATX  0017                       UTC 00000                       NTR  0003
-    11   7 XTA  0012                51   7 XTA  0000                11   6 ATX  0016                51   6 A+X  0017
-         7 XTS  0003                     6 ATX  0016                     6 XTA  0016                       NTR  0006
-    12  11 VTM 00001                52   7 XTA  0005                12  13 VJM 74012                52   6 ATX  0017
-        12 VTM 00001                     6 ATX  0015                       UTC 00000                     7 X-A  0011
-    13   6 UTC 00001                53   7 XTA  0012                13   6 XTA  0011                53     U1A 40155
-        13 VTM 00000                     6 ATX  0012                    13 VJM 74015                     7 XTA  0001
-    14  14 VJM 74002                54   7 XTA  0011                14   6 XTA  0017                54   6 ATX  0016
-           UTC 00000                     6 ATX  0013                     6 ATX  0021                       UJ  40150
-    15     ITA  0017                55   7 XTA  0003                15   6 XTA  0021                55   6 XTA  0017
-         6 ATX  0000                     6 ATX  0014                       UJ  40120                    13 VJM 74005
-    16     UJ  40044                56   6 XTA  0016                16   7 XTA  0012                56   7 XTA  0002
-           UTC 00000                    14 VJM 74004                       NTR  0003                    14 VJM 74004
-    17   8 UJ  40017                57  15 ATX  0000                17   6 A+X  0017                57   6 ATX  0021
-           UTC 00000                    15 WTC 00000                       NTR  0006                     6 XTA  0021
-    20     UJ  40044                60   6 XTA  0011                20   6 ATX  0017                60     UJ  40163
-           UTC 00000                     6 ATX  0017                     7 X-A  0011                       UTC 00000
-    21     UJ  40046                61   6 XTA  0017                21     U1A 40123                61   7 XTA  0012
-           UTC 00000                    13 VJM 74005                     7 XTA  0001                       NTR  0003
-    22  15 MTJ  0005                62   6 XTA  0015                22   6 ATX  0016                62   6 A+X  0017
-        15 UTM 00003                       UZA 40065                       UJ  40116                       NTR  0006
-    23   5 XTA  0001                63   6 XTA  0017                23   6 XTA  0017                63   6 ATX  0017
-         5 ATX  0002                       A+X  0000                    13 VJM 74005                     7 X-A  0011
-    24   5 XTA  0002                64     UJ  40066                24   6 XTA  0016                64     U1A 40166
-         5 MTJ  0017                       UTC 00000                    14 VJM 74004                     7 XTA  0001
-    25     UJ  74003                65   6 XTA  0016                25   6 ATX  0021                65   6 ATX  0016
-           UTC 00000                       UTC 00000                     6 XTA  0021                       UJ  40161
-    26  15 MTJ  0005                66  14 VJM 74004                26     UJ  40131                66   6 XTA  0017
-        15 UTM 00001                       UTC 00000                       UTC 00000                    13 VJM 74005
-    27   7 XTA  0001                67   6 ATX  0017                27   7 XTA  0012                67   6 XTA  0017
-         5 ATX  0000                     6 XTA  0017                       NTR  0003                       NTR  0003
-    30   5 XTA  0000                70  13 VJM 74005                30   6 A+X  0017                70     AVX  4006
-         5 MTJ  0017                       UTC 00000                       NTR  0006                     6 ATX  0021
-    31     UJ  74003                71   6 XTA  0016                31   6 ATX  0017                71   6 XTA  0021
-           UTC 00000                     7 A-X  0012                     7 X-A  0011                       NTR  0006
-    32  15 MTJ  0005                72     AAX  4006                32     U1A 40134                72     UJ  40175
-        15 UTM 00001                     6 ATX  0015                     7 XTA  0001                       UTC 00000
-    33   7 XTA  0005                73   6 XTA  0015                33   6 ATX  0016                73   7 XTA  0012
-         5 ATX  0000                    13 VJM 74007                       UJ  40127                       NTR  0003
-    34   5 XTA  0000                74   6 XTA  0016                34   6 XTA  0017                74   6 A+X  0017
-         5 MTJ  0017                     7 A-X  0012                    13 VJM 74005                       NTR  0006
-    35     UJ  74003                75  14 VJM 74010                35   6 XTA  0012                75   6 ATX  0017
-           UTC 00000                       UTC 00000                     6 ATX  0021                     7 X-A  0011
-    36  15 MTJ  0005                76   6 ATX  0015                36   6 XTA  0021                76     U1A 40200
-        15 UTM 00000                     6 XTA  0015                       UJ  40141                     7 XTA  0001
-    37   5 MTJ  0017                77  13 VJM 74007                37   7 XTA  0012                77   6 ATX  0016
-           UJ  74003                       UTC 00000                       NTR  0003                       UJ  40173
- 40200   6 XTA  0017             04021  4117416262441753
-        13 VJM 74005                    A/ARRD
-    01   6 UTC 00022                22  4117606257436264
-        15 VTM 00000                    A/PROC
-    02     UJ  74017                23  4117626457510000
-           UTC 00000                    A/RTOI
- 00000  4110000000000000            24  4117516062510000
-         2.00000000000+00               A/IPRI
-    01  4050000000000000            25  4117555156656300
-         1.00000000000+00               A/MINU
-    02  4054000000000000            26  4117426062510000
+   1 -       00001                   00024 00031 00036
+   9 - 00043                   00046 00051 00053 00055
+  17 - 00061 00064 00070 00077 00102 00106 00112 00121
+  25 - 00122 00132 00143 00153 00165 00176       00211
+
+PROGRAM   ДЛИHA:  148 00224B BPEMЯ:  0.00 CEK. KAPT:  32
+
+ 40000   7 VTM 40212             40040     UJ  74003             40100     AAX  4006             40140     A+X  0000
+        13 VJM 74001                       UTC 00000                     6 ATX  0015                     6 ATX  0016
+    01  15 UTM 00021                41     UJ  40044                01   6 XTA  0015                41     UJ  40134
+         7 XTA  0010                       UTC 00000                    13 VJM 74007                       UTC 00000
+    02   7 XTS  0001                42  15 MTJ  0005                02   6 XTA  0016                42   6 XTA  0017
+        11 VTM 00001                    15 UTM 00000                     7 A-X  0010                    13 VJM 74005
+    03  12 VTM 00001                43   5 MTJ  0017                03  14 VJM 74010                43   6 XTA  0012
+         6 UTC 00011                       UJ  74003                       UTC 00000                       UJ  40146
+    04  13 VTM 00000                44     UJ  40051                04   6 ATX  0015                44   7 XTA  0010
+        14 VJM 74002                       UTC 00000                     6 XTA  0015                       NTR  0003
+    05   7 XTA  0010                45  15 MTJ  0005                05  13 VJM 74007                45   6 A+X  0017
+         7 XTS  0001                    15 UTM 00020                       UTC 00000                       NTR  0006
+    06  11 VTM 00001                46   5 XTA  0001                06   7 XTA  0007                46   6 ATX  0017
+        12 VTM 00001                       A+X  0000                       A+X  0000                     7 X-A  0007
+    07   6 UTC 00005                47   5 WTC 00002                07   6 XTS  0017                47     U1A 40152
+        13 VTM 00000                       ATX  0000                    13 VJM 74011                     7 XTA  0010
+    10  14 VJM 74002                50   5 MTJ  0017                10   6 ATX  0016                50     A+X  0000
+           UTC 00000                       UJ  74003                     6 XTA  0016                     6 ATX  0016
+    11   7 XTA  0010                51   6 WTC 00000                11  13 VJM 74012                51     UJ  40144
+         7 XTS  0001                    15 VTM 00000                       UTC 00000                       UTC 00000
+    12  11 VTM 00001                52   7 XTA  0010                12   7 XTA  0007                52   6 XTA  0017
+        12 VTM 00001                     6 ATX  0017                       A+X  0000                    13 VJM 74005
+    13   6 UTC 00001                53   6 WTC 00000                13     ITS  0017                53  14 VTM 40030
+        13 VTM 00000                    15 VTM 00000                    15 UTM 00010                    13 VJM 74016
+    14  14 VJM 74002                54   7 XTA  0010                14   7 XTS  0010                54  14 VJM 74004
+           UTC 00000                       A+X  0000                    14 VJM 74013                       UTC 00000
+    15     ITA  0017                55   6 ATX  0016                15  14 VTM 40023                55     UJ  40160
+         6 ATX  0000                     7 XTA  0010                    13 VJM 74014                       UTC 00000
+    16     UJ  40022                56   6 ATX  0017                16  13 VJM 74011                56   7 XTA  0010
+           UTC 00000                     7 XTA  0007                       UTC 00000                       NTR  0003
+    17   8 UJ  40017                57     A+X  0000                17   6 ATX  0016                57   6 A+X  0017
+           UTC 00000                     6 ATX  0016                     6 XTA  0016                       NTR  0006
+    20     UJ  40051                60   7 XTA  0003                20  13 VJM 74012                60   6 ATX  0017
+           UTC 00000                     6 ATX  0015                       UTC 00000                     7 X-A  0007
+    21     UJ  40053                61   7 XTA  0010                21   6 XTA  0011                61     U1A 40164
+           UTC 00000                     6 ATX  0012                    13 VJM 74015                     7 XTA  0010
+    22     UJ  40027                62   7 XTA  0007                22   6 XTA  0017                62     A+X  0000
+           UTC 00000                     6 ATX  0013                       UJ  40125                     6 ATX  0016
+    23  15 MTJ  0005                63   7 XTA  0001                23   7 XTA  0010                63     UJ  40156
+        15 UTM 00003                     6 ATX  0014                       NTR  0003                       UTC 00000
+    24   5 XTA  0001                64   6 XTA  0016                24   6 A+X  0017                64   6 XTA  0017
+         5 ATX  0002                    14 VJM 74004                       NTR  0006                    13 VJM 74005
+    25   5 XTA  0002                65  15 ATX  0000                25   6 ATX  0017                65   7 XTA  0000
+         5 MTJ  0017                    15 WTC 00000                     7 X-A  0007                    14 VJM 74004
+    26     UJ  74003                66   6 XTA  0011                26     U1A 40131                66     UJ  40171
+           UTC 00000                     6 ATX  0017                     7 XTA  0010                       UTC 00000
+    27     UJ  40034                67   6 XTA  0017                27     A+X  0000                67   7 XTA  0010
+           UTC 00000                    13 VJM 74005                     6 ATX  0016                       NTR  0003
+    30  15 MTJ  0005                70   6 XTA  0015                30     UJ  40123                70   6 A+X  0017
+        15 UTM 00001                       UZA 40073                       UTC 00000                       NTR  0006
+    31   7 XTA  0010                71   6 XTA  0017                31   6 XTA  0017                71   6 ATX  0017
+           A+X  0000                       A+X  0000                    13 VJM 74005                     7 X-A  0007
+    32   5 ATX  0000                72     UJ  40074                32   6 XTA  0016                72     U1A 40175
+         5 XTA  0000                       UTC 00000                    14 VJM 74004                     7 XTA  0010
+    33   5 MTJ  0017                73   6 XTA  0016                33     UJ  40136                73     A+X  0000
+           UJ  74003                       UTC 00000                       UTC 00000                     6 ATX  0016
+    34     UJ  40041                74  14 VJM 74004                34   7 XTA  0010                74     UJ  40167
+           UTC 00000                       UTC 00000                       NTR  0003                       UTC 00000
+    35  15 MTJ  0005                75   6 ATX  0017                35   6 A+X  0017                75   6 XTA  0017
+        15 UTM 00001                     6 XTA  0017                       NTR  0006                    13 VJM 74005
+    36   7 XTA  0003                76  13 VJM 74005                36   6 ATX  0017                76   6 XTA  0017
+         5 ATX  0000                       UTC 00000                     7 X-A  0007                       NTR  0003
+    37   5 XTA  0000                77   6 XTA  0016                37     U1A 40142                77     AVX  4006
+         5 MTJ  0017                     7 A-X  0010                     7 XTA  0010                       NTR  0006
+ 40200     UJ  40203             04014  0000403363000000
+           UTC 00000                    ==>4033
+    01   7 XTA  0010                15  0000403463000000
+           NTR  0003                    ==>4034
+    02   6 A+X  0017                16  0000403563000000
+           NTR  0006                    ==>4035
+    03   6 ATX  0017                17  0000403663000000
+         7 X-A  0007                    ==>4036
+    04     U1A 40207                20  4117636441626400
+         7 XTA  0010                    A/STAR
+    05     A+X  0000                21  4117416262441753
+         6 ATX  0016                    A/ARRD
+    06     UJ  40201                22  4117606257436264
+           UTC 00000                    A/PROC
+    07   6 XTA  0017                23  4117626457510000
+        13 VJM 74005                    A/RTOI
+    10   6 UTC 00021                24  4117516062510000
+        15 VTM 00000                    A/IPRI
+    11     UJ  74017                25  4117555156656300
+           UTC 00000                    A/MINU
+ 00000  4054000000000000            26  4117426062510000
          1.50000000000+00               A/BPRI
-    03  6400000000000003            27  4117565764000000
+    01  6400000000000003            27  4117565764000000
                      3                  A/NOT
-    04  0000000000000000            30  4117625057435051
+    02  0000000000000000            30  4117625057435051
                                         A/RHOC
-    05  0020000000000000            31  4117626062510000
+    03  0020000000000000            31  4117626062510000
         !                               A/RPRI
-    06  6400000000000064            32  4117604162664154
+    04  6400000000000064            32  4117604162664154
                     52                  A/PARV
-    07  6400000000000063            33  4117434154546000
+    05  6400000000000063            33  4117434154546000
                     51                  A/CALL
-    10  6400000000000062            34  4117514160625100
+    06  6400000000000062            34  4117514160625100
                     50                  A/IAPR
-    11  6400000000000002            35  4117434154546300
+    07  6400000000000002            35  4117434154546300
                      2                  A/CALL
-    12  6400000000000001            36  4117636457600000
+    10  6400000000000001            36  4117636457600000
                      1                  A/STOP
-    13  6400000000000000
+    11  6400000000000000
                      0
  04000  6062574762415500
         PROGRA
@@ -172,14 +176,4 @@ PROGRAM   ДЛИHA:  143 00217B BPEMЯ:  0.00 CEK. KAPT:  32
         ==>4031
     13  0000403263000000
         ==>4032
-    14  0000403363000000
-        ==>4033
-    15  0000403463000000
-        ==>4034
-    16  0000403563000000
-        ==>4035
-    17  0000403663000000
-        ==>4036
-    20  4117636441626400
-        A/STAR
 *END FILE

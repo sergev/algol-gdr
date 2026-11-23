@@ -1,56 +1,50 @@
 *NAME EXPRS
+*CALL SETFTN:ONE,LONG
 *PUNCH
-*ALGOL                                             04 ИЮЛ 24 23.45
+*ALGOL
+                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
-           1. ′COMMENT′ FOR LIST ELEMENTS, CONDITIONAL AND P
-               OWER EXPRESSIONS;
-           2. ′BEGIN′ ′INTEGER′ I; ′REAL′ X; ′BOOLEAN′ B;
-           3.   ′INTEGER′ ′ARRAY′ IA[1:3]; ′REAL′ ′ARRAY′ RA
-               [1:3];
-           4.   ′BOOLEAN′ ′ARRAY′ BA[1:3];
-           5.   ′SWITCH′ S := L, M;
-           6.   ′INTEGER′ ′PROCEDURE′ IP(N); ′VALUE′ N; ′INT
-               EGER′ N; IP := N;
-           7.   ′REAL′ ′PROCEDURE′ RP; RP := 1;
-           8.   ′BOOLEAN′ ′PROCEDURE′ BP; BP := ′TRUE′;
-           9.   ′PROCEDURE′ P0; ;
-          10.   ′PROCEDURE′ PP(A1, A2, A3, A4, A5, A6, A7, A
-               8);
-          11.     ′VALUE′ A1; ′INTEGER′ A1; ′REAL′ A2; ′BOOL
-               EAN′ A3; ′ARRAY′ A4;
-          12.     ′LABEL′ A5; ′PROCEDURE′ A6; ′STRING′ A7; ′
-               SWITCH′ A8;
-          13.   ′BEGIN′ A2 := A1 ′END′;
-          14. L: I := 1;
-          15. M: X := 1;
-          16.   I := 1; X := 2; B := ′TRUE′;
-          17.   IA[1] := 1; IA[2] := 2; IA[3] := 3;
-          18.   I := IA[X]; PRINT(I);
-          19.   I := ′IF′ B ′THEN′ I ′ELSE′ X; PRINT(I);
-          20.   B := X ′LT′ 1; PRINT(B);
-          21.   B := X ′EQUAL′ 1; PRINT(B);
-          22.   X := 2 ′POWER′ I; PRINT(X);
-          23.   X := 2 ′POWER′ IP(1); PRINT(X);
-          24.   PRINT(IA);
-          25.   ′FOR′ I := I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1;
-                PRINT(I);
-          26.   ′FOR′ I := X ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1;
-                PRINT(I);
-          27.   ′FOR′ I := IA[1] ′STEP′ 1 ′UNTIL′ 2 ′DO′ X :
-               = 1; PRINT(I);
-          28.   ′FOR′ I := RP ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1
-               ; PRINT(I);
-          29.   ′FOR′ I := 1.5 ′STEP′ 1 ′UNTIL′ 2 ′DO′ X :=
-               1; PRINT(I);
-          30.   ′FOR′ I := -I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1
-               ; PRINT(I)
-          31. ′END′
-          32. ′EOP′
+
+     1.     ′COMMENT′ FOR LIST ELEMENTS, CONDITIONAL AND POWER EXPRESSIONS;
+     2.     ′BEGIN′ ′INTEGER′ I; ′REAL′ X; ′BOOLEAN′ B;
+     3.       ′INTEGER′ ′ARRAY′ IA[1:3]; ′REAL′ ′ARRAY′ RA[1:3];
+     4.       ′BOOLEAN′ ′ARRAY′ BA[1:3];
+     5.       ′SWITCH′ S := L, M;
+     6.       ′INTEGER′ ′PROCEDURE′ IP(N); ′VALUE′ N; ′INTEGER′ N; IP := N;
+     7.       ′REAL′ ′PROCEDURE′ RP; RP := 1;
+     8.       ′BOOLEAN′ ′PROCEDURE′ BP; BP := ′TRUE′;
+     9.       ′PROCEDURE′ P0; ;
+    10.       ′PROCEDURE′ PP(A1, A2, A3, A4, A5, A6, A7, A8);
+    11.         ′VALUE′ A1; ′INTEGER′ A1; ′REAL′ A2; ′BOOLEAN′ A3; ′ARRAY′ A4;
+    12.         ′LABEL′ A5; ′PROCEDURE′ A6; ′STRING′ A7; ′SWITCH′ A8;
+    13.       ′BEGIN′ A2 := A1 ′END′;
+    14.     L: I := 1;
+    15.     M: X := 1;
+    16.       I := 1; X := 2; B := ′TRUE′;
+    17.       IA[1] := 1; IA[2] := 2; IA[3] := 3;
+    18.       I := IA[X]; PRINT(I);
+    19.       I := ′IF′ B ′THEN′ I ′ELSE′ X; PRINT(I);
+    20.       B := X ′LT′ 1; PRINT(B);
+    21.       B := X ′EQUAL′ 1; PRINT(B);
+    22.       X := 2 ′POWER′ I; PRINT(X);
+    23.       X := 2 ′POWER′ IP(1); PRINT(X);
+    24.       PRINT(IA);
+    25.       ′FOR′ I := I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    26.       ′FOR′ I := X ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    27.       ′FOR′ I := IA[1] ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    28.       ′FOR′ I := RP ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    29.       ′FOR′ I := 1.5 ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I);
+    30.       ′FOR′ I := -I ′STEP′ 1 ′UNTIL′ 2 ′DO′ X := 1; PRINT(I)
+    31.     ′END′
+    32.     ′EOP′
+
 CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
-   1 -       00001                   00023 00027 00033
-   9 - 00037                   00041       00046 00050
-  17 - 00053 00056 00062 00071 00074 00100 00104 00113
-  25 - 00114 00124 00135 00145 00156 00167       00202
-PROGRAM   ДЛИHA:  143 00217B BPEMЯ:  0.00 CEK. KAPT:  32
+   1 -       00001                   00024 00031 00036
+   9 - 00043                   00046 00051 00053 00055
+  17 - 00061 00064 00070 00077 00102 00106 00112 00121
+  25 - 00122 00132 00143 00153 00165 00176       00211
+
+PROGRAM   ДЛИHA:  148 00224B BPEMЯ:  0.00 CEK. KAPT:  32
+
 *END FILE

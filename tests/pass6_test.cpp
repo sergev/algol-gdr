@@ -1,6 +1,6 @@
 //
 // Pass 6 on the expected stream of pass 5: the object must match NAME.std,
-// and the summary line the one in NAME.lst.
+// and the summary line the one in NAME.lst (in check mode, as the listing).
 //
 #include "pass6.h"
 
@@ -39,14 +39,14 @@ TEST_P(Pass6, object)
         ASSERT_EQ(obj.words[i], want.words[i]) << "word " << i;
     EXPECT_EQ(obj.label, want.label);
 
+    load_options(ctx.options, name);
+    if (!ctx.options.check_mode)
+        return;
     std::ifstream lst(path(name, ".lst"));
     std::string line, summary;
-    while (std::getline(lst, line)) {
-        // On a page of two columns it may be in the right one.
-        auto at = line.find("PROGRAM   ДЛИHA");
-        if (at != std::string::npos)
-            summary = line.substr(at);
-    }
+    while (std::getline(lst, line))
+        if (line.rfind("PROGRAM   ДЛИHA", 0) == 0)
+            summary = line;
     EXPECT_EQ(summary_line(ctx), summary);
 }
 

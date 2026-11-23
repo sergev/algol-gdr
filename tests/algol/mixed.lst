@@ -1,37 +1,37 @@
 *NAME MIXED
+*CALL SETFTN:ONE,LONG
 *PUNCH
-*ALGOL                                             04 ИЮЛ 24 23.45
+*ALGOL
+                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
-           1. ′COMMENT′ MIXED RELATIONS, BY-NAME FOR ELEMENT
-               S, AN ELEMENT OF A
-           2.   DYNAMIC ARRAY AS A PARAMETER BY NAME;
-           3. ′BEGIN′ ′INTEGER′ I, J, N; ′REAL′ X; ′BOOLEAN′
-                B;
-           4.   ′PROCEDURE′ Q(Z); ′REAL′ Z; Z := Z + 1;
-           5.   ′PROCEDURE′ R(V, W); ′INTEGER′ V, W;
-           6.   ′BEGIN′ ′FOR′ V := W ′DO′ PRINT(V);
-           7.     ′FOR′ V := W ′STEP′ W ′UNTIL′ 3 * W ′DO′ P
-               RINT(V)
-           8.   ′END′;
-           9.   I := 1; J := 2; X := 1.5; N := 3;
-          10.   B := I ′NOTEQUAL′ X; PRINT(B);
-          11.   B := J ′NOTEQUAL′ 2.0; PRINT(B);
-          12.   ′IF′ I ′GE′ X ′THEN′ PRINT(1) ′ELSE′ PRINT(2
-               );
-          13.   ′IF′ J ′GE′ X ′THEN′ PRINT(3) ′ELSE′ PRINT(4
-               );
-          14.   ′IF′ I ′NOTEQUAL′ X ′THEN′ PRINT(5) ′ELSE′ P
-               RINT(6);
-          15.   R(I, J);
-          16.   ′BEGIN′ ′ARRAY′ A[1:N];
-          17.     A[1] := 7; Q(A[1]); PRINT(A[1])
-          18.   ′END′
-          19. ′END′
-          20. ′EOP′
+
+     1.     ′COMMENT′ MIXED RELATIONS, BY-NAME FOR ELEMENTS, AN ELEMENT OF A
+     2.       DYNAMIC ARRAY AS A PARAMETER BY NAME;
+     3.     ′BEGIN′ ′INTEGER′ I, J, N; ′REAL′ X; ′BOOLEAN′ B;
+     4.       ′PROCEDURE′ Q(Z); ′REAL′ Z; Z := Z + 1;
+     5.       ′PROCEDURE′ R(V, W); ′INTEGER′ V, W;
+     6.       ′BEGIN′ ′FOR′ V := W ′DO′ PRINT(V);
+     7.         ′FOR′ V := W ′STEP′ W ′UNTIL′ 3 * W ′DO′ PRINT(V)
+     8.       ′END′;
+     9.       I := 1; J := 2; X := 1.5; N := 3;
+    10.       B := I ′NOTEQUAL′ X; PRINT(B);
+    11.       B := J ′NOTEQUAL′ 2.0; PRINT(B);
+    12.       ′IF′ I ′GE′ X ′THEN′ PRINT(1) ′ELSE′ PRINT(2);
+    13.       ′IF′ J ′GE′ X ′THEN′ PRINT(3) ′ELSE′ PRINT(4);
+    14.       ′IF′ I ′NOTEQUAL′ X ′THEN′ PRINT(5) ′ELSE′ PRINT(6);
+    15.       R(I, J);
+    16.       ′BEGIN′ ′ARRAY′ A[1:N];
+    17.         A[1] := 7; Q(A[1]); PRINT(A[1])
+    18.       ′END′
+    19.     ′END′
+    20.     ′EOP′
+
 CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
-   1 -             00001 00003       00011 00016 00043
-   9 -       00050 00053 00056 00063 00070 00075 00101
-  17 - 00106       00120 00120
-PROGRAM   ДЛИHA:   97 00141B BPEMЯ:  0.00 CEK. KAPT:  20
+   1 -             00001 00003       00012 00017 00044
+   9 - 00045 00051 00054 00057 00064 00071 00076 00102
+  17 - 00107       00124 00124
+
+PROGRAM   ДЛИHA:  100 00144B BPEMЯ:  0.00 CEK. KAPT:  20
+
 *END FILE

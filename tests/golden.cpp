@@ -66,15 +66,5 @@ void load_options(Options &opt, const std::string &name)
     while (std::getline(in, line)) {
         if (line == "*check")
             opt.check_mode = true;
-        if (line.rfind("*call setftn:", 0) != 0)
-            continue;
-        std::istringstream args(line.substr(13));
-        std::string arg;
-        while (std::getline(args, arg, ',')) {
-            if (arg == "one")
-                opt.setftn_one = true;
-            else if (arg == "long")
-                opt.setftn_long = true;
-        }
     }
 }

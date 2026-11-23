@@ -1,73 +1,66 @@
 *NAME FOR2_CHECK
 *CHECK
+*CALL SETFTN:ONE,LONG
 *PUNCH
 *FULL
-*ALGOL                                             04 ИЮЛ 24 23.45
-A L G O L - Г Д P                                                          39.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I*(-
-    (7.01.82)                                                                   2)] := I+20;
-                                                                           40.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[2-I+
-           1. ′COMMENT′ FOR LOOPS REWRITTEN BY PASS 3, AND L                    5] := I+30; SHOW
-               OOPS IT GIVES UP ON;                                        41. ′END′
-           2. ′BEGIN′ ′INTEGER′ I, J, K; ′BOOLEAN′ B;                      42. ′EOP′
-           3.   ′INTEGER′ ′ARRAY′ IA[-10:20];
-           4.   ′PROCEDURE′ SHOW;                                CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
-           5.   ′BEGIN′ ′FOR′ K := -10 ′STEP′ 1 ′UNTIL′ 20 ′        1 -       00001             00012 00024 00040 00041
-               DO′ PRINT(IA[K]);                                    9 - 00043 00057 00070 00103 00117 00134 00152 00164
-           6.     ′FOR′ K := -10 ′STEP′ 1 ′UNTIL′ 20 ′DO′ IA       17 - 00201 00212 00220 00221 00226 00227 00235 00240
-               [K] := 0                                            25 - 00250 00256 00256 00261 00271 00272 00315 00345
-           7.   ′END′;                                             33 - 00363 00400 00415 00435 00450 00464 00502 00521
-           8.   J := 1; B := ′TRUE′;                               41 - 00536 00540
-           9.   ′FOR′ K := -10 ′STEP′ 1 ′UNTIL′ 20 ′DO′ IA[K
-               ] := 0;                                           PROGRAM   ДЛИHA:  367 00557B BPEMЯ:  0.00 CEK. KAPT:  42
-          10.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I] :
-               = I;
-          11.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I+1]
-                := IA[I]; SHOW;
-          12.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[2*I-
-               1] := I;
-          13.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[-I+5
-               ] := I+10;
-          14.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I-J]
-                := I+20; SHOW;
-          15.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ ′IF′ B
-               ′THEN′ IA[I] := I;
-          16.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[3-I]
-                := I+10;
-          17.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[1] :
-               = I; SHOW;
-          18.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ ′IF′ B
-               ′THEN′ ′GOTO′ L1;
-          19. L1: PRINT(I);
-          20.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ ′GOTO′
-               L2;
-          21. L2: PRINT(I);
-          22.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ I := I;
-                PRINT(I);
-          23.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′
-          24.   ′BEGIN′ L3: IA[I] := IA[I] + 1;
-          25.     ′IF′ IA[I] ′LT′ 3 ′THEN′ ′GOTO′ L3
-          26.   ′END′;
-          27.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′
-          28.     ′IF′ J ′LT′ 2 ′THEN′ IA[I+3] := I;
-          29.   SHOW;
-          30.   ′FOR′ I := 3 ′STEP′ -1 ′UNTIL′ 1 ′DO′ IA[I]
-               := I;
-          31.   ′FOR′ I := 3 ′STEP′ -1 ′UNTIL′ 1 ′DO′ IA[(I+
-               1)+(I+2)] := I; SHOW;
-          32.   ′FOR′ I := 1 ′STEP′ J ′UNTIL′ 3 ′DO′ IA[I+1]
-                := IA[I]+1;
-          33.   ′FOR′ I := 1 ′STEP′ J ′UNTIL′ 3 ′DO′ ′IF′ B
-               ′THEN′ IA[I+5] := I; SHOW;
-          34.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[(I+1
-               )-(I+2)] := I;
-          35.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[(I-1
-               )*(2+1)] := I+10;
-          36.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[1+2]
-                := I+20; SHOW;
-          37.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I+(2
-               -1)] := I;
-          38.   ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I+2*
-               3] := I+10;
+*ALGOL
+                                             04 ИЮЛ 24 23.45
+A L G O L - Г Д P
+    (7.01.82)
+
+     1.     ′COMMENT′ FOR LOOPS REWRITTEN BY PASS 3, AND LOOPS IT GIVES UP ON;
+     2.     ′BEGIN′ ′INTEGER′ I, J, K; ′BOOLEAN′ B;
+     3.       ′INTEGER′ ′ARRAY′ IA[-10:20];
+     4.       ′PROCEDURE′ SHOW;
+     5.       ′BEGIN′ ′FOR′ K := -10 ′STEP′ 1 ′UNTIL′ 20 ′DO′ PRINT(IA[K]);
+     6.         ′FOR′ K := -10 ′STEP′ 1 ′UNTIL′ 20 ′DO′ IA[K] := 0
+     7.       ′END′;
+     8.       J := 1; B := ′TRUE′;
+     9.       ′FOR′ K := -10 ′STEP′ 1 ′UNTIL′ 20 ′DO′ IA[K] := 0;
+    10.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I] := I;
+    11.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I+1] := IA[I]; SHOW;
+    12.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[2*I-1] := I;
+    13.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[-I+5] := I+10;
+    14.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I-J] := I+20; SHOW;
+    15.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ ′IF′ B ′THEN′ IA[I] := I;
+    16.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[3-I] := I+10;
+    17.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[1] := I; SHOW;
+    18.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ ′IF′ B ′THEN′ ′GOTO′ L1;
+    19.     L1: PRINT(I);
+    20.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ ′GOTO′ L2;
+    21.     L2: PRINT(I);
+    22.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ I := I; PRINT(I);
+    23.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′
+    24.       ′BEGIN′ L3: IA[I] := IA[I] + 1;
+    25.         ′IF′ IA[I] ′LT′ 3 ′THEN′ ′GOTO′ L3
+    26.       ′END′;
+    27.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′
+    28.         ′IF′ J ′LT′ 2 ′THEN′ IA[I+3] := I;
+    29.       SHOW;
+    30.       ′FOR′ I := 3 ′STEP′ -1 ′UNTIL′ 1 ′DO′ IA[I] := I;
+    31.       ′FOR′ I := 3 ′STEP′ -1 ′UNTIL′ 1 ′DO′ IA[(I+1)+(I+2)] := I; SHOW;
+    32.       ′FOR′ I := 1 ′STEP′ J ′UNTIL′ 3 ′DO′ IA[I+1] := IA[I]+1;
+    33.       ′FOR′ I := 1 ′STEP′ J ′UNTIL′ 3 ′DO′ ′IF′ B ′THEN′ IA[I+5] := I; SHOW;
+    34.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[(I+1)-(I+2)] := I;
+    35.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[(I-1)*(2+1)] := I+10;
+    36.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[1+2] := I+20; SHOW;
+    37.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I+(2-1)] := I;
+    38.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I+2*3] := I+10;
+    39.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[I*(-2)] := I+20;
+    40.       ′FOR′ I := 1 ′STEP′ 1 ′UNTIL′ 3 ′DO′ IA[2-I+5] := I+30; SHOW
+    41.     ′END′
+    42.     ′EOP′
+
+CTPOKИ             OTHOCИTEЛЬHЫE AДPECA
+   1 -       00001             00012 00024 00040 00041
+   9 - 00043 00057 00070 00103 00117 00134 00152 00164
+  17 - 00201 00212 00220 00221 00226 00227 00235 00240
+  25 - 00250 00256 00256 00261 00271 00272 00315 00345
+  33 - 00363 00400 00415 00435 00450 00464 00502 00521
+  41 - 00536 00540
+
+PROGRAM   ДЛИHA:  367 00557B BPEMЯ:  0.00 CEK. KAPT:  42
+
  40000   7 VTM 40541             40040   5 MTJ  0017             40100   6 WTC 00005             40140     NTR  0003
         13 VJM 74001                       UJ  74006                     4 XTA  0000                     6 A-X  0004
     01  15 UTM 00007                41   7 XTA  0014                01   5 ATX  0000                41  15 ATX  0000

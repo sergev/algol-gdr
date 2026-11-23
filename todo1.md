@@ -24,5 +24,4 @@ Guards at every step: `Pass.stream`, `PassMem`, `ListingTest`, `Compile.object`,
 ### Cleanup
 
 - **D19** `--full`: the object listing of the sub-overlay `A/PRINTM` (30355…, modules not
-  analysed yet); or move it to a later milestone. Its rows are the only cells that can be
-  longer than 64 characters (left) or 63 (right, which dubna wraps at 128).
+  analysed yet), in one column as the rest; or move it to a later milestone.

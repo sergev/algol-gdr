@@ -35,9 +35,7 @@ std::string pre_options(const std::string &path)
     std::ifstream in(path);
     std::string line, opts;
     while (std::getline(in, line))
-        if (line.rfind("*call setftn:", 0) == 0)
-            opts += " --setftn=" + line.substr(13);
-        else if (line == "*check")
+        if (line == "*check")
             opts += " --check";
     return opts;
 }

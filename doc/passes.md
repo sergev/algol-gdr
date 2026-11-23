@@ -51,15 +51,20 @@ Checked with `hello` and `test3`:
 
 ASMPRINT gathers the rows of a page in `D45026` (67 rows of 11 words) and prints them
 through `*64` (the left cell, `GOST_SET_POSITION` 65, the right cell). As dubna shows it
-(`src/listing.*`, measured with long programs):
+(measured with long programs):
 - A page has two columns of 65 rows on the first page and 66 on the next ones. Each page
   starts with a form feed and a header line: the date on the first page, empty after.
 - A row that is blank in both columns prints nothing.
 - A page shorter than its left column prints its rows as plain lines (all short
-  listings). Otherwise (also a page that just fills its left column) each row is the left cell padded to 65 characters and the right one, and the
-  form feed of the next page ends its last line.
+  listings). Otherwise (also a page that just fills its left column) each row is the left
+  cell padded to 65 characters and the right one, and the form feed of the next page ends
+  its last line.
 - With `setftn:one` there are no pages: rows print at once, blank ones too, and the printout
   ends with an empty line.
+
+Our compiler prints only the `setftn:one,long` form (`src/listing.*`): one column, no
+splitting. The test listings (`NAME.lst`) come from the original with
+`*call setftn:one,long`, which also sets check mode, so `ListingTest` compiles in check mode.
 
 ### Data set up by the driver
 
@@ -293,6 +298,7 @@ sector to drum 27 zone 34. (V)
 - With `*call setftn:one,long`: `%6u.`, five blanks and all 80 columns. (`long` alone, or
   `one` alone, keeps the normal form; `one` makes the empty lines of G01713 visible.)
 - With `*NO LIST` a card is printed only before its first error message.
+- Ours prints the `setftn:one,long` form.
 
 ### The parser in C++
 

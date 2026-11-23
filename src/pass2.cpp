@@ -552,34 +552,13 @@ unsigned Pass2::return_sub()
 // Messages.
 //
 
-//
-// AG01644 and ASMPRINT: print the words of a text. Unless setftn:one,long, a
-// text of 11 words or more goes out as 10 words, then the rest without
-// trailing blank words, indented by 15, again 10 words at most per row.
-// ASMPRINT leaves M14 = 0.
-//
+// AG01644 and ASMPRINT: print the words of a text on one row. ASMPRINT
+// leaves M14 = 0.
 void Pass2::print_words(const std::vector<Word> &w)
 {
-    bool may_split  = !(ctx_.options.setftn_one && ctx_.options.setftn_long);
-    unsigned first  = 0;
-    unsigned last   = w.size() - 1;
-    unsigned indent = 0;
-    auto row        = [&](unsigned a, unsigned b) {
-        if (ctx_.listing && b >= a)
-            ctx_.listing->row(std::string(indent, ' ') + listing_text(&w[a], 0, 6 * (b - a + 1)));
-        emit_code_ = 0;
-    };
-    while (may_split && last - first >= 10) {
-        row(first, first + 9);
-        first += 10;
-        while (!(w[last] & NOT_BLANK)) {
-            if (last == first)
-                return;
-            last--;
-        }
-        indent = 15;
-    }
-    row(first, last);
+    if (ctx_.listing)
+        ctx_.listing->print(listing_text(w.data(), 0, 6 * w.size()));
+    emit_code_ = 0;
 }
 
 //

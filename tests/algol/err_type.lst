@@ -1,24 +1,25 @@
 *NAME ERR_TYPE
+*CALL SETFTN:ONE,LONG
 *PUNCH
-*ALGOL                                             04 ИЮЛ 24 23.45
+*ALGOL
+                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
-           1. ′BEGIN′
-           2.     ′COMMENT′ TYPE ERRORS;
-           3.     ′INTEGER′ I;
-           4.     ′REAL′ X;
-           5.     ′BOOLEAN′ B;
-           6.     I := ′TRUE′;
-           7.     B := 1;
-           8.     X := B + 1;
-           9.     ′IF′ X ′THEN′ I := 0;
-          10.     B := I ′AND′ B;
-          11. ′END′
-          12. ′EOP′
-TYPE ERROR IN CONNECTION WITH BOOLEAN OP. NEXT STATEMENT IS
-                 11/ 1
-TYPE ERROR IN CONNECTION WITH ′IF′. NEXT STATEMENT IS    9/
-               2
+
+     1.     ′BEGIN′
+     2.         ′COMMENT′ TYPE ERRORS;
+     3.         ′INTEGER′ I;
+     4.         ′REAL′ X;
+     5.         ′BOOLEAN′ B;
+     6.         I := ′TRUE′;
+     7.         B := 1;
+     8.         X := B + 1;
+     9.         ′IF′ X ′THEN′ I := 0;
+    10.         B := I ′AND′ B;
+    11.     ′END′
+    12.     ′EOP′
+TYPE ERROR IN CONNECTION WITH BOOLEAN OP. NEXT STATEMENT IS   11/ 1
+TYPE ERROR IN CONNECTION WITH ′IF′. NEXT STATEMENT IS    9/ 2
 TYPE ERROR IN CONNECTION WITH ′+′. NEXT STATEMENT IS    9/ 1
 ILLEGAL USE OF IDENTIFIER ′B′. NEXT STATEMENT IS    8/ 1
 ILLEGAL USE OF IDENTIFIER ′I′. NEXT STATEMENT IS    7/ 1

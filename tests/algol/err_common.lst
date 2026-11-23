@@ -1,30 +1,33 @@
 *NAME ERR_COMMON
+*CALL SETFTN:ONE,LONG
 *PUNCH
-*ALGOL                                             04 ИЮЛ 24 23.45
+*ALGOL
+                                             04 ИЮЛ 24 23.45
 A L G O L - Г Д P
     (7.01.82)
-           1. ′BEGIN′
-           2.     ′COMMON′ ABC/ X;
+
+     1.     ′BEGIN′
+     2.         ′COMMON′ ABC/ X;
 HET KOCOЙ ЧEPTЫ
 ERROR 05    SYMBOL
-           3.     ′COMMON′ /ABCDEFG/ X;
+     3.         ′COMMON′ /ABCDEFG/ X;
 ИMЯ COMMON > 6 CИM
 ERROR 05    SYMBOL
-           4.     ′COMMON′ /B1/ X.Y;
+     4.         ′COMMON′ /B1/ X.Y;
 ПЛOXOЙ CИMBOЛ
 ERROR 05    SYMBOL
-           5.     ′COMMON′ /B2/ Y(2) Z;
+     5.         ′COMMON′ /B2/ Y(2) Z;
 HET * , *ИЛИ* ; *
 ERROR 05    SYMBOL
-           6.     ′COMMON′ /B3/ Z(2).Y;
+     6.         ′COMMON′ /B3/ Z(2).Y;
 ЗAЧEM ЗДECЬ * . *
 ERROR 05    SYMBOL
-           7.     ′COMMON′ /B4/ U(2).,V(3,4).,W;
-           8.     ′REAL′ X, Y, Z, U, V, W;
+     7.         ′COMMON′ /B4/ U(2).,V(3,4).,W;
+     8.         ′REAL′ X, Y, Z, U, V, W;
 ERROR 34    STATEMENT
-           9.     X := 1;
-          10. ′END′
-          11. ′EOP′
+     9.         X := 1;
+    10.     ′END′
+    11.     ′EOP′
 IDENTIFIER ′X′ IS NOT DECLARED. NEXT STATEMENT IS   10/ 1
 IDENTIFIER ′W′ IS NOT DECLARED. NEXT STATEMENT IS    8/ 1
 IDENTIFIER ′V′ IS NOT DECLARED. NEXT STATEMENT IS    7/ 2

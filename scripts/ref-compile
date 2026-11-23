@@ -4,8 +4,9 @@
 #
 #   ref-compile [--full] FILE.alg [OUTDIR]
 #
-# Writes OUTDIR/NAME.std (object cards) and OUTDIR/NAME.lst
-# (NAME.full.lst with --full). Exits 1 when no object was produced.
+# Writes OUTDIR/NAME.std (object cards) and OUTDIR/NAME.lst (NAME.full.lst
+# with --full), the listing of a second job with *call setftn:one,long: one
+# column, long lines, check mode. Exits 1 when no object was produced.
 # Optional NAME.pre next to FILE.alg: control cards placed after *name.
 #
 set -e
@@ -27,18 +28,24 @@ scripts=$(dirname "$(realpath "$0")")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-# *punch must come before *algol.
-{
+# The object from the job as given; *punch must come before *algol.
+job() {
     echo "*name $name"
     [ -f "$pre" ] && cat "$pre"
+    [ -n "$1" ] && echo "$1"
     echo "*punch"
     [ -n "$full" ] && echo "*full"
     echo "*algol"
     cat "$src"
     echo "*end file"
-} > "$work/job.dub"
+}
+job > "$work/job.dub"
+(cd "$work" && dubna -r job.dub > /dev/null)
 
-(cd "$work" && dubna -r job.dub) | "$scripts/dubna-filter" > "$work/listing"
+# The listing in one column, long lines (in check mode, as setftn sets it).
+mkdir "$work/l"
+job "*call setftn:one,long" > "$work/l/job.dub"
+(cd "$work/l" && dubna -r job.dub) | "$scripts/dubna-filter" > "$work/listing"
 
 if [ -n "$full" ]; then
     cp "$work/listing" "$outdir/$name.full.lst"

@@ -1,6 +1,5 @@
 #include <getopt.h>
 
-#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -23,7 +22,6 @@ static void print_usage(std::ostream &out)
         << "    --full                  Full listing, with object code (like *FULL)\n"
         << "    --no-list               No listing (like *NO LIST)\n"
         << "    --check                 Run-time checks, no optimization (like *CHECK)\n"
-        << "    --setftn=one,long       Like *call setftn: one column, long lines; check mode\n"
         << "    --stop-after=N          Print the stream of pass N (1-5) and stop\n"
         << "    --dump                  Print object file (standard array) and exit\n"
         << "    -h, --help              Display available options\n"
@@ -32,7 +30,7 @@ static void print_usage(std::ostream &out)
 
 int main(int argc, char *argv[])
 {
-    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_SETFTN, OPT_CHECK };
+    enum { OPT_FULL = 256, OPT_NO_LIST, OPT_DUMP, OPT_STOP_AFTER, OPT_CHECK };
     static const struct option long_options[] = {
         { "help", no_argument, nullptr, 'h' },
         { "version", no_argument, nullptr, 'V' },
@@ -41,7 +39,6 @@ int main(int argc, char *argv[])
         { "no-list", no_argument, nullptr, OPT_NO_LIST },
         { "dump", no_argument, nullptr, OPT_DUMP },
         { "stop-after", required_argument, nullptr, OPT_STOP_AFTER },
-        { "setftn", required_argument, nullptr, OPT_SETFTN },
         { "check", no_argument, nullptr, OPT_CHECK },
         {},
     };
@@ -81,23 +78,6 @@ int main(int argc, char *argv[])
         case OPT_CHECK:
             opt.check_mode = true;
             break;
-        case OPT_SETFTN: {
-            std::string args = optarg;
-            for (size_t pos = 0; pos <= args.size();) {
-                size_t end      = std::min(args.find(',', pos), args.size());
-                std::string arg = args.substr(pos, end - pos);
-                if (arg == "one") {
-                    opt.setftn_one = true;
-                } else if (arg == "long") {
-                    opt.setftn_long = true;
-                } else {
-                    std::cerr << prog_name << ": --setftn: unknown " << arg << "\n";
-                    return EXIT_FAILURE;
-                }
-                pos = end + 1;
-            }
-            break;
-        }
         case OPT_STOP_AFTER: {
             std::string arg = optarg;
             if (arg.size() != 1 || arg[0] < '1' || arg[0] > '5') {
@@ -138,7 +118,7 @@ int main(int argc, char *argv[])
         }
         if (opt.full_listing)
             throw NotImplemented("--full: the object listing is not implemented yet");
-        Listing listing(std::cout, opt.setftn_one, opt.setftn_long);
+        Listing listing(std::cout);
         if (!opt.no_listing)
             ctx.listing = &listing;
         StdArray object;

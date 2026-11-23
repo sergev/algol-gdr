@@ -5,8 +5,8 @@
 #   ref-run FILE.std
 #
 # Prints the job output without the banner and statistics.
-# Optional NAME.pre, NAME.run next to FILE.std: control cards placed
-# after *name, and before *execute (libraries, other modules).
+# Optional NAME.run next to FILE.std: control cards placed before *execute
+# (libraries, other modules).
 # Optional NAME.in: terminal input of the program (default empty).
 #
 set -e
@@ -16,7 +16,6 @@ if [ $# -ne 1 ]; then
 fi
 obj=$(realpath "$1")
 name=$(basename "$1" .std)
-pre="${obj%.std}.pre"
 run="${obj%.std}.run"
 input="${obj%.std}.in"
 [ -f "$input" ] || input=/dev/null
@@ -27,7 +26,6 @@ trap 'rm -rf "$work"' EXIT
 
 {
     echo "*name $name"
-    [ -f "$pre" ] && cat "$pre"
     cat "$obj"
     [ -f "$run" ] && cat "$run"
     echo "*execute"
