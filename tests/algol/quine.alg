@@ -1,6 +1,6 @@
  _begin_string_array L[1:7];_integer I,J;_string Q,R,S;
  _procedure P(S);_string S;_begin_for J:=1_step 1_until
- LENGTH(S)_do PRINT(_if J_ne 45_and S[J] = `/' _then Q
+ length(S)_do PRINT(_if J_ne 45_and S[J] = `/' _then Q
  _else S[J]); PRINT(NEWLINE) _end; R := `1234567';
  L[1]:=`/BEGIN//STRING//ARRAY/L[1:7];/INTEGER/I,J;/STRING/Q,R,S;';
  L[2]:=`/PROCEDURE/P(S);/STRING/S;/BEGIN//FOR/J:=1/STEP/1/UNTIL/';

@@ -268,7 +268,7 @@ _begin
             _end;
 NZ:
     sentence;
-    print(newline);
+    print(NEWLINE);
 
     terin(input, 1);
     _goto NZ

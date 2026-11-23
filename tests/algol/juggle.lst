@@ -271,7 +271,7 @@ A L G O L - Г Д P
    268.                 _end;
    269.     NZ:
    270.         sentence;
-   271.         print(newline);
+   271.         print(NEWLINE);
    272.
    273.         terin(input, 1);
    274.         _goto NZ

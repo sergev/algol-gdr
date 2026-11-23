@@ -18,9 +18,9 @@ A L G O L - Г Д P
     15.         U := 1.5; V := -0.00225;
     16.         SWAP(U, V);
     17.         PRINT(U, V, F(5.0), SUM(J, 1, 10, J*J));
-    18.         PRINT(SQRT(2.0), SIN(1.0), COS(1.0));
-    19.         PRINT(ARCTAN(1.0), LN(10.0), EXP(1.0));
-    20.         PRINT(ABS(-3), SIGN(-2.0), ENTIER(3.7));
-    21.         C[2] := ENTIER(7 / 2); PRINT(C[2], 7 / 2)
+    18.         PRINT(sqrt(2.0), sin(1.0), cos(1.0));
+    19.         PRINT(arctan(1.0), ln(10.0), exp(1.0));
+    20.         PRINT(abs(-3), sign(-2.0), entier(3.7));
+    21.         C[2] := entier(7 / 2); PRINT(C[2], 7 / 2)
     22.     _end
 

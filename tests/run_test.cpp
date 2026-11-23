@@ -404,7 +404,7 @@ _end
 TEST(Run, domain_error)
 {
     const std::string src = BUILD_DIR "/run_sqrt.alg";
-    std::ofstream(src) << "_begin PRINT(1); PRINT(SQRT(-1.0)) _end\n";
+    std::ofstream(src) << "_begin PRINT(1); PRINT(sqrt(-1.0)) _end\n";
     auto r =
         run_command(compiler + " -o " BUILD_DIR "/run_sqrt " + src + " && " BUILD_DIR "/run_sqrt");
     EXPECT_EQ(r.exit_code, 1);
@@ -627,7 +627,7 @@ TEST(Run, strings)
 {
     EXPECT_EQ(run_text("strings2", R"(_begin _string S, T;
   S := `Счёт' + `-42';
-  PRINT(LENGTH(S), S[2], S[2:4], S[5:7]);
+  PRINT(length(S), S[2], S[2:4], S[5:7]);
   T := S[1:4];
   PRINT(T = `Счёт', T < `Сча', T _ne S, `ab' < `b')
 _end

@@ -168,11 +168,17 @@ TEST(Checker, messages)
 
 TEST(Checker, names)
 {
-    // Names count in full and by case; standard ones in any case.
+    // Names count in full and by case; standard ones only in their case.
     EXPECT_EQ(check_messages("_begin _integer counter1, counter2, Counter1;\n"
                              "counter1 := counter2 := Counter1 := 1; COUNTER1 := sqrt(4);\n"
-                             "Print(counter1) _end"),
-              "x.alg:2:40: error: Undeclared identifier 'COUNTER1'\n");
+                             "counter2 := SQRT(4) + Entier(2.5) _end"),
+              "x.alg:2:40: error: Undeclared identifier 'COUNTER1'\n"
+              "x.alg:3:13: error: Undeclared identifier 'SQRT' (the standard one is 'sqrt')\n"
+              "x.alg:3:23: error: Undeclared identifier 'Entier' (the standard one is 'entier')\n");
+    // READ is Algol-GDR's statement, read X1's function.
+    EXPECT_EQ(check_messages("_begin _real x; x := READ; read(x); READ(x); x := read _end"),
+              "x.alg:1:22: error: Illegal use of 'READ'\n"
+              "x.alg:1:28: error: Illegal use of 'read'\n");
 }
 
 TEST(Checker, scopes_and_conversions)

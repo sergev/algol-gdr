@@ -93,7 +93,7 @@ module AST {
             | SetRandom
 
     -- I/O statements. The standard PRINT and READ are Print and Read (but
-    -- print is X1's in the publication form, and read in an expression);
+    -- print is X1's in the publication form; read is X1's function);
     -- the keywords _print and _write are Write.
     -- The params come before the list:
     --   Print, Punch: none;

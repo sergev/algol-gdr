@@ -111,7 +111,8 @@ skipped whole (`′` is a quote too). Octal constants `'777'`, word operators li
 keywords in lower case, messages as `_begin`. Blanks are ignored inside names and numbers
 (`noun phrase` is `nounphrase`). The original wrote keywords in quotes: `'BEGIN'`. Identifiers:
 Latin, Greek or Cyrillic letters and digits, any length, case-sensitive, kept as written;
-standard identifiers (`PRINT`, `sqrt`, …) in any case. Lines have no column limit. The exponent
+standard identifiers only in their documented case: Report and IFIP lower case (`sqrt`,
+`outreal`), Algol-GDR and X1 upper case (`NEWLINE`, `PRINTTEXT`), and `print`, `read`. Lines have no column limit. The exponent
 sign is `⏨`. Operator symbols: `×`, `↑` (or `^`), `≥`, `≤`, `≠`, `¬`, `∧` (or `&`), `∨`, `⊃`,
 `≡`, `÷`. A file with underlined letters (U+0332) is in the publication form: `b̲e̲g̲i̲n̲`,
 strings `` `…' `` as in the other form (`.a60`, as x1-algol-compiler/examples). The X1 library procedures

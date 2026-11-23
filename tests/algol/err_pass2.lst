@@ -29,7 +29,7 @@ A L G O L - Г Д P
     26.       I := `S'+`T';
     27.       IP(1) := 1;
     28.       IA := 1;
-    29.       LENGTH := 1;
+    29.       length := 1;
     30.       I := X := I;
     31.       _for I := B _step 1 _until 2 _do X := 1;
     32.       _for B := 1 _step 1 _until 2 _do X := 1;
@@ -44,10 +44,10 @@ A L G O L - Г Д P
     41.       PRINT(P0);
     42.       PRINT(PP);
     43.       PUNCH(S);
-    44.       I := LENGTH(I);
+    44.       I := length(I);
     45.       CP(P0);
     46.       CP(PP);
-    47.       X := SIN(B);
+    47.       X := sin(B);
     48.       X := -B;
     49.       STOP(I);
     50.       ASSIGN(I);

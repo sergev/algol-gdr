@@ -18,7 +18,7 @@ M: X := 1;
   _for I := I+I _step 1 _until 2 _do X := 1; PRINT(I);
   _for I := _if B _then I _else X _step 1 _until 2 _do X := 1;
   PRINT(I);
-  _for I := ABS(I) _step 1 _until 2 _do X := 1; PRINT(I);
+  _for I := abs(I) _step 1 _until 2 _do X := 1; PRINT(I);
   _for I := 1 _step I _until 2 _do X := 1; PRINT(I);
   _for I := 1 _step IA[1] _until 2 _do X := 1; PRINT(I);
   _for I := 1 _step IA[X] _until 2 _do X := 1; PRINT(I);

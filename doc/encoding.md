@@ -42,8 +42,11 @@ _BEGIN, not in quotes`.
   Cyrillic (U+0370–U+04FF). Digits: `0`–`9`.
 - An identifier is a letter and letters and digits, of any length, kept as written and
   case-sensitive: `Count` and `count` differ.
-- Standard identifiers (`sqrt`, `PRINT`, `outreal`, `PRINTTEXT`, …) are recognized in any
-  case; a declaration of the same name hides them.
+- Standard identifiers are recognized only in their documented case: the functions of the
+  Report and IFIP in lower case (`sqrt`, `outreal`), Algol-GDR's and the X1 library's in
+  upper case (`NEWLINE`, `PRINTTEXT`), and X1's `print` and `read`. A wrong case gets a
+  hint: `Undeclared identifier 'SQRT' (the standard one is 'sqrt')`. A declaration of the
+  same name hides them.
 
 ## Operators and delimiters
 

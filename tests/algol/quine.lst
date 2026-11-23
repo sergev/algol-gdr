@@ -3,7 +3,7 @@ A L G O L - Г Д P
 
      1.      _begin_string_array L[1:7];_integer I,J;_string Q,R,S;
      2.      _procedure P(S);_string S;_begin_for J:=1_step 1_until
-     3.      LENGTH(S)_do PRINT(_if J_ne 45_and S[J] = `/' _then Q
+     3.      length(S)_do PRINT(_if J_ne 45_and S[J] = `/' _then Q
      4.      _else S[J]); PRINT(NEWLINE) _end; R := `1234567';
      5.      L[1]:=`/BEGIN//STRING//ARRAY/L[1:7];/INTEGER/I,J;/STRING/Q,R,S;';
      6.      L[2]:=`/PROCEDURE/P(S);/STRING/S;/BEGIN//FOR/J:=1/STEP/1/UNTIL/';

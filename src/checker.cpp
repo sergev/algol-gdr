@@ -321,6 +321,7 @@ enum class Std {
     MAXINT,
     EPSILON,
     // The X1 library.
+    X1_READ,
     PRINTTEXT,
     PRSYM,
     SPACE,
@@ -338,45 +339,50 @@ enum class Std {
     SUM,
 };
 
-// A standard identifier by its name in any case.
-Std standard(const std::string &name)
+// The standard identifiers, each in its documented case: the functions of
+// the Revised Report and IFIP in lower case, Algol-GDR's and the X1 library's
+// in upper case, but X1's print and read.
+const std::map<std::string, Std> &standard_names()
 {
     static const std::map<std::string, Std> table = {
-        { "ABS", Std::ABS },
-        { "ARCTAN", Std::ARCTAN },
-        { "COS", Std::COS },
-        { "ENTIER", Std::ENTIER },
-        { "EXP", Std::EXP },
-        { "LENGTH", Std::LENGTH },
-        { "LN", Std::LN },
-        { "SIGN", Std::SIGN },
-        { "SIN", Std::SIN },
-        { "SQRT", Std::SQRT },
+        { "abs", Std::ABS },
+        { "arctan", Std::ARCTAN },
+        { "cos", Std::COS },
+        { "entier", Std::ENTIER },
+        { "exp", Std::EXP },
+        { "length", Std::LENGTH },
+        { "ln", Std::LN },
+        { "sign", Std::SIGN },
+        { "sin", Std::SIN },
+        { "sqrt", Std::SQRT },
+        { "ininteger", Std::ININTEGER },
+        { "inreal", Std::INREAL },
+        { "insymbol", Std::INSYMBOL },
+        { "outinteger", Std::OUTINTEGER },
+        { "outreal", Std::OUTREAL },
+        { "outstring", Std::OUTSTRING },
+        { "outsymbol", Std::OUTSYMBOL },
+        { "outterminator", Std::OUTTERMINATOR },
+        { "fault", Std::FAULT },
+        { "stop", Std::STOP },
+        { "maxreal", Std::MAXREAL },
+        { "minreal", Std::MINREAL },
+        { "maxint", Std::MAXINT },
+        { "epsilon", Std::EPSILON },
         { "PRINT", Std::PRINT },
         { "READ", Std::READ },
+        { "NEWLINE", Std::NEWLINE },
+        { "NEWPAGE", Std::NEWPAGE },
         { "NEWLIN", Std::NEWLINE },
         { "NEWPAG", Std::NEWPAGE },
         { "STOP", Std::STOP },
-        { "NEWLINE", Std::NEWLINE },
-        { "NEWPAGE", Std::NEWPAGE },
         { "LOAD", Std::LOAD },
         { "LOADGO", Std::LOADGO },
         { "ASSIGN", Std::ASSIGN },
         { "ATOS", Std::ATOS },
         { "STOA", Std::STOA },
-        { "ININTEGER", Std::ININTEGER },
-        { "INREAL", Std::INREAL },
-        { "INSYMBOL", Std::INSYMBOL },
-        { "OUTINTEGER", Std::OUTINTEGER },
-        { "OUTREAL", Std::OUTREAL },
-        { "OUTSTRING", Std::OUTSTRING },
-        { "OUTSYMBOL", Std::OUTSYMBOL },
-        { "OUTTERMINATOR", Std::OUTTERMINATOR },
-        { "FAULT", Std::FAULT },
-        { "MAXREAL", Std::MAXREAL },
-        { "MINREAL", Std::MINREAL },
-        { "MAXINT", Std::MAXINT },
-        { "EPSILON", Std::EPSILON },
+        { "print", Std::PRINT },
+        { "read", Std::X1_READ },
         { "PRINTTEXT", Std::PRINTTEXT },
         { "PRSYM", Std::PRSYM },
         { "SPACE", Std::SPACE },
@@ -393,11 +399,29 @@ Std standard(const std::string &name)
         { "TIMEOFDAY", Std::TIMEOFDAY },
         { "SUM", Std::SUM },
     };
-    std::string upper = name;
-    std::transform(upper.begin(), upper.end(), upper.begin(),
-                   [](char c) { return c >= 'a' && c <= 'z' ? char(c - 'a' + 'A') : c; });
-    auto it = table.find(upper);
-    return it == table.end() ? Std::NONE : it->second;
+    return table;
+}
+
+// A standard identifier by its name, in its documented case.
+Std standard(const std::string &name)
+{
+    auto it = standard_names().find(name);
+    return it == standard_names().end() ? Std::NONE : it->second;
+}
+
+// The standard identifier spelled as name but for the case; empty if none.
+std::string standard_spelling(const std::string &name)
+{
+    auto upper = [](std::string w) {
+        std::transform(w.begin(), w.end(), w.begin(),
+                       [](char c) { return c >= 'a' && c <= 'z' ? char(c - 'a' + 'A') : c; });
+        return w;
+    };
+    const std::string key = upper(name);
+    const auto &names     = standard_names();
+    auto it               = std::find_if(names.begin(), names.end(),
+                                         [&](const auto &entry) { return upper(entry.first) == key; });
+    return it == names.end() ? "" : it->first;
 }
 
 // A standard function of one number.
@@ -1122,7 +1146,7 @@ ExprPtr Checker::x1_function(Std s, const std::string &nm, const syn::ExprList *
 {
     // The parameters: i integer, r real, I integer destination.
     static const std::map<Std, std::tuple<StdFunc, Type, const char *>> table = {
-        { Std::READ, { StdFunc::READ, Type::REAL, "" } },
+        { Std::X1_READ, { StdFunc::READ, Type::REAL, "" } },
         { Std::RESYM, { StdFunc::RESYM, Type::INTEGER, "" } },
         { Std::RANDOM, { StdFunc::RANDOM, Type::REAL, "" } },
         { Std::TIMEOFDAY, { StdFunc::TIMEOFDAY, Type::REAL, "" } },
@@ -1648,8 +1672,13 @@ ExprPtr Checker::named(const std::string &nm, Pos line, bool argument)
             return f;
         switch (s) {
         case Std::NONE:
-            if (undeclared_.insert(nm).second)
-                error(line, "Undeclared identifier " + quoted(nm));
+            if (undeclared_.insert(nm).second) {
+                std::string spelled = standard_spelling(nm);
+                error(
+                    line,
+                    "Undeclared identifier " + quoted(nm) +
+                        (spelled.empty() ? "" : " (the standard one is " + quoted(spelled) + ")"));
+            }
             return bad();
         case Std::MAXREAL:
             return make_expr(Type::REAL, expr::RealConst{ std::numeric_limits<double>::max() });

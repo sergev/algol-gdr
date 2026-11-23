@@ -2,15 +2,15 @@ A L G O L - Г Д P
     (7.01.82)
 
      1.     _begin
-     2.         _comment STRING VARIABLES, ARRAYS, LENGTH AND INDEXING;
+     2.         _comment STRING VARIABLES, ARRAYS, length AND INDEXING;
      3.         _string S, T;
      4.         _string _array A[1:2];
      5.         _integer I;
      6.         S := `ABCDEF';
      7.         T := S;
      8.         A[1] := `XY'; A[2] := S;
-     9.         PRINT(LENGTH(S), LENGTH(A[1]));
-    10.         _for I := 1 _step 1 _until LENGTH(S) _do PRINT(S[I]);
+     9.         PRINT(length(S), length(A[1]));
+    10.         _for I := 1 _step 1 _until length(S) _do PRINT(S[I]);
     11.         PRINT(NEWLINE, T, A[1], A[2])
     12.     _end
 

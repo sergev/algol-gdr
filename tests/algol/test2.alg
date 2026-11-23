@@ -15,8 +15,8 @@ _begin
     U := 1.5; V := -0.00225;
     SWAP(U, V);
     PRINT(U, V, F(5.0), SUM(J, 1, 10, J*J));
-    PRINT(SQRT(2.0), SIN(1.0), COS(1.0));
-    PRINT(ARCTAN(1.0), LN(10.0), EXP(1.0));
-    PRINT(ABS(-3), SIGN(-2.0), ENTIER(3.7));
-    C[2] := ENTIER(7 / 2); PRINT(C[2], 7 / 2)
+    PRINT(sqrt(2.0), sin(1.0), cos(1.0));
+    PRINT(arctan(1.0), ln(10.0), exp(1.0));
+    PRINT(abs(-3), sign(-2.0), entier(3.7));
+    C[2] := entier(7 / 2); PRINT(C[2], 7 / 2)
 _end
