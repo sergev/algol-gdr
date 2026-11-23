@@ -1,8 +1,9 @@
-# Passes 2–4 on a machine
+# Passes 2 and 3 on a machine
 
-Passes 2–4 are C++ routines that still work instruction by instruction on a BESM-6 state
-(`Machine`), as the passes of the overlay did. They leave it one by one (todo1.md): a pass
-off the machine works on `Context` alone.
+Passes 2 and 3 are C++ routines that work on a BESM-6 state (`Machine`), as the passes of
+the overlay did. They leave it one by one (todo1.md): a pass off the machine works on
+`Context` alone, as pass 4 does (`Pass4` in src/pass4.cpp: its handlers chained by the
+continuation addresses of the original, kept on its own stack).
 
 ## Pieces
 
@@ -70,14 +71,6 @@ the original does:
 | 3 | 22327–23426 | the rewrite of a FOR loop: a native per entry (`register_rewrite`) |
 | 3 | 22716 | `intern_constant` |
 | 3 | 23343 | `eop` |
-| 4 | 23523–23763, 26152–26157 | `start`, `main_loop`, `emit`, `run_template`, `save_acc`, `operand_done`, `read_dispatch`, `eop` (src/pass4.cpp) |
-| 4 | 23764–24136, 24221–24243, 25276–25362 | operands, operators, assignment, powers (`register_operators`) |
-| 4 | 24137–24220, 24661–24672, 25010–25041 | IF, compare-and-jump, GOTO, switches (`register_jumps`) |
-| 4 | 24673–24754, 25525–25746 | labels, blocks, procedure entry and end, block entry (`register_blocks`) |
-| 4 | 24244–24360, 24616–24660, 25363–25524 | subscripts, arrays, pass 3's register items (`register_arrays`) |
-| 4 | 25042–25275 | FOR loops (`register_loops`) |
-| 4 | 24361–24501, 24755–25007 | calls, arguments, thunks, VALUE (`register_procedures`) |
-| 4 | 24502–24615, 30034 | non-ALGOL calls, G30034 (`register_code_calls`) |
 
 Natives write memory through `Machine::store`, which drops stores to address 0 as the
 machine does: a descriptor address of 0 (after a thunk) is common, and address 0 must keep
@@ -100,6 +93,5 @@ those of the original.
 |---|---|---|---|---|
 | 2 | 17223 | 01627 | backward (27143) | backward (27114), from the cursor at 22113 |
 | 3 | 22162 | 01632 | forward (27154) | forward (27126), from the cursor at 23501 |
-| 4 | 23523 | 01633 | forward (27154) | forward (27126) |
 
 Pass 4 also calls 30034–30117 (ISO name to TEXT).

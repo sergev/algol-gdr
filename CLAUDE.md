@@ -30,7 +30,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 
 ## Layout
 
-- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*`, `pass3*`, `pass4*` (C++ on a `Machine`, see [doc/translation.md](doc/translation.md)), `machine.*` + `translated.*` (BESM-6 state for passes 2–4, shared routines of the overlay), `listing.*` (printer characters, pages), `item.*` (pass stream items), `passes.*` (pass interface, `Context`), `pass5.*` (addresses, line table), `pass6.*` (object assembly), `tables.*` (generated tables of the original), `workspace.*` (its shared data as words), `stdarray.*` (object
+- `src/` — compiler: `main.cpp` (CLI), `source.*` (UTF-8 input), `card.*` (lines → KOI-7 cards), `arith.*` (BESM-6 floating point), `pass1*` (lexer, parser), `pass2*`, `pass3*` (C++ on a `Machine`, see [doc/translation.md](doc/translation.md)), `pass4*` (code generator), `machine.*` + `translated.*` (BESM-6 state for passes 2 and 3, shared routines of the overlay), `listing.*` (printer characters, pages), `item.*` (pass stream items), `passes.*` (pass interface, `Context`), `pass5.*` (addresses, line table), `pass6.*` (object assembly), `tables.*` (generated tables of the original), `workspace.*` (its shared data as words), `stdarray.*` (object
   format), `besm6.*` + `dump.*` (disassembly).
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.std` object, `.lst`/`.full.lst` listings, `.out` run output,
@@ -42,7 +42,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   passes, their streams), [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
   [runtime-abi.md](doc/runtime-abi.md) (run-time calls, generated code),
   [stdarray.md](doc/stdarray.md) (object format), [encoding.md](doc/encoding.md),
-  [translation.md](doc/translation.md) (passes 2–4 on a machine),
+  [translation.md](doc/translation.md) (passes 2 and 3 on a machine),
   [traces.md](doc/traces.md) (`scripts/trace-compile`).
 
 Milestones (from README.md):

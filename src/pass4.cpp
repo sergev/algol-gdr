@@ -1,49 +1,56 @@
 #include "pass4.h"
 
-#include "translated.h"
+#include <array>
+#include <functional>
+#include <initializer_list>
+#include <map>
+#include <stdexcept>
+#include <string>
+
+#include "arith.h"
+#include "tables.h"
 
 namespace {
 
-constexpr unsigned M7          = 023523; // base of the constants: M7+2441… = 26164…
-constexpr unsigned READ        = 027154; // the next item of the input stream in A
-constexpr unsigned WRITE       = 027126; // A to the output stream
-constexpr unsigned PAGE        = 02000;  // page and position of the streams
-constexpr unsigned POS         = 02001;
-constexpr unsigned LABELS      = 02004;      // the next label number
-constexpr unsigned EMIT_MODE   = 02022;      // 1 after 0200.0000: the next half starts a word
-constexpr unsigned NAMES       = 06000;      // the names, from drum 26 zone 0
-constexpr unsigned EXT_NAMES   = 027245;     // external table: 3 words per name
-constexpr unsigned LINE        = M7 + 01107; // a line marker to write after the half
-constexpr unsigned EMIT_LINK   = M7 + 01106; // return of emit while writing the externals
-constexpr unsigned EXT_NEXT    = M7 + 0166;  // the external entry written next
-constexpr unsigned HALF        = M7 + 036;   // the half being written
-constexpr unsigned TEMPLATE_AT = 02007;      // the template half to emit next
+// Cells of the workspace.
+constexpr unsigned LABELS      = 02004; // the next label number
+constexpr unsigned TEMPLATE_AT = 02007; // the template half to emit next
+constexpr unsigned EMIT_MODE   = 02022; // set by 0037.0002: the next half starts a word
+constexpr unsigned NAMES       = 06000; // the names, from drum 26 zone 0
+constexpr unsigned EXT_NAMES   = 027245; // external table: 3 words per name
 
+// Addresses of the original: continuations, kept on the stack as return
+// addresses, and handlers.
+constexpr unsigned DRIVER        = 01633; // the return into the driver
 constexpr unsigned MAIN_LOOP     = 023625;
-constexpr unsigned READ_DISPATCH = 023752;
 constexpr unsigned DISPATCH_NEXT = 023753;
-constexpr unsigned TEMPLATE      = 023734; // the template at M11, returning to M12
-constexpr unsigned OPERAND_DONE  = 023725;
-constexpr unsigned BLOCK_ENTRY   = 025525;
-constexpr unsigned ISO_TO_TEXT   = 030034;
+constexpr unsigned RESULT        = 024015; // the value is in A
 constexpr unsigned DISPATCH      = 026056; // per code: UZA handler / UJ handler
+constexpr unsigned MAIN_NAME     = 023611; // the name of the main program as TEXT
+constexpr unsigned BY_KIND       = 025151; // continuations of a FOR element by kind
+constexpr unsigned TEXT_CODES    = 030076; // six-bit codes of ISO characters, 8 per word
 
-constexpr unsigned SP = Machine::SP;
+// The machine stack, as the driver leaves it.
+constexpr unsigned STACK      = 053401;
+constexpr unsigned STACK_SIZE = 010000;
 
 // The arithmetic unit without normalization or rounding (NTR 3).
 constexpr unsigned RAW = Arith::NORM_DISABLE | Arith::ROUND_DISABLE;
 
-// Constants of the pass (at M7+…).
 constexpr Word BIT48      = 0'4000'0000'0000'0000;
+constexpr Word BIT47      = 0'2000'0000'0000'0000; // a descriptor; without it, a link
+constexpr Word BIT46      = 0'1000'0000'0000'0000; // its offset counted down from 02013
 constexpr Word BIT45      = 0'0400'0000'0000'0000;
 constexpr Word ADDR       = 077777;
-constexpr Word ON_STACK   = 074000000; // 15 ATX: the value saved on the stack (M7+2227)
+constexpr Word MINUS_ONE  = 0'7777'7777'7777'7776; // cyclic −1
+constexpr Word MINUS_TWO  = 0'7777'7777'7777'7775;
+constexpr Word ON_STACK   = 074000000; // 15 ATX: the value saved on the stack
 constexpr Word DROPPED    = 074030000; // never emitted
 constexpr Word ALIGN      = 0370002;   // the next half starts a word
 constexpr Word ALIGN_END  = 0370003;
-constexpr Word ALIGN_FILL = 0370006; // written before a half that does not fit
-constexpr Word FITS_CMD   = 01014000000;          // by bits 20–16 of a command half (M7+130)
-constexpr Word FITS_OP    = 0'0003'7400'0002'7413; // by bits 18–13 of others (M7+131)
+constexpr Word ALIGN_FILL = 0370006;              // written before a half that does not fit
+constexpr Word FITS_CMD   = 01014000000;          // by bits 20–16 of a command half
+constexpr Word FITS_OP    = 0'0003'7400'0002'7413; // by bits 18–13 of others
 constexpr Word EXTERNAL   = 04131;                 // address of a call of an external
 constexpr Word EXT_HALF   = 02000000;              // the number of an external name
 constexpr Word LINE_HALF  = 067100000;             // a line marker
@@ -58,28 +65,53 @@ constexpr Word KIND       = 0'3400'0000'0000'0000;
 constexpr Word FRAME_MAIN = 030000000;
 constexpr Word FRAME_PROC = 034000000;
 constexpr Word CONST_BASE = 033777777;
-constexpr Word READ_BACK  = 0'7777'7777'7757'7777; // a zone back (cyclic add)
-constexpr Word OUT_CURSOR = 0'0000'0302'6020'6000; // 06000, drum 26 zone 2
 
-constexpr unsigned EXT_COUNTER = M7 + 037; // externals numbered so far
-constexpr unsigned MAIN_NAME   = M7 + 066; // the name of the main program as TEXT
+constexpr Word LABEL_U1A   = 02600000;  // U1A to label n
+constexpr Word LABEL_U1A2  = 02700000;
+constexpr Word LABEL_UJ    = 03000000;  // UJ to label n
+constexpr Word LABEL_DEF   = 02100000;  // label n defined here
+constexpr Word NEW_WORD    = 02000000;
+constexpr Word SWITCH_UJ   = 042400000;
+constexpr Word PREV_LABEL  = 02777777; // added to a label: the one after
+constexpr Word FORMAL      = 0'4000'0000'7407'7777; // a formal's descriptor
+constexpr Word BY_NAME     = 0'4000'0000'7400'0000; // a pushed address
+constexpr Word REG_STORE   = 060440000;             // its address to register n
+constexpr Word STACK_ATX1  = 074000001;
+constexpr Word ASN         = 0360000;
+constexpr Word DIV_1       = 074010001; // real division, both on the stack
+constexpr Word DIV_2       = 074160002;
 
-Word pop(Machine &m)
-{
-    m.M[SP] = (m.M[SP] - 1) & 077777;
-    return m.mem[m.M[SP]];
-}
+constexpr Word TYPE        = 0'0360'0000'0000'0000;
+constexpr Word OFFSET_CLR  = 0'7777'7777'0370'0000; // a descriptor without its offset
+constexpr Word HEAD_KEEP   = 0'7400'0000'7777'7777;
+constexpr Word HEAD_KIND   = 0'1400'0000'0000'0000;
+constexpr Word TEXT_HEAD   = 0'1200'0000'0000'0000;
+constexpr Word DOPE_INIT   = 0'2021'0000'0000'0000; // a dope word not yet set
+constexpr Word DOPE_MASK   = 074007777;
+constexpr Word FRAME_STEP  = 010000;
+constexpr Word FRAME_BASE  = 0'7777'7777'7377'7777; // added to the frame of a procedure
+constexpr Word LINE_HEAD   = 03300000;              // 0330.n: line n
+constexpr Word PROC_LABEL  = 036400000;
+constexpr Word FRAME_REG   = 0100000;
+constexpr Word RETURN_1    = 0440017;
+constexpr Word RETURN_2    = 03004020;
 
-void push(Machine &m, Word w)
-{
-    m.push(w);
-}
+constexpr Word INDEX_A     = 062400000; // the half that indexes by A
+constexpr Word INDEX_REG   = 02400000;  // … by register r<<20
+constexpr Word ARRAY_HALF  = 02300000;
+constexpr Word ELEMENT_A   = 02200000;
+constexpr Word ELEMENT_REG = 02500000;
+constexpr Word CHECK_REG   = 0440014; // A/SUBCH's register
+constexpr Word ADDRESS_OP  = 060000000;
+constexpr Word DOPE_HALF   = 0420017;
+constexpr Word STEP_ONE    = 01000000; // a loop descriptor: the step is 1
 
-void set_acc(Machine &m, Word w)
-{
-    m.acc = w;
-    m.set_logical();
-}
+constexpr Word BY_REGISTERS = 0300000; // a loop descriptor: pass 3's registers
+constexpr Word UJ_BACK      = 057700000;
+
+constexpr Word VALUE_START = 056400000;
+constexpr Word CODE_RESULT = 0420014;
+constexpr Word RESULT_SIZE = 076410000;
 
 Word cyclic_add(Word a, Word b)
 {
@@ -101,83 +133,322 @@ Word unpacked(Word d)
     return unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
 }
 
-// Write w to the output stream (27126), returning to link.
-void write(Machine &m, Word w, unsigned link)
+// A descriptor's address, unpacked when packed (bit 48).
+Word address_of(Word d)
 {
-    m.acc = w;
-    m.call(WRITE, 13, link);
+    return ((d & BIT48) ? unpacked(d) : d) & DESC_MASK;
+}
+
+// a < x on the arithmetic unit without normalization or rounding.
+bool unit_less(Word a, Word x)
+{
+    Arith u(a, RAW);
+    u.sub(x);
+    return u.acc & 0'0020'0000'0000'0000;
+}
+
+// A word of the overlay: templates and tables.
+Word image(unsigned addr)
+{
+    if (addr < tables::image_base || addr >= tables::image_base + tables::image_size)
+        throw std::runtime_error("pass 4: no overlay word at " + std::to_string(addr));
+    return tables::image[addr - tables::image_base];
 }
 
 //
-// 23655: emit an instruction half; returns to link. 7403.0000 is dropped.
-// 0370002 starts EMIT_MODE: until 0370003, a half that does not fit the
-// word in progress (FITS_CMD, FITS_OP by its opcode) first gets a 0370006
-// written before it. A line marker (LINE) is written after a call of an
-// external (address 4131), preceded by the number of the next external
-// name in the table not written yet.
+// G30034: the 6 ISO characters iso as TEXT: each character c its six-bit
+// code from the tables at 30076 (word c/8, field c%8), left-justified in 8
+// six-bit characters.
 //
-void emit(Machine &m, Word half, unsigned link)
+Word iso_text(Word iso)
 {
-    if (half == DROPPED) {
-        set_acc(m, 0);
-        m.set_m(13, link);
-        return;
+    Word text = 0;
+    for (unsigned k = 0; k < 6; k++) {
+        unsigned c = (iso >> (8 * k)) & 0377;
+        if (c) {
+            Word codes = image(TEXT_CODES + (c >> 3));
+            text |= ((codes >> (6 * (c & 7))) & 077) << (12 + 6 * k);
+        }
     }
-    if (m.mem[EMIT_MODE]) {
+    return text;
+}
+
+//
+// Pass 4 runs as the original: handlers chained by the addresses they
+// return (continuations), the return addresses of operands on its stack.
+// An item's handler leaves the descriptor of its value on the stack in
+// place of the return address it pops: an address (with 074000000: on the
+// stack, bit 48: through a register…), or 0 for a value in A, acc_cell_
+// then its stack cell. Operands come after their operator in the stream.
+//
+class Pass4 {
+public:
+    Pass4(Context &ctx, const Stream &input);
+
+    Stream run();
+
+private:
+    using Handler = std::function<unsigned()>;
+
+    Context &ctx_;
+    const Stream &in_;
+    size_t pos_{};
+    Stream out_;
+    std::map<unsigned, Handler> handlers_;
+
+    std::array<Word, STACK_SIZE> stack_{};
+    unsigned sp_{ STACK };
+    Word zero_{};
+
+    // The item: code (bits 7–1), attribute (12–8), value (24–13).
+    unsigned code_{};
+    unsigned attr_{};
+    unsigned value_{};
+
+    unsigned acc_cell_{}; // the stack cell of a value in A, or 02017, or 0
+    unsigned count_{};    // arguments of a non-ALGOL call that are values
+    unsigned arg_{};      // the argument pair being passed
+    unsigned args_{};     // the first argument pair, where the stack goes back
+    unsigned routine_{};  // the routine called
+
+    // Block entry: numbers counted, the TEXT of the next external name.
+    unsigned number_{ 010000 };
+    unsigned ext_text_{ 04133 };
+
+    // Cells of the pass (M7+36, +37, +166, +1106, +1107).
+    Word half_{};      // the half being written; a name being looked up
+    Word ext_count_{}; // externals numbered so far
+    Word ext_next_{};  // the external entry written next
+    Word emit_link_{};
+    Word line_{}; // a line marker to write after a call of an external
+
+    Word &mem(unsigned addr);
+    void store(unsigned addr, Word w)
+    {
+        if (addr)
+            mem(addr) = w;
+    }
+    void push(Word w)
+    {
+        mem(sp_) = w;
+        sp_      = (sp_ + 1) & 077777;
+    }
+    Word pop()
+    {
+        sp_ = (sp_ - 1) & 077777;
+        return mem(sp_);
+    }
+    // The k-th word from the top of the stack.
+    Word &top(unsigned k = 1) { return mem((sp_ - k) & 077777); }
+
+    Word read();
+    void write(Word w) { out_.push_back(Item{ uint32_t(w & 077777777) }); }
+    Word new_label();
+    Word constant_address() const { return cyclic_add(value_, ctx_.ws[02010]); }
+
+    // Framework.
+    void emit(Word half);
+    Word template_half();
+    void emit_template(unsigned t);
+    void save_acc();
+    void load_value(Word d);
+    void operand_done();
+    unsigned dispatch_next();
+    unsigned operand(unsigned link);
+    unsigned main_loop();
+    unsigned start();
+    unsigned eop();
+
+    // Operators.
+    unsigned give(Word d);
+    unsigned give_none();
+    unsigned result_in_acc();
+    unsigned apply_template(unsigned t);
+    unsigned string_item();
+    unsigned variable_item();
+    unsigned call_item();
+    unsigned formal_item();
+    unsigned unary(unsigned t);
+    unsigned unary_2();
+    unsigned std_function();
+    unsigned std_procedure();
+    unsigned apply(unsigned t);
+    void left_to_acc();
+    unsigned binary(unsigned t);
+    unsigned binary_3();
+    unsigned paired(unsigned pair, unsigned link);
+    unsigned paired_3();
+    unsigned divide_3();
+    unsigned assign(Word target);
+    unsigned assign_pushed();
+    unsigned assign_formal();
+    unsigned power(Word flag);
+    unsigned power_loop();
+    unsigned power_2();
+    unsigned octal_shift_2();
+    unsigned library_call(unsigned r);
+    unsigned slice_2();
+    void register_operators();
+
+    // Jumps.
+    unsigned jump_ahead(Word half);
+    bool comparison_operands();
+    unsigned string_jump_3();
+    unsigned compare_jump(unsigned pair);
+    unsigned compare_jump_3();
+    unsigned define_label(Word n);
+    unsigned else_item();
+    unsigned goto_label();
+    unsigned switch_element();
+    unsigned switch_end();
+    void register_jumps();
+
+    // Blocks.
+    void set_offset(unsigned p, Word v);
+    void offset_up(unsigned p);
+    void offset_down(unsigned p);
+    void number(unsigned p);
+    void external_name(unsigned p, unsigned mod);
+    bool array_dope(unsigned &p);
+    void block_entry(unsigned list);
+    unsigned frame_reset(Word d);
+    unsigned label_item();
+    unsigned line_item();
+    unsigned procedure_item();
+    unsigned procedure_end();
+    void register_blocks();
+
+    // Arrays.
+    unsigned next_subscript();
+    unsigned subscript(bool counted);
+    void emit_element(unsigned k);
+    unsigned element_read();
+    unsigned element_store();
+    unsigned element_address();
+    unsigned array_segment();
+    unsigned register_step();
+    unsigned preamble_4();
+    unsigned preamble_end();
+    unsigned register_load();
+    unsigned loop_template(std::initializer_list<unsigned> offsets, unsigned t, unsigned n);
+    void register_arrays();
+
+    // FOR loops.
+    Word loop_descriptor() { return mem(mem(02031) & 077777); }
+    unsigned for_item();
+    unsigned for_jump(Word half);
+    unsigned do_item();
+    unsigned for_end();
+    unsigned element_item(unsigned k);
+    void store_control();
+    unsigned plain_value();
+    unsigned by_kind(unsigned t, Word kind);
+    unsigned step_operand();
+    unsigned until_test();
+    unsigned until_value();
+    unsigned step_in_acc();
+    unsigned step_in_acc_2();
+    void register_loops();
+
+    // Procedures and non-ALGOL calls.
+    void pending_label();
+    unsigned call_tail(unsigned t, Word d);
+    unsigned argument(unsigned t, Word a);
+    unsigned thunk_start();
+    unsigned value_parameter(unsigned t);
+    unsigned push_argument(Word a, unsigned passer);
+    unsigned code_value(unsigned passer);
+    unsigned code_call(unsigned r, Word count);
+    unsigned pass_argument(unsigned t);
+    unsigned pass_value(bool result);
+    void register_procedures();
+};
+
+Word &Pass4::mem(unsigned addr)
+{
+    if (Workspace::contains(addr))
+        return ctx_.ws[addr];
+    if (addr >= STACK && addr < STACK + STACK_SIZE)
+        return stack_[addr - STACK];
+    if (!addr) {
+        zero_ = 0;
+        return zero_;
+    }
+    throw std::runtime_error("pass 4: no data at " + std::to_string(addr));
+}
+
+Word Pass4::read()
+{
+    if (pos_ >= in_.size())
+        throw std::runtime_error("pass 4: the stream ends without EOP");
+    return in_[pos_++].bits;
+}
+
+// The next label.
+Word Pass4::new_label()
+{
+    Word n         = mem(LABELS);
+    mem(LABELS) = cyclic_add(n, 1);
+    return n;
+}
+
+//
+// 23655: emit an instruction half. 7403.0000 is dropped. 0037.0002 starts
+// EMIT_MODE: until 0037.0003, a half that does not fit the word in
+// progress (FITS_CMD, FITS_OP by its opcode) first gets a 0037.0006 written
+// before it. A line marker (line_) is written after a call of an external
+// (address 4131), preceded by the number of the next external name in the
+// table not written yet.
+//
+void Pass4::emit(Word half)
+{
+    if (half == DROPPED)
+        return;
+    if (mem(EMIT_MODE)) {
         unsigned k;
         Word table;
         if (half & 02000000) {
             k     = (half >> 15) & 037;
             table = FITS_CMD;
         } else if (half == ALIGN_END) {
-            m.mem[EMIT_MODE] = 0;
-            set_acc(m, half);
-            m.set_m(13, link);
+            mem(EMIT_MODE) = 0;
             return;
         } else {
             k     = (half >> 12) & 077;
             table = FITS_OP;
         }
-        m.set_m(14, k);
         if (k > 47 || !((table >> k) & 1)) {
-            write(m, ALIGN_FILL, 023646);
-            m.mem[EMIT_MODE] = 0;
-            write(m, half, link);
+            write(ALIGN_FILL);
+            mem(EMIT_MODE) = 0;
+            write(half);
             return;
         }
     } else if (half == ALIGN) {
-        m.mem[EMIT_MODE] = 1;
-        set_acc(m, half);
-        m.set_m(13, link);
+        mem(EMIT_MODE) = 1;
         return;
     }
-    m.mem[HALF] = half;
-    if (m.mem[LINE] && (half & 07777) == EXTERNAL) {
-        m.mem[EMIT_LINK] = link;
-        write(m, half, 023674);
-        unsigned e = m.mem[EXT_NEXT] & 077777;
-        while (!(m.mem[(EXT_NAMES + 1 + e) & 077777] & EXT_USED)) {
-            m.mem[EXT_NEXT] = cyclic_add(m.mem[EXT_NEXT], 3);
-            e               = m.mem[EXT_NEXT] & 077777;
+    half_ = half;
+    write(half);
+    if (line_ && (half & 07777) == EXTERNAL) {
+        unsigned e = ext_next_ & 077777;
+        while (!(mem((EXT_NAMES + 1 + e) & 077777) & EXT_USED)) {
+            ext_next_ = cyclic_add(ext_next_, 3);
+            e         = ext_next_ & 077777;
         }
-        write(m, ((m.mem[(EXT_NAMES + 2 + e) & 077777] >> 15) & 077777) | EXT_HALF, 023702);
-        m.mem[EXT_NEXT] = cyclic_add(m.mem[EXT_NEXT], 3);
-        write(m, LINE_HALF | m.mem[LINE], 023705);
-        m.mem[LINE] = 0;
-        set_acc(m, 0);
-        return;
+        write(((mem((EXT_NAMES + 2 + e) & 077777) >> 15) & 077777) | EXT_HALF);
+        ext_next_ = cyclic_add(ext_next_, 3);
+        write(LINE_HALF | line_);
+        line_ = 0;
     }
-    write(m, half, link);
 }
 
 // 23712: the next half of the template at TEMPLATE_AT (bit 48: the right half).
-Word template_half(Machine &m)
+Word Pass4::template_half()
 {
-    Word at = m.mem[TEMPLATE_AT];
-    m.set_m(14, at & 077777);
-    Word word = m.mem[at & 077777];
-    Word half = (at & BIT48) ? word & 077777777 : word >> 24;
-    m.mem[TEMPLATE_AT] = cyclic_add(at, BIT48);
+    Word at         = mem(TEMPLATE_AT);
+    Word word       = image(at & 077777);
+    Word half       = (at & BIT48) ? word & 077777777 : word >> 24;
+    mem(TEMPLATE_AT) = cyclic_add(at, BIT48);
     return half;
 }
 
@@ -187,546 +458,363 @@ Word template_half(Machine &m)
 // an operand with bit 48, the operand + 4000000002277777 is emitted first
 // and the half keeps address 0.
 //
-void emit_template(Machine &m, unsigned t)
+void Pass4::emit_template(unsigned t)
 {
-    m.mem[TEMPLATE_AT] = t;
+    mem(TEMPLATE_AT) = t;
     for (;;) {
-        Word half = template_half(m);
+        Word half = template_half();
         if (!half)
-            break;
+            return;
         if ((half & 07777) == OPERAND) {
-            Word op = pop(m);
+            Word op = pop();
             if (op & BIT48) {
-                emit(m, cyclic_add(op, INDIRECT), 023747);
-                emit(m, half & ADDR_CLR, 023750);
+                emit(cyclic_add(op, INDIRECT));
+                emit(half & ADDR_CLR);
                 continue;
             }
             half = (half & ADDR_CLR) | op;
         }
-        emit(m, half, 023735);
+        emit(half);
     }
-    set_acc(m, 0);
-    m.set_m(13, 023736);
 }
 
-// 23734 as entered: the template at M11, returning to M12.
-unsigned run_template(Machine &m)
+// 23721: the value in A, if any, saved (15 ATX emitted, its cell marked).
+void Pass4::save_acc()
 {
-    emit_template(m, m.M[11]);
-    return m.M[12];
-}
-
-//
-// The accumulator: M4 ≠ 0 is the stack cell of a value still in A.
-// 23721: it is saved (15 ATX emitted, the cell marked); returns to M12.
-//
-unsigned save_acc(Machine &m)
-{
-    if (m.M[4]) {
-        m.mem[m.M[4]] = ON_STACK;
-        emit(m, ON_STACK, 023724);
-        m.vtm(4, 0);
+    if (acc_cell_) {
+        mem(acc_cell_) = ON_STACK;
+        emit(ON_STACK);
+        acc_cell_ = 0;
     }
-    return m.M[12];
 }
 
 // 23727: the operand d loaded into A (template 25772), or, with the
 // accumulator in use, through the stack (template 25771).
-void load_value(Machine &m, Word d)
+void Pass4::load_value(Word d)
 {
-    push(m, d);
+    push(d);
     unsigned t = 025772;
-    if (m.M[4]) {
-        m.mem[m.M[4]] = ON_STACK;
-        m.vtm(4, 0);
-        t = 025771;
+    if (acc_cell_) {
+        mem(acc_cell_) = ON_STACK;
+        acc_cell_      = 0;
+        t              = 025771;
     }
-    m.vtm(11, t);
-    emit_template(m, t);
+    emit_template(t);
 }
 
-// 23727 as entered: the operand in A, returning to M12.
-unsigned load_operand(Machine &m)
+// 23725: the operand on the stack done: loaded if any (nonzero).
+void Pass4::operand_done()
 {
-    load_value(m, m.acc);
-    return m.M[12];
-}
-
-// 23725: the operand on the stack done: loaded if any (nonzero); M4 = 0.
-unsigned operand_done(Machine &m)
-{
-    Word d = pop(m);
-    if (d) {
-        load_value(m, d);
-    } else {
-        set_acc(m, 0);
-        m.vtm(4, 0);
-    }
-    return m.M[12];
+    if (Word d = pop())
+        load_value(d);
+    else
+        acc_cell_ = 0;
 }
 
 //
-// 23752: read an item and go to its handler (return address on the stack);
-// 23753 without the return. M1 = code, M2 = attribute (bits 12–8), M3 =
-// value (bits 24–13); the handler of code c is in the left half of word
-// DISPATCH + c/2 (c even) or the right one. A has bit 48 for c odd.
+// 23753: read an item and go to its handler: the code c (bits 7–1), the
+// attribute (12–8) and the value (24–13); the handler of code c is in the
+// left half of word DISPATCH + c/2 (c even) or the right one.
 //
-unsigned dispatch_next(Machine &m)
+unsigned Pass4::dispatch_next()
 {
-    m.call(READ, 13, 023754);
-    Word item = m.acc;
-    m.set_m(1, item & 0177);
-    m.set_m(2, (item >> 7) & 037);
-    m.set_m(3, (item >> 12) & 07777);
-    m.set_m(14, m.M[1] >> 1);
-    Word w = m.mem[DISPATCH + m.M[14]];
-    set_acc(m, Word(m.M[1] & 1) << 47);
-    m.rmr = m.acc;
-    return unsigned(((m.M[1] & 1) ? w : w >> 24) & 077777);
+    Word item = read();
+    code_     = item & 0177;
+    attr_     = (item >> 7) & 037;
+    value_    = (item >> 12) & 07777;
+    Word w    = image(DISPATCH + (code_ >> 1));
+    return unsigned(((code_ & 1) ? w : w >> 24) & 077777);
 }
 
-unsigned read_dispatch(Machine &m)
+// 23752: dispatch the next item, returning to link (pushed).
+unsigned Pass4::operand(unsigned link)
 {
-    push(m, m.M[13]);
-    return dispatch_next(m);
+    push(link);
+    return dispatch_next();
 }
 
-// 23625: the main loop: 02021 kept on the stack around each item.
-unsigned main_loop(Machine &m)
+// 23625: the main loop: 02021 kept on the stack around each item, the
+// value of an expression statement loaded.
+unsigned Pass4::main_loop()
 {
-    push(m, m.mem[02021]);
-    m.set_m(13, 023627);
-    return read_dispatch(m);
-}
-
-unsigned main_loop_2(Machine &m)
-{
-    m.set_m(12, 023630);
-    return OPERAND_DONE;
-}
-
-unsigned main_loop_3(Machine &m)
-{
-    m.mem[02021] = pop(m);
-    return MAIN_LOOP;
-}
-
-// 23623: the location counter starts after the prologue.
-unsigned prologue_done(Machine &m)
-{
-    m.mem[02020] = m.M[1];
-    m.mem[02004] = m.M[1] + 1;
-    return MAIN_LOOP;
+    push(mem(02021));
+    return operand(023627);
 }
 
 //
 // 23523: init. The return address is pushed; external table entries get
-// their numbers (EXT_COUNTER counts them), the names of drum 26 zone 0
+// their numbers (ext_count_ counts them), the names of drum 26 zone 0
 // (06000) used as externals lose their marks; then the outer block: the
 // main program (named MAIN_NAME) gets the prologue (template 23612: 7 VTM,
 // 13 VJM A/START, 15 UTM frame), a procedure ('CODE', 'ALGOL' module) its
 // name as TEXT.
 //
-unsigned start(Machine &m)
+unsigned Pass4::start()
 {
-    m.vtm(7, M7);
-    push(m, m.M[13]);
-    m.mem[PAGE] = cyclic_add(m.mem[POS], READ_BACK);
-    m.call(READ, 13, 023526);
-    m.mem[POS]         = OUT_CURSOR;
-    m.mem[EXT_COUNTER] = 0;
+    push(DRIVER);
+    ext_count_ = 0;
     for (unsigned e = 0;; e += 3) {
-        Word w = m.mem[EXT_NAMES + 1 + e];
+        Word w = mem(EXT_NAMES + 1 + e);
         if (!w)
             break;
         if (!(w & EXT_COUNT)) {
-            m.mem[EXT_COUNTER] = 0;
+            ext_count_ = 0;
             continue;
         }
-        Word v                   = (m.mem[EXT_COUNTER] << 15) | m.mem[EXT_NAMES + 2 + e];
-        m.mem[EXT_NAMES + 2 + e] = v;
-        m.mem[EXT_COUNTER]       = cyclic_add(v & ADDR, m.mem[EXT_COUNTER]);
+        Word v                 = (ext_count_ << 15) | mem(EXT_NAMES + 2 + e);
+        mem(EXT_NAMES + 2 + e) = v;
+        ext_count_             = cyclic_add(v & ADDR, ext_count_);
     }
     unsigned p = NAMES;
     bool more  = true;
     do {
         p--;
-        if (!m.mem[p]) {
+        if (!mem(p)) {
             more = false;
             break;
         }
-    } while (m.mem[p] & BIT45);
+    } while (mem(p) & BIT45);
     if (more) {
-        for (unsigned e = 3; m.mem[EXT_NAMES + e]; e += 3) {
-            Word name   = (m.mem[EXT_NAMES + 1 + e] >> 24) & 07777;
-            m.mem[HALF] = name;
+        for (unsigned e = 3; mem(EXT_NAMES + e); e += 3) {
+            Word name = (mem(EXT_NAMES + 1 + e) >> 24) & 07777;
+            half_     = name;
             if (!name)
                 continue;
             do
                 p--;
-            while ((m.mem[p + 1] & 07777) != name);
-            m.mem[p + 1] &= MARK_CLR;
+            while ((mem(p + 1) & 07777) != name);
+            mem(p + 1) &= MARK_CLR;
         }
     }
-    m.vtm(8, p);
-    m.mem[EXT_NEXT] = 0;
-    Word head       = m.mem[02026];
-    m.set_m(2, head);
-    m.mem[02015] = head;
-    m.vtm(14, 05760);
-    m.store(m.M[2], 05760);
-    m.vtm(1, 010000);
-    m.vtm(3, 04133);
+    ext_next_     = 0;
+    Word head     = mem(02026);
+    unsigned list = head & 077777;
+    mem(02015)    = head;
+    store(list, 05760);
     for (unsigned i = 0; i < 1024; i++) // drum 26 zone 0
-        m.mem[NAMES + i] = m.drums->drum(026, 0, i);
-    m.mem[02010] = cyclic_add(m.mem[02003] ^ WORD_MASK, CONST_BASE);
-    m.vtm(4, 0);
-    m.mem[02006]     = 0;
-    m.mem[EMIT_MODE] = 0;
-    m.mem[02021]     = 5;
-    if ((m.mem[m.M[2] + 2] & KIND) != BIT45) {
-        m.mem[02005] = m.mem[MAIN_NAME];
-        m.mem[02014] = FRAME_MAIN;
-        m.call(BLOCK_ENTRY, 13, 023603);
-        m.store(m.M[2], packed_frame(m.mem[02014]) ^ m.mem[m.M[2]]);
-        push(m, m.mem[02014] & ADDR);
-        push(m, m.M[1]);
-        m.vtm(11, 023612);
-        m.vtm(12, 023623);
-        return TEMPLATE;
+        mem(NAMES + i) = ctx_.ws.drum(026, 0, i);
+    mem(02010)     = cyclic_add(mem(02003) ^ WORD_MASK, CONST_BASE);
+    acc_cell_      = 0;
+    mem(02006)     = 0;
+    mem(EMIT_MODE) = 0;
+    mem(02021)     = 5;
+    if ((mem(list + 2) & KIND) != BIT45) {
+        mem(02005) = image(MAIN_NAME);
+        mem(02014) = FRAME_MAIN;
+        block_entry(list);
+        store(list, packed_frame(mem(02014)) ^ mem(list));
+        push(mem(02014) & ADDR);
+        push(number_);
+        emit_template(023612);
+    } else {
+        mem(02014) = FRAME_PROC;
+        mem(02006) = mem((06144 + mem(list + 1)) & 077777);
+        mem(02005) = iso_text(mem(02006));
+        block_entry(list);
+        store(list + 1, (Word(number_) << 24) ^ mem(list + 1));
     }
-    m.mem[02014] = FRAME_PROC;
-    m.mem[02006] = m.mem[(06144 + m.mem[m.M[2] + 1]) & 077777];
-    m.call(ISO_TO_TEXT, 13, 023620);
-    m.mem[02005] = m.acc;
-    m.call(BLOCK_ENTRY, 13, 023621);
-    m.store(m.M[2] + 1, (Word(m.M[1]) << 24) ^ m.mem[m.M[2] + 1]);
-    return prologue_done(m);
+    // 23623: the location counter starts after the prologue.
+    mem(02020) = number_;
+    mem(02004) = number_ + 1;
+    return MAIN_LOOP;
 }
 
 //
 // 26152: EOP. The main program ends with UJ A/STOP (template 26160); return
 // to the driver.
 //
-unsigned eop_end(Machine &m)
+unsigned Pass4::eop()
 {
-    pop(m);
-    pop(m);
-    return pop(m) & 077777;
-}
-
-unsigned eop(Machine &m)
-{
-    if (m.mem[02005] != m.mem[MAIN_NAME])
-        return eop_end(m);
-    push(m, m.mem[02020]);
-    m.vtm(11, 026160);
-    m.set_m(12, 026156);
-    return TEMPLATE;
+    if (mem(02005) == image(MAIN_NAME)) {
+        push(mem(02020));
+        emit_template(026160);
+    }
+    pop();
+    pop();
+    return pop() & 077777;
 }
 
 //
-// Handlers. An item's handler leaves the descriptor of its value on the
-// stack (in place of the return address it pops): an address (with
-// 074000000: on the stack, bit 48: through a register…), or 0 for a
-// value in A, M4 then its stack cell. Operands come first in the stream
-// after the operator; each is dispatched through READ_DISPATCH, which
-// returns to the continuation in M13.
+// Operators.
 //
-
-constexpr Word LABEL_U1A  = 02600000;  // U1A to label n (M7+2302)
-constexpr Word LABEL_U1A2 = 02700000;  // (M7+2304)
-constexpr Word LABEL_UJ   = 03000000;  // UJ to label n (M7+2317)
-constexpr Word LABEL_DEF  = 02100000;  // label n defined here (M7+746)
-constexpr Word NEW_WORD   = 02000000;  // (M7+744)
-constexpr Word SWITCH_UJ  = 042400000; // (M7+1147)
-constexpr Word PREV_LABEL = 02777777;  // added to a label: the one after (M7+2533)
-constexpr Word FORMAL     = 0'4000'0000'7407'7777; // a formal's descriptor (M7+2513)
-constexpr Word BY_NAME    = 0'4000'0000'7400'0000; // a pushed address (M7+2514)
-constexpr Word REG_STORE  = 060440000;             // its address to register n (M7+520)
-constexpr Word STACK_ATX1 = 074000001;             // (M7+1572)
-constexpr Word ASN        = 0360000;               // (M7+2245)
-constexpr Word DIV_1      = 074010001;             // real division, both on the stack
-constexpr Word DIV_2      = 074160002;
-constexpr Word MINUS_ONE  = 0'7777'7777'7777'7776; // cyclic −1 (M7+2522)
-
-// Load the operand on the stack (23725), through M12 = link.
-void load(Machine &m, unsigned link)
-{
-    m.set_m(12, link);
-    operand_done(m);
-}
-
-// The template t, then the result in A.
-unsigned apply_template(Machine &m, unsigned t)
-{
-    m.vtm(11, t);
-    m.vtm(12, 024015);
-    return TEMPLATE;
-}
-
-// Dispatch the next item, returning to link.
-unsigned operand(Machine &m, unsigned link)
-{
-    m.set_m(13, link);
-    return READ_DISPATCH;
-}
 
 // 23776: return (the address on the stack) with the descriptor d in its place.
-unsigned give(Machine &m, Word d)
+unsigned Pass4::give(Word d)
 {
-    unsigned ret = pop(m) & 077777;
-    m.set_m(14, ret);
-    push(m, d);
-    m.acc = d;
+    unsigned ret = pop() & 077777;
+    push(d);
     return ret;
 }
 
 // 24016: no value.
-unsigned give_none(Machine &m)
+unsigned Pass4::give_none()
 {
-    set_acc(m, 0);
-    return give(m, 0);
+    return give(0);
 }
 
 // 24015: the value is in A, its cell the return address's.
-unsigned result_in_acc(Machine &m)
+unsigned Pass4::result_in_acc()
 {
-    m.set_m(4, m.M[SP] - 1);
-    return give_none(m);
+    acc_cell_ = (sp_ - 1) & 077777;
+    return give_none();
 }
 
-// The value of item M3 in the constants (02010: their base).
-Word constant_address(const Machine &m)
+// The template t, then the result in A.
+unsigned Pass4::apply_template(unsigned t)
 {
-    return cyclic_add(m.M[3], m.mem[02010]);
+    emit_template(t);
+    return result_in_acc();
 }
 
 // 23764: a string (070): its address loaded into A (template 23771, or 23773
 // with A saved).
-unsigned string_item(Machine &m)
+unsigned Pass4::string_item()
 {
-    push(m, constant_address(m));
-    m.vtm(11, 023771);
-    m.vtm(12, 024015);
-    if (m.M[4]) {
-        m.vtm(11, 023773);
-        m.mem[m.M[4]] = ON_STACK;
+    push(constant_address());
+    unsigned t = 023771;
+    if (acc_cell_) {
+        t              = 023773;
+        mem(acc_cell_) = ON_STACK;
     }
-    return TEMPLATE;
+    return apply_template(t);
 }
 
-// 23775: a constant (023): its address in the constants.
-unsigned constant_item(Machine &m)
+// 24000: a variable (017): from its descriptor.
+unsigned Pass4::variable_item()
 {
-    return give(m, constant_address(m));
-}
-
-// 24000: a variable (017): from its descriptor (bit 48: packed, unpacked).
-unsigned variable_item(Machine &m)
-{
-    Word d = m.mem[m.M[3]];
-    if (d & BIT48)
-        d = unpack_bits((d << 5) & WORD_MASK, DESC_MASK);
-    else
-        d &= DESC_MASK;
-    m.set_logical();
-    return give(m, d);
+    return give(address_of(mem(value_)));
 }
 
 // 24010: a call without parameters (0107), or a formal by name: A saved,
 // the call (template 25747, or 25751 for one on the stack).
-unsigned call_item(Machine &m)
+unsigned Pass4::call_item()
 {
-    m.set_m(12, 024011);
-    save_acc(m);
-    Word d = m.mem[m.M[3]] & DESC_MASK;
-    push(m, d);
-    return apply_template(m, (d & ON_STACK) ? 025747 : 025751);
+    save_acc();
+    Word d = mem(value_) & DESC_MASK;
+    push(d);
+    return apply_template((d & ON_STACK) ? 025747 : 025751);
 }
 
 // 24005: a formal by name (022): a value parameter as a variable.
-unsigned formal_item(Machine &m)
+unsigned Pass4::formal_item()
 {
-    Word d = m.mem[m.M[3]];
+    Word d = mem(value_);
     if (!(d & BIT48))
-        return call_item(m);
-    return give(m, d & FORMAL);
+        return call_item();
+    return give(d & FORMAL);
 }
 
 // 24041: a unary operator, template t: the operand loaded, then the template.
-unsigned unary(Machine &m, unsigned t)
+unsigned Pass4::unary(unsigned t)
 {
-    m.vtm(11, t);
-    push(m, t);
-    return operand(m, 024043);
+    push(t);
+    return operand(024043);
 }
 
-unsigned unary_2(Machine &m)
+unsigned Pass4::unary_2()
 {
-    load(m, 024044);
-    m.vtm(11, pop(m));
-    m.vtm(12, 024015);
-    return TEMPLATE;
-}
-
-// 24035: call the routine on the stack (template 25751).
-unsigned routine_call(Machine &m)
-{
-    return apply_template(m, 025751);
+    operand_done();
+    return apply_template(pop() & 077777);
 }
 
 // 24030: a standard function n (071): 6 inline (template 25761), else the
-// routine 4030+n of its argument.
-unsigned std_function(Machine &m)
+// routine 4030+n of its argument (template 25751).
+unsigned Pass4::std_function()
 {
-    if (m.M[3] == 6)
-        return unary(m, 025761);
-    m.set_m(3, m.M[3] + 04030);
-    push(m, m.M[3]);
-    return operand(m, 024034);
-}
-
-unsigned std_function_2(Machine &m)
-{
-    load(m, 024035);
-    return routine_call(m);
+    if (value_ == 6)
+        return unary(025761);
+    value_ = (value_ + 04030) & 077777;
+    push(value_);
+    return operand(024034);
 }
 
 // 24037: a standard procedure n without arguments (072).
-unsigned std_procedure(Machine &m)
+unsigned Pass4::std_procedure()
 {
-    m.set_m(3, m.M[3] + 04030);
-    push(m, m.M[3]);
-    return routine_call(m);
+    value_ = (value_ + 04030) & 077777;
+    push(value_);
+    return apply_template(025751);
 }
 
 // 24071: the template t, the operand on the stack; the template's word dropped.
-unsigned apply(Machine &m, unsigned t)
+unsigned Pass4::apply(unsigned t)
 {
-    m.vtm(11, t);
-    m.set_m(12, 024072);
-    emit_template(m, t);
-    pop(m);
-    return result_in_acc(m);
+    emit_template(t);
+    pop();
+    return result_in_acc();
 }
 
 //
 // The right operand d2 popped, the left one on the stack: unless in A, it
 // is loaded, and the right one takes its place.
 //
-void left_to_acc(Machine &m, unsigned link)
+void Pass4::left_to_acc()
 {
-    Word d1 = pop(m);
-    Word d2 = m.mem[(m.M[SP] + 1) & 077777];
+    Word d1 = pop();
+    Word d2 = mem((sp_ + 1) & 077777);
     if (d1) {
-        m.set_m(SP, m.M[SP] + 2);
-        m.set_m(12, link);
-        load_value(m, d1);
-        m.set_m(SP, m.M[SP] - 2);
+        sp_ = (sp_ + 2) & 077777;
+        load_value(d1);
+        sp_ = (sp_ - 2) & 077777;
     }
-    push(m, d2);
-}
-
-// The word of the template (or two) under the operand.
-Word template_word(const Machine &m)
-{
-    return m.mem[(m.M[SP] - 2) & 077777];
+    push(d2);
 }
 
 // 24062: a binary operator, template t: both operands; the template works
 // on A and the operand on the stack.
-unsigned binary(Machine &m, unsigned t)
+unsigned Pass4::binary(unsigned t)
 {
-    m.vtm(11, t);
-    push(m, t);
-    return operand(m, 024064);
+    push(t);
+    return operand(024064);
 }
 
-unsigned binary_2(Machine &m)
+unsigned Pass4::binary_3()
 {
-    return operand(m, 024065);
-}
-
-unsigned binary_3(Machine &m)
-{
-    if (pop(m))
-        left_to_acc(m, 024074);
-    return apply(m, template_word(m) & 077777);
+    if (pop())
+        left_to_acc();
+    return apply(top(2) & 077777);
 }
 
 // 24122: an operator not commutative, pair = a word of two templates: the
 // left half for A op stack, the right one when the right operand is in A.
-unsigned paired(Machine &m, unsigned pair)
+unsigned Pass4::paired(unsigned pair, unsigned link)
 {
-    m.vtm(11, pair);
-    push(m, pair);
-    return operand(m, 024124);
+    push(pair);
+    return operand(link);
 }
 
-unsigned paired_2(Machine &m)
+unsigned Pass4::paired_3()
 {
-    return operand(m, 024125);
+    if (!pop())
+        return apply(image(top(2) & 077777) & 077777);
+    left_to_acc();
+    return apply((image(top(2) & 077777) >> 24) & 077777);
 }
 
-unsigned paired_3(Machine &m)
+// 24101: real division (016) with both operands on the stack: two halves
+// of its own.
+unsigned Pass4::divide_3()
 {
-    if (!pop(m))
-        return apply(m, m.mem[template_word(m) & 077777] & 077777);
-    left_to_acc(m, 024134);
-    return apply(m, (m.mem[template_word(m) & 077777] >> 24) & 077777);
-}
-
-// 24076: real division (016): both operands on the stack: two halves of
-// its own (DIV_1, DIV_2).
-unsigned divide(Machine &m)
-{
-    m.vtm(11, 024114);
-    push(m, 024114);
-    return operand(m, 024100);
-}
-
-unsigned divide_2(Machine &m)
-{
-    return operand(m, 024101);
-}
-
-unsigned divide_3(Machine &m)
-{
-    if (m.mem[(m.M[SP] - 2) & 077777] != ON_STACK) // the left operand
-        return paired_3(m);
-    emit(m, DIV_1, 024104);
-    emit(m, DIV_2, 024105);
-    m.set_m(SP, m.M[SP] - 3);
-    return result_in_acc(m);
+    if (top(2) != ON_STACK) // the left operand
+        return paired_3();
+    emit(DIV_1);
+    emit(DIV_2);
+    sp_ = (sp_ - 3) & 077777;
+    return result_in_acc();
 }
 
 // 24222: assignment to target: the value, then the store (template 25760).
-unsigned assign(Machine &m, Word target)
+unsigned Pass4::assign(Word target)
 {
-    push(m, target);
-    return operand(m, 024223);
-}
-
-unsigned assign_2(Machine &m)
-{
-    load(m, 024224);
-    return apply_template(m, 025760);
-}
-
-// 24221: to a variable (0100).
-unsigned assign_variable(Machine &m)
-{
-    return assign(m, m.mem[m.M[3]] & DESC_MASK);
+    push(target);
+    return operand(024223);
 }
 
 // 24240: the address computed is pushed (template 24242).
-unsigned assign_pushed(Machine &m)
+unsigned Pass4::assign_pushed()
 {
-    m.vtm(11, 024242);
-    m.set_m(12, 024241);
-    emit_template(m, 024242);
-    return assign(m, BY_NAME);
+    emit_template(024242);
+    return assign(BY_NAME);
 }
 
 //
@@ -734,235 +822,189 @@ unsigned assign_pushed(Machine &m)
 // and kept in a register counted by 02021 from 5 down, or pushed (template
 // 24242) when none is left.
 //
-unsigned assign_formal(Machine &m)
+unsigned Pass4::assign_formal()
 {
-    Word d = m.mem[m.M[3]] & FORMAL;
+    Word d = mem(value_) & FORMAL;
     if (d & BIT48)
-        return assign(m, d);
-    push(m, d);
-    m.vtm(11, 025747);
-    m.set_m(12, 024232);
-    emit_template(m, 025747);
-    Word r = m.mem[02021];
+        return assign(d);
+    push(d);
+    emit_template(025747);
+    Word r = mem(02021);
     if (!r)
-        return assign_pushed(m);
-    emit(m, r | REG_STORE, 024234);
-    m.mem[02021] = r - 1;
-    m.set_logical();
-    return assign(m, (r << 20) & WORD_MASK);
+        return assign_pushed();
+    emit(r | REG_STORE);
+    mem(02021) = r - 1;
+    return assign((r << 20) & WORD_MASK);
 }
 
 // 25301: x ** c with flag (1 real, 0 integer): c and the flag kept on the
 // stack, then x: c − 1 multiplications (template 25774), then for an
 // integer 25321.
-unsigned power(Machine &m, Word flag)
+unsigned Pass4::power(Word flag)
 {
-    push(m, flag);
-    push(m, m.M[3]);
-    push(m, 0);
-    return operand(m, 025303);
+    push(flag);
+    push(value_);
+    push(0);
+    return operand(025303);
 }
 
-unsigned power_loop(Machine &m)
+unsigned Pass4::power_loop()
 {
     for (;;) {
-        Word c = cyclic_add(m.mem[(m.M[SP] - 2) & 077777], MINUS_ONE);
+        Word c = cyclic_add(top(2), MINUS_ONE);
         if (c & BIT48)
             break;
-        m.mem[(m.M[SP] - 2) & 077777] = c;
-        push(m, m.mem[(m.M[SP] - 1) & 077777]);
-        m.vtm(11, 025774);
-        m.set_m(12, 025306);
-        emit_template(m, 025774);
+        top(2) = c;
+        push(top(1));
+        emit_template(025774);
     }
-    m.set_m(SP, m.M[SP] - 2);
-    Word flag = pop(m);
-    m.set_logical();
-    if (flag)
-        return result_in_acc(m);
-    return apply_template(m, 025321);
+    sp_ = (sp_ - 2) & 077777;
+    if (pop())
+        return result_in_acc();
+    return apply_template(025321);
 }
 
-unsigned power_2(Machine &m)
+unsigned Pass4::power_2()
 {
-    Word d = pop(m);
+    Word d = pop();
     if (!d) {
-        m.mem[(m.M[SP] - 1) & 077777] = STACK_ATX1;
-        emit(m, STACK_ATX1, 025306);
-        return power_loop(m);
+        top(1) = STACK_ATX1;
+        emit(STACK_ATX1);
+        return power_loop();
     }
-    m.mem[(m.M[SP] - 1) & 077777] = d;
-    m.set_m(SP, m.M[SP] + 1);
-    load(m, 025306);
-    return power_loop(m);
+    top(1) = d;
+    sp_    = (sp_ + 1) & 077777;
+    operand_done();
+    return power_loop();
 }
 
-// 25330: an octal base ** c (0352): ASN by c.
-unsigned octal_shift(Machine &m)
+// 25332: an octal base ** c (0352): ASN by c.
+unsigned Pass4::octal_shift_2()
 {
-    push(m, m.M[3]);
-    return operand(m, 025332);
+    operand_done();
+    emit(pop() | ASN);
+    return result_in_acc();
 }
 
-unsigned octal_shift_2(Machine &m)
+// 25337: a routine r of two operands (pushed): the first loaded, 02017
+// for A, the second, then the call (template 25751).
+unsigned Pass4::library_call(unsigned r)
 {
-    load(m, 025333);
-    emit(m, pop(m) | ASN, 024015);
-    return result_in_acc(m);
-}
-
-// 25276: a real ** c (0152).
-unsigned power_real(Machine &m)
-{
-    if (m.M[2])
-        return octal_shift(m);
-    return power(m, 1);
-}
-
-// 25300: an integer ** c (0153).
-unsigned power_integer(Machine &m)
-{
-    return power(m, 0);
-}
-
-// 25337: a routine r of two operands (pushed): the first loaded, M4 =
-// 02017, the second, then the call.
-unsigned library_call(Machine &m, unsigned r)
-{
-    m.set_m(14, r);
-    push(m, r);
-    return operand(m, 025341);
-}
-
-unsigned library_call_2(Machine &m)
-{
-    load(m, 025342);
-    m.vtm(4, 02017);
-    return operand(m, 025343);
-}
-
-unsigned library_call_3(Machine &m)
-{
-    load(m, 025344);
-    return routine_call(m);
-}
-
-// 0150, 0151, 0147 (** by types), 001 (IMPL): routine r, or octal for an
-// octal operand (M2).
-unsigned library_with(Machine &m, unsigned r, unsigned octal)
-{
-    return library_call(m, octal && m.M[2] ? octal : r);
-}
-
-// 0157: string relation n (M3): routine 4067+n.
-unsigned string_relation(Machine &m)
-{
-    return library_call(m, (m.M[3] + 04067) & 077777);
+    push(r);
+    return operand(025341);
 }
 
 // 25346: a string slice (050): the string, then the bounds; routine 4100
-// (template 25361). M2 ≠ 0: the string pushed first.
-unsigned slice(Machine &m)
+// (template 25361). attr ≠ 0: the string pushed first.
+unsigned Pass4::slice_2()
 {
-    push(m, m.M[2]);
-    return operand(m, 025350);
-}
-
-unsigned slice_3(Machine &m)
-{
-    m.vtm(4, 02017);
-    return operand(m, 025354);
-}
-
-unsigned slice_2(Machine &m)
-{
-    load(m, 025351);
-    if (!pop(m)) {
-        m.vtm(4, 02017);
-        return operand(m, 025360);
+    operand_done();
+    if (!pop()) {
+        acc_cell_ = 02017;
+        return operand(025360);
     }
-    emit(m, ON_STACK, 025353);
-    return slice_3(m);
+    emit(ON_STACK);
+    acc_cell_ = 02017;
+    return operand(025354);
 }
 
-unsigned slice_4(Machine &m)
+void Pass4::register_operators()
 {
-    load(m, 025355);
-    return apply_template(m, 025361);
-}
-
-unsigned slice_5(Machine &m)
-{
-    load(m, 025353);
-    return slice_3(m);
-}
-
-void register_operators(Machine::Natives &n)
-{
-    n[023764] = string_item;
-    n[023775] = constant_item;
-    n[023776] = [](Machine &m) { return give(m, m.acc); };
-    n[024000] = variable_item;
-    n[024005] = formal_item;
-    n[024010] = call_item;
-    n[024015] = result_in_acc;
-    n[024016] = give_none;
-    n[024021] = [](Machine &m) { return unary(m, 025753); };
-    n[024022] = [](Machine &m) { return unary(m, 025754); };
-    n[024023] = [](Machine &m) { return unary(m, m.M[2] ? 025767 : 025756); };
-    n[024026] = [](Machine &m) { return unary(m, 025762); };
-    n[024027] = [](Machine &m) { return unary(m, 025763); };
-    n[024030] = std_function;
-    n[024034] = std_function_2;
-    n[024037] = std_procedure;
-    n[024043] = unary_2;
-    n[024046] = [](Machine &m) { return binary(m, 025773); };
-    n[024047] = [](Machine &m) { return binary(m, 025774); };
-    n[024050] = [](Machine &m) { return binary(m, 025775); };
-    n[024051] = [](Machine &m) { return binary(m, 025777); };
-    n[024052] = [](Machine &m) { return binary(m, 026000); };
-    n[024053] = [](Machine &m) { return binary(m, m.M[2] ? 026016 : 026001); };
-    n[024055] = [](Machine &m) { return binary(m, 026003); };
-    n[024056] = [](Machine &m) { return binary(m, 026005); };
-    n[024057] = [](Machine &m) { return binary(m, 026007); };
-    n[024060] = [](Machine &m) { return binary(m, 026012); };
-    n[024061] = [](Machine &m) { return binary(m, 026014); };
-    n[024064] = binary_2;
-    n[024065] = binary_3;
-    n[024075] = [](Machine &m) { return paired(m, 024113); };
-    n[024076] = divide;
-    n[024100] = divide_2;
-    n[024101] = divide_3;
-    n[024106] = [](Machine &m) { return paired(m, 024115); };
-    n[024107] = [](Machine &m) { return paired(m, 024116); };
-    n[024110] = [](Machine &m) { return paired(m, 024117); };
-    n[024111] = [](Machine &m) { return paired(m, 024120); };
-    n[024112] = [](Machine &m) { return paired(m, 024121); };
-    n[024124] = paired_2;
-    n[024125] = paired_3;
-    n[024221] = assign_variable;
-    n[024222] = [](Machine &m) { return assign(m, m.acc); };
-    n[024223] = assign_2;
-    n[024226] = assign_formal;
-    n[024240] = assign_pushed;
-    n[025276] = power_real;
-    n[025300] = power_integer;
-    n[025303] = power_2;
-    n[025306] = power_loop;
-    n[025323] = [](Machine &m) { return library_with(m, 04023, 04122); };
-    n[025325] = [](Machine &m) { return library_with(m, 04024, 0); };
-    n[025326] = [](Machine &m) { return library_with(m, 04025, 04121); };
-    n[025330] = octal_shift;
-    n[025332] = octal_shift_2;
-    n[025335] = [](Machine &m) { return library_with(m, 04026, 0); };
-    n[025336] = string_relation;
-    n[025341] = library_call_2;
-    n[025343] = library_call_3;
-    n[025346] = slice;
-    n[025350] = slice_2;
-    n[025353] = slice_3;
-    n[025354] = slice_4;
-    n[025360] = slice_5;
+    auto &n   = handlers_;
+    n[023764] = [this] { return string_item(); };
+    n[023775] = [this] { return give(constant_address()); };
+    n[024000] = [this] { return variable_item(); };
+    n[024005] = [this] { return formal_item(); };
+    n[024010] = [this] { return call_item(); };
+    n[RESULT] = [this] { return result_in_acc(); };
+    n[024016] = [this] { return give_none(); };
+    n[024021] = [this] { return unary(025753); };
+    n[024022] = [this] { return unary(025754); };
+    n[024023] = [this] { return unary(attr_ ? 025767 : 025756); };
+    n[024026] = [this] { return unary(025762); };
+    n[024027] = [this] { return unary(025763); };
+    n[024030] = [this] { return std_function(); };
+    n[024034] = [this] {
+        operand_done();
+        return apply_template(025751);
+    };
+    n[024037] = [this] { return std_procedure(); };
+    n[024043] = [this] { return unary_2(); };
+    n[024046] = [this] { return binary(025773); };
+    n[024047] = [this] { return binary(025774); };
+    n[024050] = [this] { return binary(025775); };
+    n[024051] = [this] { return binary(025777); };
+    n[024052] = [this] { return binary(026000); };
+    n[024053] = [this] { return binary(attr_ ? 026016 : 026001); };
+    n[024055] = [this] { return binary(026003); };
+    n[024056] = [this] { return binary(026005); };
+    n[024057] = [this] { return binary(026007); };
+    n[024060] = [this] { return binary(026012); };
+    n[024061] = [this] { return binary(026014); };
+    n[024064] = [this] { return operand(024065); };
+    n[024065] = [this] { return binary_3(); };
+    n[024075] = [this] { return paired(024113, 024124); };
+    n[024076] = [this] { return paired(024114, 024100); };
+    n[024100] = [this] { return operand(024101); };
+    n[024101] = [this] { return divide_3(); };
+    n[024106] = [this] { return paired(024115, 024124); };
+    n[024107] = [this] { return paired(024116, 024124); };
+    n[024110] = [this] { return paired(024117, 024124); };
+    n[024111] = [this] { return paired(024120, 024124); };
+    n[024112] = [this] { return paired(024121, 024124); };
+    n[024124] = [this] { return operand(024125); };
+    n[024125] = [this] { return paired_3(); };
+    n[024221] = [this] { return assign(mem(value_) & DESC_MASK); };
+    n[024223] = [this] {
+        operand_done();
+        return apply_template(025760);
+    };
+    n[024226] = [this] { return assign_formal(); };
+    n[025276] = [this] { // a real ** c (0152), an octal base (0352)
+        if (attr_) {
+            push(value_);
+            return operand(025332);
+        }
+        return power(1);
+    };
+    n[025300] = [this] { return power(0); }; // an integer ** c (0153)
+    n[025303] = [this] { return power_2(); };
+    n[025306] = [this] { return power_loop(); };
+    // 0150, 0151, 0147 (** by types), 001 (IMPL): routine r, or for an octal
+    // operand (attr) another.
+    n[025323] = [this] { return library_call(attr_ ? 04122 : 04023); };
+    n[025325] = [this] { return library_call(04024); };
+    n[025326] = [this] { return library_call(attr_ ? 04121 : 04025); };
+    n[025332] = [this] { return octal_shift_2(); };
+    n[025335] = [this] { return library_call(04026); };
+    n[025336] = [this] { return library_call((value_ + 04067) & 077777); }; // string relation n
+    n[025341] = [this] {
+        operand_done();
+        acc_cell_ = 02017;
+        return operand(025343);
+    };
+    n[025343] = [this] {
+        operand_done();
+        return apply_template(025751);
+    };
+    n[025346] = [this] {
+        push(attr_);
+        return operand(025350);
+    };
+    n[025350] = [this] { return slice_2(); };
+    n[025353] = [this] {
+        acc_cell_ = 02017;
+        return operand(025354);
+    };
+    n[025354] = [this] {
+        operand_done();
+        return apply_template(025361);
+    };
+    n[025360] = [this] {
+        operand_done();
+        acc_cell_ = 02017;
+        return operand(025354);
+    };
 }
 
 //
@@ -970,244 +1012,171 @@ void register_operators(Machine::Natives &n)
 // its label for the item that defines it.
 //
 
-// The next label.
-Word new_label(Machine &m)
-{
-    Word n         = m.mem[LABELS];
-    m.mem[LABELS] = cyclic_add(n, 1);
-    return n;
-}
-
 // 24142: emit the jump half, push its label, next label; on to the main loop.
-unsigned jump_ahead(Machine &m, Word half)
+unsigned Pass4::jump_ahead(Word half)
 {
-    emit(m, half, 024143);
-    push(m, new_label(m));
+    emit(half);
+    push(new_label());
     return MAIN_LOOP;
 }
 
-// 24137: IF (027): the condition loaded, U1A to a new label.
-unsigned if_item(Machine &m)
-{
-    return operand(m, 024140);
-}
-
-unsigned if_item_2(Machine &m)
-{
-    load(m, 024141);
-    return jump_ahead(m, LABEL_U1A | m.mem[LABELS]);
-}
-
 // Both operands of a comparison: unless the right one is in A, the left
-// one is loaded (link) and the right one takes its place. False when the
-// right one is in A.
-bool comparison_operands(Machine &m, unsigned link)
+// one is loaded and the right one takes its place. False when the right
+// one is in A.
+bool Pass4::comparison_operands()
 {
-    Word d2 = pop(m);
+    Word d2 = pop();
     if (!d2)
         return false;
-    Word d1 = pop(m);
+    Word d1 = pop();
     if (d1) {
-        m.set_m(SP, m.M[SP] + 2);
-        m.set_m(12, link);
-        load_value(m, d1);
-        m.set_m(SP, m.M[SP] - 2);
+        sp_ = (sp_ + 2) & 077777;
+        load_value(d1);
+        sp_ = (sp_ - 2) & 077777;
     }
-    push(m, d2);
+    push(d2);
     return true;
 }
 
-// 24146: compare-and-jump of a string (0134): both operands, template
+// 24150: compare-and-jump of strings (0134), both operands: template
 // 26040, then U1A ahead.
-unsigned string_jump(Machine &m)
+unsigned Pass4::string_jump_3()
 {
-    return operand(m, 024147);
-}
-
-unsigned string_jump_2(Machine &m)
-{
-    return operand(m, 024150);
-}
-
-unsigned string_jump_3(Machine &m)
-{
-    Word d2 = pop(m);
+    Word d2 = pop();
     if (d2) {
-        Word d1 = pop(m);
-        if (d1) {
-            m.set_m(SP, m.M[SP] + 2);
-            load(m, 024160);
+        if (pop()) {
+            sp_ = (sp_ + 2) & 077777;
+            operand_done();
         } else {
-            push(m, d2);
+            push(d2);
         }
     }
-    m.vtm(11, 026040);
-    m.set_m(12, 024152);
-    emit_template(m, 026040);
-    m.vtm(4, 0);
-    return jump_ahead(m, LABEL_U1A2 | m.mem[LABELS]);
+    emit_template(026040);
+    acc_cell_ = 0;
+    return jump_ahead(LABEL_U1A2 | mem(LABELS));
 }
 
 //
 // 24165: compare-and-jump (0130–0133), pair = a word of two templates (as
 // for 24122): the label pushed under the operands; the template jumps to it.
 //
-unsigned compare_jump(Machine &m, unsigned pair)
+unsigned Pass4::compare_jump(unsigned pair)
 {
-    m.vtm(11, pair);
-    push(m, pair);
-    push(m, m.mem[LABELS]);
-    return operand(m, 024167);
+    push(pair);
+    push(mem(LABELS));
+    return operand(024167);
 }
 
-unsigned compare_jump_2(Machine &m)
+unsigned Pass4::compare_jump_3()
 {
-    return operand(m, 024170);
-}
-
-unsigned compare_jump_3(Machine &m)
-{
-    bool left    = comparison_operands(m, 024205);
-    Word pair    = m.mem[m.mem[(m.M[SP] - 3) & 077777] & 077777];
-    unsigned t   = (left ? pair >> 24 : pair) & 077777;
-    m.vtm(11, t);
-    m.vtm(4, 0);
-    m.set_m(12, 024174);
-    emit_template(m, t);
-    m.mem[(m.M[SP] - 1) & 077777] = new_label(m);
+    bool left  = comparison_operands();
+    Word pair  = image(top(3) & 077777);
+    unsigned t = (left ? pair >> 24 : pair) & 077777;
+    acc_cell_  = 0;
+    emit_template(t);
+    top(1) = new_label();
     return MAIN_LOOP;
 }
 
 // 24210: define label n (template 26051), the value in A.
-unsigned define_label(Machine &m, Word n)
+unsigned Pass4::define_label(Word n)
 {
-    m.set_m(SP, m.M[SP] - 2);
-    m.mem[LABELS] = n;
-    return apply_template(m, 026051);
-}
-
-// 24206: the end of an IF statement (053): its label.
-unsigned if_end(Machine &m)
-{
-    return define_label(m, m.mem[(m.M[SP] - 3) & 077777]);
-}
-
-// 24207: the end of a conditional expression (054): the label before.
-unsigned if_expression_end(Machine &m)
-{
-    return define_label(m, cyclic_add(m.mem[(m.M[SP] - 3) & 077777], MINUS_ONE));
+    sp_         = (sp_ - 2) & 077777;
+    mem(LABELS) = n;
+    return apply_template(026051);
 }
 
 // 24213: ELSE (031): UJ to a new label, then the IF's label defined.
-unsigned else_item(Machine &m)
+unsigned Pass4::else_item()
 {
-    m.set_m(SP, m.M[SP] - 2);
-    emit(m, LABEL_UJ | m.mem[LABELS], 024215);
-    m.vtm(11, 026051);
-    m.set_m(12, 024216);
-    emit_template(m, 026051);
-    push(m, new_label(m));
+    sp_ = (sp_ - 2) & 077777;
+    emit(LABEL_UJ | mem(LABELS));
+    emit_template(026051);
+    push(new_label());
     return MAIN_LOOP;
 }
 
 // 24666: GOTO a label (024): UJ (template 24671).
-unsigned goto_label(Machine &m)
+unsigned Pass4::goto_label()
 {
-    push(m, m.mem[m.M[3]] & DESC_MASK);
-    m.vtm(11, 024671);
-    m.vtm(12, 024016);
-    return TEMPLATE;
+    push(mem(value_) & DESC_MASK);
+    emit_template(024671);
+    return give_none();
 }
 
 // 24661: an element of a switch (025), the index on the stack: loaded
 // (template 24360) unless in A, the half SWITCH_UJ with it, then as 024.
-unsigned switch_element(Machine &m)
+unsigned Pass4::switch_element()
 {
-    Word d = pop(m);
+    Word d = pop();
     if (d) {
-        push(m, d);
-        m.vtm(11, 024360);
-        m.set_m(12, 024664);
-        emit_template(m, 024360);
+        push(d);
+        emit_template(024360);
     }
-    emit(m, SWITCH_UJ | pop(m), 024666);
-    return goto_label(m);
+    emit(SWITCH_UJ | pop());
+    return goto_label();
 }
 
-// 25010: switch elements start (0143): the label of the table pushed.
-unsigned switch_start(Machine &m)
+// 25023: the switch (041) with attr words on the stack: template 25040,
+// then each word and NEW_WORD; the table's label back to LABELS.
+unsigned Pass4::switch_end()
 {
-    push(m, m.mem[LABELS]);
-    return DISPATCH_NEXT;
-}
-
-// 25012: an element expression (0144): its own label, the expression.
-unsigned switch_expression(Machine &m)
-{
-    emit(m, m.mem[LABELS] | LABEL_DEF, 025014);
-    new_label(m);
-    return operand(m, 025016);
-}
-
-unsigned switch_expression_2(Machine &m)
-{
-    m.mem[(m.M[SP] - 1) & 077777] = cyclic_add(m.mem[LABELS], PREV_LABEL);
-    return DISPATCH_NEXT;
-}
-
-// 25020: an element label (0142).
-unsigned switch_label(Machine &m)
-{
-    push(m, (m.mem[m.M[3]] & DESC_MASK) | LABEL_UJ);
-    return DISPATCH_NEXT;
-}
-
-// 25023: the switch (041) with M2 words on the stack: template 25040, then
-// each word and NEW_WORD; the table's label back to LABELS.
-unsigned switch_end(Machine &m)
-{
-    Word d = m.mem[m.M[3]] & ADDR;
-    push(m, d);
-    push(m, d);
-    m.vtm(11, 025040);
-    m.set_m(12, 025026);
-    emit_template(m, 025040);
-    unsigned n    = m.M[2];
-    unsigned base = (m.M[SP] - n) & 077777;
-    for (unsigned i = 0; i < n; i++) {
-        emit(m, m.mem[(base + i) & 077777], 025033);
-        emit(m, NEW_WORD, 025034);
+    Word d = mem(value_) & ADDR;
+    push(d);
+    push(d);
+    emit_template(025040);
+    unsigned base = (sp_ - attr_) & 077777;
+    for (unsigned i = 0; i < attr_; i++) {
+        emit(mem((base + i) & 077777));
+        emit(NEW_WORD);
     }
-    m.set_m(11, -n);
-    m.set_m(12, 0);
-    m.set_m(SP, base);
-    m.mem[LABELS] = pop(m);
+    sp_         = base;
+    mem(LABELS) = pop();
     return DISPATCH_NEXT;
 }
 
-void register_jumps(Machine::Natives &n)
+void Pass4::register_jumps()
 {
-    n[024137] = if_item;
-    n[024140] = if_item_2;
-    n[024146] = string_jump;
-    n[024147] = string_jump_2;
-    n[024150] = string_jump_3;
-    n[024161] = [](Machine &m) { return compare_jump(m, 026052); };
-    n[024162] = [](Machine &m) { return compare_jump(m, 026053); };
-    n[024163] = [](Machine &m) { return compare_jump(m, 026054); };
-    n[024164] = [](Machine &m) { return compare_jump(m, 026055); };
-    n[024167] = compare_jump_2;
-    n[024170] = compare_jump_3;
-    n[024206] = if_end;
-    n[024207] = if_expression_end;
-    n[024213] = else_item;
-    n[024661] = switch_element;
-    n[024666] = goto_label;
-    n[025010] = switch_start;
-    n[025012] = switch_expression;
-    n[025016] = switch_expression_2;
-    n[025020] = switch_label;
-    n[025023] = switch_end;
+    auto &n   = handlers_;
+    n[024137] = [this] { return operand(024140); }; // IF (027): the condition
+    n[024140] = [this] {
+        operand_done();
+        return jump_ahead(LABEL_U1A | mem(LABELS));
+    };
+    n[024146] = [this] { return operand(024147); };
+    n[024147] = [this] { return operand(024150); };
+    n[024150] = [this] { return string_jump_3(); };
+    n[024161] = [this] { return compare_jump(026052); };
+    n[024162] = [this] { return compare_jump(026053); };
+    n[024163] = [this] { return compare_jump(026054); };
+    n[024164] = [this] { return compare_jump(026055); };
+    n[024167] = [this] { return operand(024170); };
+    n[024170] = [this] { return compare_jump_3(); };
+    n[024206] = [this] { return define_label(top(3)); }; // the end of IF (053)
+    n[024207] = [this] { // the end of a conditional expression (054)
+        return define_label(cyclic_add(top(3), MINUS_ONE));
+    };
+    n[024213] = [this] { return else_item(); };
+    n[024661] = [this] { return switch_element(); };
+    n[024666] = [this] { return goto_label(); };
+    n[025010] = [this] { // switch elements start (0143): the table's label
+        push(mem(LABELS));
+        return DISPATCH_NEXT;
+    };
+    n[025012] = [this] { // an element expression (0144): its own label
+        emit(mem(LABELS) | LABEL_DEF);
+        new_label();
+        return operand(025016);
+    };
+    n[025016] = [this] {
+        top(1) = cyclic_add(mem(LABELS), PREV_LABEL);
+        return DISPATCH_NEXT;
+    };
+    n[025020] = [this] { // an element label (0142)
+        push((mem(value_) & DESC_MASK) | LABEL_UJ);
+        return DISPATCH_NEXT;
+    };
+    n[025023] = [this] { return switch_end(); };
 }
 
 //
@@ -1215,309 +1184,248 @@ void register_jumps(Machine::Natives &n)
 // 02015 is the head of the innermost block's D-list.
 //
 
-constexpr Word BIT47      = 0'2000'0000'0000'0000; // a descriptor; without it, a link
-constexpr Word BIT46      = 0'1000'0000'0000'0000; // its offset counted down from 02013
-constexpr Word TYPE       = 0'0360'0000'0000'0000;
-constexpr Word OFFSET_CLR = 0'7777'7777'0370'0000; // a descriptor without its offset
-constexpr Word HEAD_KEEP  = 0'7400'0000'7777'7777;
-constexpr Word HEAD_KIND  = 0'1400'0000'0000'0000;
-constexpr Word TEXT_HEAD  = 0'1200'0000'0000'0000;
-constexpr Word DOPE_INIT  = 0'2021'0000'0000'0000; // a dope word not yet set
-constexpr Word DOPE_MASK  = 074007777;
-constexpr Word FRAME_STEP = 010000;
-constexpr Word FRAME_BASE = 0'7777'7777'7377'7777; // added to the frame of a procedure
-constexpr Word MINUS_TWO  = 0'7777'7777'7777'7775;
-constexpr Word LINE_HEAD  = 03300000;  // 0330.n: line n (M7+1226)
-constexpr Word PROC_LABEL = 036400000; // (M7+1231)
-constexpr Word FRAME_REG  = 0100000;   // (M7+1165)
-constexpr Word RETURN_1   = 0440017;   // (M7+752)
-constexpr Word RETURN_2   = 03004020;  // (M7+750)
-
-// a < x on the arithmetic unit without normalization or rounding (NTR 3).
-bool unit_less(Word a, Word x)
+// The descriptor at p gets offset v.
+void Pass4::set_offset(unsigned p, Word v)
 {
-    Arith u(a, RAW);
-    u.sub(x);
-    return u.acc & 0'0020'0000'0000'0000;
-}
-
-// The descriptor at M2 gets offset v.
-void set_offset(Machine &m, Word v)
-{
-    m.store(m.M[2], (m.mem[m.M[2]] & OFFSET_CLR) ^ v);
+    store(p, (mem(p) & OFFSET_CLR) ^ v);
 }
 
 // The next offset of the frame.
-void offset_up(Machine &m)
+void Pass4::offset_up(unsigned p)
 {
-    set_offset(m, m.mem[02014]);
-    m.mem[02014] = cyclic_add(m.mem[02014], 1);
+    set_offset(p, mem(02014));
+    mem(02014) = cyclic_add(mem(02014), 1);
 }
 
 // An offset counted down from 02013.
-void offset_down(Machine &m)
+void Pass4::offset_down(unsigned p)
 {
-    m.mem[02013] = cyclic_add(m.mem[02013], MINUS_TWO);
-    set_offset(m, m.mem[02013]);
+    mem(02013) = cyclic_add(mem(02013), MINUS_TWO);
+    set_offset(p, mem(02013));
 }
 
-// A number counted in M1.
-void number(Machine &m)
+// A number counted in number_.
+void Pass4::number(unsigned p)
 {
-    set_offset(m, m.M[1]);
-    m.set_m(1, m.M[1] + 1);
+    set_offset(p, number_);
+    number_ = (number_ + 1) & 077777;
 }
 
 //
 // An external or 'CODE' name, its ISO text at 06144+mod: the number of its
-// entry in the external table (M3 then in the entry's bits 36–25, the name
-// as TEXT at M3−1400), M3 counting.
+// entry in the external table (ext_text_ then in the entry's bits 36–25,
+// the name as TEXT at ext_text_ − 1400), ext_text_ counting.
 //
-void external_name(Machine &m, unsigned mod)
+void Pass4::external_name(unsigned p, unsigned mod)
 {
-    Word name   = m.mem[(06144 + mod) & 077777];
-    m.mem[HALF] = name;
-    Word text   = 0;
-    unsigned e  = 0;
-    for (;; e += 3) {
-        Word w = m.mem[EXT_NAMES + 1 + e];
+    Word name = mem((06144 + mod) & 077777);
+    half_     = name;
+    Word text = 0;
+    for (unsigned e = 0;; e += 3) {
+        Word w = mem(EXT_NAMES + 1 + e);
         if (!w) {
-            m.acc = name;
-            m.call(ISO_TO_TEXT, 13, 025654);
-            text = m.acc;
+            text = iso_text(name);
             break;
         }
-        if ((w & EXT_COUNT) || m.mem[EXT_NAMES + e] != name)
+        if ((w & EXT_COUNT) || mem(EXT_NAMES + e) != name)
             continue;
-        m.store(EXT_NAMES + 1 + e, (Word(m.M[3]) << 24) | w);
-        m.acc = name;
-        m.call(ISO_TO_TEXT, 13, 025644);
-        Word t      = (m.acc >> 6) | TEXT_HEAD;
-        m.mem[HALF] = t;
-        unsigned k  = 0;
+        store(EXT_NAMES + 1 + e, (Word(ext_text_) << 24) | w);
+        Word t     = (iso_text(name) >> 6) | TEXT_HEAD;
+        half_      = t;
+        unsigned k = 0;
         while (!((Word(077) << k) & t))
             k += 6;
-        m.set_m(13, -k);
         text = (k >= 6 ? Word(012) << (k - 6) : 0) | t;
         break;
     }
-    m.set_m(14, e);
-    m.store((m.M[3] + 076400) & 077777, text);
-    set_offset(m, m.M[3]);
-    m.set_m(3, m.M[3] + 1);
+    store((ext_text_ + 076400) & 077777, text);
+    set_offset(p, ext_text_);
+    ext_text_ = (ext_text_ + 1) & 077777;
 }
 
 //
 // An array (kind 2) with its dope in the frame: the frame grows by the
-// dope of the bounds descriptor at M8 (bits 24–13: its words, bits 12–8: their
-// number, set to DOPE_INIT). Then the walk goes on from those words (M2).
-// False when the descriptor needs no offset.
+// dope of the bounds descriptor (bits 24–13 of the array's: its words,
+// bits 12–8: their number, set to DOPE_INIT). Then the walk goes on from
+// those words (p). False when the descriptor needs no offset.
 //
-bool array_dope(Machine &m)
+bool Pass4::array_dope(unsigned &p)
 {
-    Word d = m.mem[m.M[2]];
+    Word d = mem(p);
     if (!(d & BIT48))
         return true;
-    m.set_m(8, (d >> 20) & 07777);
-    m.store(m.M[2], (d & HEAD_KEEP) | packed_frame(m.mem[02014]));
-    Word bounds = m.mem[m.M[8]];
+    unsigned b = (d >> 20) & 07777;
+    store(p, (d & HEAD_KEEP) | packed_frame(mem(02014)));
+    Word bounds = mem(b);
     Arith u(bounds >> 36, RAW);
-    u.rsub(m.mem[02014]);
+    u.rsub(mem(02014));
     u.add(1);
     Word t = cyclic_add(u.acc, FRAME_STEP) & DOPE_MASK;
-    m.store(m.M[2], (m.mem[m.M[2]] & OFFSET_CLR) | t);
-    Word size    = cyclic_add((bounds >> 24) & 07777, cyclic_add(t, 1)) & DOPE_MASK;
-    m.mem[02014] = size;
-    m.set_logical();
+    store(p, (mem(p) & OFFSET_CLR) | t);
+    Word size  = cyclic_add((bounds >> 24) & 07777, cyclic_add(t, 1)) & DOPE_MASK;
+    mem(02014) = size;
     if (!(size & 076000))
         return false;
     unsigned at = (bounds >> 12) & 07777;
-    m.set_m(2, at);
-    m.set_m(12, (bounds >> 7) & 037);
-    m.mem[02014] = unpacked(m.mem[at]);
+    unsigned n  = (bounds >> 7) & 037;
+    p           = at;
+    mem(02014)  = unpacked(mem(at));
     do {
-        m.store(at++, DOPE_INIT);
-        m.set_m(12, m.M[12] - 1);
-    } while (m.M[12]);
-    m.set_m(14, at);
+        store(at++, DOPE_INIT);
+        n = (n - 1) & 077777;
+    } while (n);
     return true;
 }
 
 //
-// 25525: block entry, the D-list at M2 (up to the word at its head): each
-// descriptor gets its storage offset from 02014 (the frame size), counted
-// up (or down from 02013 for some), or a number counted in M1, or for an
+// 25525: block entry, the D-list at list (up to the word at its head):
+// each descriptor gets its storage offset from 02014 (the frame size),
+// counted up (or down from 02013 for some), or a number, or for an
 // external or 'CODE' name the number of its entry in the external table.
 // A word without bit 47 links to a nested list: it is followed and the
 // place pushed; the inner blocks are entered after the list, each from the
-// current size, the frame growing to the largest. Returns through M13.
+// current size, the frame growing to the largest.
 //
-unsigned block_entry(Machine &m)
+void Pass4::block_entry(unsigned list)
 {
-    m.mem[05777] = 04067;
-    m.mem[05773] = 04047;
-    push(m, m.M[13]);
-    push(m, m.mem[02015]);
-    push(m, m.M[2]);
-    push(m, 0); // the end of the inner blocks
-    Word head    = m.mem[m.M[2]];
-    m.mem[02011] = head & ADDR;
-    m.mem[02012] = 0;
+    mem(05777)    = 04067;
+    mem(05773)    = 04047;
+    Word saved15  = mem(02015);
+    push(0); // the end of the inner blocks
+    Word head     = mem(list);
+    mem(02011)    = head & ADDR;
+    mem(02012)    = 0;
     unsigned kind = (head >> 44) & 3;
-    m.set_m(14, kind);
+    unsigned p    = list;
     switch (kind) {
     case 0: // a procedure: its frame descriptor
         if (head & BIT48) {
-            m.mem[02015] = m.M[2];
-            m.store(m.M[2], packed_frame(m.mem[02014]) ^ head);
-            m.mem[02014] = cyclic_add(m.mem[02014], 1);
+            mem(02015) = p;
+            store(p, packed_frame(mem(02014)) ^ head);
+            mem(02014) = cyclic_add(mem(02014), 1);
         }
         break;
     case 1: { // the body of a procedure: its frame
-        m.mem[02012] = head;
-        Word size    = (m.mem[m.M[2] - 1] & 03700000) >> 14;
-        Word frame   = cyclic_add(m.mem[02014] & ON_STACK, FRAME_BASE);
-        m.mem[02007] = frame;
-        m.mem[02013] = m.mem[02014] = frame ^ size;
-        m.mem[02015]                = m.M[2];
-        set_offset(m, frame);
-        m.store(m.M[2] - 1, m.mem[m.M[2] - 1] & HEAD_KEEP);
-        if (m.mem[m.M[2]] & 0200000)
-            offset_up(m);
+        mem(02012)  = head;
+        Word size   = (mem(p - 1) & 03700000) >> 14;
+        Word frame  = cyclic_add(mem(02014) & ON_STACK, FRAME_BASE);
+        mem(02007)  = frame;
+        mem(02013) = mem(02014) = frame ^ size;
+        mem(02015)              = p;
+        set_offset(p, frame);
+        store(p - 1, mem(p - 1) & HEAD_KEEP);
+        if (mem(p) & 0200000)
+            offset_up(p);
         break;
     }
     default: { // a block, its size in bits 12–1 (kind 3) or 36–25 (kind 2)
         Word x = (kind == 2 ? head >> 24 : head) & 07777;
-        m.store(m.M[2], head & HEAD_KEEP);
-        Word v = m.mem[02014];
-        if (m.mem[m.M[2]] & BIT48) {
-            m.store(m.M[2], m.mem[m.M[2]] ^ (Word(m.M[1]) << 24));
-            m.set_m(1, m.M[1] + 1);
-        } else {
-            m.set_m(14, v);
-            if (v & ADDR)
-                v = cyclic_add(v, MINUS_ONE);
+        store(p, head & HEAD_KEEP);
+        Word v = mem(02014);
+        if (mem(p) & BIT48) {
+            store(p, mem(p) ^ (Word(number_) << 24));
+            number_ = (number_ + 1) & 077777;
+        } else if (v & ADDR) {
+            v = cyclic_add(v, MINUS_ONE);
         }
-        set_offset(m, v);
-        m.mem[02014] = cyclic_add(cyclic_add(v, 2), x);
+        set_offset(p, v);
+        mem(02014) = cyclic_add(cyclic_add(v, 2), x);
         break;
     }
     }
-    m.set_logical();
     for (;;) {
-        m.set_m(2, m.M[2] + 1);
-        while (m.M[2] != m.mem[02011] && !(m.mem[m.M[2]] & BIT47)) {
-            push(m, m.M[2]); // a link: followed
-            m.set_m(2, m.mem[m.M[2]]);
+        p = (p + 1) & 077777;
+        while (p != mem(02011) && !(mem(p) & BIT47)) {
+            push(p); // a link: followed
+            p = mem(p) & 077777;
         }
-        if (m.M[2] == m.mem[02011])
+        if (p == mem(02011))
             break;
-        Word d = m.mem[m.M[2]];
+        Word d = mem(p);
         if (d & BIT46) {
-            offset_down(m);
+            offset_down(p);
             continue;
         }
-        unsigned k = (d >> 35) & 7; // by its kind (bits 38–36)
-        m.set_m(14, k);
-        switch (k) {
+        switch ((d >> 35) & 7) { // its kind
         case 1:
             if (!(d & TYPE)) {
                 if (d & BIT48)
-                    m.store(m.M[2], (d & HEAD_KEEP) ^ ((m.mem[02015] << 24) & WORD_MASK));
-                number(m);
-            } else if (!m.mem[02012]) {
-                offset_up(m);
+                    store(p, (d & HEAD_KEEP) ^ ((mem(02015) << 24) & WORD_MASK));
+                number(p);
+            } else if (!mem(02012)) {
+                offset_up(p);
             } else {
-                offset_down(m);
+                offset_down(p);
             }
             break;
         case 2:
             if (!(d & TYPE))
-                number(m);
-            else if (array_dope(m))
-                offset_up(m);
+                number(p);
+            else if (array_dope(p))
+                offset_up(p);
             break;
         case 4:
         case 5:
             if (!(d & BIT45))
-                number(m);
+                number(p);
             else
-                external_name(m, d & ADDR);
+                external_name(p, d & ADDR);
             break;
         case 6:
             if (!(d & TYPE))
-                number(m);
+                number(p);
             else
-                external_name(m, d & ADDR);
+                external_name(p, d & ADDR);
             break;
         case 7:
-            external_name(m, 0);
+            external_name(p, 0);
             break;
         default:
-            throw std::runtime_error("pass 4: descriptor kind " + std::to_string(k));
+            throw std::runtime_error("pass 4: descriptor kind " + std::to_string((d >> 35) & 7));
         }
-        m.set_logical();
     }
     // The list done: the inner blocks.
-    m.mem[02013] = m.mem[02014];
-    for (Word link = pop(m); (link & ADDR) != 0; link = pop(m)) {
-        m.set_m(2, link);
-        push(m, m.mem[02013]);
-        push(m, m.mem[02014]);
-        m.mem[02014] = m.mem[02013];
-        m.set_m(13, 025700);
-        block_entry(m);
-        Word old = pop(m);
-        if (!unit_less(old, m.mem[02014]))
-            m.mem[02014] = old;
-        m.set_logical();
-        m.mem[02013] = pop(m);
+    mem(02013) = mem(02014);
+    for (Word link = pop(); (link & ADDR) != 0; link = pop()) {
+        push(mem(02013));
+        push(mem(02014));
+        mem(02014) = mem(02013);
+        block_entry(link & ADDR);
+        Word old = pop();
+        if (!unit_less(old, mem(02014)))
+            mem(02014) = old;
+        mem(02013) = pop();
     }
-    m.set_m(2, pop(m));
-    m.mem[02015] = pop(m);
-    m.set_m(13, pop(m));
-    if ((m.mem[m.M[2]] & HEAD_KIND) == BIT45)
-        m.store(m.M[2], m.mem[m.M[2]] ^ packed_frame(m.mem[02014]));
-    return m.M[13];
+    mem(02015) = saved15;
+    if ((mem(list) & HEAD_KIND) == BIT45)
+        store(list, mem(list) ^ packed_frame(mem(02014)));
 }
 
-// 24700: the frame reset to the block of the descriptor at M14 (template
-// 24705, or 24707 for one by a register); then the next item.
-unsigned frame_reset(Machine &m)
+// 24700: the frame reset to the block of descriptor d (template 24705, or
+// 24707 for one by a register); then the next item.
+unsigned Pass4::frame_reset(Word d)
 {
-    Word d = m.mem[m.M[14]];
-    push(m, unpacked(d));
-    unsigned t = (d & BIT48) ? 024707 : 024705;
-    m.vtm(11, t);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
+    push(unpacked(d));
+    emit_template((d & BIT48) ? 024707 : 024705);
+    return DISPATCH_NEXT;
 }
 
 // 24673: a label definition (d<<12 | 060): 0211.n; a label that may be
 // jumped to from an inner block resets the frame.
-unsigned label_item(Machine &m)
+unsigned Pass4::label_item()
 {
-    emit(m, (m.mem[m.M[3]] & DESC_MASK) | LABEL_DEF, 024675);
-    Word d = m.mem[m.M[3]];
+    emit((mem(value_) & DESC_MASK) | LABEL_DEF);
+    Word d = mem(value_);
     if (!(d & BIT48))
         return DISPATCH_NEXT;
-    m.set_m(14, d >> 24);
-    return frame_reset(m);
+    return frame_reset(mem((d >> 24) & 077777));
 }
 
-// 24752: the end of a block (037): the frame of the block outside.
-unsigned block_end(Machine &m)
+// 24746: a line marker (051) or block begin (036): 0330.n when attr = 1.
+unsigned Pass4::line_item()
 {
-    m.set_m(14, m.M[3]);
-    return frame_reset(m);
-}
-
-// 24746: a line marker (051) or block begin (036): 0330.n when M2 = 1.
-unsigned line_item(Machine &m)
-{
-    m.set_m(2, m.M[2] - 1);
-    if (!m.M[2])
-        emit(m, m.M[3] ^ LINE_HEAD, DISPATCH_NEXT);
+    if (attr_ == 1)
+        emit(value_ ^ LINE_HEAD);
     return DISPATCH_NEXT;
 }
 
@@ -1526,50 +1434,47 @@ unsigned line_item(Machine &m)
 // and the number of parameters); 02021 = parameters − 1, 02023 its kind;
 // a procedure with a label inside gets PROC_LABEL with it.
 //
-unsigned procedure_item(Machine &m)
+unsigned Pass4::procedure_item()
 {
-    Word d      = m.mem[m.M[3]];
-    Word before = m.mem[(m.M[3] - 1) & 077777];
+    Word d      = mem(value_);
+    Word before = mem((value_ - 1) & 077777);
     Word params = (d >> 20) & 017;
-    push(m, (d >> 24) & ADDR);
-    push(m, params);
-    m.mem[02021] = cyclic_add(params, MINUS_ONE);
-    push(m, before & ADDR);
-    m.vtm(11, 024726);
-    m.set_m(12, 024720);
-    emit_template(m, 024726);
-    m.mem[02023] = (m.mem[m.M[3]] & 0100000) ^ 0100000;
-    Word label   = (m.mem[(m.M[3] - 1) & 077777] >> 24) & ADDR;
-    if (label)
-        emit(m, label | PROC_LABEL, MAIN_LOOP);
+    push((d >> 24) & ADDR);
+    push(params);
+    mem(02021) = cyclic_add(params, MINUS_ONE);
+    push(before & ADDR);
+    emit_template(024726);
+    mem(02023) = (mem(value_) & 0100000) ^ 0100000;
+    if (Word label = (mem((value_ - 1) & 077777) >> 24) & ADDR)
+        emit(label | PROC_LABEL);
     return MAIN_LOOP;
 }
 
 // 24730: the end of a procedure body (062): the return (RETURN_1,
 // RETURN_2), then 0211 of the label after it or NEW_WORD.
-unsigned procedure_end(Machine &m)
+unsigned Pass4::procedure_end()
 {
-    m.set_m(SP, m.M[SP] - 2);
-    Word d = m.mem[m.M[3]];
+    sp_    = (sp_ - 2) & 077777;
+    Word d = mem(value_);
     if (d & 0200000)
-        emit(m, (d & DESC_MASK) | FRAME_REG, 024734);
-    Word r       = m.mem[m.M[3]] & ON_STACK;
-    m.mem[02021] = r >> 20;
-    emit(m, r | RETURN_1, 024740);
-    emit(m, RETURN_2, 024741);
-    Word label = (m.mem[(m.M[3] - 1) & 077777] >> 24) & ADDR;
-    emit(m, label ? label | LABEL_DEF : NEW_WORD, DISPATCH_NEXT);
+        emit((d & DESC_MASK) | FRAME_REG);
+    Word r     = mem(value_) & ON_STACK;
+    mem(02021) = r >> 20;
+    emit(r | RETURN_1);
+    emit(RETURN_2);
+    Word label = (mem((value_ - 1) & 077777) >> 24) & ADDR;
+    emit(label ? label | LABEL_DEF : NEW_WORD);
     return DISPATCH_NEXT;
 }
 
-void register_blocks(Machine::Natives &n)
+void Pass4::register_blocks()
 {
-    n[024673]      = label_item;
-    n[024711]      = procedure_item;
-    n[024730]      = procedure_end;
-    n[024746]      = line_item;
-    n[024752]      = block_end;
-    n[BLOCK_ENTRY] = block_entry;
+    auto &n   = handlers_;
+    n[024673] = [this] { return label_item(); };
+    n[024711] = [this] { return procedure_item(); };
+    n[024730] = [this] { return procedure_end(); };
+    n[024746] = [this] { return line_item(); };
+    n[024752] = [this] { return frame_reset(mem(value_)); }; // the end of a block (037)
 }
 
 //
@@ -1577,126 +1482,72 @@ void register_blocks(Machine::Natives &n)
 // 0 above it.
 //
 
-constexpr Word INDEX_A     = 062400000; // the half that indexes by A (M7+2300)
-constexpr Word INDEX_REG   = 02400000;  // … by register r<<20 (M7+2266)
-constexpr Word ARRAY_HALF  = 02300000;  // (M7+2241)
-constexpr Word ELEMENT_A   = 02200000;  // (M7+634)
-constexpr Word ELEMENT_REG = 02500000;  // (M7+2243)
-constexpr Word CHECK_REG   = 0440014;   // A/SUBCH's register (M7+562)
-constexpr Word ADDRESS_OP  = 060000000; // (M7+1131)
-constexpr Word DOPE_HALF   = 0420017;   // (M7+674)
-constexpr Word STEP_ONE    = 01000000;  // a loop descriptor: the step is 1 (M7+2445)
-
-// The k-th word from the top of the stack.
-Word &top(Machine &m, unsigned k = 1)
-{
-    return m.mem[(m.M[SP] - k) & 077777];
-}
-
-// 24244: a constant subscript (045).
-unsigned constant_subscript(Machine &m)
-{
-    push(m, m.M[3]);
-    push(m, 0);
-    return DISPATCH_NEXT;
-}
-
-// 24246: subscript + c (030): c, then the expression (A saved if in it).
-unsigned subscript_plus(Machine &m)
-{
-    push(m, m.M[3]);
-    return operand(m, 024250);
-}
-
-unsigned subscript_plus_2(Machine &m)
-{
-    set_acc(m, top(m));
-    if (m.acc)
-        return DISPATCH_NEXT;
-    m.vtm(12, DISPATCH_NEXT);
-    return save_acc(m);
-}
-
 // *0620B: the next subscript: on the stack (1) or loaded through 02011 (3).
-unsigned next_subscript(Machine &m)
+unsigned Pass4::next_subscript()
 {
-    Word x = pop(m);
+    Word x = pop();
     if (!x)
         return 1;
-    push(m, x);
-    emit(m, m.mem[02011], 024350);
-    m.vtm(11, 024360);
-    m.set_m(12, 024351);
-    emit_template(m, 024360);
-    top(m) |= m.mem[02011] & ON_STACK;
+    push(x);
+    emit(mem(02011));
+    emit_template(024360);
+    top(1) |= mem(02011) & ON_STACK;
     return 3;
 }
 
 //
 // 24324 (24327 without a register for a formal: from 02021): the address
-// of an element of the array at M3, M2 subscripts on the stack: 02011 =
-// the half that indexes it. Returns k: 0 all constant (the address on the
-// stack), 1 in a register, 2 in A, 3 in a register and on the stack; M10 =
-// base, M11 = base + k as the original.
+// of an element of the array at value_, attr subscripts on the stack: 02011
+// = the half that indexes it. Returns k: 0 all constant (the address on
+// the stack), 1 in a register, 2 in A, 3 in a register and on the stack.
 //
-unsigned subscript(Machine &m, unsigned base, bool counted)
+unsigned Pass4::subscript(bool counted)
 {
-    m.set_m(10, base);
-    Word r       = m.mem[02021];
-    m.mem[02011] = counted && r ? ((r << 20) & WORD_MASK) | INDEX_REG : INDEX_A;
-    Word d       = m.mem[m.M[3]];
+    Word r     = mem(02021);
+    mem(02011) = counted && r ? ((r << 20) & WORD_MASK) | INDEX_REG : INDEX_A;
+    Word d     = mem(value_);
     unsigned k;
     if (d & BIT48) { // its dope: a constant subscript added to it
-        Word a = cyclic_add(d & DOPE_MASK, top(m, 2)) & DOPE_MASK;
-        top(m, 2) = a;
-        Word x    = pop(m);
-        k         = 0;
+        top(2) = cyclic_add(d & DOPE_MASK, top(2)) & DOPE_MASK;
+        Word x = pop();
+        k      = 0;
         if (x) {
-            push(m, x);
-            m.vtm(11, 024360);
-            m.set_m(12, 024337);
-            emit_template(m, 024360);
+            push(x);
+            emit_template(024360);
             k = 2;
         }
     } else {
-        emit(m, (d & DESC_MASK) | ARRAY_HALF, 024343);
-        k = next_subscript(m);
+        emit((d & DESC_MASK) | ARRAY_HALF);
+        k = next_subscript();
     }
-    for (;;) {
-        m.set_m(2, m.M[2] - 1);
-        if (!m.M[2])
-            break;
-        m.vtm(11, 024360);
-        m.set_m(12, 024343);
-        emit_template(m, 024360);
-        k = next_subscript(m);
+    for (unsigned n = (attr_ - 1) & 077777; n; n--) {
+        emit_template(024360);
+        k = next_subscript();
     }
-    m.set_m(11, base + k);
     return k;
 }
 
 // The element's half (24262…24264) with the address on the stack: by k,
-// 02011 or ELEMENT_REG, or ELEMENT_A (link_a) and then 02011.
-void emit_element(Machine &m, unsigned k, unsigned link_a, unsigned link_b)
+// 02011 or ELEMENT_REG, or ELEMENT_A and then 02011.
+void Pass4::emit_element(unsigned k)
 {
     if (k == 1 || k == 3) {
-        emit(m, (k == 1 ? m.mem[02011] : ELEMENT_REG) | pop(m), link_b);
+        emit((k == 1 ? mem(02011) : ELEMENT_REG) | pop());
         return;
     }
-    emit(m, ELEMENT_A | pop(m), link_a);
-    emit(m, m.mem[02011], link_b);
+    emit(ELEMENT_A | pop());
+    emit(mem(02011));
 }
 
 // 24252: an element read (044): the address, loaded unless constant.
-unsigned element_read(Machine &m)
+unsigned Pass4::element_read()
 {
-    unsigned k = subscript(m, 024253, true);
-    Word a     = pop(m);
+    unsigned k = subscript(true);
+    Word a     = pop();
     if (k == 0)
-        return give(m, a);
-    m.vtm(12, 024015);
-    load_value(m, a);
-    return 024015;
+        return give(a);
+    load_value(a);
+    return result_in_acc();
 }
 
 //
@@ -1704,412 +1555,281 @@ unsigned element_read(Machine &m)
 // (template 24303), then the assignment through a register counted by
 // 02021 (or pushed).
 //
-unsigned element_store(Machine &m)
+unsigned Pass4::element_store()
 {
-    unsigned k = subscript(m, 024261, true);
+    unsigned k = subscript(true);
     if (k == 0)
-        return assign(m, pop(m));
-    emit_element(m, k, 024307, 024266);
-    if (m.mem[TranslatedPass::CHECKFL]) {
-        Word r = m.mem[02021];
-        if (r)
-            emit(m, ((r << 20) & WORD_MASK) | CHECK_REG, 024272);
-        Word d = m.mem[m.M[3]];
-        push(m, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK);
-        m.vtm(11, 024303);
-        m.set_m(12, 024277);
-        emit_template(m, 024303);
+        return assign(pop());
+    emit_element(k);
+    if (ctx_.options.check()) {
+        if (Word r = mem(02021))
+            emit(((r << 20) & WORD_MASK) | CHECK_REG);
+        push(address_of(mem(value_)));
+        emit_template(024303);
     }
-    Word r = m.mem[02021];
+    Word r = mem(02021);
     if (!r)
-        return assign_pushed(m);
-    m.mem[02021] = r - 1;
-    m.set_logical();
-    return assign(m, m.mem[02011] & ON_STACK);
+        return assign_pushed();
+    mem(02021) = r - 1;
+    return assign(mem(02011) & ON_STACK);
 }
 
 // 24311: the address of an element (0103), loaded (ADDRESS_OP).
-unsigned element_address(Machine &m)
+unsigned Pass4::element_address()
 {
-    unsigned k = subscript(m, 024312, false);
-    emit_element(m, k, 024322, 024317);
-    push(m, ADDRESS_OP);
-    m.vtm(12, 024015);
-    return OPERAND_DONE;
+    emit_element(subscript(false));
+    push(ADDRESS_OP);
+    operand_done();
+    return result_in_acc();
 }
 
 //
-// 24616: an array segment (040) of the array at M3: its routine (4021,
+// 24616: an array segment (040) of the array at value_: its routine (4021,
 // 4022 by kind; or for a formal 4131 with the number of its external entry
-// in LINE), then each bound loaded and pushed (M4 = 02017) until 0104.
+// in line_), then each bound loaded and pushed (02017 for A) until 0104.
 //
-unsigned array_segment(Machine &m)
+unsigned Pass4::array_segment()
 {
-    m.mem[HALF] = m.M[3];
-    unsigned e  = 0;
-    unsigned r  = 0;
-    while (Word w = m.mem[EXT_NAMES + 1 + e]) {
+    half_      = value_;
+    unsigned r = 0;
+    for (unsigned e = 0; Word w = mem(EXT_NAMES + 1 + e);) {
         e += 3;
         if (!(w >> 36)) {
-            m.mem[EMIT_LINK] = w >> 24;
+            emit_link_ = w >> 24;
             continue;
         }
-        if ((w >> 36) == m.mem[HALF]) {
-            r           = 04131;
-            m.mem[LINE] = m.mem[EMIT_LINK];
+        if ((w >> 36) == half_) {
+            r     = 04131;
+            line_ = emit_link_;
             break;
         }
     }
-    Word d = m.mem[m.M[3]];
+    Word d = mem(value_);
     if (!r)
         r = (d & BIT48) ? 04022 : 04021;
-    m.set_m(14, r);
-    push(m, r);
-    push(m, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK);
-    push(m, m.M[2]);
-    m.set_logical();
-    return operand(m, 024644);
+    push(r);
+    push(address_of(d));
+    push(attr_);
+    return operand(024644);
 }
 
-unsigned bound(Machine &m)
+// 25400: step register R (attr) by c (0165): UTM c, or for c = 0 template
+// 25410.
+unsigned Pass4::register_step()
 {
-    load(m, 024645);
-    m.vtm(4, 02017);
-    return operand(m, 024644);
-}
-
-// 24646: the bounds end (0104): the routine call (template 24651).
-unsigned bounds_end(Machine &m)
-{
-    top(m) = m.M[2];
-    m.vtm(11, 024651);
-    m.vtm(4, 0);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
-}
-
-// 24655: a block with arrays (0102): DOPE_HALF, then the frame of its
-// descriptor.
-unsigned array_block(Machine &m)
-{
-    emit(m, DOPE_HALF, 024656);
-    emit(m, unpacked(m.mem[m.M[3]]), DISPATCH_NEXT);
-    return DISPATCH_NEXT;
-}
-
-//
-// Items made by pass 3: an element through an index register R (bits
-// 8-12) at offset d (M3).
-//
-
-// d + 02027.
-Word register_offset(const Machine &m)
-{
-    return cyclic_add(m.M[3], m.mem[02027]);
-}
-
-// R<<20 + d.
-Word by_register(const Machine &m)
-{
-    return cyclic_add(Word(m.M[2]) << 20, m.M[3]);
-}
-
-// 25363: 0161: d + 02027.
-unsigned register_item(Machine &m)
-{
-    return give(m, register_offset(m));
-}
-
-// 25365: an element read through R (0163).
-unsigned register_read(Machine &m)
-{
-    return give(m, by_register(m));
-}
-
-// 25375: an element stored through R (0164).
-unsigned register_store(Machine &m)
-{
-    return assign(m, by_register(m));
-}
-
-// 25370: 0160: d + 02027 loaded, the half kept.
-unsigned register_value(Machine &m)
-{
-    push(m, register_offset(m));
-    return operand(m, 025372);
-}
-
-unsigned register_value_2(Machine &m)
-{
-    load(m, 025373);
-    emit(m, pop(m), DISPATCH_NEXT);
-    return DISPATCH_NEXT;
-}
-
-// 25400: step R by c (0165): UTM c, or for c = 0 template 25410.
-unsigned register_step(Machine &m)
-{
-    if (m.M[3]) {
-        emit(m, by_register(m) | ELEMENT_REG, DISPATCH_NEXT);
+    if (value_) {
+        emit(cyclic_add(Word(attr_) << 20, value_) | ELEMENT_REG);
         return DISPATCH_NEXT;
     }
-    push(m, Word(m.M[2]) << 20);
-    push(m, m.M[2] + 020);
-    m.vtm(11, 025410);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
+    push(Word(attr_) << 20);
+    push(attr_ + 020);
+    emit_template(025410);
+    return DISPATCH_NEXT;
 }
 
-// 25412: the preamble of an inner loop (0167): the control variable, the
-// initial value, the step and the until value; template 25441 (or 25447
-// when the step is not 1).
-unsigned preamble(Machine &m)
+// 25416: the preamble of an inner loop (0167) with its control variable,
+// initial value, step and until value on the stack; template 25441 (or
+// 25447 when the step is not 1).
+unsigned Pass4::preamble_4()
 {
-    push(m, m.mem[m.M[3]] & DESC_MASK);
-    return operand(m, 025414);
-}
-
-unsigned preamble_2(Machine &m)
-{
-    return operand(m, 025415);
-}
-
-unsigned preamble_3(Machine &m)
-{
-    return operand(m, 025416);
-}
-
-unsigned preamble_4(Machine &m)
-{
-    unsigned at = (m.M[SP] - 4) & 077777;
-    m.set_m(14, at);
-    Word cv = m.mem[at], init = m.mem[at + 1], step = m.mem[at + 2], until = m.mem[at + 3];
-    Word label = m.mem[LABELS];
+    unsigned at = (sp_ - 4) & 077777;
+    Word cv = mem(at), init = mem(at + 1), step = mem(at + 2), until = mem(at + 3);
+    Word label = mem(LABELS);
     unsigned t = 025441;
-    push(m, cyclic_add(label, 2));
-    if (!(m.mem[m.mem[02031] & 077777] & STEP_ONE)) {
+    push(cyclic_add(label, 2));
+    if (!(loop_descriptor() & STEP_ONE)) {
         t = 025447;
-        push(m, step);
+        push(step);
     }
     for (Word w : { until, cv, label, step, cv, cyclic_add(label, 1), label, init })
-        push(m, w);
-    m.vtm(11, t);
-    m.set_m(12, 025432);
-    emit_template(m, t);
-    m.set_m(SP, m.M[SP] - 4);
+        push(w);
+    emit_template(t);
+    sp_ = (sp_ - 4) & 077777;
     return DISPATCH_NEXT;
 }
 
 // 25433: the end of a preamble (0166): template 25455 with the count of
-// registers in M2.
-unsigned preamble_end(Machine &m)
+// registers (attr).
+unsigned Pass4::preamble_end()
 {
-    Word label = m.mem[LABELS];
-    push(m, cyclic_add(label, 1));
-    Arith u(m.M[2], RAW);
+    Word label = mem(LABELS);
+    push(cyclic_add(label, 1));
+    Arith u(attr_, RAW);
     u.rsub(1);
-    m.set_logical();
-    push(m, u.acc & 07777);
-    push(m, cyclic_add(label, 2));
-    m.vtm(11, 025455);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
+    push(u.acc & 07777);
+    push(cyclic_add(label, 2));
+    emit_template(025455);
+    return DISPATCH_NEXT;
 }
 
 // 25460: load a register with the address of an element (0162): the
 // element item read here; then 02021 = 1.
-unsigned register_load(Machine &m)
+unsigned Pass4::register_load()
 {
-    m.call(READ, 13, 025461);
-    m.mem[02021] = (m.acc >> 7) & 037;
-    unsigned k   = subscript(m, 025463, true);
-    emit_element(m, k, 025473, 025470);
-    m.mem[02021] = 1;
+    mem(02021) = (read() >> 7) & 037;
+    emit_element(subscript(true));
+    mem(02021) = 1;
     return DISPATCH_NEXT;
 }
 
-// 25475: a FOR loop with registers (from 25134, the loop descriptor in A):
-// its control variable, the next item, the elements; template 25522 (or
-// 25516 with bit 0100000).
-unsigned register_loop(Machine &m)
+// Push the words at offsets (from the top on entry), template t, drop n.
+unsigned Pass4::loop_template(std::initializer_list<unsigned> offsets, unsigned t, unsigned n)
 {
-    if (m.acc & 0100000)
-        return operand(m, 025477);
-    return operand(m, 025507);
-}
-
-unsigned register_loop_2(Machine &m)
-{
-    m.call(READ, 13, 025500);
-    return operand(m, 025501);
-}
-
-// Push the words at offsets (from the top on entry), run template t, drop n.
-unsigned loop_template(Machine &m, std::initializer_list<unsigned> offsets, unsigned t,
-                       unsigned link, unsigned n)
-{
-    unsigned s = m.M[SP];
+    unsigned s = sp_;
     for (unsigned k : offsets)
-        push(m, m.mem[(s - k) & 077777]);
-    m.vtm(11, t);
-    m.set_m(12, link);
-    emit_template(m, t);
-    m.set_m(SP, m.M[SP] - n);
+        push(mem((s - k) & 077777));
+    emit_template(t);
+    sp_ = (sp_ - n) & 077777;
     return DISPATCH_NEXT;
 }
 
-unsigned register_loop_3(Machine &m)
+void Pass4::register_arrays()
 {
-    return loop_template(m, { 12, 11, 1, 2 }, 025522, 025505, 2);
-}
-
-unsigned register_loop_4(Machine &m)
-{
-    return operand(m, 025510);
-}
-
-unsigned register_loop_5(Machine &m)
-{
-    return operand(m, 025511);
-}
-
-unsigned register_loop_6(Machine &m)
-{
-    return loop_template(m, { 13, 12, 2, 1, 3 }, 025516, 025515, 3);
-}
-
-void register_arrays(Machine::Natives &n)
-{
-    n[024244] = constant_subscript;
-    n[024246] = subscript_plus;
-    n[024250] = subscript_plus_2;
-    n[024252] = element_read;
-    n[024260] = element_store;
-    n[024311] = element_address;
-    n[024616] = array_segment;
-    n[024644] = bound;
-    n[024646] = bounds_end;
-    n[024655] = array_block;
-    n[025363] = register_item;
-    n[025365] = register_read;
-    n[025370] = register_value;
-    n[025372] = register_value_2;
-    n[025375] = register_store;
-    n[025400] = register_step;
-    n[025412] = preamble;
-    n[025414] = preamble_2;
-    n[025415] = preamble_3;
-    n[025416] = preamble_4;
-    n[025433] = preamble_end;
-    n[025460] = register_load;
-    n[025475] = register_loop;
-    n[025477] = register_loop_2;
-    n[025501] = register_loop_3;
-    n[025507] = register_loop_4;
-    n[025510] = register_loop_5;
-    n[025511] = register_loop_6;
+    auto &n   = handlers_;
+    n[024244] = [this] { // a constant subscript (045)
+        push(value_);
+        push(0);
+        return DISPATCH_NEXT;
+    };
+    n[024246] = [this] { // subscript + c (030): c, then the expression
+        push(value_);
+        return operand(024250);
+    };
+    n[024250] = [this] {
+        if (!top(1))
+            save_acc();
+        return DISPATCH_NEXT;
+    };
+    n[024252] = [this] { return element_read(); };
+    n[024260] = [this] { return element_store(); };
+    n[024311] = [this] { return element_address(); };
+    n[024616] = [this] { return array_segment(); };
+    n[024644] = [this] { // a bound
+        operand_done();
+        acc_cell_ = 02017;
+        return operand(024644);
+    };
+    n[024646] = [this] { // the bounds end (0104): the call (template 24651)
+        top(1)    = attr_;
+        acc_cell_ = 0;
+        emit_template(024651);
+        return DISPATCH_NEXT;
+    };
+    n[024655] = [this] { // a block with arrays (0102): its frame
+        emit(DOPE_HALF);
+        emit(unpacked(mem(value_)));
+        return DISPATCH_NEXT;
+    };
+    // Items made by pass 3: an element through index register R (attr) at
+    // offset d (value).
+    n[025363] = [this] { return give(cyclic_add(value_, mem(02027))); }; // 0161
+    n[025365] = [this] { return give(cyclic_add(Word(attr_) << 20, value_)); }; // 0163
+    n[025370] = [this] { // 0160: d + 02027 loaded, the half kept
+        push(cyclic_add(value_, mem(02027)));
+        return operand(025372);
+    };
+    n[025372] = [this] {
+        operand_done();
+        emit(pop());
+        return DISPATCH_NEXT;
+    };
+    n[025375] = [this] { return assign(cyclic_add(Word(attr_) << 20, value_)); }; // 0164
+    n[025400] = [this] { return register_step(); };
+    n[025412] = [this] {
+        push(mem(value_) & DESC_MASK);
+        return operand(025414);
+    };
+    n[025414] = [this] { return operand(025415); };
+    n[025415] = [this] { return operand(025416); };
+    n[025416] = [this] { return preamble_4(); };
+    n[025433] = [this] { return preamble_end(); };
+    n[025460] = [this] { return register_load(); };
+    // 25475: a FOR loop with registers: its control variable, the next item,
+    // the elements; template 25522 (or 25516 with bit 0100000).
+    n[025477] = [this] {
+        read();
+        return operand(025501);
+    };
+    n[025501] = [this] { return loop_template({ 12, 11, 1, 2 }, 025522, 2); };
+    n[025507] = [this] { return operand(025510); };
+    n[025510] = [this] { return operand(025511); };
+    n[025511] = [this] { return loop_template({ 13, 12, 2, 1, 3 }, 025516, 3); };
 }
 
 //
 // FOR loops. 055 reserves 10 stack words for the loop (S−10 … S−1 below,
-// top(m, k) while the stack is at S): S−10 L, S−9 L+1, S−8 L+2 its labels;
+// top(k) while the stack is at S): S−10 L, S−9 L+1, S−8 L+2 its labels;
 // S−7 the control variable's address, S−6 the loop descriptor's word, S−5
 // the control variable (032/0141), S−4 the step, S−3 a constant step, S−2
 // the jump to the body after the elements, S−1 the kind of the element.
 // 02031 = the loop descriptor; with registers (bits 0300000 of it, from
 // pass 3) the elements go to 25475.
 //
-constexpr unsigned REGISTER_LOOP = 025475;
-constexpr Word BY_REGISTERS      = 0300000;  // (M7+2443)
-constexpr Word UJ_BACK           = 057700000; // (M7+1376)
-
-unsigned step_in_acc(Machine &m);
-
-// The loop descriptor of 02031.
-Word loop_descriptor(const Machine &m)
-{
-    return m.mem[m.mem[02031] & 077777];
-}
 
 // 25042: FOR (055).
-unsigned for_item(Machine &m)
+unsigned Pass4::for_item()
 {
-    m.set_m(SP, m.M[SP] + 012);
-    m.mem[02031] = m.M[3];
-    Word label   = m.mem[LABELS];
-    top(m, 10)   = label;
-    top(m, 9)    = cyclic_add(label, 1);
-    top(m, 8)    = cyclic_add(label, 2);
-    m.mem[LABELS] = cyclic_add(label, 3);
-    top(m, 2)     = 0;
-    Word d        = m.mem[m.M[3]];
-    top(m, 6)     = (d >> 24) & ADDR;
-    top(m, 7)     = d & DESC_MASK;
-    m.mem[02027]  = cyclic_add(top(m, 7), 2);
+    sp_         = (sp_ + 012) & 077777;
+    mem(02031)  = value_;
+    Word label  = mem(LABELS);
+    top(10)     = label;
+    top(9)      = cyclic_add(label, 1);
+    top(8)      = cyclic_add(label, 2);
+    mem(LABELS) = cyclic_add(label, 3);
+    top(2)      = 0;
+    Word d      = mem(value_);
+    top(6)      = (d >> 24) & ADDR;
+    top(7)      = d & DESC_MASK;
+    mem(02027)  = cyclic_add(top(7), 2);
     if (d & 0400000) {
-        m.mem[02030] = m.mem[02021];
-        m.mem[02021] = 1;
+        mem(02030) = mem(02021);
+        mem(02021) = 1;
     }
-    return DISPATCH_NEXT;
-}
-
-// 25062, 25064: the control variable, simple (032) or by name (0141).
-unsigned control_variable(Machine &m, bool by_name)
-{
-    top(m, 5) = (m.mem[m.M[3]] & DESC_MASK) | (by_name ? BIT48 : 0);
-    return DISPATCH_NEXT;
-}
-
-// 25067: a by-name element (0135).
-unsigned by_name_element(Machine &m)
-{
-    if (!(m.mem[m.M[3]] & BIT48))
-        return give_none(m);
     return DISPATCH_NEXT;
 }
 
 // 25075: the half with label L+1, then (unless the descriptor word is 0)
 // 0211 of it; on to the main loop.
-unsigned for_jump(Machine &m, Word half)
+unsigned Pass4::for_jump(Word half)
 {
-    emit(m, half | top(m, 9), 025076);
-    if (Word w = top(m, 6))
-        emit(m, w | LABEL_DEF, MAIN_LOOP);
+    emit(half | top(9));
+    if (Word w = top(6))
+        emit(w | LABEL_DEF);
     return MAIN_LOOP;
 }
 
 // 25071: DO (033): the jump to the body (S−2, U1A or UJ).
-unsigned do_item(Machine &m)
+unsigned Pass4::do_item()
 {
-    if (loop_descriptor(m) & BY_REGISTERS)
+    if (loop_descriptor() & BY_REGISTERS)
         return MAIN_LOOP;
-    if (Word j = top(m, 2))
-        return for_jump(m, j ^ 0100000);
-    if (!top(m, 6))
+    if (Word j = top(2))
+        return for_jump(j ^ 0100000);
+    if (!top(6))
         return MAIN_LOOP;
-    return for_jump(m, LABEL_UJ);
+    return for_jump(LABEL_UJ);
 }
 
 // 25103: the end of a FOR (052): UJ back to L (or by the step), 0211 of
 // L+1; the frame dropped, 02004 = L.
-unsigned for_end(Machine &m)
+unsigned Pass4::for_end()
 {
-    m.set_m(SP, m.M[SP] - 2);
-    if (m.mem[m.M[3]] & BY_REGISTERS) {
-        emit(m, top(m, 10) | UJ_BACK, 025110);
+    sp_ = (sp_ - 2) & 077777;
+    if (mem(value_) & BY_REGISTERS) {
+        emit(top(10) | UJ_BACK);
     } else {
-        Word target = top(m, 10);
-        if (top(m, 6)) {
-            emit(m, top(m, 7) | ARRAY_HALF, 025124);
+        Word target = top(10);
+        if (top(6)) {
+            emit(top(7) | ARRAY_HALF);
             target = 0;
         }
-        emit(m, target | LABEL_UJ, 025110);
+        emit(target | LABEL_UJ);
     }
-    emit(m, LABEL_DEF | top(m, 9), 025112);
-    m.mem[LABELS] = top(m, 10);
-    m.set_m(SP, m.M[SP] - 10);
-    if (m.mem[m.M[3]] & 0400000)
-        m.mem[02021] = m.mem[02030];
+    emit(LABEL_DEF | top(9));
+    mem(LABELS) = top(10);
+    sp_         = (sp_ - 10) & 077777;
+    if (mem(value_) & 0400000)
+        mem(02021) = mem(02030);
     return DISPATCH_NEXT;
 }
 
@@ -2117,205 +1837,189 @@ unsigned for_end(Machine &m)
 // 25132: an element of kind k: 0 STEP-UNTIL integer (034), 1 real (0140),
 // 2 integer constant step (0137), 3 WHILE (035), 4 plain (056). The jump
 // of the element before (S−2), the address (template 25174) and 0211 L
-// for the first; then the value, and its continuation from the table at
-// 25151.
+// for the first; then the value, and its continuation by kind from the
+// table at 25151.
 //
-unsigned element_item(Machine &m, unsigned k)
+unsigned Pass4::element_item(unsigned k)
 {
-    m.set_m(14, k);
-    top(m, 1) = k;
-    Word d    = loop_descriptor(m);
-    if (d & BY_REGISTERS) {
-        set_acc(m, d & BY_REGISTERS);
-        return REGISTER_LOOP;
+    top(1)       = k;
+    Word regs    = loop_descriptor() & BY_REGISTERS;
+    if (regs) // 25475: the control variable, then the elements
+        return operand((regs & 0100000) ? 025477 : 025507);
+    if (Word j = top(2))
+        emit(j | top(6));
+    if (top(6)) {
+        Word a = top(7), label = top(10);
+        push(a);
+        push(label);
+        emit_template(025174);
     }
-    if (Word j = top(m, 2))
-        emit(m, j | top(m, 6), 025137);
-    if (top(m, 6)) {
-        Word a = top(m, 7), label = top(m, 10);
-        push(m, a);
-        push(m, label);
-        m.vtm(11, 025174);
-        m.set_m(12, 025143);
-        emit_template(m, 025174);
-    }
-    if (top(m, 1) == 3)
-        emit(m, top(m, 10) | LABEL_DEF, 025146);
-    return operand(m, 025147);
-}
-
-unsigned element_value(Machine &m)
-{
-    m.vtm(12, m.mem[(025151 + top(m, 2)) & 077777]);
-    return OPERAND_DONE;
+    if (top(1) == 3)
+        emit(top(10) | LABEL_DEF);
+    return operand(025147);
 }
 
 // The value stored into the control variable (template 25760).
-void store_control(Machine &m, unsigned link)
+void Pass4::store_control()
 {
-    push(m, top(m, 5));
-    m.vtm(11, 025760);
-    m.set_m(12, link);
-    emit_template(m, 025760);
-}
-
-// 25156: WHILE: stored; the condition, U1A next.
-unsigned while_value(Machine &m)
-{
-    store_control(m, 025160);
-    top(m, 2) = LABEL_U1A2;
-    return operand(m, 025162);
-}
-
-unsigned while_condition(Machine &m)
-{
-    m.vtm(12, DISPATCH_NEXT);
-    return OPERAND_DONE;
+    push(top(5));
+    emit_template(025760);
 }
 
 // 25163: a plain element: stored, UJ to the body, 0211 of L.
-unsigned plain_value(Machine &m)
+unsigned Pass4::plain_value()
 {
-    store_control(m, 025165);
-    Word w = top(m, 6);
+    store_control();
+    Word w = top(6);
     if (!w) {
-        top(m, 9) = top(m, 10);
+        top(9) = top(10);
         return DISPATCH_NEXT;
     }
-    emit(m, w | LABEL_UJ, 025167);
-    top(m, 2) = 0;
-    emit(m, top(m, 10) | LABEL_DEF, DISPATCH_NEXT);
+    emit(w | LABEL_UJ);
+    top(2) = 0;
+    emit(top(10) | LABEL_DEF);
     return DISPATCH_NEXT;
 }
 
-// 25206: template t with M5 = the kind, returning to 25210 + kind.
-unsigned by_kind(Machine &m, unsigned t, Word kind)
+// 25206: template t, going on by kind at 25210 + kind.
+unsigned Pass4::by_kind(unsigned t, Word kind)
 {
-    m.vtm(11, t);
-    m.set_m(5, kind);
-    m.vtm(12, 025210 + m.M[5]);
-    m.acc = kind;
-    return TEMPLATE;
+    count_ = kind & 077777;
+    emit_template(t);
+    return 025210 + count_;
 }
 
-// 25176: STEP-UNTIL: the initial value stored (template 25235), then the
-// step: a constant one (023, M2 = 0) is kept in S−3; in A: 25247.
-unsigned step_value(Machine &m)
+// 25200: STEP-UNTIL: the initial value stored (template 25235), then the
+// step: a constant one (023, attr 0) is kept in S−3; in A: 25247.
+unsigned Pass4::step_operand()
 {
-    top(m, 3) = 0;
-    return operand(m, 025200);
-}
-
-unsigned step_operand(Machine &m)
-{
-    Word d = pop(m);
+    Word d = pop();
     if (!d)
-        return step_in_acc(m);
-    top(m, 4) = d;
-    m.set_m(1, m.M[1] - 023);
-    if (!m.M[1] && !m.M[2])
-        top(m, 3) = d;
-    Word l0 = top(m, 10), l1 = top(m, 9), kind = top(m, 1);
-    push(m, d);
-    push(m, l0);
-    push(m, l1);
-    return by_kind(m, 025235, kind);
+        return step_in_acc();
+    top(4) = d;
+    code_  = (code_ - 023) & 077777;
+    if (!code_ && !attr_)
+        top(3) = d;
+    Word l0 = top(10), l1 = top(9), kind = top(1);
+    push(d);
+    push(l0);
+    push(l1);
+    return by_kind(025235, kind);
 }
 
-// 25210…25212 by kind: the increment (templates 25243, 25237, 25241),
-// then the until value: compared (template 26020, or 26017 when in A),
-// and for a step not constant the sign test (template 25227); U1A to the
-// body.
-unsigned increment(Machine &m, unsigned t)
+// 25222: for a step not constant the sign test (template 25227); U1A to
+// the body.
+unsigned Pass4::until_test()
 {
-    loop_template(m, { 5, 9, 5 }, t, 025216, 0);
-    return operand(m, 025217);
-}
-
-unsigned until_test(Machine &m)
-{
-    if (!top(m, 3)) {
-        push(m, top(m, 4));
-        m.vtm(11, 025227);
-        m.set_m(12, 025225);
-        emit_template(m, 025227);
+    if (!top(3)) {
+        push(top(4));
+        emit_template(025227);
     }
-    top(m, 2) = LABEL_U1A;
+    top(2) = LABEL_U1A;
     return DISPATCH_NEXT;
 }
 
-unsigned until_value(Machine &m)
+// 25217: the until value: compared (template 26020, or 26017 when in A).
+unsigned Pass4::until_value()
 {
-    Word d = pop(m);
+    Word d = pop();
     if (!d)
-        return operand(m, 025231);
-    push(m, d);
-    m.vtm(11, 026020);
-    m.set_m(12, 025222);
-    emit_template(m, 026020);
-    return until_test(m);
-}
-
-unsigned until_in_acc(Machine &m)
-{
-    load(m, 025232);
-    push(m, top(m, 5));
-    m.vtm(11, 026017);
-    m.vtm(12, 025222);
-    return TEMPLATE;
+        return operand(025231);
+    push(d);
+    emit_template(026020);
+    return until_test();
 }
 
 // 25247: a step in A: kept in a temporary (template 25265, the until
 // after it), then by kind with template 25270.
-unsigned step_in_acc(Machine &m)
+unsigned Pass4::step_in_acc()
 {
-    Word temp = cyclic_add(top(m, 7) & DESC_MASK, 1);
-    Word l0 = top(m, 10), l1 = top(m, 9), cv = top(m, 5);
+    Word temp = cyclic_add(top(7) & DESC_MASK, 1);
+    Word l0 = top(10), l1 = top(9), cv = top(5);
     for (Word w : { l0, temp, l1, cv })
-        push(m, w);
-    m.vtm(11, 025265);
-    m.set_m(12, 025254);
-    emit_template(m, 025265);
-    return operand(m, 025255);
+        push(w);
+    emit_template(025265);
+    return operand(025255);
 }
 
-unsigned step_in_acc_2(Machine &m)
+unsigned Pass4::step_in_acc_2()
 {
-    load(m, 025256);
-    Word temp = cyclic_add(top(m, 7) & DESC_MASK, 1);
-    Word l1 = top(m, 9), l2 = top(m, 8), cv = top(m, 5), kind = top(m, 1);
-    top(m, 4) = ON_STACK;
+    operand_done();
+    Word temp = cyclic_add(top(7) & DESC_MASK, 1);
+    Word l1 = top(9), l2 = top(8), cv = top(5), kind = top(1);
+    top(4)    = ON_STACK;
     for (Word w : { l2, l1, cv, temp, l2, l1, temp })
-        push(m, w);
-    return by_kind(m, 025270, kind);
+        push(w);
+    return by_kind(025270, kind);
 }
 
-void register_loops(Machine::Natives &n)
+void Pass4::register_loops()
 {
-    n[025042] = for_item;
-    n[025062] = [](Machine &m) { return control_variable(m, false); };
-    n[025064] = [](Machine &m) { return control_variable(m, true); };
-    n[025067] = by_name_element;
-    n[025071] = do_item;
-    n[025103] = for_end;
-    n[025125] = [](Machine &m) { return element_item(m, 1); };
-    n[025126] = [](Machine &m) { return element_item(m, 0); };
-    n[025127] = [](Machine &m) { return element_item(m, 2); };
-    n[025130] = [](Machine &m) { return element_item(m, 4); };
-    n[025131] = [](Machine &m) { return element_item(m, 3); };
-    n[025147] = element_value;
-    n[025156] = while_value;
-    n[025162] = while_condition;
-    n[025163] = plain_value;
-    n[025176] = step_value;
-    n[025200] = step_operand;
-    n[025210] = [](Machine &m) { return increment(m, 025243); };
-    n[025211] = [](Machine &m) { return increment(m, 025237); };
-    n[025212] = [](Machine &m) { return increment(m, 025241); };
-    n[025217] = until_value;
-    n[025222] = until_test;
-    n[025231] = until_in_acc;
-    n[025255] = step_in_acc_2;
+    auto &n   = handlers_;
+    n[025042] = [this] { return for_item(); };
+    n[025062] = [this] { // the control variable, simple (032)
+        top(5) = mem(value_) & DESC_MASK;
+        return DISPATCH_NEXT;
+    };
+    n[025064] = [this] { // … or by name (0141)
+        top(5) = (mem(value_) & DESC_MASK) | BIT48;
+        return DISPATCH_NEXT;
+    };
+    n[025067] = [this] { // a by-name element (0135)
+        if (!(mem(value_) & BIT48))
+            return give_none();
+        return DISPATCH_NEXT;
+    };
+    n[025071] = [this] { return do_item(); };
+    n[025103] = [this] { return for_end(); };
+    n[025125] = [this] { return element_item(1); };
+    n[025126] = [this] { return element_item(0); };
+    n[025127] = [this] { return element_item(2); };
+    n[025130] = [this] { return element_item(4); };
+    n[025131] = [this] { return element_item(3); };
+    n[025147] = [this] { // the element's value: on by its kind
+        unsigned next = image(BY_KIND + top(2)) & 077777;
+        operand_done();
+        return next;
+    };
+    n[025156] = [this] { // WHILE: stored; the condition, U1A next
+        store_control();
+        top(2) = LABEL_U1A2;
+        return operand(025162);
+    };
+    n[025162] = [this] {
+        operand_done();
+        return DISPATCH_NEXT;
+    };
+    n[025163] = [this] { return plain_value(); };
+    n[025176] = [this] { // STEP-UNTIL
+        top(3) = 0;
+        return operand(025200);
+    };
+    n[025200] = [this] { return step_operand(); };
+    // 25210…25212 by kind: the increment (templates 25243, 25237, 25241),
+    // then the until value.
+    n[025210] = [this] {
+        loop_template({ 5, 9, 5 }, 025243, 0);
+        return operand(025217);
+    };
+    n[025211] = [this] {
+        loop_template({ 5, 9, 5 }, 025237, 0);
+        return operand(025217);
+    };
+    n[025212] = [this] {
+        loop_template({ 5, 9, 5 }, 025241, 0);
+        return operand(025217);
+    };
+    n[025217] = [this] { return until_value(); };
+    n[025222] = [this] { return until_test(); };
+    n[025231] = [this] {
+        operand_done();
+        push(top(5));
+        emit_template(026017);
+        return until_test();
+    };
+    n[025255] = [this] { return step_in_acc_2(); };
 }
 
 //
@@ -2323,440 +2027,309 @@ void register_loops(Machine::Natives &n)
 // code: after a thunk, the place its jump around goes.
 //
 
-constexpr Word VALUE_START = 056400000; // (M7+742)
-constexpr Word CODE_RESULT = 0420014;   // (M7+1023)
-constexpr Word RESULT_SIZE = 076410000; // (M7+1056)
-
 // 24372: define the pending label, if any.
-void pending_label(Machine &m, unsigned link)
+void Pass4::pending_label()
 {
-    m.set_m(12, link);
-    Word label = m.mem[02017];
-    set_acc(m, 0);
-    if (!label)
-        return;
-    emit(m, label | LABEL_DEF, 024374);
-    m.mem[LABELS] = label;
-    m.mem[02017]  = 0;
-    set_acc(m, 0);
-}
-
-// 24361: a call with parameters starts (0110): the frame of the arguments
-// (template 24366, or 24370 with A saved).
-unsigned call_start(Machine &m)
-{
-    m.vtm(11, 024366);
-    if (m.M[4]) {
-        m.mem[m.M[4]] = ON_STACK;
-        m.vtm(4, 0);
-        m.vtm(11, 024370);
+    if (Word label = mem(02017)) {
+        emit(label | LABEL_DEF);
+        mem(LABELS) = label;
+        mem(02017)  = 0;
     }
-    m.mem[02017] = 0;
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
 }
 
-// 24407: the call of the procedure d: template M11, or 24420 for one on
-// the stack; the result in A.
-unsigned call_tail(Machine &m, Word d)
+// 24407: the call of the procedure d: template t, or 24420 for one on the
+// stack; the result in A.
+unsigned Pass4::call_tail(unsigned t, Word d)
 {
-    push(m, d);
-    m.vtm(12, 024015);
-    if (d & ON_STACK)
-        m.vtm(11, 024420);
-    return TEMPLATE;
-}
-
-// 24377: a standard function with an expression argument (n<<12 | 057):
-// routine 2n (template 24402).
-unsigned std_expression(Machine &m)
-{
-    m.vtm(11, 024402);
-    pending_label(m, 024400);
-    m.set_m(3, 2 * m.M[3]);
-    return call_tail(m, m.M[3]);
-}
-
-// 24405: the call of a procedure with parameters (020), template 24416.
-unsigned call_item_params(Machine &m)
-{
-    m.vtm(11, 024416);
-    pending_label(m, 024406);
-    return call_tail(m, m.mem[m.M[3]] & DESC_MASK);
-}
-
-// 24412: the call of a procedure without parameters (021), template 24414.
-unsigned call_item_plain(Machine &m)
-{
-    m.set_m(12, 024413);
-    save_acc(m);
-    m.vtm(11, 024414);
-    return call_tail(m, m.mem[m.M[3]] & DESC_MASK);
+    push(d);
+    return apply_template((d & ON_STACK) ? 024420 : t);
 }
 
 // 24426: an argument a, template t.
-unsigned argument(Machine &m, unsigned t, Word a)
+unsigned Pass4::argument(unsigned t, Word a)
 {
-    m.vtm(11, t);
-    push(m, a);
-    pending_label(m, 024427);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
-}
-
-// 24434: an array argument (0115), its address by its descriptor.
-unsigned array_argument(Machine &m)
-{
-    Word d = m.mem[m.M[3]];
-    return argument(m, 024472, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK);
-}
-
-// 24440: a procedure argument (0113), with the register count 02021.
-unsigned procedure_argument(Machine &m)
-{
-    Word a = ((m.mem[02021] << 20) & WORD_MASK) | (m.mem[m.M[3]] & ADDR);
-    return argument(m, 024474, a);
-}
-
-// 24444: an expression argument (0120): its value (template 24476).
-unsigned expression_argument(Machine &m)
-{
-    pending_label(m, 024445);
-    m.vtm(4, 02017);
-    return operand(m, 024446);
-}
-
-unsigned expression_argument_2(Machine &m)
-{
-    load(m, 024447);
-    m.vtm(11, 024476);
-    m.mem[02017] = 0;
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
+    push(a);
+    pending_label();
+    emit_template(t);
+    return DISPATCH_NEXT;
 }
 
 // 24452: a thunk starts (0117): the argument (template 24464) and a jump
 // around the thunk's code to a new label, pushed.
-unsigned thunk_start(Machine &m)
+unsigned Pass4::thunk_start()
 {
-    pending_label(m, 024453);
-    m.vtm(11, 024464);
-    push(m, ((m.mem[02021] << 20) & WORD_MASK) | m.mem[LABELS]);
-    m.set_m(12, 024456);
-    emit_template(m, 024464);
-    push(m, new_label(m));
+    pending_label();
+    push(((mem(02021) << 20) & WORD_MASK) | mem(LABELS));
+    emit_template(024464);
+    push(new_label());
     return MAIN_LOOP;
-}
-
-// 24461: a thunk ends (0116): its return (RETURN_2); its label pending.
-unsigned thunk_end(Machine &m)
-{
-    m.set_m(SP, m.M[SP] - 2);
-    m.mem[02017] = pop(m);
-    emit(m, RETURN_2, DISPATCH_NEXT);
-    return DISPATCH_NEXT;
-}
-
-// 24755: a jump around procedure bodies (0146): UJ to a new label, pushed
-// twice.
-unsigned bodies_start(Machine &m)
-{
-    Word label = new_label(m);
-    push(m, label);
-    push(m, label);
-    m.vtm(11, 024671);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
-}
-
-// 24761: its target (0145): the label defined.
-unsigned bodies_end(Machine &m)
-{
-    m.mem[LABELS] = top(m);
-    m.vtm(11, 026051);
-    m.vtm(12, DISPATCH_NEXT);
-    return TEMPLATE;
-}
-
-// 24764, 25005: VALUE ends (0155), starts (0127): for a procedure with
-// value parameters (02023 = 0) the half with 02004.
-unsigned value_mark(Machine &m, Word half)
-{
-    if (!m.mem[02023])
-        emit(m, half | m.mem[LABELS], DISPATCH_NEXT);
-    return DISPATCH_NEXT;
 }
 
 // 24767, 24776: a value parameter (061), a real one (0154): its descriptor
 // marked; the copy (template 25002, 24777) unless 02023 ≠ 0.
-unsigned value_parameter(Machine &m, unsigned t)
+unsigned Pass4::value_parameter(unsigned t)
 {
-    m.vtm(11, t);
-    Word d = cyclic_add(m.mem[m.M[3]], 1);
-    m.store(m.M[3], d);
-    push(m, d & DESC_MASK);
-    push(m, cyclic_add(d & DESC_MASK, MINUS_ONE));
-    m.vtm(12, DISPATCH_NEXT);
-    if (!m.mem[02023])
-        return TEMPLATE;
-    m.set_m(SP, m.M[SP] - 2);
+    Word d = cyclic_add(mem(value_), 1);
+    store(value_, d);
+    push(d & DESC_MASK);
+    push(cyclic_add(d & DESC_MASK, MINUS_ONE));
+    if (!mem(02023))
+        emit_template(t);
+    else
+        sp_ = (sp_ - 2) & 077777;
     return DISPATCH_NEXT;
-}
-
-void register_procedures(Machine::Natives &n)
-{
-    n[024361] = call_start;
-    n[024377] = std_expression;
-    n[024405] = call_item_params;
-    n[024412] = call_item_plain;
-    n[024423] = [](Machine &m) { return argument(m, 024500, constant_address(m)); };
-    n[024424] = [](Machine &m) { return argument(m, 024466, constant_address(m)); };
-    n[024430] = [](Machine &m) { return argument(m, 024470, m.mem[m.M[3]] & DESC_MASK); };
-    n[024432] = [](Machine &m) { return argument(m, 024472, m.mem[m.M[3]] & DESC_MASK); };
-    n[024434] = array_argument;
-    n[024440] = procedure_argument;
-    n[024444] = expression_argument;
-    n[024446] = expression_argument_2;
-    n[024452] = thunk_start;
-    n[024461] = thunk_end;
-    n[024755] = bodies_start;
-    n[024761] = bodies_end;
-    n[024764] = [](Machine &m) { return value_mark(m, VALUE_START); };
-    n[024767] = [](Machine &m) { return value_parameter(m, 025002); };
-    n[024776] = [](Machine &m) { return value_parameter(m, 024777); };
-    n[025005] = [](Machine &m) { return value_mark(m, LABEL_DEF); };
 }
 
 //
 // Non-ALGOL ('CODE') calls. Each argument pushes its descriptor and the
-// address (M8) that passes it later, then the next item; the call
-// (0126, 073, 065) passes them in order, then calls. M5 counts arguments
-// that are expressions.
+// continuation (passer) that passes it later, then the next item; the call
+// (0126, 073, 065) passes them in order, then calls. count_ counts
+// arguments that are values.
 //
 
 // 24505: push a and the passer, then the next item.
-unsigned push_argument(Machine &m, Word a, unsigned passer)
+unsigned Pass4::push_argument(Word a, unsigned passer)
 {
-    m.vtm(8, passer);
-    push(m, a);
-    push(m, passer);
+    push(a);
+    push(passer);
     return DISPATCH_NEXT;
 }
 
-// 24502: no argument count (0121).
-unsigned code_start(Machine &m)
+// 24513: a value kept in a stack word (count_, saved under the operand,
+// counting), passed by passer.
+unsigned Pass4::code_value(unsigned passer)
 {
-    m.vtm(5, 0);
-    return DISPATCH_NEXT;
-}
-
-// 24513: an expression's value kept in a stack word (M5 counts, saved
-// under the operand), passed by passer.
-unsigned code_value(Machine &m, unsigned passer)
-{
-    m.set_m(5, pop(m) - 1);
-    m.vtm(4, 02017);
-    return push_argument(m, 0, passer);
-}
-
-// 24507: an expression (0125), passed by 24603.
-unsigned code_expression(Machine &m)
-{
-    push(m, m.M[5]);
-    return operand(m, 024511);
-}
-
-unsigned code_expression_2(Machine &m)
-{
-    load(m, 024512);
-    return code_value(m, 024603);
-}
-
-// 24523: an expression of a non-ALGOL type (0124): in A, as 074's
-// result; else its address, passed by 24612.
-unsigned code_typed(Machine &m)
-{
-    push(m, m.M[5]);
-    return operand(m, 024525);
-}
-
-unsigned code_result(Machine &m)
-{
-    emit(m, CODE_RESULT, 024542);
-    return code_value(m, 024607);
-}
-
-unsigned code_typed_2(Machine &m)
-{
-    Word d = pop(m);
-    if (!d)
-        return code_result(m);
-    m.set_m(5, pop(m));
-    return push_argument(m, d & DESC_MASK, 024612);
-}
-
-// 24533: a call of an ALGOL procedure as argument (074): routine 4111
-// (template 25751), the result passed by 24607.
-unsigned code_call_argument(Machine &m)
-{
-    push(m, m.M[5]);
-    return operand(m, 024535);
-}
-
-unsigned code_call_argument_2(Machine &m)
-{
-    load(m, 024536);
-    m.vtm(14, 04111);
-    push(m, 04111);
-    m.vtm(11, 025751);
-    m.set_m(12, 024542);
-    emit_template(m, 025751);
-    return code_value(m, 024607);
+    count_    = (pop() - 1) & 077777;
+    acc_cell_ = 02017;
+    return push_argument(0, passer);
 }
 
 //
-// 24553: the call of routine r, count words of results: the M2 arguments
-// are passed in order (each by its passer, M6 at its pair, 02023 counting
-// from the count), then the call (template 25751); the stack is reset and
-// a result of M5 words in A.
+// 24553: the call of routine r, count words of results: the attr arguments
+// are passed in order (each by its passer, arg_ at its pair, 02023
+// counting from the count), then the call (template 25751); the stack is
+// reset and a result of count_ words in A.
 //
-unsigned code_call(Machine &m, unsigned r, Word count)
+unsigned Pass4::code_call(unsigned r, Word count)
 {
-    m.set_m(1, r);
-    m.mem[02023] = (count & 07777) | ON_STACK;
-    m.set_m(12, 024555);
-    save_acc(m);
-    m.set_m(6, m.M[SP] - 2 * m.M[2]);
-    m.set_m(8, m.M[6]);
-    return m.mem[(m.M[6] + 1) & 077777] & 077777;
+    routine_   = r & 077777;
+    mem(02023) = (count & 07777) | ON_STACK;
+    save_acc();
+    arg_  = (sp_ - 2 * attr_) & 077777;
+    args_ = arg_;
+    return mem((arg_ + 1) & 077777) & 077777;
 }
 
 // 24567: pass the argument by template t, then the next one or the call.
-unsigned pass_argument(Machine &m, unsigned t)
+unsigned Pass4::pass_argument(unsigned t)
 {
-    m.vtm(11, t);
-    m.set_m(12, 024570);
-    emit_template(m, t);
-    m.mem[02023] = cyclic_add(m.mem[02023], MINUS_ONE);
-    m.set_m(6, m.M[6] + 2);
-    m.set_m(2, m.M[2] - 1);
-    unsigned next = m.mem[(m.M[6] + 1) & 077777] & 077777;
-    if (m.M[2])
-        return next;
-    push(m, m.M[1]);
-    m.vtm(11, 025751);
-    m.set_m(12, 024576);
-    emit_template(m, 025751);
-    m.set_m(SP, m.M[8]);
-    if (m.M[5])
-        emit(m, cyclic_add(m.M[5], RESULT_SIZE), 024015);
-    return 024015;
-}
-
-// 24566: the argument word at M6 pushed, template t.
-unsigned pass_word(Machine &m, unsigned t)
-{
-    push(m, m.mem[m.M[6]]);
-    return pass_argument(m, t);
+    emit_template(t);
+    mem(02023) = cyclic_add(mem(02023), MINUS_ONE);
+    arg_       = (arg_ + 2) & 077777;
+    attr_      = (attr_ - 1) & 077777;
+    if (attr_)
+        return mem((arg_ + 1) & 077777) & 077777;
+    push(routine_);
+    emit_template(025751);
+    sp_ = args_;
+    if (count_)
+        emit(cyclic_add(count_, RESULT_SIZE));
+    return RESULT;
 }
 
 // 24603, 24607: pass a value from its stack word (02023 counting).
-unsigned pass_value(Machine &m, bool result)
+unsigned Pass4::pass_value(bool result)
 {
-    Word c = m.mem[02023];
-    push(m, result ? cyclic_add(c, MINUS_ONE) : c);
-    m.mem[02023] = cyclic_add(c, 1);
-    return pass_argument(m, result ? 025771 : 024543);
+    Word c = mem(02023);
+    push(result ? cyclic_add(c, MINUS_ONE) : c);
+    mem(02023) = cyclic_add(c, 1);
+    return pass_argument(result ? 025771 : 024543);
 }
 
-//
-// G30034: the 6 ISO characters iso as TEXT: each character c its six-bit
-// code from the tables at 30076 (word c/8, field c%8), left-justified in 8
-// six-bit characters. Through M13; M1–M3 kept.
-//
-Word iso_text(const Machine &m, Word iso)
+void Pass4::register_procedures()
 {
-    Word text = 0;
-    for (unsigned k = 0; k < 6; k++) {
-        unsigned c = (iso >> (8 * k)) & 0377;
-        if (c) {
-            Word codes = m.mem[030076 + (c >> 3)];
-            text |= ((codes >> (6 * (c & 7))) & 077) << (12 + 6 * k);
+    auto &n   = handlers_;
+    n[024361] = [this] { // a call with parameters starts (0110): the frame
+        unsigned t = 024366; // of the arguments (24370 with A saved)
+        if (acc_cell_) {
+            mem(acc_cell_) = ON_STACK;
+            acc_cell_      = 0;
+            t              = 024370;
         }
+        mem(02017) = 0;
+        emit_template(t);
+        return DISPATCH_NEXT;
+    };
+    n[024377] = [this] { // a standard function with an expression argument
+        pending_label(); // (n<<12 | 057): routine 2n
+        value_ = (2 * value_) & 077777;
+        return call_tail(024402, value_);
+    };
+    n[024405] = [this] { // the call of a procedure with parameters (020)
+        pending_label();
+        return call_tail(024416, mem(value_) & DESC_MASK);
+    };
+    n[024412] = [this] { // … without parameters (021)
+        save_acc();
+        return call_tail(024414, mem(value_) & DESC_MASK);
+    };
+    // Arguments: a string (0156), a constant (0111), a variable (0112), a
+    // label (0114), an array (0115), a procedure (0113, with 02021).
+    n[024423] = [this] { return argument(024500, constant_address()); };
+    n[024424] = [this] { return argument(024466, constant_address()); };
+    n[024430] = [this] { return argument(024470, mem(value_) & DESC_MASK); };
+    n[024432] = [this] { return argument(024472, mem(value_) & DESC_MASK); };
+    n[024434] = [this] { return argument(024472, address_of(mem(value_))); };
+    n[024440] = [this] {
+        return argument(024474, ((mem(02021) << 20) & WORD_MASK) | (mem(value_) & ADDR));
+    };
+    n[024444] = [this] { // an expression argument (0120): its value
+        pending_label();
+        acc_cell_ = 02017;
+        return operand(024446);
+    };
+    n[024446] = [this] {
+        operand_done();
+        mem(02017) = 0;
+        emit_template(024476);
+        return DISPATCH_NEXT;
+    };
+    n[024452] = [this] { return thunk_start(); };
+    n[024461] = [this] { // a thunk ends (0116): its return; its label pending
+        sp_        = (sp_ - 2) & 077777;
+        mem(02017) = pop();
+        emit(RETURN_2);
+        return DISPATCH_NEXT;
+    };
+    n[024755] = [this] { // a jump around procedure bodies (0146): UJ to a
+        Word label = new_label(); // new label, pushed twice
+        push(label);
+        push(label);
+        emit_template(024671);
+        return DISPATCH_NEXT;
+    };
+    n[024761] = [this] { // its target (0145): the label defined
+        mem(LABELS) = top(1);
+        emit_template(026051);
+        return DISPATCH_NEXT;
+    };
+    // VALUE ends (0155), starts (0127): for a procedure with value
+    // parameters (02023 = 0) a half with 02004.
+    n[024764] = [this] {
+        if (!mem(02023))
+            emit(VALUE_START | mem(LABELS));
+        return DISPATCH_NEXT;
+    };
+    n[025005] = [this] {
+        if (!mem(02023))
+            emit(LABEL_DEF | mem(LABELS));
+        return DISPATCH_NEXT;
+    };
+    n[024767] = [this] { return value_parameter(025002); };
+    n[024776] = [this] { return value_parameter(024777); };
+
+    // Non-ALGOL calls.
+    n[024502] = [this] { // no argument count (0121)
+        count_ = 0;
+        return DISPATCH_NEXT;
+    };
+    n[024503] = [this] { return push_argument(mem(value_) & DESC_MASK, 024565); }; // 0122
+    n[024531] = [this] { return push_argument(constant_address(), 024565); };     // 066
+    n[024516] = [this] { return push_argument(address_of(mem(value_)), 024602); }; // 0123
+    n[024507] = [this] { // an expression (0125), passed by 24603
+        push(count_);
+        return operand(024511);
+    };
+    n[024511] = [this] {
+        operand_done();
+        return code_value(024603);
+    };
+    // 24523: an expression of a non-ALGOL type (0124): in A, as 074's
+    // result; else its address, passed by 24612.
+    n[024523] = [this] {
+        push(count_);
+        return operand(024525);
+    };
+    n[024525] = [this] {
+        Word d = pop();
+        if (!d) {
+            emit(CODE_RESULT);
+            return code_value(024607);
+        }
+        count_ = pop() & 077777;
+        return push_argument(d & DESC_MASK, 024612);
+    };
+    // 24533: a call of an ALGOL procedure as argument (074): routine 4111
+    // (template 25751), the result passed by 24607.
+    n[024533] = [this] {
+        push(count_);
+        return operand(024535);
+    };
+    n[024535] = [this] {
+        operand_done();
+        push(04111);
+        emit_template(025751);
+        return code_value(024607);
+    };
+    n[024547] = [this] { return code_call(mem(value_) & ADDR, count_); }; // 0126
+    n[024551] = [this] { return code_call(value_ + 04030, count_); };     // 073
+    n[024562] = [this] { // 065: one result fewer
+        Word count = count_;
+        count_     = (count_ - 1) & 077777;
+        return code_call(mem(value_) & ADDR, count);
+    };
+    // Passers: the argument word at arg_ (template 24543, 24545, 24613), or
+    // a value.
+    n[024565] = [this] {
+        push(mem(arg_));
+        return pass_argument(024543);
+    };
+    n[024602] = [this] {
+        push(mem(arg_));
+        return pass_argument(024545);
+    };
+    n[024612] = [this] {
+        push(mem(arg_));
+        return pass_argument(024613);
+    };
+    n[024603] = [this] { return pass_value(false); };
+    n[024607] = [this] { return pass_value(true); };
+}
+
+Pass4::Pass4(Context &ctx, const Stream &input) : ctx_(ctx), in_(input)
+{
+    auto &n         = handlers_;
+    n[MAIN_LOOP]     = [this] { return main_loop(); };
+    n[023627]        = [this] { // an expression statement: its value loaded
+        operand_done();
+        mem(02021) = pop();
+        return MAIN_LOOP;
+    };
+    n[DISPATCH_NEXT] = [this] { return dispatch_next(); };
+    n[026152]        = [this] { return eop(); };
+    register_operators();
+    register_jumps();
+    register_blocks();
+    register_arrays();
+    register_loops();
+    register_procedures();
+}
+
+Stream Pass4::run()
+{
+    unsigned pc = start();
+    while (pc != DRIVER) {
+        auto it = handlers_.find(pc);
+        if (it == handlers_.end())
+            throw std::runtime_error("pass 4: no handler at " + std::to_string(pc));
+        pc = it->second();
     }
-    return text;
-}
-
-unsigned iso_to_text(Machine &m)
-{
-    set_acc(m, iso_text(m, m.acc));
-    m.set_m(14, 0);
-    return m.M[13];
-}
-
-void register_code_calls(Machine::Natives &n)
-{
-    n[024502]      = code_start;
-    n[024503]      = [](Machine &m) { return push_argument(m, m.mem[m.M[3]] & DESC_MASK, 024565); };
-    n[024507]      = code_expression;
-    n[024511]      = code_expression_2;
-    n[024516]      = [](Machine &m) {
-        Word d = m.mem[m.M[3]];
-        return push_argument(m, ((d & BIT48) ? unpacked(d) : d) & DESC_MASK, 024602);
-    };
-    n[024523]      = code_typed;
-    n[024525]      = code_typed_2;
-    n[024531]      = [](Machine &m) { return push_argument(m, constant_address(m), 024565); };
-    n[024533]      = code_call_argument;
-    n[024535]      = code_call_argument_2;
-    n[024547]      = [](Machine &m) { return code_call(m, m.mem[m.M[3]] & ADDR, m.M[5]); };
-    n[024551]      = [](Machine &m) { return code_call(m, m.M[3] + 04030, m.M[5]); };
-    n[024562]      = [](Machine &m) {
-        Word count = m.M[5];
-        m.set_m(5, m.M[5] - 1);
-        return code_call(m, m.mem[m.M[3]] & ADDR, count);
-    };
-    n[024565]      = [](Machine &m) { return pass_word(m, 024543); };
-    n[024602]      = [](Machine &m) { return pass_word(m, 024545); };
-    n[024603]      = [](Machine &m) { return pass_value(m, false); };
-    n[024607]      = [](Machine &m) { return pass_value(m, true); };
-    n[024612]      = [](Machine &m) { return pass_word(m, 024613); };
-    n[ISO_TO_TEXT] = iso_to_text;
+    return out_;
 }
 
 } // namespace
 
 Stream pass4(Context &ctx, const Stream &input)
 {
-    // The stream of the previous pass is in the workspace and on the drums,
-    // where it left it.
-    (void)input;
-    TranslatedPass pass(ctx);
-    auto &n          = pass.m.natives;
-    n[023523]        = start;
-    n[023623]        = prologue_done;
-    n[MAIN_LOOP]     = main_loop;
-    n[023627]        = main_loop_2;
-    n[023630]        = main_loop_3;
-    n[023655]        = [](Machine &mm) {
-        unsigned link = mm.M[13];
-        emit(mm, mm.acc, link);
-        return link;
-    };
-    n[023721]        = save_acc;
-    n[OPERAND_DONE]  = operand_done;
-    n[023727]        = load_operand;
-    n[TEMPLATE]      = run_template;
-    n[READ_DISPATCH] = read_dispatch;
-    n[DISPATCH_NEXT] = dispatch_next;
-    n[026152]        = eop;
-    n[026156]        = eop_end;
-    register_operators(n);
-    register_jumps(n);
-    register_blocks(n);
-    register_arrays(n);
-    register_loops(n);
-    register_procedures(n);
-    register_code_calls(n);
-    return pass.run(023523, 01633);
+    return Pass4(ctx, input).run();
 }

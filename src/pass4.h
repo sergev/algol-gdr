@@ -5,8 +5,7 @@
 
 //
 // Pass 4 (G23523): code generation; reads the stream of pass 3 (of pass 2 in
-// check mode) and writes instruction halves and pseudo-items. C++ on a
-// Machine (doc/translation.md).
+// check mode) and writes instruction halves and pseudo-items.
 //
 Stream pass4(Context &ctx, const Stream &input);
 

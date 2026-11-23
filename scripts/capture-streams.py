@@ -12,7 +12,8 @@ word 02000 and register M4, in octal).
 
 Passes start at the driver's calls (01625 … 01634). Items are the A register at the
 entries of G27126 (27114, 27126 halves; 27137 words), taken from the push at their
-first instruction.
+first instruction. Pass 3 moves back over what it wrote (the FOR rewrite): its
+stream is read from where it left it, drum 26 zones 10…, up to EOP (075).
 
 Memory and the scratch drums are shadowed from the start of pass 1: memory starts
 as the data set by the driver (TABLES_DATA, default src/tables_data.cpp), then
@@ -42,6 +43,19 @@ def in_ranges(a):
     return any(lo <= a < hi for lo, hi in RANGES)
 
 
+def drum_stream(drum):
+    """The halves of drum 26 from zone 10 on, up to EOP (075)."""
+    out = []
+    for zone in range(0o10, 0o40):
+        for w in range(1024):
+            word = drum.get(('26', zone, w), 0)
+            for h in (word >> 24, word & 0o77777777):
+                out.append(h)
+                if h & 0o177 == 0o75:
+                    return out
+    sys.exit('pass 3: no EOP on drum 26')
+
+
 def main():
     if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
@@ -64,8 +78,12 @@ def main():
     mismatches = 0
     pending = None          # writer entry waiting for its push
     lex = []                # (02000, M4) at each lexer return
+    final3 = None           # the stream pass 3 left on drum
 
     def end_pass(final=True):
+        nonlocal final3
+        if npass == 3:
+            final3 = drum_stream(drum)
         dm = {a: v for a, v in mem.items() if in_ranges(a) and start[0].get(a, 0) != v}
         dd = {k: v for k, v in drum.items()
               if k[0] in DRUMS and start[1].get(k, 0) != v}
@@ -136,6 +154,8 @@ def main():
         vals = [v & 0o77777777 for e, v in items]
         if entries == {'114'}:
             vals.reverse()
+        if n == 3:
+            vals = final3
         with open(f'{out}.s{n}', 'w') as f:
             f.writelines(f'{v:08o}\n' for v in vals)
     with open(f'{out}.lex', 'w') as f:

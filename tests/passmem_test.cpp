@@ -1,6 +1,8 @@
 //
 // Passes 2-4 as a whole: besides the stream (pass_test), the words each leaves
 // in the workspace and on drum, and its registers, must be those of NAME.mem.
+// A pass off the machine keeps its streams in vectors: its stream pages,
+// their drum zones and cursors are not compared, nor its registers.
 //
 #include <gtest/gtest.h>
 
@@ -20,6 +22,26 @@ struct MemCase {
 };
 
 class PassMem : public ::testing::TestWithParam<MemCase> {};
+
+// Pass 4: cursors 02000-02001, pages 06000-11777, drum 26 from zone 2.
+static bool stream_part(int pass, const std::string &line)
+{
+    if (pass != 4)
+        return false;
+    if (line.rfind("reg", 0) == 0)
+        return true;
+    std::istringstream f(line);
+    f >> std::oct;
+    if (line.rfind("drum", 0) == 0) {
+        std::string word;
+        unsigned unit, zone;
+        f >> word >> unit >> zone;
+        return unit == 026 && zone >= 2;
+    }
+    unsigned addr;
+    f >> addr;
+    return addr == 02000 || addr == 02001 || (addr >= 06000 && addr < 012000);
+}
 
 TEST_P(PassMem, workspace)
 {
@@ -43,6 +65,8 @@ TEST_P(PassMem, workspace)
     }
     unsigned bad = 0;
     while (std::getline(in, line) && line.rfind("pass", 0) != 0) {
+        if (stream_part(pass, line))
+            continue;
         std::istringstream f(line);
         f >> std::oct;
         std::string word;

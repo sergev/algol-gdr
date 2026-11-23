@@ -31,4 +31,10 @@ private:
     Context &ctx_;
 };
 
+//
+// The stream a pass left for the next one, read as pass 4 reads it: from a
+// zone before the write cursor 02001, after a priming read, up to EOP (075).
+//
+Stream stream_left(Context &ctx);
+
 #endif

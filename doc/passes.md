@@ -651,7 +651,8 @@ Pseudo-items, consumed by pass 5:
 when set, it emits `13 VJM` to `A/SUBCH` after each subscript computation.
 
 **Input.** The pass-3 stream (the pass-2 stream in `*CHECK` mode), read through the page at
-10000.
+10000. C++ (`Pass4`, src/pass4.cpp) takes it as a vector and writes a vector; the stack,
+the cells at M7+36…, M7+1107 are its members, the workspace stays at its addresses.
 
 **Memory.**
 - At start it reads drum 26 zone 0 (the names) into 06000. Only four names are used before

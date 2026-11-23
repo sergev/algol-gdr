@@ -1917,5 +1917,8 @@ Stream pass3(Context &ctx, const Stream &input)
     pass.m.natives[022214] = fold;
     pass.m.natives[022232] = for_scan;
     pass.m.natives[022716] = intern_constant;
-    return pass.run(022162, 01632);
+    pass.run(022162, 01632);
+    // The FOR rewrite moves back over what was written: the stream is read
+    // from where the pass left it.
+    return stream_left(ctx);
 }

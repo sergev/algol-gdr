@@ -71,7 +71,8 @@ Run:
 (`dubna -d ime`) and writes next to the source:
 - `NAME.s1` … `NAME.s5`: the stream written by each pass, one 24-bit item per line in octal,
   in memory order (pass 2 writes backward, so its items are reversed). Items are taken at the
-  entries of the stream helper G27126. A pass that did not run has no file.
+  entries of the stream helper G27126; pass 3, which goes back over what it wrote, has the
+  stream it left on drum 26 (zones 10…, up to EOP 075). A pass that did not run has no file.
 - `NAME.mem`: per pass, the words it changed: in the workspace (01736–11777 with the stream
   pages, 27245–27644) as `ADDR VALUE`, and on the scratch drums 26 and 27 (data and streams
   between passes) as `drum UNIT ZONE OFFSET VALUE`; all numbers octal. The workspace at the
