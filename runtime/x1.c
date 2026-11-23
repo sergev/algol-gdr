@@ -33,6 +33,7 @@ static const char *const x1_symbols[128] = {
 static void out(const char *s)
 {
     static int tty = -1;
+    algol_final_newline = 0;
     algol_print_string(s);
     if (tty < 0)
         tty = isatty(1);

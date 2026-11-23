@@ -71,9 +71,34 @@ const std::vector<std::string> programs = {
     "a60/publication",
     "a60/revised_report",
     "a60/units",
+    "x1/beer",
+    "x1/bulls_and_cows",
+    "x1/disarium",
+    "x1/encoding",
+    "x1/hanoi",
+    "x1/hello",
     "x1/helpers",
     "x1/input",
+    "x1/lisp",
+    "x1/magic_square",
+    "x1/man_or_boy",
+    "x1/mersenne",
+    "x1/outer_planets",
     "x1/output",
+    "x1/palindromic_primes",
+    "x1/pentomino3x20",
+    "x1/pentomino4x15",
+    "x1/pentomino5x12",
+    "x1/pentomino6x10",
+    "x1/perfect_numbers",
+    "x1/quine",
+    "x1/quinio",
+    "x1/sieve",
+    "x1/sqrt_test",
+    "x1/steady_squares",
+    "x1/sum",
+    "x1/time",
+    "x1/whetstone",
 };
 // clang-format on
 
@@ -93,8 +118,8 @@ std::vector<std::string> tokens(const std::string &text)
     return list;
 }
 
-// Equal, or both reals equal to 1e-10 relative.
-bool same(const std::string &a, const std::string &b)
+// Equal, or both reals equal to tolerance relative.
+bool same(const std::string &a, const std::string &b, double tolerance = 1e-10)
 {
     if (a == b)
         return true;
@@ -105,7 +130,54 @@ bool same(const std::string &a, const std::string &b)
     double y = std::strtod(b.c_str(), &eb);
     if (*ea || *eb)
         return false;
-    return std::fabs(x - y) <= 1e-10 * std::max(std::fabs(x), std::fabs(y));
+    return std::fabs(x - y) <= tolerance * std::max(std::fabs(x), std::fabs(y));
+}
+
+std::vector<std::string> lines(const std::string &text)
+{
+    std::vector<std::string> list;
+    std::istringstream in(text);
+    std::string line;
+    while (std::getline(in, line))
+        list.push_back(line);
+    return list;
+}
+
+// A line as runs of blanks and of other characters.
+std::vector<std::string> chunks(const std::string &line)
+{
+    std::vector<std::string> list;
+    for (char c : line) {
+        bool blank = c == ' ';
+        if (list.empty() || (list.back()[0] == ' ') != blank)
+            list.emplace_back();
+        list.back() += c;
+    }
+    return list;
+}
+
+// The output of an X1 program: each line the same, or with the same blanks
+// and the numbers equal to 1e-9 relative (the 40-bit reals of the X1).
+std::string compare_x1(const std::string &output, const std::string &expected)
+{
+    if (output == expected)
+        return "";
+    auto got = lines(output), want = lines(expected);
+    for (size_t i = 0; i < std::max(got.size(), want.size()); i++) {
+        std::string g = i < got.size() ? got[i] : "(end)";
+        std::string w = i < want.size() ? want[i] : "(end)";
+        if (g == w)
+            continue;
+        auto gt = chunks(g), wt = chunks(w);
+        bool ok = gt.size() == wt.size();
+        for (size_t k = 0; ok && k < gt.size(); k++)
+            ok = gt[k] == wt[k] || (gt[k][0] != ' ' && same(gt[k], wt[k], 1e-9));
+        if (!ok)
+            return "line " + std::to_string(i + 1) + ": got '" + g + "', expected '" + w + "'";
+    }
+    bool g = !output.empty() && output.back() == '\n';
+    bool w = !expected.empty() && expected.back() == '\n';
+    return g == w ? "" : g ? "a newline at the end" : "no newline at the end";
 }
 
 // Empty when the outputs match, otherwise where they differ.
@@ -129,6 +201,14 @@ std::string expected(const std::string &name)
     return file_contents(TEST_DIR "/" + name + ".out");
 }
 
+// The output of the program against its expected one: X1 programs line by
+// line, the others by tokens.
+std::string compare_output(const std::string &name, const std::string &out)
+{
+    return name.rfind("x1/", 0) == 0 ? compare_x1(out, expected(name))
+                                     : compare(out, expected(name));
+}
+
 // C for the _code procedures of a program, or a unit of _algol ones.
 std::string stub_of(const std::string &base)
 {
@@ -138,10 +218,27 @@ std::string stub_of(const std::string &base)
     return "";
 }
 
-// The program: NAME.alg, or NAME.a60.
+// The program: NAME.a60, NAME.alg, or a60 of the longest prefix of the name
+// (pentomino.a60 for pentomino6x10).
 std::string source_of(const std::string &base)
 {
-    return std::filesystem::exists(base + ".a60") ? base + ".a60" : base + ".alg";
+    namespace fs = std::filesystem;
+    if (fs::exists(base + ".a60") || !fs::exists(base + ".alg")) {
+        for (std::string b = base; !b.empty() && b.back() != '/'; b.pop_back())
+            if (fs::exists(b + ".a60"))
+                return b + ".a60";
+    }
+    return base + ".alg";
+}
+
+// The environment of the run, from NAME.env: VAR=value words.
+std::string env_of(const std::string &base)
+{
+    if (!std::filesystem::exists(base + ".env"))
+        return "";
+    std::string text = file_contents(base + ".env");
+    std::replace(text.begin(), text.end(), '\n', ' ');
+    return "env " + text + " ";
 }
 
 // qemu-ARCH for a target triple.
@@ -154,7 +251,7 @@ std::string qemu(const std::string &target)
 // output.
 std::string run(const std::string &src, const std::string &exe, bool check,
                 const std::string &input = "/dev/null", const std::string &stub = "",
-                const std::string &target = "")
+                const std::string &target = "", const std::string &env = "")
 {
     std::string tflag = target.empty() ? "" : " --target=" + target;
     std::string objects;
@@ -171,7 +268,7 @@ std::string run(const std::string &src, const std::string &exe, bool check,
     std::string runner;
     if (!target.empty())
         runner = qemu(target) + " -L /usr/" + target + " ";
-    return run_command("(" + runner + exe + " < " + input + " 2>/dev/null)").output;
+    return run_command("(" + env + runner + exe + " < " + input + " 2>/dev/null)").output;
 }
 
 // The output of a program given as text.
@@ -201,8 +298,9 @@ TEST_P(RunTest, output)
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = stub_of(base);
-    std::string out = run(source_of(base), BUILD_DIR "/run_" + test_name(name), check, input, stub);
-    EXPECT_EQ(compare(out, expected(name)), "") << out;
+    std::string out = run(source_of(base), BUILD_DIR "/run_" + test_name(name), check, input, stub,
+                          "", env_of(base));
+    EXPECT_EQ(compare_output(name, out), "") << out;
 }
 
 INSTANTIATE_TEST_SUITE_P(algol, RunTest, ::testing::ValuesIn(programs),
@@ -226,8 +324,8 @@ TEST_P(CrossTest, output)
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = stub_of(base);
     std::string out = run(source_of(base), BUILD_DIR "/run_" + target + "_" + test_name(name),
-                          check, input, stub, target);
-    EXPECT_EQ(compare(out, expected(name)), "") << out;
+                          check, input, stub, target, env_of(base));
+    EXPECT_EQ(compare_output(name, out), "") << out;
 }
 
 // aarch64_hello and the like.
@@ -253,6 +351,17 @@ TEST(Run, print_layout)
               "true  false STRING ONESTRING TWO\n"
               "AFTER NEWLINE             1 \n"
               "             2 \fLAST\n");
+}
+
+TEST(Run, compare_x1)
+{
+    EXPECT_EQ(compare_x1("a  1.5\n", "a  1.5\n"), "");
+    EXPECT_EQ(compare_x1("a 1.5\n", "a  1.5\n"), "line 1: got 'a 1.5', expected 'a  1.5'");
+    EXPECT_EQ(compare_x1("1 0.1234567890123\n", "1 0.1234567890456\n"), "");
+    EXPECT_NE(compare_x1("1 0.1234567\n", "1 0.1234568\n"), "");
+    EXPECT_EQ(compare_x1("x", "x\n"), "no newline at the end");
+    EXPECT_EQ(compare_x1("x\n", "x"), "a newline at the end");
+    EXPECT_NE(compare_x1("x\n", "x\ny\n"), "");
 }
 
 TEST(Run, compare)

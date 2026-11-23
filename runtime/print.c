@@ -13,6 +13,9 @@
 
 static int last_char = '\n'; // the last character written
 
+// The X1 library ends no line at the end, as x1sim.
+int algol_final_newline = 1;
+
 static void out(const char *s)
 {
     size_t n = strlen(s);
@@ -24,7 +27,7 @@ static void out(const char *s)
 
 void algol_flush_output(void)
 {
-    if (last_char != '\n')
+    if (last_char != '\n' && algol_final_newline)
         out("\n");
     fflush(stdout);
 }

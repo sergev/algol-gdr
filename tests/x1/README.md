@@ -9,7 +9,14 @@ Programs in the publication form for the library of the Electrologica X1:
 `goldens.sh [EXAMPLES [X1SIM]]`, which also copies the examples and takes their inputs from
 the `NAME.sh` scripts; `pentominoWxH.in` are inputs of `pentomino.a60`. `quinio.in` (a game
 the computer wins) and `bulls_and_cows.in` are written here. `time` (the time of day) and
-`bulls_and_cows` (its secret is random) have no `x1sim` output.
+`bulls_and_cows` (its secret is random) have no `x1sim` output: they run with the time
+fixed by `NAME.env` (`ALGC_TIMEOFDAY`), and `NAME.native.out` is algc's output, checked by
+hand (`bulls_and_cows.in` wins against that secret).
+
+`run_test` compares the output line by line: the same, or with the same blanks and the
+numbers equal to 1e-9 relative. Only `whetstone` needs that: X1 reals have 40 bits of
+mantissa, doubles 53, and the difference grows to about 1e-10 over its loops. No example
+depends on the 27-bit integers of the X1.
 
 | Program | What |
 |---|---|

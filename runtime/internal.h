@@ -11,6 +11,9 @@
 // Print the line in progress, if any.
 void algol_flush_output(void);
 
+// 0: the line in progress stays open at the end (the X1 library).
+extern int algol_final_newline;
+
 // Element types of arrays, as ast::Type.
 enum { T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_BITS };
 

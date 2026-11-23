@@ -267,7 +267,8 @@ procedures of quinio and bozp_ybyb are C in `NAME.c` next to the program.
   `ABSFIXT`, `FLOT` are `algol_x1_fixt`, `algol_x1_absfixt`, `algol_x1_flot`. The formats
   round the exact decimal value of the double half up, the same on every target (x1sim
   rounds an exact half either way, by the error of its `long double`). Output to a
-  terminal is flushed after each call.
+  terminal is flushed after each call. Once the X1 output is used, a line in progress
+  stays open at the end of the program, as in x1sim.
 - X1 input from standard input: `read` is `algol_x1_read`, a number as C++ streams read
   it (`⏨` for `E`); the symbol after it is consumed, as in x1sim. On a terminal it asks
   `Enter number:` and again after a bad number; otherwise a bad number or the end of the

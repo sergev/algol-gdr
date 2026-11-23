@@ -45,7 +45,7 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 - `tests/` — GoogleTest. `tests/algol/` holds test programs with expected outputs from the
   original compiler: `.out` run output under `dubna` (frozen); and ours, which
   `ALGC_UPDATE_GOLDENS=1` rewrites: `.lst` listings (`algc --list`), `.ast` the AST, `.err` the messages; side files
-  `.pre` (`*check`), `.in` (input of the run), `.run` (the extra `dubna` cards of the run:
+  `.pre` (`*check`), `.in` (input of the run), `.env` (its environment), `.run` (the extra `dubna` cards of the run:
   libraries, Fortran or Madlen externals), `.norun` (why there is no `.out`). The goldens
   from `dubna` are frozen: the tools that made them are on the `besm6` branch.
   `listing_test` checks the `.lst` files, `ast_test` the `.ast` and `.err` files; `run_test`

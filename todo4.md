@@ -26,17 +26,6 @@ green.
 
 ### Running the examples
 
-- **G6** `run_test` runs `tests/x1/`: each example is compiled, run on the three targets
-  and compared with `NAME.out`, or with `NAME.native.out` where the reason is documented.
-  - Reals: X1 has a 40-bit mantissa and doubles have 53, so the last of the 13 printed
-    digits may differ. Numbers compare with a relative tolerance (e.g. whetstone), as the
-    dubna comparison allows.
-  - `time`: the output is checked against a pattern, since it is the time of day.
-  - `bulls_and_cows`: the secret comes from `SETRANDOM(TIMEOFDAY)`. An environment variable
-    (`ALGC_TIMEOFDAY`) fixes the time for the test, and a `.native.out` replaces the
-    `x1sim` output. The reason goes in the README.
-  - Integers are 64-bit in algc and 27-bit on X1. An example whose output depends on that
-    is a documented `.native.out`.
 - **G7** The stress cases are correct and fast enough:
   - `man_or_boy` and its stack;
   - `lisp`, with the missionaries and cannibals in lisp.md;

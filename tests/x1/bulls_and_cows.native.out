@@ -1,0 +1,17 @@
+Welcome to bulls and cows!
+
+I choose a number made of 4 digits (from 0 to 9) without repetitions.
+You enter a number of 4 digits, and I say you how many of them
+are in my secret number but in wrong position (cows),
+and how many are in the right position (bulls).
+
+Guess a number.
+You scored 0 bulls and 3 cows.
+Guess a number.
+You scored 0 bulls and 0 cows.
+Guess a number.
+Guess a number.
+You scored 2 bulls and 2 cows.
+Guess a number.
+You scored 4 bulls and 0 cows.
+Correct. That took you 4 guesses.
