@@ -23,11 +23,9 @@ reference for the native runs.
 
 ### Tree
 
-- **E6** AST (`ast.h`): program, blocks with declarations (variables, arrays with bound
-  expressions, procedures with formals and VALUE, labels, switches), statements
-  (assignment with left parts, IF, GOTO, FOR with its element list, calls, compound,
-  dummy), expressions with their types from pass 2 (conversions explicit). Source line on
-  every statement.
+- **E6** AST (`ast.h`) after [doc/ast.asdl](doc/ast.asdl): program, blocks with
+  declarations, statements, typed expressions with explicit conversions; names resolved to
+  declaration ids; the source position (line, statement) on every statement.
 - **E7** Build the AST from the pass-2 stream (`ast_builder.cpp`), a stack machine over the
   postfix items. A `--dump-ast` option prints it; goldens `.ast` for all programs.
 

@@ -1,0 +1,125 @@
+-- AST of algc: an Algol-GDR program after scopes and type checks (pass 2).
+--
+-- Names are resolved: a declaration has an id unique in the program, and every
+-- use refers to it (`int decl`), so the back end needs no scope rules. Implicit
+-- conversions are explicit (Convert), and every expression has its type.
+-- Codes in comments are the items of the pass-2 stream that make the node
+-- (doc/passes.md, "Output stream").
+module AST {
+    -- Where a statement starts: the line, and the statement on the line (from
+    -- the statement markers 051), as in "NEXT STATEMENT IS l/s".
+    SrcLoc = (int line, int stmt)
+
+    -- 'CODE' and 'ALGOL' procedures declared before the program, then its
+    -- outer block.
+    Program = (External* externals, Stmt block)
+
+    External = (identifier name, int id, ExternalKind kind)
+    ExternalKind = Code | Algol
+
+    Type = Integer | Real | Boolean | String
+         | Bits     -- 'BITS': octal words, 48 bits
+         | None     -- a procedure without a value
+
+    -- Declarations of a block, or of the body of a procedure.
+    Decl = Var(identifier name, int id, Type type)
+         -- a segment: arrays with the same bounds, evaluated once at block entry (040 … 0104)
+         | Arrays(Type type, ArrayName* arrays, BoundPair* bounds)
+         | Switch(identifier name, int id, Expr* elements)              -- 0146 0142/0144 … 0143
+         | Label(identifier name, int id)
+         | Procedure(identifier name, int id, Type type, Formal* formals, Stmt body)
+         -- 'COMMON' /name/ elements: they are declared in the same block, in this
+         -- order; a variable is an array [1:1]
+         | Common(identifier name, CommonElement* elements)
+         attributes(SrcLoc loc)
+
+    ArrayName = (identifier name, int id)
+
+    BoundPair = (Expr lower, Expr upper)
+
+    CommonElement = (identifier name, int decl, int* dims)
+
+    -- A formal parameter: called by value (in the VALUE list) or by name.
+    Formal = (identifier name, int id, Spec spec, bool by_value)
+
+    Spec = Simple(Type type)
+         | Array(Type type)
+         | Procedure(Type type)
+         | Label
+         | Switch
+
+    Stmt = Block(Decl* decls, Stmt* body)                           -- 036 … 037
+         | Compound(Stmt* body)
+         | Labeled(int label, Stmt stmt)                            -- 060
+         | Dummy
+         -- left parts from left to right; a real value to an integer is rounded (063)
+         | Assign(LeftPart* targets, Expr value)                    -- 0100, 0101, 046
+         | Goto(Expr target)                                        -- 026; target designational
+         | If(Expr condition, Stmt then_stmt, Stmt? else_stmt)      -- 027, 0130-0134
+         | For(LeftPart control, ForElement* elements, Stmt body)   -- 055 032/0141 … 033 … 052
+         | Call(int proc, Expr* args)                               -- 020 … 0110; 0126 … 0121
+         | StdProc(StdProc proc, Expr* args)                        -- 071, 072
+         | Io(IoOp op, Expr* params, IoElement* items)              -- 063-074, 0100-0103
+         attributes(SrcLoc loc)
+
+    ForElement = Value(Expr value)                                  -- 056, 0136, 0135
+               | StepUntil(Expr init, Expr step, Expr until)        -- 034, 0137, 0140
+               | While(Expr value, Expr condition)                  -- 035
+
+    -- A variable (a formal by name, or the result of the function whose body
+    -- this is), or an array element.
+    LeftPart = Var(int decl)
+             | Element(int array, Expr* subscripts)
+
+    -- Standard procedures used as statements.
+    StdProc = Stop | Load | LoadGo | Assign | Atos | Stoa
+
+    -- I/O statements. The params come before the list:
+    --   Print, Punch: none;
+    --   Read, Write: a unit and optionally a second one;
+    --   Decode, Encode: three expressions; Rewind, Backspace, Endfile: the unit.
+    IoOp = Print | Punch | Read | Write | Decode | Encode | Rewind | Backspace | Endfile
+
+    IoElement = Item(Expr expr)
+              | For(LeftPart control, ForElement* elements, IoElement* body)
+              | NewLine
+              | NewPage
+
+    Expr = IntConst(int value)                                      -- 023
+         | RealConst(float value)                                   -- 023
+         | BoolConst(bool value)                                    -- 023 of TRUE, FALSE
+         | BitsConst(int value)                                     -- 023 of an octal constant
+         | StringConst(string value)                                -- 070
+         -- the value of a variable or a formal by name, or a call of a function
+         -- without parameters (017, 022, 021, 0107)
+         | Var(int decl)
+         | Element(int array, Expr* subscripts)                     -- 044; 045, 030 per subscript
+         | Call(int proc, Expr* args)                               -- 020 … 0110
+         | StdFunc(StdFunc func, Expr* args)                        -- 057
+         | Unary(UnaryOp op, Expr operand)
+         | Binary(BinaryOp op, Expr left, Expr right)
+         | Cond(Expr condition, Expr then_expr, Expr else_expr)     -- 031 … 054
+         | Convert(Conversion conv, Expr expr)                      -- 064, 063
+         | StringElement(Expr string, Expr index)                   -- 0250
+         | Slice(Expr string, Expr first, Expr last)                -- 050
+         -- designational expressions: in GOTO, switches and arguments
+         | LabelRef(int label)                                      -- 024
+         | SwitchElement(int switch, Expr index)                    -- 025
+         attributes(Type type)
+
+    StdFunc = Abs | Sign | Sqrt | Sin | Cos | Arctan | Ln | Exp | Entier | Length
+
+    -- Neg: 047 real, 026 integer; Not: 004, 0204 on bits.
+    UnaryOp = Neg | Not
+
+    -- Arithmetic on integer and real operands of the node's type: 013-016, 067,
+    -- 076, 077; Power: 0147-0153, 0347, 0350 (on bits by a constant: a shift,
+    -- 0352). Add on strings concatenates. Relations on numbers, strings (0157),
+    -- bits (Eq, Ne). And, Or, Not on Boolean operands and on bits (0203).
+    BinaryOp = Add | Sub | Mul | Div | Power
+             | Lt | Le | Eq | Ne | Ge | Gt
+             | And | Or | Impl | Equiv
+
+    -- IntToReal: 064, exact; RealToInt: 063, rounds to the nearest (floor of x + 1/2).
+    Conversion = IntToReal | RealToInt
+}

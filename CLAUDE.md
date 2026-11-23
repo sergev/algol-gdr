@@ -39,7 +39,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 - `doc/` — findings about the original compiler: [passes.md](doc/passes.md) (driver, passes
   1–2, their streams), [tables.md](doc/tables.md), [symbols.md](doc/symbols.md),
   [runtime-abi.md](doc/runtime-abi.md) (what the run-time routines do),
-  [encoding.md](doc/encoding.md).
+  [encoding.md](doc/encoding.md); [ast.asdl](doc/ast.asdl) — the AST of `algc`, the reference
+  for its implementation.
 
 Milestones (from README.md):
 1. Rewrite the Madlen assembler sources into C++; compile simple examples into BESM-6 object
