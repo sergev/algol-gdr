@@ -105,6 +105,9 @@ interpreter, the pentomino solver and others.
 
 ## Learn more
 
+- [doc/algol-manual.md](doc/algol-manual.md): the manual: the language, formatted input and
+  output, the options of `algc`, with examples.
+- [doc/runtime-library.md](doc/runtime-library.md): the procedures a program can call.
 - [doc/deviations.md](doc/deviations.md): how `algc` differs from the Revised Report and
   from the X1 simulator.
 - [doc/](doc/): how the compiler works.

@@ -55,7 +55,10 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   (where the native run differs for a reason) or `NAME.out`. `tests/a60/` holds the
   conformance programs (outputs by hand); `tests/x1/` the X1 examples with their `x1sim`
   outputs (frozen, made by `tests/x1/goldens.sh`), compared line by line.
-- `doc/` — [passes.md](doc/passes.md) (the passes of algc, what each gives),
+- `doc/` — [algol-manual.md](doc/algol-manual.md) (the user manual: the language, I/O,
+  options, examples),
+  [runtime-library.md](doc/runtime-library.md) (the run-time procedures, for the
+  programmer); [passes.md](doc/passes.md) (the passes of algc, what each gives),
   [encoding.md](doc/encoding.md) (source characters and symbols, text at run time),
   [symbols.md](doc/symbols.md) (the lexer's symbols and how each is written),
   [tables.md](doc/tables.md) (keywords, standard identifiers and what each becomes, I/O
