@@ -58,6 +58,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 - `examples/` — the showcase, with README.md: the x1-algol-compiler examples (`x1sim`
   outputs, line by line, as `tests/x1/`) and revised_report, classics, parameters, units,
   gdr_io (moved from `tests/a60/`); `run_test` runs them as `examples/NAME`.
+- `vscode/` — the VS Code extension for Algol 60 (highlighting; `grammar.py` writes the
+  grammar); vscode/README.md says how to install it.
 - `doc/` — [algol-manual.md](doc/algol-manual.md) (the user manual: the language, I/O,
   options, examples),
   [runtime-library.md](doc/runtime-library.md) (the run-time procedures, for the

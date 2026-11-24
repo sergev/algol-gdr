@@ -1,0 +1,210 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Algol 60",
+  "scopeName": "source.algol60",
+  "fileTypes": [
+    "alg",
+    "a60"
+  ],
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#end-comment"
+    },
+    {
+      "include": "#string-backquote"
+    },
+    {
+      "include": "#string-curly"
+    },
+    {
+      "include": "#bad-string"
+    },
+    {
+      "include": "#octal"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#standard"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#operator"
+    },
+    {
+      "include": "#punctuation"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.block.algol60",
+      "begin": "(?:_(?i:comment)(?![\\p{L}\\p{N}])|(?:[cC]\\x{0332}+[oO]\\x{0332}+[mM]\\x{0332}+[mM]\\x{0332}+[eE]\\x{0332}+[nN]\\x{0332}+[tT]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))",
+      "end": ";|\\.,"
+    },
+    "end-comment": {
+      "begin": "(?:_(?i:end)(?![\\p{L}\\p{N}])|(?:[eE]\\x{0332}+[nN]\\x{0332}+[dD]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))",
+      "beginCaptures": {
+        "0": {
+          "name": "keyword.control.algol60"
+        }
+      },
+      "end": "(?=;|\\.,|(?:_(?i:else|end|eop)(?![\\p{L}\\p{N}])|(?:[eE]\\x{0332}+[lL]\\x{0332}+[sS]\\x{0332}+[eE]\\x{0332}+|[eE]\\x{0332}+[nN]\\x{0332}+[dD]\\x{0332}+|[eE]\\x{0332}+[oO]\\x{0332}+[pP]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332})))",
+      "contentName": "comment.block.algol60"
+    },
+    "string-backquote": {
+      "name": "string.quoted.other.algol60",
+      "begin": "`",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.algol60"
+        }
+      },
+      "end": "['′]",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.algol60"
+        }
+      },
+      "applyEndPatternLast": true,
+      "patterns": [
+        {
+          "name": "constant.character.escape.algol60",
+          "match": "['′]`"
+        },
+        {
+          "include": "#string-backquote"
+        }
+      ]
+    },
+    "string-curly": {
+      "name": "string.quoted.other.algol60",
+      "begin": "‘",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.algol60"
+        }
+      },
+      "end": "’",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.algol60"
+        }
+      },
+      "applyEndPatternLast": true,
+      "patterns": [
+        {
+          "include": "#string-curly"
+        }
+      ]
+    },
+    "bad-string": {
+      "patterns": [
+        {
+          "name": "invalid.illegal.string.algol60",
+          "begin": "''",
+          "end": "''"
+        },
+        {
+          "name": "invalid.illegal.string.algol60",
+          "begin": "'\\(",
+          "end": "'\\)"
+        },
+        {
+          "name": "invalid.illegal.string.algol60",
+          "begin": "\"",
+          "end": "\""
+        }
+      ]
+    },
+    "octal": {
+      "patterns": [
+        {
+          "name": "constant.numeric.octal.algol60",
+          "match": "['′][0-7]+['′]"
+        },
+        {
+          "name": "invalid.illegal.quoted-keyword.algol60",
+          "match": "['′][A-Za-z]+['′]"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.algol60",
+          "match": "(?:_(?i:begin|until|while|goto|then|else|step|end|for|eop|if|do)(?![\\p{L}\\p{N}])|(?:[bB]\\x{0332}+[eE]\\x{0332}+[gG]\\x{0332}+[iI]\\x{0332}+[nN]\\x{0332}+|[uU]\\x{0332}+[nN]\\x{0332}+[tT]\\x{0332}+[iI]\\x{0332}+[lL]\\x{0332}+|[wW]\\x{0332}+[hH]\\x{0332}+[iI]\\x{0332}+[lL]\\x{0332}+[eE]\\x{0332}+|[gG]\\x{0332}+[oO]\\x{0332}+\\s*[tT]\\x{0332}+[oO]\\x{0332}+|[tT]\\x{0332}+[hH]\\x{0332}+[eE]\\x{0332}+[nN]\\x{0332}+|[eE]\\x{0332}+[lL]\\x{0332}+[sS]\\x{0332}+[eE]\\x{0332}+|[sS]\\x{0332}+[tT]\\x{0332}+[eE]\\x{0332}+[pP]\\x{0332}+|[eE]\\x{0332}+[nN]\\x{0332}+[dD]\\x{0332}+|[fF]\\x{0332}+[oO]\\x{0332}+[rR]\\x{0332}+|[eE]\\x{0332}+[oO]\\x{0332}+[pP]\\x{0332}+|[iI]\\x{0332}+[fF]\\x{0332}+|[dD]\\x{0332}+[oO]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))"
+        },
+        {
+          "name": "storage.type.algol60",
+          "match": "(?:_(?i:procedure|boolean|integer|string|switch|common|array|label|value|algol|real|bits|code|own)(?![\\p{L}\\p{N}])|(?:[pP]\\x{0332}+[rR]\\x{0332}+[oO]\\x{0332}+[cC]\\x{0332}+[eE]\\x{0332}+[dD]\\x{0332}+[uU]\\x{0332}+[rR]\\x{0332}+[eE]\\x{0332}+|[bB]\\x{0332}+[oO]\\x{0332}+[oO]\\x{0332}+[lL]\\x{0332}+[eE]\\x{0332}+[aA]\\x{0332}+[nN]\\x{0332}+|[iI]\\x{0332}+[nN]\\x{0332}+[tT]\\x{0332}+[eE]\\x{0332}+[gG]\\x{0332}+[eE]\\x{0332}+[rR]\\x{0332}+|[sS]\\x{0332}+[tT]\\x{0332}+[rR]\\x{0332}+[iI]\\x{0332}+[nN]\\x{0332}+[gG]\\x{0332}+|[sS]\\x{0332}+[wW]\\x{0332}+[iI]\\x{0332}+[tT]\\x{0332}+[cC]\\x{0332}+[hH]\\x{0332}+|[cC]\\x{0332}+[oO]\\x{0332}+[mM]\\x{0332}+[mM]\\x{0332}+[oO]\\x{0332}+[nN]\\x{0332}+|[aA]\\x{0332}+[rR]\\x{0332}+[rR]\\x{0332}+[aA]\\x{0332}+[yY]\\x{0332}+|[lL]\\x{0332}+[aA]\\x{0332}+[bB]\\x{0332}+[eE]\\x{0332}+[lL]\\x{0332}+|[vV]\\x{0332}+[aA]\\x{0332}+[lL]\\x{0332}+[uU]\\x{0332}+[eE]\\x{0332}+|[aA]\\x{0332}+[lL]\\x{0332}+[gG]\\x{0332}+[oO]\\x{0332}+[lL]\\x{0332}+|[rR]\\x{0332}+[eE]\\x{0332}+[aA]\\x{0332}+[lL]\\x{0332}+|[bB]\\x{0332}+[iI]\\x{0332}+[tT]\\x{0332}+[sS]\\x{0332}+|[cC]\\x{0332}+[oO]\\x{0332}+[dD]\\x{0332}+[eE]\\x{0332}+|[oO]\\x{0332}+[wW]\\x{0332}+[nN]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))"
+        },
+        {
+          "name": "constant.language.algol60",
+          "match": "(?:_(?i:false|true)(?![\\p{L}\\p{N}])|(?:[fF]\\x{0332}+[aA]\\x{0332}+[lL]\\x{0332}+[sS]\\x{0332}+[eE]\\x{0332}+|[tT]\\x{0332}+[rR]\\x{0332}+[uU]\\x{0332}+[eE]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))"
+        },
+        {
+          "name": "keyword.operator.word.algol60",
+          "match": "(?:_(?i:notgreater|notequal|greater|notless|equiv|power|equal|impl|less|and|not|div|or|lt|le|eq|ne|ge|gt)(?![\\p{L}\\p{N}])|(?:[nN]\\x{0332}+[oO]\\x{0332}+[tT]\\x{0332}+[gG]\\x{0332}+[rR]\\x{0332}+[eE]\\x{0332}+[aA]\\x{0332}+[tT]\\x{0332}+[eE]\\x{0332}+[rR]\\x{0332}+|[nN]\\x{0332}+[oO]\\x{0332}+[tT]\\x{0332}+[eE]\\x{0332}+[qQ]\\x{0332}+[uU]\\x{0332}+[aA]\\x{0332}+[lL]\\x{0332}+|[gG]\\x{0332}+[rR]\\x{0332}+[eE]\\x{0332}+[aA]\\x{0332}+[tT]\\x{0332}+[eE]\\x{0332}+[rR]\\x{0332}+|[nN]\\x{0332}+[oO]\\x{0332}+[tT]\\x{0332}+[lL]\\x{0332}+[eE]\\x{0332}+[sS]\\x{0332}+[sS]\\x{0332}+|[eE]\\x{0332}+[qQ]\\x{0332}+[uU]\\x{0332}+[iI]\\x{0332}+[vV]\\x{0332}+|[pP]\\x{0332}+[oO]\\x{0332}+[wW]\\x{0332}+[eE]\\x{0332}+[rR]\\x{0332}+|[eE]\\x{0332}+[qQ]\\x{0332}+[uU]\\x{0332}+[aA]\\x{0332}+[lL]\\x{0332}+|[iI]\\x{0332}+[mM]\\x{0332}+[pP]\\x{0332}+[lL]\\x{0332}+|[lL]\\x{0332}+[eE]\\x{0332}+[sS]\\x{0332}+[sS]\\x{0332}+|[aA]\\x{0332}+[nN]\\x{0332}+[dD]\\x{0332}+|[nN]\\x{0332}+[oO]\\x{0332}+[tT]\\x{0332}+|[dD]\\x{0332}+[iI]\\x{0332}+[vV]\\x{0332}+|[oO]\\x{0332}+[rR]\\x{0332}+|[lL]\\x{0332}+[tT]\\x{0332}+|[lL]\\x{0332}+[eE]\\x{0332}+|[eE]\\x{0332}+[qQ]\\x{0332}+|[nN]\\x{0332}+[eE]\\x{0332}+|[gG]\\x{0332}+[eE]\\x{0332}+|[gG]\\x{0332}+[tT]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))"
+        },
+        {
+          "name": "keyword.other.io.algol60",
+          "match": "(?:_(?i:backspace|endfile|decode|encode|rewind|print|punch|write|read)(?![\\p{L}\\p{N}])|(?:[bB]\\x{0332}+[aA]\\x{0332}+[cC]\\x{0332}+[kK]\\x{0332}+[sS]\\x{0332}+[pP]\\x{0332}+[aA]\\x{0332}+[cC]\\x{0332}+[eE]\\x{0332}+|[eE]\\x{0332}+[nN]\\x{0332}+[dD]\\x{0332}+[fF]\\x{0332}+[iI]\\x{0332}+[lL]\\x{0332}+[eE]\\x{0332}+|[dD]\\x{0332}+[eE]\\x{0332}+[cC]\\x{0332}+[oO]\\x{0332}+[dD]\\x{0332}+[eE]\\x{0332}+|[eE]\\x{0332}+[nN]\\x{0332}+[cC]\\x{0332}+[oO]\\x{0332}+[dD]\\x{0332}+[eE]\\x{0332}+|[rR]\\x{0332}+[eE]\\x{0332}+[wW]\\x{0332}+[iI]\\x{0332}+[nN]\\x{0332}+[dD]\\x{0332}+|[pP]\\x{0332}+[rR]\\x{0332}+[iI]\\x{0332}+[nN]\\x{0332}+[tT]\\x{0332}+|[pP]\\x{0332}+[uU]\\x{0332}+[nN]\\x{0332}+[cC]\\x{0332}+[hH]\\x{0332}+|[wW]\\x{0332}+[rR]\\x{0332}+[iI]\\x{0332}+[tT]\\x{0332}+[eE]\\x{0332}+|[rR]\\x{0332}+[eE]\\x{0332}+[aA]\\x{0332}+[dD]\\x{0332}+)(?![\\p{L}\\p{N}]\\x{0332}))"
+        },
+        {
+          "name": "invalid.illegal.keyword.algol60",
+          "match": "_[\\p{L}\\p{N}]+"
+        }
+      ]
+    },
+    "standard": {
+      "name": "support.function.algol60",
+      "match": "(?<![\\p{L}\\p{N}\\x{0332}])(?:outterminator|outinteger|SETRANDOM|outstring|ininteger|TIMEOFDAY|PRINTTEXT|outsymbol|insymbol|NEWLINE|epsilon|minreal|maxreal|outreal|NEWPAGE|ABSFIXT|entier|inreal|NEWPAG|length|LOADGO|RANDOM|ASSIGN|NEWLIN|maxint|arctan|fault|PRSYM|print|SPACE|RESYM|XEEN|NLCR|ATOS|LOAD|STOA|EVEN|FLOT|read|sign|FIXT|STOP|sqrt|stop|exp|TAB|SUM|cos|abs|sin|ln)(?![\\p{L}\\p{N}\\x{0332}])"
+    },
+    "number": {
+      "name": "constant.numeric.algol60",
+      "match": "(?<![\\p{L}\\p{N}])(?:(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:⏨[+-]?\\d+)?|⏨[+-]?\\d+)"
+    },
+    "operator": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.algol60",
+          "match": ":="
+        },
+        {
+          "name": "punctuation.section.brackets.algol60",
+          "match": "\\(/|/\\)"
+        },
+        {
+          "name": "keyword.operator.comparison.algol60",
+          "match": "[<≤⩽=≠≥⩾>]"
+        },
+        {
+          "name": "keyword.operator.logical.algol60",
+          "match": "[¬∧&∨⊃≡]"
+        },
+        {
+          "name": "keyword.operator.arithmetic.algol60",
+          "match": "\\*\\*|[×*/÷↑^+\\-]"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.terminator.statement.algol60",
+          "match": ";|\\.,"
+        },
+        {
+          "name": "punctuation.separator.algol60",
+          "match": "[,:]"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "name": "algol60",
+  "displayName": "Algol 60 (algc)",
+  "description": "Syntax highlighting for Algol 60 as algc reads it: _keywords and underlined keywords",
+  "version": "0.1.0",
+  "publisher": "algc",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Algol 60",
+      "properties": {
+        "algol60.underlineKeywords": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show underlined keywords (b̲e̲g̲i̲n̲) with a real underline: hide the combining U+0332 characters."
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "algol60",
+        "aliases": [
+          "Algol 60",
+          "algol60"
+        ],
+        "extensions": [
+          ".alg",
+          ".a60"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "algol60",
+        "scopeName": "source.algol60",
+        "path": "./syntaxes/algol60.tmLanguage.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[algol60]": {
+        "editor.unicodeHighlight.ambiguousCharacters": false,
+        "editor.unicodeHighlight.invisibleCharacters": false
+      }
+    }
+  }
+}
