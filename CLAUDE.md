@@ -53,8 +53,11 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
   `listing_test` checks the `.lst` files, `ast_test` the `.ast` and `.err` files; `run_test`
   compiles the programs it lists natively and compares their output with `NAME.native.out`
   (where the native run differs for a reason) or `NAME.out`. `tests/a60/` holds the
-  conformance programs (outputs by hand); `tests/x1/` the X1 examples with their `x1sim`
+  conformance programs (outputs by hand); `tests/x1/` the X1 library tests with their `x1sim`
   outputs (frozen, made by `tests/x1/goldens.sh`), compared line by line.
+- `examples/` — the showcase, with README.md: the x1-algol-compiler examples (`x1sim`
+  outputs, line by line, as `tests/x1/`) and revised_report, classics, parameters, units,
+  gdr_io (moved from `tests/a60/`); `run_test` runs them as `examples/NAME`.
 - `doc/` — [algol-manual.md](doc/algol-manual.md) (the user manual: the language, I/O,
   options, examples),
   [runtime-library.md](doc/runtime-library.md) (the run-time procedures, for the
@@ -78,7 +81,7 @@ Milestones (all done; the history is in README.md):
    (done).
 3. Extend the parser to full Algol-60 and develop a full runtime library (done; what
    remains different is in [doc/deviations.md](doc/deviations.md)).
-4. Compile and run all programs from x1-algol-compiler/examples (done: `tests/x1/`).
+4. Compile and run all programs from x1-algol-compiler/examples (done: `examples/`).
 
 ## Reference material (outside this repo)
 

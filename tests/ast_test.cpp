@@ -242,19 +242,20 @@ TEST(Checker, x1_library)
               "x.alg:3:11: error: Wrong number of arguments of 'EVEN'\n");
 }
 
-// The X1 programs (tests/x1, from x1-algol-compiler) pass the front end.
+// The X1 programs (tests/x1, examples/) pass the front end.
 TEST(Ast, x1_examples)
 {
     namespace fs = std::filesystem;
     int n        = 0;
-    for (const auto &e : fs::directory_iterator(TEST_DIR "/x1")) {
-        if (e.path().extension() != ".a60")
-            continue;
-        std::ostringstream err;
-        Diagnostics diag(e.path().filename().string(), err);
-        front_end(read_source(e.path().string()), diag, nullptr);
-        EXPECT_EQ(diag.errors(), 0) << err.str();
-        n++;
-    }
+    for (const char *dir : { TEST_DIR "/x1", TEST_DIR "/../examples" })
+        for (const auto &e : fs::directory_iterator(dir)) {
+            if (e.path().extension() != ".a60")
+                continue;
+            std::ostringstream err;
+            Diagnostics diag(e.path().filename().string(), err);
+            front_end(read_source(e.path().string()), diag, nullptr);
+            EXPECT_EQ(diag.errors(), 0) << err.str();
+            n++;
+        }
     EXPECT_GT(n, 20);
 }

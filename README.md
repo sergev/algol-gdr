@@ -55,7 +55,8 @@ _begin _integer i;
 _end
 ```
 
-The `tests/algol/` directory has more examples.
+The [examples/](examples/) directory has more programs; `tests/algol/` has the test
+programs of Algol-GDR.
 
 ## Programs in the publication form
 
@@ -77,8 +78,8 @@ Hello, `Algol'
 ```
 
 The programs of [x1-algol-compiler](https://github.com/sergev/x1-algol-compiler) run this
-way, with the output of its X1 simulator; they are in `tests/x1/`, with the Lisp
-interpreter, the pentomino solver and others.
+way, with the output of its X1 simulator; they are in [examples/](examples/), with
+the Lisp interpreter, the pentomino solver and others.
 
 ## Options
 
@@ -114,6 +115,6 @@ interpreter, the pentomino solver and others.
   from the X1 simulator.
 - [doc/](doc/): how the compiler works.
 - [x1-algol-compiler](https://github.com/sergev/x1-algol-compiler): the Algol 60 programs
-  of `tests/x1/` and the X1 simulator.
+  of `examples/` and the X1 simulator.
 - [dubna](https://github.com/besm6/dubna): a BESM-6 simulator, where the original compiler
   still runs.

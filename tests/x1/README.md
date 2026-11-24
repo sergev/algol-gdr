@@ -3,12 +3,12 @@
 Programs in the publication form for the library of the Electrologica X1:
 
 - the examples of x1-algol-compiler (`examples/`, revision 8e19077), copied unchanged, but
-  `quine` (its output is not its source);
+  `quine` (its output is not its source): `encoding` here, the others in `../../examples/`;
 - `output`, `input`, `helpers`: the X1 library procedures and their corner cases.
 
 `NAME.out` is the output of `x1sim NAME.a60 < NAME.in` (frozen), made by
-`goldens.sh [EXAMPLES [X1SIM]]`, which also copies the examples and takes their inputs from
-the `NAME.sh` scripts; `pentominoWxH.in` are inputs of `pentomino.a60`. `quinio.in` (a game
+`goldens.sh [EXAMPLES [X1SIM]]`, which also copies the examples to `examples/` and takes
+their inputs from the `NAME.sh` scripts; `pentominoWxH.in` are inputs of `pentomino.a60`. `quinio.in` (a game
 the computer wins) and `bulls_and_cows.in` are written here. `time` (the time of day) and
 `bulls_and_cows` (its secret is random) have no `x1sim` output: they run with the time
 fixed by `NAME.env` (`ALGC_TIMEOFDAY`), and `NAME.native.out` is algc's output, checked by

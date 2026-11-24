@@ -1397,7 +1397,8 @@ Output:
    5      25    2.2361
 ```
 
-More programs are in the `tests/` directory of the source: `tests/a60/` (Algol 60 of the
-Report: Jensen's device, the procedures of the Report, eight queens), `tests/x1/` (the
-programs of x1-algol-compiler: a Lisp interpreter, the pentomino puzzle, Whetstone), and
-`tests/algol/` (the test programs of Algol-GDR).
+More programs are in the `examples/` directory of the source, with a README: the
+programs of x1-algol-compiler (a Lisp interpreter, the pentomino puzzle, Whetstone), the
+procedures of the Report, Jensen's device, eight queens, separate compilation. The
+`tests/` directory has the rest: `tests/a60/` (Algol 60 of the Report), `tests/x1/` (the
+X1 library) and `tests/algol/` (the test programs of Algol-GDR).

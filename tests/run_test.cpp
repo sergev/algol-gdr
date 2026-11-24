@@ -24,7 +24,7 @@ namespace {
 
 const std::string compiler = BUILD_DIR "/src/algc";
 
-// The programs, as DIR/NAME under tests/.
+// The programs, as DIR/NAME under tests/, or examples/NAME.
 // clang-format off
 const std::vector<std::string> programs = {
     "algol/arith",
@@ -58,45 +58,45 @@ const std::vector<std::string> programs = {
     "algol/test1",
     "algol/test2",
     "algol/test3",
-    "a60/classics",
     "a60/for",
     "a60/goto_arrays",
     "a60/ifip",
     "a60/intdiv",
     "a60/man_or_boy",
     "a60/own",
-    "a60/parameters",
     "a60/program_form",
     "a60/publication",
-    "a60/revised_report",
-    "a60/units",
-    "x1/beer",
-    "x1/bulls_and_cows",
-    "x1/disarium",
     "x1/encoding",
-    "x1/hanoi",
-    "x1/hello",
     "x1/helpers",
     "x1/input",
-    "x1/lisp",
-    "x1/magic_square",
-    "x1/man_or_boy",
-    "x1/mersenne",
-    "x1/outer_planets",
     "x1/output",
-    "x1/palindromic_primes",
-    "x1/pentomino3x20",
-    "x1/pentomino4x15",
-    "x1/pentomino5x12",
-    "x1/pentomino6x10",
-    "x1/perfect_numbers",
-    "x1/quinio",
-    "x1/sieve",
-    "x1/sqrt_test",
-    "x1/steady_squares",
-    "x1/sum",
-    "x1/time",
-    "x1/whetstone",
+    "examples/beer",
+    "examples/bulls_and_cows",
+    "examples/classics",
+    "examples/disarium",
+    "examples/hanoi",
+    "examples/hello",
+    "examples/lisp",
+    "examples/magic_square",
+    "examples/man_or_boy",
+    "examples/mersenne",
+    "examples/outer_planets",
+    "examples/palindromic_primes",
+    "examples/parameters",
+    "examples/pentomino3x20",
+    "examples/pentomino4x15",
+    "examples/pentomino5x12",
+    "examples/pentomino6x10",
+    "examples/perfect_numbers",
+    "examples/quinio",
+    "examples/revised_report",
+    "examples/sieve",
+    "examples/sqrt_test",
+    "examples/steady_squares",
+    "examples/sum",
+    "examples/time",
+    "examples/units",
+    "examples/whetstone",
 };
 // clang-format on
 
@@ -191,20 +191,36 @@ std::string compare(const std::string &output, const std::string &expected)
     return "";
 }
 
+// The path of a program without the extension.
+std::string base_of(const std::string &name)
+{
+    return name.rfind("examples/", 0) == 0 ? TEST_DIR "/../" + name : TEST_DIR "/" + name;
+}
+
 std::string expected(const std::string &name)
 {
-    std::string native = TEST_DIR "/" + name + ".native.out";
+    std::string native = base_of(name) + ".native.out";
     if (std::filesystem::exists(native))
         return file_contents(native);
-    return file_contents(TEST_DIR "/" + name + ".out");
+    return file_contents(base_of(name) + ".out");
+}
+
+// Programs of x1-algol-compiler: tests/x1 and the examples but these.
+bool is_x1(const std::string &name)
+{
+    static const std::vector<std::string> others = { "examples/classics", "examples/parameters",
+                                                     "examples/revised_report", "examples/units" };
+    if (name.rfind("x1/", 0) == 0)
+        return true;
+    return name.rfind("examples/", 0) == 0 &&
+           std::find(others.begin(), others.end(), name) == others.end();
 }
 
 // The output of the program against its expected one: X1 programs line by
 // line, the others by tokens.
 std::string compare_output(const std::string &name, const std::string &out)
 {
-    return name.rfind("x1/", 0) == 0 ? compare_x1(out, expected(name))
-                                     : compare(out, expected(name));
+    return is_x1(name) ? compare_x1(out, expected(name)) : compare(out, expected(name));
 }
 
 // C for the _code procedures of a program, or a unit of _algol ones.
@@ -292,7 +308,7 @@ class RunTest : public ::testing::TestWithParam<std::string> {};
 TEST_P(RunTest, output)
 {
     const std::string name = GetParam();
-    const std::string base = TEST_DIR "/" + name;
+    const std::string base = base_of(name);
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = stub_of(base);
@@ -317,7 +333,7 @@ TEST_P(CrossTest, output)
         GTEST_SKIP() << "no runtime for " << target;
     if (run_command("command -v " + qemu(target)).exit_code != 0)
         GTEST_SKIP() << "no " << qemu(target);
-    const std::string base = TEST_DIR "/" + name;
+    const std::string base = base_of(name);
     bool check             = pre_options(base + ".pre").find("--check") != std::string::npos;
     std::string input      = std::filesystem::exists(base + ".in") ? base + ".in" : "/dev/null";
     std::string stub       = stub_of(base);
@@ -490,12 +506,13 @@ _end
 TEST(Run, gdr_io)
 {
     const std::string exe = BUILD_DIR "/run_gdr_io";
-    auto c                = run_command(compiler + " -o " + exe + " " TEST_DIR "/a60/gdr_io.alg");
+    auto c = run_command(compiler + " -o " + exe + " " TEST_DIR "/../examples/gdr_io.alg");
     ASSERT_EQ(c.exit_code, 0) << c.output;
     std::filesystem::remove(exe + ".7");
-    auto r = run_command("ALGC_UNIT7=" + exe + ".7 " + exe + " < " TEST_DIR "/a60/gdr_io.in");
+    auto r =
+        run_command("ALGC_UNIT7=" + exe + ".7 " + exe + " < " TEST_DIR "/../examples/gdr_io.in");
     EXPECT_EQ(r.exit_code, 0) << r.output;
-    EXPECT_EQ(compare(r.output, file_contents(TEST_DIR "/a60/gdr_io.out")), "") << r.output;
+    EXPECT_EQ(compare(r.output, file_contents(TEST_DIR "/../examples/gdr_io.out")), "") << r.output;
     EXPECT_EQ(file_contents(exe + ".7"), "  9\n");
 }
 

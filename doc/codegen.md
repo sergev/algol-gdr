@@ -224,8 +224,9 @@ between calls; no line buffer, and nothing is added at the end of the program.
 All output goes through `algol_out`, flushed after each call when stdout is a terminal.
 Before a run-time error message a line in progress is ended.
 
-**Tests.** `run_test` compares the output of the programs of tests/algol and tests/a60 with
-`NAME.out` by tokens, reals to 1e-10 relative (tests/run_test.cpp); tests/x1 line by line.
+**Tests.** `run_test` compares the output of the programs of tests/algol, tests/a60 and examples
+with `NAME.out` by tokens, reals to 1e-10 relative (tests/run_test.cpp); the X1 programs
+(tests/x1 and those of examples) line by line.
 The `_code` and `_algol` procedures of quinio and bozp_ybyb are C in `NAME.c` next to the
 program.
 

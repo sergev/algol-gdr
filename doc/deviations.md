@@ -1,9 +1,9 @@
 # Deviations from the Revised Report
 
 How `algc` differs from the Revised Report on the Algorithmic Language Algol 60 (1963),
-where, and why. Milestone 3 removed the others; the programs of `tests/a60/` check what
-it added. The last section is how the X1 library differs from `x1sim` (Milestone 4,
-`tests/x1/`).
+where, and why. Milestone 3 removed the others; the programs of `tests/a60/` and
+`examples/` check what it added. The last section is how the X1 library differs from `x1sim` (Milestone 4,
+`examples/`, `tests/x1/`).
 
 ## Representation
 
