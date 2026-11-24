@@ -518,6 +518,8 @@ TEST(Run, checks)
           "Parameter 1 of p is a value, not what the formal takes" },
         { "_procedure p(a); _real a; ; _procedure q(f); _procedure f; f(_true); q(p)",
           "Parameter 1 of p is Boolean, not real" },
+        { "_procedure p(a); _real a; ; _procedure r; ; _procedure q(f); _procedure f; f(r); q(p)",
+          "Parameter 1 of p is a procedure without a value, not real" },
     };
     int n = 0;
     for (const auto &[body, message] : cases) {
@@ -529,6 +531,17 @@ TEST(Run, checks)
         EXPECT_EQ(r.exit_code, 1) << body;
         EXPECT_EQ(r.output, "Error: " + message + "\n") << body;
     }
+}
+
+// A function as the actual of a simple formal passes --check: man or boy.
+TEST(Run, checks_function_actual)
+{
+    const std::string exe = BUILD_DIR "/run_check_mob";
+    auto c = run_command(compiler + " --check -o " + exe + " " TEST_DIR "/a60/man_or_boy.a60");
+    ASSERT_EQ(c.exit_code, 0) << c.output;
+    auto r = run_command(exe + " < /dev/null");
+    EXPECT_EQ(r.exit_code, 0) << r.output;
+    EXPECT_EQ(compare(r.output, file_contents(TEST_DIR "/a60/man_or_boy.out")), "") << r.output;
 }
 
 TEST(Run, division_by_zero)

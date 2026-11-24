@@ -332,10 +332,15 @@ Token Lexer::scan()
         if (c == QUOTE)
             return rejected_string(false);
         if (is_letter(c)) {
+            Pos start     = start_;
             std::string w = word(true);
             if (text_[col_] == QUOTE)
                 step();
-            return error("Write a keyword as _" + w + ", not in quotes");
+            if (!keyword(w))
+                return error("Write a keyword as _" + w + ", not in quotes");
+            // Reported, then read as the keyword.
+            diag_.error(start, "Write a keyword as _" + w + ", not in quotes");
+            return keyword_token(w, start);
         }
         if (is_digit(c))
             return octal();

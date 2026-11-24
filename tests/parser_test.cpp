@@ -45,6 +45,20 @@ TEST(Parser, recovery)
 }
 
 // _eop, which the original needed, ends the input with an error.
+// A lexical error is not reported again; a stray _end or _else before the
+// program is reported once; a quoted keyword is read as the keyword.
+TEST(Parser, lexical_errors)
+{
+    EXPECT_EQ(messages("_begin X := 3 # 4; Y := 1 _end"),
+              "x.alg:1:15: error: Illegal character '#'\n");
+    EXPECT_EQ(messages("_end _else _begin X := 1 _end"),
+              "x.alg:1:1: error: Expected the program, found _end\n"
+              "x.alg:1:6: error: Expected the program, found _else\n");
+    EXPECT_EQ(messages("'BEGIN' X := 1 'END'"),
+              "x.alg:1:1: error: Write a keyword as _BEGIN, not in quotes\n"
+              "x.alg:1:16: error: Write a keyword as _END, not in quotes\n");
+}
+
 TEST(Parser, eop)
 {
     EXPECT_EQ(messages("_begin X := 1 _end\n_eop\n"),

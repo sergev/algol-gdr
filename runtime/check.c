@@ -37,7 +37,8 @@ void algol_check_actuals(void **args, int64_t n, const char *spec, const char *n
         int ok;
         switch (want) {
         case 's':
-            ok = kind == A_VALUE || kind == A_VARIABLE;
+            // A procedure is called at each access.
+            ok = kind == A_VALUE || kind == A_VARIABLE || kind == A_PROCEDURE;
             break;
         case 'a':
             ok = kind == A_ARRAY;
@@ -62,7 +63,7 @@ void algol_check_actuals(void **args, int64_t n, const char *spec, const char *n
             continue;
         if (formal == type || (numeric(formal) && numeric(type)))
             continue;
-        if (want == 'p' && type == 5)
+        if (type == 5 && (want == 'p' || kind == A_PROCEDURE))
             algol_error("Parameter %lld of %s is a procedure without a value, not %s",
                         (long long)k + 1, name, type_names[formal]);
         algol_error("Parameter %lld of %s is %s, not %s", (long long)k + 1, name,

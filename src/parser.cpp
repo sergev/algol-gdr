@@ -363,7 +363,7 @@ Program Parser::program()
     try {
         advance();
         head(p);
-        if (tok_.sym != Sym::END_OF_FILE)
+        if (tok_.sym != Sym::END_OF_FILE && tok_.sym != Sym::ERROR)
             report(tok_.line, "Expected the end of the file after the program, found " + found());
     } catch (const Stop &) {
     }
@@ -415,6 +415,9 @@ void Parser::head(Program &p)
             skip_declaration();
             if (tok_.sym == Sym::END_OF_FILE)
                 return;
+            // A stray _end or _else: skip_declaration stops there.
+            if (tok_.sym == Sym::END || tok_.sym == Sym::ELSE)
+                advance();
         }
     }
 }
@@ -489,7 +492,8 @@ StmtList Parser::statements()
             report(tok_.line, "Missing _end");
             return list;
         }
-        report(tok_.line, "Expected ';' or _end, found " + found());
+        if (tok_.sym != Sym::ERROR) // a lexical error is reported already
+            report(tok_.line, "Expected ';' or _end, found " + found());
         // The statement before is incomplete: not checked.
         if (!std::holds_alternative<stmt::Labeled>(list.back()->node))
             list.back()->node = stmt::Error{};
