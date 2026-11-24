@@ -108,6 +108,8 @@ interpreter, the pentomino solver and others.
 - [doc/algol-manual.md](doc/algol-manual.md): the manual: the language, formatted input and
   output, the options of `algc`, with examples.
 - [doc/runtime-library.md](doc/runtime-library.md): the procedures a program can call.
+- [doc/interoperability.md](doc/interoperability.md): Algol with C, C++, Rust: `_code`,
+  `_algol`, units, calling Algol from C.
 - [doc/deviations.md](doc/deviations.md): how `algc` differs from the Revised Report and
   from the X1 simulator.
 - [doc/](doc/): how the compiler works.

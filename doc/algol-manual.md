@@ -856,9 +856,11 @@ _algol: _real half;        _comment a procedure of another Algol unit;
 **`_code` procedures** are C functions (or of any language with the C calling
 convention). Each argument is passed by its address: a variable or an array element as a
 pointer to it, an expression as a pointer to a temporary holding its value, an array as a
-pointer to its elements (8 bytes each, row-major), a string as a `char *`. The C types are
-`int64_t` for integer, `double` for real, `bool` for Boolean and `char *` for string. The
-function returns the type declared in Algol, or `void`.
+pointer to its elements (8 bytes each, row-major); a string is a `char *` in its cell, so C
+gets a `char **`. The C types are `int64_t` for integer, `double` for real, `bool` for
+Boolean and `char *` for string. The function returns the type declared in Algol, or
+`void`. [interoperability.md](interoperability.md) has the details and examples in C, C++
+and Rust, and how C calls Algol.
 
 ```c
 // hyp.c

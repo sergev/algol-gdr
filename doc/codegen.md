@@ -171,9 +171,10 @@ account (see tests/algol/quinio.c).
 
 - **`_code` procedures** are C functions, called with the address of each argument: a
   variable or an element is its own cell, an array its data (8-byte cells, row-major), an
-  expression a temporary holding its value (a string: a `char *`). The result is the
-  procedure's type in C: `int64_t` (integer), `double` (real), `bool`, `char *` (string),
-  `void`. `_code: _real rndm;` is `double rndm(…)`.
+  expression a temporary holding its value (a string: its `char *` cell, so C gets
+  `char **`). The result is the procedure's type in C: `int64_t` (integer), `double`
+  (real), `bool`, `char *` (string), `void`. `_code: _real rndm;` is `double rndm(…)`.
+  doc/interoperability.md has examples, and C calling Algol.
 - **Units.** A file of procedures alone (`_real _procedure f(…); …; _procedure g; …`)
   compiles to an object with no `algol_main`: its procedures are global functions under
   their own names, with the Algol convention below. A program declares them `_algol: _real

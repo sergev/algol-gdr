@@ -58,7 +58,8 @@ Warnings are errors (`-Wall -Werror -Wshadow`, cppcheck `--enable=style`). Forma
 - `doc/` — [algol-manual.md](doc/algol-manual.md) (the user manual: the language, I/O,
   options, examples),
   [runtime-library.md](doc/runtime-library.md) (the run-time procedures, for the
-  programmer); [passes.md](doc/passes.md) (the passes of algc, what each gives),
+  programmer), [interoperability.md](doc/interoperability.md) (`_code`, `_algol`, units,
+  `_common`; Algol and C calling each other); [passes.md](doc/passes.md) (the passes of algc, what each gives),
   [encoding.md](doc/encoding.md) (source characters and symbols, text at run time),
   [symbols.md](doc/symbols.md) (the lexer's symbols and how each is written),
   [tables.md](doc/tables.md) (keywords, standard identifiers and what each becomes, I/O
