@@ -1,6 +1,8 @@
 //
 // Copyright (c) 2026 Serge Vakulenko. MIT license.
 //
+// Errors, the end of the program, non-local goto. main is in start.c.
+//
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -26,12 +28,6 @@ void algol_stop(void)
 {
     fflush(stdout);
     exit(0);
-}
-
-int main(void)
-{
-    algol_main();
-    algol_stop();
 }
 
 // A goto to a label of another function: frame is the label's frame; its

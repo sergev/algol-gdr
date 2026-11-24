@@ -16,14 +16,15 @@ uses them; doc/tables.md which Algol name calls which routine.
   elements, the number of dimensions, then the lower and upper bound of each dimension.
   Elements are 8-byte cells, row-major. Routines that take a whole array also take the type
   of its elements (`T_INTEGER` 0, `T_REAL` 1, `T_BOOLEAN` 2, `T_STRING` 3, `T_BITS` 4).
-- `main` (runtime/main.c) calls the program's `void algol_main(void)`, then `algol_stop`.
+- `main` (runtime/start.c) calls the program's `void algol_main(void)`, then `algol_stop`.
+  It is alone in its file, so a C program with its own `main` can link Algol units.
 - An error writes `Error: ` and the message to stderr and exits with status 1. A line of
   output in progress is ended first, so the message starts a line.
 - All output goes to stdout through `algol_out` (runtime/print.c), flushed at once when
   stdout is a terminal. All input from stdin goes through runtime/input.c, so the routines
   that read it can be mixed: a byte one of them put back is the next for all.
 
-## Program and control (main.c)
+## Program and control (control.c)
 
 | Routine | What |
 |---|---|

@@ -2,12 +2,13 @@ add_library(algolrt STATIC
     arith.c
     array.c
     check.c
-    main.c
+    control.c
     format.c
     ifip.c
     input.c
     print.c
     read.c
+    start.c
     string.c
     x1.c
 )
@@ -17,7 +18,7 @@ install(TARGETS algolrt DESTINATION lib)
 # The runtime for other targets, built with clang --target=TRIPLE into
 # runtime/TRIPLE/libalgol.a: the triples in ALGC_TARGETS, by default those
 # with a sysroot in /usr/TRIPLE.
-set(RUNTIME_SOURCES arith.c array.c check.c format.c ifip.c input.c main.c print.c read.c string.c x1.c)
+set(RUNTIME_SOURCES arith.c array.c check.c control.c format.c ifip.c input.c print.c read.c start.c string.c x1.c)
 if(NOT DEFINED ALGC_TARGETS)
     set(ALGC_TARGETS "")
     foreach(t aarch64-linux-gnu riscv64-linux-gnu x86_64-linux-gnu)

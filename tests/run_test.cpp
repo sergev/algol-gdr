@@ -689,6 +689,52 @@ _end
     EXPECT_EQ(run(src, BUILD_DIR "/run_code", false, "/dev/null", stub), "5\n[1 2 3] 7 6 8\n");
 }
 
+// A C main calls the procedures of an Algol unit, by the Algol convention:
+// a value, a variable by name, a term evaluated at each use.
+TEST(Run, c_main_calls_unit)
+{
+    const std::string main_c = BUILD_DIR "/run_cmain.c";
+    std::ofstream(main_c) << R"(#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+typedef struct { void *(*code)(void *); void *env; int64_t tag; } Actual;
+int64_t incr(void *sl, Actual *args);
+int64_t sigma(void *sl, Actual *args);
+static void *self(void *env) { return env; }
+static int64_t k;
+static double value;
+static void *term(void *env) { (void)env; value = (double)(k * k); return &value; }
+int main(void)
+{
+    int64_t n = 41, lo = 1, hi = 3;
+    struct { int64_t n; Actual a[1]; } i = { 1, { { self, &n, 16 } } };
+    incr(NULL, i.a);
+    struct { int64_t n; Actual a[4]; } s = { 4, { { self, &k, 16 }, { self, &lo, 0 },
+                                                  { self, &hi, 0 }, { term, NULL, 1 } } };
+    int64_t r = sigma(NULL, s.a);
+    double d;
+    memcpy(&d, &r, sizeof d);
+    printf("%lld %g\n", (long long)n, d);
+    return 0;
+}
+)";
+    const std::string unit = BUILD_DIR "/run_cmain_unit.alg";
+    std::ofstream(unit) << R"(_procedure incr(n); _integer n; n := n + 1;
+_real _procedure sigma(i, lo, hi, term); _value lo, hi; _integer i, lo, hi; _real term;
+_begin _real s; s := 0;
+    _for i := lo _step 1 _until hi _do s := s + term;
+    sigma := s
+_end
+)";
+    const std::string exe = BUILD_DIR "/run_cmain";
+    auto c = run_command("clang -c -o " + exe + "_main.o " + main_c + " && " + compiler + " -o " +
+                         exe + " " + exe + "_main.o " + unit);
+    ASSERT_EQ(c.exit_code, 0) << c.output;
+    auto r = run_command(exe + " < /dev/null");
+    EXPECT_EQ(r.exit_code, 0);
+    EXPECT_EQ(r.output, "42 14\n");
+}
+
 TEST(Run, format_and_read)
 {
     const std::string src = BUILD_DIR "/run_format.alg";
