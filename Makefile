@@ -1,7 +1,7 @@
 #
 # make          -- build everything
 # make test     -- run unit tests
-# make install  -- install binaries to /usr/local
+# make install  -- install to ~/.local (algc in ~/.local/bin)
 # make clean    -- remove build files
 #
 # To reconfigure for Debug build:
@@ -15,8 +15,8 @@ test:   build
 	$(MAKE) -Cbuild unit_tests
 	ctest --test-dir build/tests
 
-install: build
-	$(MAKE) -Cbuild $@
+install: all
+	cmake --install build --prefix $(HOME)/.local
 
 clean:
 	rm -rf build

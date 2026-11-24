@@ -15,7 +15,7 @@ You need CMake, a C++ compiler and clang.
 ```
 make            # build the compiler: build/src/algc
 make test       # run the tests
-make install    # install to /usr/local
+make install    # install to ~/.local (algc in ~/.local/bin)
 ```
 
 ## A first program
